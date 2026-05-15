@@ -5,7 +5,11 @@
 @说明:自定义规则配置 - 文明演进规则
 @时间:2026/03/26 13:36:46
 @作者:Sherry
+<<<<<<< HEAD
 @版本:2.1 — 修复：补全导入、修复remove_component类型参数、修复Resource/Social引用
+=======
+@版本:2.0
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 '''
 
 from core.entity import Entity
@@ -13,7 +17,10 @@ from core.world import World
 from typing import Dict, Any
 
 from resource.food.components.food_component import FoodComponent
+<<<<<<< HEAD
 from resource.components.resource_component import ResourceComponent, ResourceState
+=======
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 from resource.wood.components.wood_component import WoodComponent
 from resource.stone.components.stone_component import StoneComponent
 from resource.metal.components.metal_component import MetalComponent
@@ -23,7 +30,10 @@ from garbage.components.garbage_component import GarbageComponent
 from human.components.economic.economy_component import EconomyComponent
 from human.components.abilities.skill_component import SkillComponent
 from human.components.cognitive.memory_component import MemoryComponent
+<<<<<<< HEAD
 from human.components.social.social_component import SocialComponent
+=======
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 
 # ===== 基础资源转换规则 =====
@@ -37,6 +47,7 @@ def spoiled_food_transform(entity: Entity, world: World):
     """变质食物转换规则"""
     food: FoodComponent = world.get_component(entity=entity, component_type=FoodComponent)
 
+<<<<<<< HEAD
     # 移除食物组件（按类型移除）
     world.remove_component(entity=entity, component_type=FoodComponent)
 
@@ -45,6 +56,15 @@ def spoiled_food_transform(entity: Entity, world: World):
         world.add_component(entity, GarbageComponent(
             toxicity=food.poison + food.contamination
         ))
+=======
+    # 移除食物
+    world.remove_component(entity=entity, component_type=food)
+
+    # 转换为垃圾
+    world.add_component(GarbageComponent(
+        toxicity=food.poison + food.contamination
+    ))
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 
 # ===== 文明演进规则 =====
@@ -56,11 +76,16 @@ def resource_depletion_condition(resource) -> bool:
 
 def resource_depletion_transform(entity: Entity, world: World):
     """资源耗尽处理"""
+<<<<<<< HEAD
     resource = world.get_component(entity, ResourceComponent)
     if resource is None:
         return
 
     if resource.regenerable:
+=======
+    resource = world.get_component(entity, type(world.get_component(entity, ResourceComponent)))
+    if resource and resource.regenerable:
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         resource.state = ResourceState.REGENERATING
     else:
         resource.state = ResourceState.DEPLETED
@@ -79,9 +104,12 @@ def skill_improvement_transform(entity: Entity, world: World):
     skill = world.get_component(entity, SkillComponent)
     memory = world.get_component(entity, MemoryComponent)
 
+<<<<<<< HEAD
     if skill is None or memory is None:
         return
 
+=======
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
     # 找到最常练习的技能
     skill_counts = {}
     for exp in memory.experiences:
@@ -104,6 +132,7 @@ def wealth_accumulation_condition(economy: EconomyComponent) -> bool:
 def wealth_accumulation_transform(entity: Entity, world: World):
     """财富积累效应"""
     economy = world.get_component(entity, EconomyComponent)
+<<<<<<< HEAD
     if economy is None:
         return
 
@@ -119,3 +148,18 @@ def wealth_accumulation_transform(entity: Entity, world: World):
 
         # 重置财富阈值（但保留部分财富）
         economy.wealth = economy.wealth * 0.7  # 保留70%
+=======
+
+    # 财富积累可以解锁新能力或社会地位
+    if economy.wealth >= 100.0:
+        # 增加社会地位
+        social_comp = world.get_component(entity, SocialComponent)
+        if social_comp:
+            social_comp.social_status += 1
+
+        # 重置财富阈值（但保留部分财富）
+        economy.wealth = economy.wealth * 0.7  # 保留70%
+
+
+    
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc

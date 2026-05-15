@@ -41,16 +41,25 @@ class System:
     # 主执行入口
     # ============================
 
+<<<<<<< HEAD
     def update(self, world: World, dt: float = 1.0):
+=======
+    def update(self, world: World):
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         """
         不建议子类重写此方法。
         子类应重写 _update。
         """
         if not self.enabled:
             return
+<<<<<<< HEAD
         self._update(world, dt)
 
     def _update(self, world: World, dt: float = 1.0):
+=======
+
+    def _update(self, world: World):
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         """
         子类必须实现
         """

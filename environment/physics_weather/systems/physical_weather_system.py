@@ -81,7 +81,10 @@ from environment.physics_weather.config.physics_constants import (
     saturation_vapor_pressure,
 )
 from environment.season.season_component import SeasonComponent
+<<<<<<< HEAD
 from environment.climate.climate_component import ClimateComponent
+=======
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 
 class PhysicalWeatherSystem(System):
@@ -105,7 +108,10 @@ class PhysicalWeatherSystem(System):
 
         time = world.get_time()
         season_comp = world._world_entity.get_component(SeasonComponent)
+<<<<<<< HEAD
         climate_comp = world._world_entity.get_component(ClimateComponent)
+=======
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
         # 获取季节信息（可选耦合）
         season_offset = 0.0
@@ -114,6 +120,7 @@ class PhysicalWeatherSystem(System):
             season_offset = season_comp.temperature_offset
             season_rainfall_factor = season_comp.rainfall_factor
 
+<<<<<<< HEAD
         # 获取气候偏移（长期气候波动，可选耦合）
         climate_temp_bias = 0.0
         climate_humidity_bias = 0.0
@@ -127,15 +134,21 @@ class PhysicalWeatherSystem(System):
         total_temp_offset = season_offset + climate_temp_bias
         total_rainfall_factor = season_rainfall_factor * (1.0 + climate_rainfall_bias)
 
+=======
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         hour = time.hour
         day_of_year = time.day_of_year
 
         # =========================================================
         # 1️⃣ 温度演化
         # =========================================================
+<<<<<<< HEAD
         self._update_temperature(
             weather, hour, day_of_year, total_temp_offset, delta_hours,
         )
+=======
+        self._update_temperature(weather, hour, day_of_year, season_offset, delta_hours)
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
         # =========================================================
         # 2️⃣ 气压演化
@@ -146,8 +159,12 @@ class PhysicalWeatherSystem(System):
         # 3️⃣ 水汽演化 & 相对湿度计算
         # =========================================================
         self._update_humidity(
+<<<<<<< HEAD
             weather, delta_hours, total_rainfall_factor,
             climate_humidity_bias,
+=======
+            weather, delta_hours, season_rainfall_factor,
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         )
 
         # =========================================================
@@ -159,7 +176,11 @@ class PhysicalWeatherSystem(System):
         # 5️⃣ 降水演化
         # =========================================================
         self._update_precipitation(
+<<<<<<< HEAD
             weather, delta_hours, total_rainfall_factor,
+=======
+            weather, delta_hours, season_rainfall_factor,
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         )
 
         # =========================================================
@@ -254,7 +275,10 @@ class PhysicalWeatherSystem(System):
         weather: PhysicalWeatherComponent,
         delta_hours: float,
         rainfall_factor: float = 1.0,
+<<<<<<< HEAD
         climate_humidity_bias: float = 0.0,
+=======
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
     ):
         """
         绝对湿度演化：
@@ -267,16 +291,26 @@ class PhysicalWeatherSystem(System):
         ah = weather.absolute_humidity
 
         # ── 蒸发项 ──
+<<<<<<< HEAD
         # 蒸发率 = coeff * wind * (1 - RH) * (1 + climate_humidity_bias)
         # 气候湿度偏置：ElNino 加大蒸发（偏湿），LaNina 减少蒸发（偏干）
         sat_ah = saturation_absolute_humidity(weather.temperature)
         rh = ah / sat_ah if sat_ah > 0 else 1.0
         evap_factor = 1.0 + climate_humidity_bias
+=======
+        # 蒸发率 = coeff * wind * (1 - RH)
+        # 湿度越低、风速越大，蒸发越快
+        sat_ah = saturation_absolute_humidity(weather.temperature)
+        rh = ah / sat_ah if sat_ah > 0 else 1.0
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         evaporation = (
             EVAPORATION_COEFFICIENT
             * max(0.5, weather.wind_speed)
             * max(0.0, 1.0 - rh)
+<<<<<<< HEAD
             * max(0.5, evap_factor)  # 气候偏置影响蒸发速率
+=======
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         )
 
         # ── 降水消耗项 ──

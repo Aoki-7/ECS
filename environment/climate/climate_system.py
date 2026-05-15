@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -8,10 +9,14 @@
 @作者:Sherry
 @版本:2.0
 '''
+=======
+
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 import random
 
 from core.world import World
+<<<<<<< HEAD
 from core.system import System
 from environment.climate.climate_component import ClimateComponent
 
@@ -60,3 +65,27 @@ class ClimateSystem(System):
         else:  # Neutral
             climate.rainfall_bias = 0.0
             climate.humidity_bias = 0.0
+=======
+from environment.climate.climate_component import ClimateComponent
+
+class ClimateSystem:
+    
+    def update(self, world: World, delta_hours):
+
+        climate: ClimateComponent = world._world_entity.get_component(ClimateComponent)
+
+        climate.phase_remaining_days -= delta_hours / 24
+
+        if climate.phase_remaining_days <= 0:
+            climate.climate_phase = random.choice(
+                ["Neutral", "ElNino", "LaNina"]
+            )
+            climate.phase_remaining_days = random.uniform(90, 400)
+
+        if climate.climate_phase == "ElNino":
+            climate.rainfall_bias = 0.3
+            climate.humidity_bias = 0.2
+
+        elif climate.climate_phase == "LaNina":
+            climate.rainfall_bias = -0.2
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc

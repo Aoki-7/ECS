@@ -14,6 +14,7 @@
 【模块结构】
     components/
         physical_weather_component.py   — 纯数据：仅存连续物理量
+<<<<<<< HEAD
         weather_event_components.py     — 极端天气事件组件（标签/生命周期/Modifier）
     systems/
         physical_weather_system.py      — 演化逻辑：更新所有物理量
@@ -25,6 +26,13 @@
         physics_constants.py            — 物理常数与可调参数
         weather_thresholds.py           — 天气状态分类阈值与枚举
         physics_weather_builder.py      — 系统构建器
+=======
+    systems/
+        physical_weather_system.py      — 演化逻辑：更新所有物理量
+    config/
+        physics_constants.py            — 物理常数与可调参数
+        weather_thresholds.py           — 天气状态分类阈值与枚举
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
     utils/
         weather_classifier.py           — 从物理量推导天气标签
 
@@ -57,6 +65,7 @@
 
 # ── 组件 ──
 from .components.physical_weather_component import PhysicalWeatherComponent
+<<<<<<< HEAD
 from .components.weather_event_components import (
     WeatherEventType,
     WeatherSourceType,
@@ -71,6 +80,11 @@ from .systems.physical_weather_system import PhysicalWeatherSystem
 from .systems.weather_modifier_bridge import WeatherModifierBridgeSystem
 from .systems.weather_event_system import WeatherEventSystem
 from .systems.weather_lifetime_system import WeatherLifetimeSystem
+=======
+
+# ── 系统 ──
+from .systems.physical_weather_system import PhysicalWeatherSystem
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 # ── 分类器 ──
 from .utils.weather_classifier import (
@@ -103,6 +117,7 @@ from .config.physics_constants import (
 __all__ = [
     # 组件
     "PhysicalWeatherComponent",
+<<<<<<< HEAD
     "WeatherEventType",
     "WeatherSourceType",
     "WeatherEventTagComponent",
@@ -114,6 +129,10 @@ __all__ = [
     "WeatherModifierBridgeSystem",
     "WeatherEventSystem",
     "WeatherLifetimeSystem",
+=======
+    # 系统
+    "PhysicalWeatherSystem",
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
     # 分类器
     "classify",
     "classify_from_component",

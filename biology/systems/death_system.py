@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -15,10 +16,20 @@ from core.world import World
 from biology.components.energy_component import EnergyComponent
 from human.components.physiological.health_component import HealthComponent
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+=======
+
+
+
+
+from biology.components.energy_component import EnergyComponent
+from core.world import World
+from core.system import System
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 
 class DeathSystem(System):
     """
+<<<<<<< HEAD
     统一死亡判定系统
     检查所有实体的生存状态，将应死亡的实体从世界中移除。
     """
@@ -48,3 +59,17 @@ class DeathSystem(System):
 
         if dead:
             print(f"[DeathSystem] 移除了 {len(dead)} 个死亡实体")
+=======
+        死亡系统
+    """
+    def update(self, world: World):
+        """所有包含 Energy 组件的实体，如果能量小于等于 0，则移除该实体"""
+        dead = []
+
+        for entity, [energy] in world.get_components(EnergyComponent):
+            if energy.value <= 0:
+                dead.append(entity)
+
+        for e in dead:
+            world.remove_entity(e)
+>>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
