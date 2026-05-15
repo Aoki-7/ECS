@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+'''
+@文件:eat_system.py
+@说明:进食系统
+@时间:2026/03/18 15:52:00
+@作者:Sherry
+@版本:1.1
+'''
+
+from core.system import System
+from core.world import World
+
+from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.economic.inventory.inventory_component import InventoryComponent
+from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
+from resource.food.components.food_component import FoodComponent
+from space.space_component import SpaceComponent
+from equipment.components.ownership_component import OwnershipComponent
+
+
+class EatSystem(System):
+    """
+        进食系统
+        仅负责处理 ActionType.EAT 行为。
+        不执行额外寻食或状态切换逻辑。
+    """
+
+    def update(self, world: World, dt):
+        for entity, (needs, action, inventory, task, space) in world.get_components(
+            PhysiologyNeedsComponent, ActionComponent, InventoryComponent, TaskComponent, SpaceComponent
+        ):
+            needs: PhysiologyNeedsComponent
+            action: ActionComponent
+            inventory: InventoryComponent
+            task: TaskComponent
+            space: SpaceComponent
+
+            if action.current_action != ActionType.EAT:
+                continue
+
+            food_entity = None
+            food_source = None
+
+            # 先从inventory找食物
+            food_entity = inventory.find(FoodComponent, world)
+            if food_entity is not None:
+                food_source = "inventory"
+                print(f"[EatSystem] Found food in inventory: entity_id={food_entity.id}")
+            else:
+                # 从相同坐标找食物
+                for f_ent, (f_comp, f_space) in world.get_components(FoodComponent, SpaceComponent):
+                    if f_space.x == space.x and f_space.y == space.y and f_space.layer == space.layer:
+                        food_entity = f_ent
+                        food_source = "ground"
+                        print(f"[EatSystem] Found food on ground: entity_id={food_entity.id}")
+                        break
+            
+            if food_entity is None:
+                action.current_action = ActionType.IDLE
+                action.status = ActionStatus.FAILED
+                action.progress = 0.0
+                task.status = TaskStatus.FAILED
+                print(f"Entity {entity} failed to eat: no food found in inventory or on ground at location.")
+                continue
+
+            food_component: FoodComponent = world.get_component(food_entity, FoodComponent)
+
+            if food_component is None:
+                action.current_action = ActionType.IDLE
+                action.status = ActionStatus.FAILED
+                action.progress = 0.0
+                task.status = TaskStatus.FAILED
+                continue
+
+            needs.hunger = max(0.0, needs.hunger - food_component.nutrition)
+            needs.thirst = max(0.0, needs.thirst - food_component.hydration)
+            needs.energy = min(needs.max_energy, needs.energy + food_component.energy)
+
+            food_component.amount -= food_component.bite_size
+            if food_component.amount <= 0:
+                # 食物消耗完毕
+                if food_source == "inventory":
+                    inventory.remove(food_entity)
+                
+                # 释放所有权
+                ownership: OwnershipComponent | None = world.get_component(food_entity, OwnershipComponent)
+
+                if ownership is not None:
+                    ownership.release_ownership()
+                    print(f"Entity {entity} finished eating food from {food_source}, ownership released, hunger now {needs.hunger:.1f}")
+                else:
+                    print(f"Entity {entity} finished eating food from {food_source}, hunger now {needs.hunger:.1f}")
+            else:
+                print(f"Entity {entity} ate food from {food_source}, hunger now {needs.hunger:.1f}, thirst now {needs.thirst:.1f}, energy now {needs.energy:.1f}, food amount remaining {food_component.amount:.1f}")
+
+            # 标记动作完成，由 ActionSystem 处理状态切换
+            action.progress = 1.0
+            task.status = TaskStatus.DONE
+
+
+
