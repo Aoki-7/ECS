@@ -16,11 +16,7 @@ class LightFieldSystem(System):
     直射光
     漫射光
     """
-<<<<<<< HEAD
     def update(self, world: World, delta_hours: float = 0.0):
-=======
-    def update(self, world: World):
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
         radiation, scatter, surface = world._world_entity.get_components(
             SolarRadiationComponent,

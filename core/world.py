@@ -41,9 +41,9 @@ class World:
         space_system = SpaceSystem()
         self.add_system(space_system)
 
-    # =====================================================
+    # ====
     # Entity
-    # =====================================================
+    # ====
 
     def create_entity(self) -> Entity:
         entity = Entity.create()
@@ -132,9 +132,9 @@ class World:
 
         print("====== 打印结束 ======\n")
         
-    # =====================================================
+    # ====
     # Component
-    # =====================================================
+    # ====
 
     def add_component(self, entity: Entity, component):
         if not self.has_entity(entity):
@@ -205,9 +205,9 @@ class World:
             else:
                 yield entity, components
 
-    # ==========================
+    # =====
     # 世界级访问接口
-    # ==========================
+    # =====
 
     def get_time(self) -> TimeComponent:
         return self._world_entity.get_component(TimeComponent)
@@ -222,9 +222,9 @@ class World:
         return self._world_entity.get_component(component_type)
 
         
-    # =====================================================
+    # ====
     # System
-    # =====================================================
+    # ====
 
     def add_system(self, system):
         """添加系统，按优先级插入到正确位置"""
@@ -254,13 +254,13 @@ class World:
 
                 system_name = system.__class__.__name__
 
-                print("\n==============================")
+                print("\n==")
                 print("ECS System Error")
                 print("System:", system_name)
                 print("dt:", dt)
                 print("------------------------------")
                 traceback.print_exc()
-                print("==============================\n")
+                print("==\n")
 
                 raise
 
@@ -269,9 +269,9 @@ class World:
             if isinstance(system, system_type):
                 return system
             
-    # =====================================================
+    # ====
     # Search
-    # =====================================================
+    # ====
 
     def get_entities_with(self, *component_types):
         """
@@ -282,9 +282,9 @@ class World:
             for entity, _ in self.get_components(*component_types)
         ]
 
-    # =====================================================
+    # ====
     # Debug
-    # =====================================================
+    # ====
 
     def entity_count(self):
         return len(self.entities)

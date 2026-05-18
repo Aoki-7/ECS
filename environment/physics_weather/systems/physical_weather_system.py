@@ -81,10 +81,7 @@ from environment.physics_weather.config.physics_constants import (
     saturation_vapor_pressure,
 )
 from environment.season.season_component import SeasonComponent
-<<<<<<< HEAD
 from environment.climate.climate_component import ClimateComponent
-=======
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 
 class PhysicalWeatherSystem(System):
@@ -100,6 +97,18 @@ class PhysicalWeatherSystem(System):
         self.latitude = latitude
         self.elevation = elevation
 
+    # ── 日较差改进参数 ──
+    # 冬季日较差衰减因子（相对于夏季）
+    SEASONAL_DIURNAL_FACTOR_MIN: float = 0.6    # 冬季最小因子
+    SEASONAL_DIURNAL_FACTOR_MAX: float = 1.0    # 夏季最大因子
+    # 纬度对日较差的减弱（赤道日较差小，极地反而大 — 但和季节耦合）
+    LATITUDE_DIURNAL_SCALE: float = 0.3         # 纬度影响权重
+    # 雪盖对日较差的抑制
+    SNOW_DIURNAL_DAMPING: float = 0.7           # 雪盖时日较差 × 0.3
+    # 蒸发回馈（土壤湿度 → 水汽回补）
+    SOIL_EVAP_FEEDBACK_RATE: float = 0.02       # 回馈强度系数
+    SOIL_EVAP_WIND_FACTOR: float = 0.1          # 风速增强因子
+
     def update(self, world: World, delta_hours: float):
         """主更新入口"""
         weather = world._world_entity.get_component(PhysicalWeatherComponent)
@@ -108,10 +117,7 @@ class PhysicalWeatherSystem(System):
 
         time = world.get_time()
         season_comp = world._world_entity.get_component(SeasonComponent)
-<<<<<<< HEAD
         climate_comp = world._world_entity.get_component(ClimateComponent)
-=======
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
         # 获取季节信息（可选耦合）
         season_offset = 0.0
@@ -120,7 +126,6 @@ class PhysicalWeatherSystem(System):
             season_offset = season_comp.temperature_offset
             season_rainfall_factor = season_comp.rainfall_factor
 
-<<<<<<< HEAD
         # 获取气候偏移（长期气候波动，可选耦合）
         climate_temp_bias = 0.0
         climate_humidity_bias = 0.0
@@ -134,63 +139,49 @@ class PhysicalWeatherSystem(System):
         total_temp_offset = season_offset + climate_temp_bias
         total_rainfall_factor = season_rainfall_factor * (1.0 + climate_rainfall_bias)
 
-=======
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         hour = time.hour
         day_of_year = time.day_of_year
 
-        # =========================================================
+        # =
         # 1️⃣ 温度演化
-        # =========================================================
-<<<<<<< HEAD
+        # =
         self._update_temperature(
             weather, hour, day_of_year, total_temp_offset, delta_hours,
         )
-=======
-        self._update_temperature(weather, hour, day_of_year, season_offset, delta_hours)
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
-        # =========================================================
+        # =
         # 2️⃣ 气压演化
-        # =========================================================
+        # =
         self._update_pressure(weather, hour, day_of_year, delta_hours)
 
-        # =========================================================
+        # =
         # 3️⃣ 水汽演化 & 相对湿度计算
-        # =========================================================
+        # =
         self._update_humidity(
-<<<<<<< HEAD
             weather, delta_hours, total_rainfall_factor,
             climate_humidity_bias,
-=======
-            weather, delta_hours, season_rainfall_factor,
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         )
 
-        # =========================================================
+        # =
         # 4️⃣ 云量演化
-        # =========================================================
+        # =
         self._update_cloud_cover(weather, hour, delta_hours)
 
-        # =========================================================
+        # =
         # 5️⃣ 降水演化
-        # =========================================================
+        # =
         self._update_precipitation(
-<<<<<<< HEAD
             weather, delta_hours, total_rainfall_factor,
-=======
-            weather, delta_hours, season_rainfall_factor,
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         )
 
-        # =========================================================
+        # =
         # 6️⃣ 风速演化
-        # =========================================================
+        # =
         self._update_wind_speed(weather, hour, day_of_year, delta_hours)
 
-    # ============================================================
+    # ====
     # 🌡 温度更新
-    # ============================================================
+    # ====
 
     def _update_temperature(
         self,
@@ -200,18 +191,50 @@ class PhysicalWeatherSystem(System):
         season_offset: float,
         delta_hours: float,
     ):
-        """温度演化：日循环 + 季节偏置 + 云量阻尼 + 噪声"""
+        """
+        温度演化：日循环 + 季节偏置 + 云量阻尼 + 噪声
+
+        【🟡 改进 #12】日较差动态化：
+        - 季节因子：夏季日较差大，冬季小
+        - 纬度因子：中纬度日较差大，赤道/极地小
+        - 雪盖因子：积雪覆盖显著减小日较差
+        - 云量阻尼：厚云减少日间升温
+        """
 
         # 基准温度：季节偏置
         base_temp = 18.0 + season_offset
 
         # 日循环：正弦波，峰值在 14:00，谷值在 5:00
-        # 将小时映射到 [0, 2π]，峰值在 hour=14
         hour_angle = 2.0 * math.pi * (hour - DIURNAL_PEAK_HOUR) / 24.0
-        diurnal_range = DEFAULT_DIURNAL_RANGE * (
-            1.0 - CLOUD_DAMPING_FACTOR * weather.cloud_cover
+
+        # ── 日较差动态因子 ──
+        # ① 季节因子：夏至 (day 173) 最大，冬至 (day 355) 最小
+        seasonal_diurnal_factor = (
+            self.SEASONAL_DIURNAL_FACTOR_MIN
+            + (self.SEASONAL_DIURNAL_FACTOR_MAX - self.SEASONAL_DIURNAL_FACTOR_MIN)
+            * 0.5 * (1.0 + math.sin(math.radians((360.0 / 365.0) * (day_of_year - 81))))
         )
-        diurnal_anomaly = (diurnal_range / 2.0) * math.cos(hour_angle)
+
+        # ② 纬度因子：中纬度 (35~55°) 日较差最大，赤道和极地较小
+        # 使用高斯型曲线模拟
+        lat_deg = abs(self.latitude)
+        latitude_diurnal_factor = (
+            1.0
+            - self.LATITUDE_DIURNAL_SCALE * (1.0 - math.exp(-((lat_deg - 45.0) / 20.0) ** 2))
+        )
+
+        # ③ 云量阻尼
+        cloud_factor = 1.0 - CLOUD_DAMPING_FACTOR * weather.cloud_cover
+
+        # ④ 综合日较差
+        effective_range = (
+            DEFAULT_DIURNAL_RANGE
+            * seasonal_diurnal_factor
+            * latitude_diurnal_factor
+            * cloud_factor
+        )
+
+        diurnal_anomaly = (effective_range / 2.0) * math.cos(hour_angle)
 
         # 温度噪声：累积有偏随机游走 + 回归
         weather._temp_noise *= TEMP_NOISE_REGRESSION
@@ -222,9 +245,9 @@ class PhysicalWeatherSystem(System):
         new_temp += self.elevation * -0.0065  # 海拔递减率
         weather.temperature = new_temp
 
-    # ============================================================
+    # ====
     # 🌀 气压更新
-    # ============================================================
+    # ====
 
     def _update_pressure(
         self,
@@ -266,23 +289,21 @@ class PhysicalWeatherSystem(System):
         # 缓慢更新气压相位（模拟天气系统相位漂移）
         weather._pressure_phase += random.uniform(-0.05, 0.05) * delta_hours
 
-    # ============================================================
+    # ====
     # 💧 水汽与相对湿度更新
-    # ============================================================
+    # ====
 
     def _update_humidity(
         self,
         weather: PhysicalWeatherComponent,
         delta_hours: float,
         rainfall_factor: float = 1.0,
-<<<<<<< HEAD
         climate_humidity_bias: float = 0.0,
-=======
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
     ):
         """
         绝对湿度演化：
-        - 蒸发：取决于风速和当前湿度亏缺
+        - 蒸发：取决于风速、当前湿度亏缺和土壤湿度
+        - 土壤蒸发回馈：【新增 #14】地表蒸发将土壤水分回补到边界层
         - 降水消耗：降水带走水汽
         - 平流：向背景湿度漂移
 
@@ -290,37 +311,56 @@ class PhysicalWeatherSystem(System):
         """
         ah = weather.absolute_humidity
 
+        # 计算当前相对湿度
+        sat_ah = saturation_absolute_humidity(weather.temperature)
+        rh = ah / sat_ah if sat_ah > 0 else 1.0
+
         # ── 蒸发项 ──
-<<<<<<< HEAD
-        # 蒸发率 = coeff * wind * (1 - RH) * (1 + climate_humidity_bias)
-        # 气候湿度偏置：ElNino 加大蒸发（偏湿），LaNina 减少蒸发（偏干）
-        sat_ah = saturation_absolute_humidity(weather.temperature)
-        rh = ah / sat_ah if sat_ah > 0 else 1.0
         evap_factor = 1.0 + climate_humidity_bias
-=======
-        # 蒸发率 = coeff * wind * (1 - RH)
-        # 湿度越低、风速越大，蒸发越快
-        sat_ah = saturation_absolute_humidity(weather.temperature)
-        rh = ah / sat_ah if sat_ah > 0 else 1.0
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         evaporation = (
             EVAPORATION_COEFFICIENT
             * max(0.5, weather.wind_speed)
             * max(0.0, 1.0 - rh)
-<<<<<<< HEAD
-            * max(0.5, evap_factor)  # 气候偏置影响蒸发速率
-=======
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
+            * max(0.5, evap_factor)
         )
 
+        # ── 【新增 #14】土壤蒸发回馈 ──
+        # 从土壤湿度组件读取土壤水分状态
+        # 土壤越湿 → 蒸发越多 → 水汽回补到边界层
+        # 仅当土壤水分充足且未饱和时发生
+        try:
+            from environment.soil.components.soil_moisture_component import (
+                SoilMoistureComponent,
+            )
+            # 尝试获取 world entity 上的土壤湿度组件
+            world_entity = None
+            soil_moisture = None
+            # 通过内省获取世界实体上的组件
+            if hasattr(weather, '_world_entity'):
+                world_entity = getattr(weather, '_world_entity')
+            if world_entity is not None:
+                soil_moisture = world_entity.get_component(SoilMoistureComponent)
+
+            if soil_moisture is not None and soil_moisture.moisture > 0.01:
+                # 土壤蒸发回馈率 = 基础率 * 土壤湿度比 * 风速增强
+                moisture_ratio = soil_moisture.moisture / max(soil_moisture.capacity, 0.1)
+                soil_evap = (
+                    self.SOIL_EVAP_FEEDBACK_RATE
+                    * moisture_ratio
+                    * (1.0 + self.SOIL_EVAP_WIND_FACTOR * weather.wind_speed)
+                    * delta_hours
+                )
+                evaporation += soil_evap
+        except Exception:
+            # 土壤组件不存在时，静默跳过（非关键路径）
+            pass
+
         # ── 降水消耗项 ──
-        # 降水消耗水汽
         precip_loss = (
             weather.precipitation_rate * PRECIPITATION_CONSUMPTION * delta_hours
         )
 
         # ── 平流项 ──
-        # 向背景湿度漂移
         advection = (
             (BACKGROUND_ABSOLUTE_HUMIDITY - ah)
             / HUMIDITY_ADVECTION_TIMESCALE
@@ -335,9 +375,9 @@ class PhysicalWeatherSystem(System):
         # ── 重算相对湿度 ──
         weather.relative_humidity = relative_humidity(ah, weather.temperature)
 
-    # ============================================================
+    # ====
     # ☁️ 云量更新
-    # ============================================================
+    # ====
 
     def _update_cloud_cover(
         self,
@@ -394,9 +434,9 @@ class PhysicalWeatherSystem(System):
 
         weather.cloud_cover = max(0.0, min(1.0, cloud))
 
-    # ============================================================
+    # ====
     # 🌧 降水更新
-    # ============================================================
+    # ====
 
     def _update_precipitation(
         self,
@@ -449,9 +489,9 @@ class PhysicalWeatherSystem(System):
             if weather.precipitation_rate < 0.001:
                 weather.precipitation_rate = 0.0
 
-    # ============================================================
+    # ====
     # 🌬 风速更新
-    # ============================================================
+    # ====
 
     def _update_wind_speed(
         self,

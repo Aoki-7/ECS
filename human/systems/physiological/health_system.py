@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-<<<<<<< HEAD
 """
 HealthSystem
 
@@ -17,7 +16,6 @@ from core.system import System
 from core.world import World
 from human.components.physiological.health_component import HealthComponent
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
-=======
 '''
 @文件:health_system.py
 @说明:身体状态系统
@@ -36,12 +34,10 @@ from core.system import System
 from core.world import World
 from core.entity import Entity
 from human.components.physiological.health_component import HealthComponent
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 
 class HealthSystem(System):
     """
-<<<<<<< HEAD
     健康状态管理系统
     """
 
@@ -107,7 +103,6 @@ class HealthSystem(System):
 
         # 最终 clamp
         health.hp = max(0.0, min(health.hp, health.max_hp))
-=======
     HealthSystem
 
     职责：
@@ -168,4 +163,3 @@ class HealthSystem(System):
             # 5. 再次 clamp
             # -------------------------
             health.hp = max(0, min(health.hp, health.max_hp))
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc

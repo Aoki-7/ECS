@@ -8,11 +8,8 @@
 @作者:Sherry
 @版本:1.0
 '''
-<<<<<<< HEAD
 from dataclasses import dataclass, field
-=======
 from dataclasses import dataclass
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 from core.component import Component
 
@@ -29,9 +26,6 @@ class HealthComponent(Component):
     hp: float = 100
     max_hp: float = 100
     fatigue: float = 0
-<<<<<<< HEAD
     injury: dict = field(default_factory=dict)
-=======
     injury: dict = None
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
     

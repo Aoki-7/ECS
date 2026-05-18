@@ -48,11 +48,8 @@
     SocializeSystem: 社交系统 - 处理实体的社交行为
 
     === 死亡系统 (Death Systems) ===
-<<<<<<< HEAD
     DeathSystem: 死亡系统 - 已迁移至 biology/systems/death_system.py（统一版）
-=======
     DeathSystem: 死亡系统 - 处理实体的死亡逻辑
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 """
 
 """
@@ -124,10 +121,7 @@ from .action.pickup_system import PickupSystem
 from .action.search_system import SearchSystem
 from .action.socialize_system import SocializeSystem
 
-<<<<<<< HEAD
 # 死亡系统（已迁移至 biology/systems/death_system.py 统一版）
 # from .death.death_system import DeathSystem
-=======
 # 死亡系统
 from .death.death_system import DeathSystem
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc

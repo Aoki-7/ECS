@@ -2,26 +2,21 @@
 # -*- encoding: utf-8 -*-
 
 """
-<<<<<<< HEAD
 云层系统 [适配版] — 已移除对旧版 WeatherComponent 离散状态的操作
 
 【设计变更】
 - 不再写 WeatherComponent.sky / precipitation_type（这些由 PhysicalWeatherSystem 的物理量推导）
 - 仅维护 AtmosphereComponent 的 cloud_density / cloud_cover
 - AtmosphereComponent.cloud_density 作为大气微观物理的独立层
-=======
 云层系统 [扩展版] — 与 WeatherComponent 的降水联动完善
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 【物理原理】
 云的形成需要：
 1. 水汽达到饱和状态（相对湿度 > 100%）
 2. 凝结核（气溶胶）作为结晶核心
 3. 足够的空气上升运动/对流
-<<<<<<< HEAD
 """
 
-=======
 
 【降水触发条件】
 - 云量超过阈值
@@ -34,20 +29,15 @@
 """
 
 
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 from core.system import System
 from core.world import World
 
 from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
-<<<<<<< HEAD
-=======
 from environment.weather.components.weather_component import WeatherComponent
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
 
 class CloudSystem(System):
     """
-<<<<<<< HEAD
     云层系统（大气微观物理层）
 
     维护 AtmosphereComponent.cloud_density / cloud_cover，
@@ -69,7 +59,6 @@ class CloudSystem(System):
         Args:
             atm: 大气组件
 
-=======
     云层系统
     
     【扩展功能】
@@ -98,13 +87,11 @@ class CloudSystem(System):
             atm: 大气组件
             weather: 天气组件（提供降水状态信息）
         
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         Returns:
             云量的增长率（0-1/小时）
         """
         # 相对湿度越接近饱和，增长越快
         humidity_factor = abs(atm.humidity - 100.0) / 5 if atm.humidity else 0
-<<<<<<< HEAD
 
         # 气溶胶作为凝结核浓度
         aerosol_factor = atm.aerosol * 2 if atm.aerosol > 0 else 0
@@ -123,7 +110,6 @@ class CloudSystem(System):
 
         Returns:
             诊断用的降水信息字典
-=======
         
         # 气溶胶作为凝结核浓度
         aerosol_factor = atm.aerosol * 2 if atm.aerosol > 0 else 0
@@ -143,28 +129,22 @@ class CloudSystem(System):
         
         Returns:
             包含 precipitation_type, precipitation_intensity 的字典
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         """
         cloud_density = atm.cloud_density or 0
         convection = atm.convection_strength or 0
         temp = atm.temperature or 0
         altitude = atm.altitude or 0
-<<<<<<< HEAD
 
-=======
         
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         result = {
             'precipitation_type': 'none',
             'precipitation_intensity': 'none',
         }
-<<<<<<< HEAD
 
         if cloud_density > self.CLOUD_DENSITY_RAIN_THRESHOLD:
             precipitation_type = 'none'
             intensity = 'light'
 
-=======
         
         # 云密度超过阈值，检查降水触发条件
         if cloud_density > self.CLOUD_DENSITY_RAIN_THRESHOLD:
@@ -172,24 +152,19 @@ class CloudSystem(System):
             intensity = 'light'
             
             # 温度决定类型：低温 → 雪，高温 → 雨
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
             if temp < 0:
                 precipitation_type = 'snow'
             elif temp < 5:
                 precipitation_type = 'sleet'
             else:
                 precipitation_type = 'rain'
-<<<<<<< HEAD
 
-=======
             
             # 高云密度 + 强对流 → 强度升级
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
             if convection > 0.3 and cloud_density > self.CLOUD_DENSITY_SNOW_THRESHOLD:
                 intensity = 'heavy'
             elif cloud_density > self.CLOUD_DENSITY_RAIN_THRESHOLD * 1.5:
                 intensity = 'moderate'
-<<<<<<< HEAD
 
             result['precipitation_type'] = precipitation_type
             result['precipitation_intensity'] = intensity
@@ -225,7 +200,6 @@ class CloudSystem(System):
             return False
         humidity = atm.humidity or 0
         return humidity > 90.0
-=======
             
             result['precipitation_type'] = precipitation_type
             result['precupitation_intensity'] = intensity
@@ -341,4 +315,3 @@ class CloudSystem(System):
         if not world.get_component_by_type(WeatherComponent):
             weather = WeatherComponent()
             world._world_entity.add_component(weather)
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc

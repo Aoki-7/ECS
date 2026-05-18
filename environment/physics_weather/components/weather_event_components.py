@@ -15,9 +15,9 @@ from typing import Optional
 from core.component import Component
 
 
-# =========================================================
+# =
 # 天气事件类型枚举
-# =========================================================
+# =
 
 class WeatherEventType(Enum):
     COLD_WAVE = "cold_wave"

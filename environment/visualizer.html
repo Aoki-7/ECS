@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌍 ECS 环境模块可视化</title>
+<style>
+/* ============================================================
+   RESET / BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #0b0e14;
+  --bg-secondary: #111820;
+  --bg-card: #151d28;
+  --bg-hover: #1c2838;
+  --border: #2a3a4a;
+  --text-primary: #e8edf2;
+  --text-secondary: #8899aa;
+  --text-muted: #5a6a7a;
+  --accent: #4fc3f7;
+  --accent-warm: #ffb74d;
+  --success: #66bb6a;
+  --danger: #ef5350;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html { font-size: 14px; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  grid-template-rows: auto 1fr auto;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* --- Header --- */
+.header {
+  grid-column: 1 / -1;
+  padding: 12px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-left h1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.header-left h1 span { color: var(--accent); }
+.header-badge {
+  font-size: 0.7rem;
+  background: rgba(79, 195, 247, 0.15);
+  color: var(--accent);
+  padding: 2px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(79,195,247,0.25);
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.time-display {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.step-display {
+  background: var(--bg-card);
+  padding: 3px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+/* --- Main Grid Area --- */
+.main-area {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  overflow: hidden;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+.sidebar-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* --- Controls --- */
+.controls {
+  grid-column: 1 / -1;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* ============================================================
+   CANVAS
+   ============================================================ */
+#gridCanvas {
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: block;
+  cursor: crosshair;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.15s;
+  user-select: none;
+}
+.btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn:active { transform: scale(0.93); }
+.btn-primary {
+  background: rgba(79, 195, 247, 0.15);
+  border-color: rgba(79, 195, 247, 0.35);
+  color: var(--accent);
+}
+.btn-primary:hover {
+  background: rgba(79, 195, 247, 0.25);
+}
+.btn-danger {
+  background: rgba(239, 83, 80, 0.15);
+  border-color: rgba(239, 83, 80, 0.35);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background: rgba(239, 83, 80, 0.25);
+}
+.btn-sm { width: 28px; height: 28px; font-size: 0.85rem; }
+.btn-label {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  font-family: var(--font-sans);
+}
+.btn-label:hover { color: var(--text-primary); background: var(--bg-hover); }
+.btn-label.active {
+  color: var(--accent);
+  background: rgba(79, 195, 247, 0.12);
+}
+
+/* ============================================================
+   PARAMETER TABS
+   ============================================================ */
+.param-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 2px;
+  overflow-x: auto;
+}
+.param-tab {
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+.param-tab:hover { color: var(--text-secondary); background: var(--bg-hover); }
+.param-tab.active {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  box-shadow: 0 0 0 1px rgba(79,195,247,0.3);
+}
+
+/* ============================================================
+   SPEED CONTROL
+   ============================================================ */
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+.speed-control input[type="range"] {
+  -webkit-appearance: none;
+  width: 80px;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+.speed-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+.speed-value {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  min-width: 28px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ============================================================
+   LEGEND
+   ============================================================ */
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 500px;
+  padding: 0 8px;
+}
+.legend-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+.legend-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  min-width: 50px;
+  text-align: center;
+}
+
+/* ============================================================
+   SIDEBAR PANELS
+   ============================================================ */
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+.panel-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* Stats grid */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+}
+.stat-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.8px;
+}
+.stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+/* Cell detail */
+.cell-detail {
+  padding: 8px 10px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.cell-detail .label { color: var(--text-muted); }
+.cell-detail .value { color: var(--text-primary); font-family: var(--font-mono); }
+
+.cell-coord {
+  color: var(--accent);
+  font-weight: 600;
+  font-family: var(--font-mono);
+  margin-bottom: 4px;
+}
+
+/* Global stats at bottom of sidebar */
+.global-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.global-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(42,58,74,0.3);
+}
+.global-stat-row .label { color: var(--text-muted); }
+.global-stat-row .value { color: var(--text-primary); font-family: var(--font-mono); }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 800px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto auto;
+  }
+  .sidebar {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 12px;
+    max-height: 200px;
+  }
+  .sidebar > * { flex: 1 1 45%; }
+  .sidebar .panel { min-width: 0; }
+}
+
+/* Volume indicator dots */
+.volume-indicator {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.volume-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.15s;
+}
+.volume-dot.active { background: var(--accent); }
+
+/* Noise button toggle */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.toggle-switch {
+  width: 32px;
+  height: 18px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+.toggle-switch.on {
+  background: rgba(79, 195, 247, 0.25);
+  border-color: var(--accent);
+}
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  top: 2px;
+  left: 2px;
+  transition: all 0.2s;
+}
+.toggle-switch.on::after {
+  left: 16px;
+  background: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ========== HEADER ========== -->
+  <header class="header">
+    <div class="header-left">
+      <h1>🌍 <span>ECS</span> 环境模块</h1>
+      <span class="header-badge">10 × 10 网格</span>
+    </div>
+    <div class="header-right">
+      <span>🕐</span>
+      <span class="time-display" id="timeDisplay">DAY 000 · 06:00</span>
+      <span class="step-display" id="stepDisplay">步 0</span>
+    </div>
+  </header>
+
+  <!-- ========== MAIN AREA ========== -->
+  <div class="main-area">
+    <!-- Parameter tabs -->
+    <div class="param-tabs" id="paramTabs">
+      <button class="param-tab active" data-param="temperature">🌡️ 温度</button>
+      <button class="param-tab" data-param="moisture">💧 湿度</button>
+      <button class="param-tab" data-param="par">☀️ 光照</button>
+      <button class="param-tab" data-param="wind">🌬️ 风速</button>
+      <button class="param-tab" data-param="co2">🌿 CO₂</button>
+      <button class="param-tab" data-param="composite">📊 综合</button>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="gridCanvas"></canvas>
+
+    <!-- Legend -->
+    <div class="legend">
+      <span class="legend-label" id="legendMin">0.0</span>
+      <canvas class="legend-bar" id="legendBar"></canvas>
+      <span class="legend-label" id="legendMax">100.0</span>
+    </div>
+  </div>
+
+  <!-- ========== SIDEBAR ========== -->
+  <div class="sidebar">
+
+    <!-- Cell detail -->
+    <div class="panel" id="cellPanel">
+      <div class="panel-title">📍 单元格详情</div>
+      <div class="cell-detail" id="cellDetail">
+        <div class="cell-coord">—</div>
+        <div>🌡️ 温度: <span class="value">--</span></div>
+        <div>💧 湿度: <span class="value">--</span></div>
+        <div>☀️ PAR: <span class="value">--</span></div>
+        <div>🌬️ 风速: <span class="value">--</span></div>
+        <div>🌿 CO₂: <span class="value">--</span></div>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="panel">
+      <div class="panel-title">📊 统计</div>
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-item">
+          <span class="stat-label">最小值</span>
+          <span class="stat-value" id="statMin" style="color:var(--accent)">--</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">最大值</span>
+          <span class="stat-value" id="statMax" style="color:var(--danger)">--</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">平均值</span>
+          <span class="stat-value" id="statAvg" style="color:var(--accent-warm)">--</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">标准差</span>
+          <span class="stat-value" id="statStd" style="color:var(--success)">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="panel">
+      <div class="panel-title">⚙️ 设置</div>
+      <div class="toggle-row">
+        <span>空间平滑</span>
+        <div class="toggle-switch on" id="smoothToggle"></div>
+      </div>
+      <div class="toggle-row">
+        <span>显示网格线</span>
+        <div class="toggle-switch on" id="gridlineToggle"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== CONTROLS ========== -->
+  <div class="controls">
+    <!-- Play/Pause -->
+    <button class="btn btn-primary" id="playBtn" title="播放/暂停">▶</button>
+    <!-- Step -->
+    <button class="btn" id="stepBtn" title="步进">⏭</button>
+    <!-- Reset -->
+    <button class="btn" id="resetBtn" title="重置">⟲</button>
+
+    <div style="width:1px;height:24px;background:var(--border);margin:0 8px;"></div>
+
+    <!-- Speed -->
+    <div class="speed-control">
+      <span>速度</span>
+      <input type="range" id="speedSlider" min="1" max="10" value="3" step="1">
+      <span class="speed-value" id="speedDisplay">3×</span>
+    </div>
+
+    <div style="width:1px;height:24px;background:var(--border);margin:0 8px;"></div>
+
+    <!-- Time-of-day preset -->
+    <button class="btn-label" data-hour="6">🌅 黎明</button>
+    <button class="btn-label" data-hour="12">☀️ 正午</button>
+    <button class="btn-label" data-hour="18">🌇 黄昏</button>
+    <button class="btn-label" data-hour="0">🌙 午夜</button>
+  </div>
+
+</div>
+
+<script>
+// ================================================================
+//  ENVIRONMENT SIMULATOR  —  10×10 空间场随时间演化
+// ================================================================
+
+class EnvironmentSimulator {
+  constructor(size = 10) {
+    this.size = size;
+    this.step = 0;
+    this.hour = 6;          // 起始清晨 06:00
+    this.day = 0;
+    this.dt = 1;            // 每步 1 小时
+
+    // 10×10 数据: { param -> Float32Array(size*size) }
+    this.data = {};
+    this.history = {};      // 用于迷你趋势
+    this.MAX_HISTORY = 120;
+
+    // 物理参数
+    this.params = {
+      temperature: { base: 20, amplitude: 8, min: -5, max: 45, unit: '°C', decimals: 1 },
+      moisture:    { base: 0.40, amplitude: 0.15, min: 0, max: 1, unit: '', decimals: 2 },
+      par:         { base: 0, amplitude: 400, min: 0, max: 1200, unit: 'μmol/m²/s', decimals: 0 },
+      wind:        { base: 0.8, amplitude: 0.6, min: 0, max: 5, unit: 'm/s', decimals: 1 },
+      co2:         { base: 420, amplitude: 15, min: 350, max: 500, unit: 'ppm', decimals: 0 },
+    };
+
+    this._initFields();
+  }
+
+  /* ---- 初始化空间场 ---- */
+  _initFields() {
+    const n = this.size * this.size;
+    for (const key of Object.keys(this.params)) {
+      this.data[key] = new Float32Array(n);
+      this.history[key] = [];
+    }
+    this._generateAll();
+  }
+
+  /* ---- 生成空间分布 ---- */
+  _generateAll() {
+    // 为每个参数生成特征点
+    this.features = {
+      temperature: this._makeFeatures(3, 5),   // 3 个热源
+      moisture:    this._makeFeatures(4, 5),   // 4 个湿源
+      par:         null,                        // 均匀 + 云斑块
+      wind:        this._makeWindField(),
+      co2:         this._makeFeatures(2, 8),   // 2 个CO2源
+    };
+    this._recalcAll();
+  }
+
+  /* ---- 生成随机特征点 ---- */
+  _makeFeatures(count, spread) {
+    const pts = [];
+    for (let i = 0; i < count; i++) {
+      pts.push({
+        x: Math.random() * this.size,
+        y: Math.random() * this.size,
+        strength: 0.6 + Math.random() * 0.8,
+        spread: spread + Math.random() * spread,
+        dx: (Math.random() - 0.5) * 0.3,   // 漂移速度
+        dy: (Math.random() - 0.5) * 0.3,
+      });
+    }
+    return pts;
+  }
+
+  /* ---- 生成风场（方向性梯度） ---- */
+  _makeWindField() {
+    // 主风向：从西到东 + 随机涡旋
+    const angle = Math.random() * Math.PI * 2;
+    return { angle, turbulence: 0.3 + Math.random() * 0.4 };
+  }
+
+  /* ---- 重新计算所有场 ---- */
+  _recalcAll() {
+    const n = this.size;
+    for (const key of Object.keys(this.params)) {
+      const field = this.data[key];
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          const idx = i * n + j;
+          field[idx] = this._calcValue(key, i, j);
+        }
+      }
+    }
+  }
+
+  /* ---- 计算单个格子的参数值 ---- */
+  _calcValue(key, i, j) {
+    const n = this.size;
+    const p = this.params[key];
+    let val;
+
+    switch (key) {
+      case 'temperature': {
+        // 基础温度（昼夜正弦）+ 热源叠加
+        const diurnal = Math.sin((this.hour - 6) / 24 * Math.PI * 2);
+        const base = p.base + p.amplitude * Math.max(0, diurnal);
+        // 热源叠加
+        let heat = 0;
+        if (this.features.temperature) {
+          for (const f of this.features.temperature) {
+            const dist = Math.hypot(i - f.x, j - f.y);
+            heat += f.strength * 5 * Math.exp(-dist * dist / (f.spread * f.spread));
+          }
+        }
+        // 海拔微调（随机地形）
+        const elev = Math.sin(i * 0.7 + j * 1.3) * 2;
+        val = base + heat - elev * 0.3;
+        // 夜间降温
+        if (this.hour < 6 || this.hour > 20) {
+          val -= 2 + Math.random() * 0.5;
+        }
+        break;
+      }
+
+      case 'moisture': {
+        const diurnal = Math.sin((this.hour - 6) / 24 * Math.PI * 2);
+        // 蒸发：白天降低
+        const evaporate = p.amplitude * 0.3 * Math.max(0, diurnal);
+        let wet = 0;
+        if (this.features.moisture) {
+          for (const f of this.features.moisture) {
+            const dist = Math.hypot(i - f.x, j - f.y);
+            wet += f.strength * 0.3 * Math.exp(-dist * dist / (f.spread * f.spread));
+          }
+        }
+        // 低洼积水
+        const basin = Math.max(0, Math.sin(i * 0.5 + 1) * Math.cos(j * 0.6 + 0.5) * 0.1);
+        val = p.base + wet + basin - evaporate * 0.2;
+        val = Math.max(0.05, Math.min(0.95, val));
+        break;
+      }
+
+      case 'par': {
+        // 光照：严格昼夜，正午最大
+        if (this.hour < 5 || this.hour > 19) {
+          val = 0;
+        } else {
+          const peak = Math.sin((this.hour - 6) / 13 * Math.PI);
+          const basePAR = p.amplitude * 1.8 * Math.max(0, peak);
+          // 云斑块遮挡
+          const cloud = Math.sin(i * 2.1 + j * 1.7 + this.step * 0.02) * 0.3 + 0.7;
+          val = basePAR * cloud;
+          val = Math.max(0, val);
+        }
+        break;
+      }
+
+      case 'wind': {
+        const { angle, turbulence } = this.features.wind || this._makeWindField();
+        // 主风向梯度
+        const grad = Math.cos(angle) * (i / n - 0.5) + Math.sin(angle) * (j / n - 0.5);
+        const turb = Math.sin(i * 1.3 + j * 2.1 + this.step * 0.05) * turbulence;
+        val = p.base + p.amplitude * (grad * 0.5 + turb * 0.5);
+        val = Math.max(0.1, val);
+        break;
+      }
+
+      case 'co2': {
+        let source = p.base;
+        if (this.features.co2) {
+          for (const f of this.features.co2) {
+            const dist = Math.hypot(i - f.x, j - f.y);
+            source += f.strength * 25 * Math.exp(-dist * dist / (f.spread * f.spread));
+          }
+        }
+        // 光合作用消耗（白天降低）
+        if (this.hour >= 6 && this.hour <= 18) {
+          const photo = Math.sin((this.hour - 6) / 13 * Math.PI) * 20;
+          source -= photo;
+        } else {
+          // 夜间呼吸释放
+          source += 5;
+        }
+        val = source;
+        break;
+      }
+
+      default:
+        val = 0;
+    }
+
+    // 加少量随机噪声
+    val += (Math.random() - 0.5) * (p.amplitude || 1) * 0.04;
+    return Math.max(p.min, Math.min(p.max, val));
+  }
+
+  /* ---- 漂移特征点 ---- */
+  _driftFeatures() {
+    const n = this.size;
+    for (const key of ['temperature', 'moisture', 'co2']) {
+      const pts = this.features[key];
+      if (!pts) continue;
+      for (const f of pts) {
+        f.x += f.dx * 0.05;
+        f.y += f.dy * 0.05;
+        // 边界反弹
+        if (f.x < 1 || f.x > n - 2) f.dx *= -1;
+        if (f.y < 1 || f.y > n - 2) f.dy *= -1;
+        f.x = Math.max(1, Math.min(n - 2, f.x));
+        f.y = Math.max(1, Math.min(n - 2, f.y));
+      }
+    }
+    // 风场缓慢旋转
+    if (this.features.wind) {
+      this.features.wind.angle += (Math.random() - 0.5) * 0.02;
+    }
+  }
+
+  /* ---- 空间平滑 ---- */
+  smooth() {
+    const n = this.size;
+    for (const key of Object.keys(this.params)) {
+      const field = this.data[key];
+      const copy = new Float32Array(field);
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          let sum = 0, count = 0;
+          for (let di = -1; di <= 1; di++) {
+            for (let dj = -1; dj <= 1; dj++) {
+              const ni = i + di, nj = j + dj;
+              if (ni >= 0 && ni < n && nj >= 0 && nj < n) {
+                sum += copy[ni * n + nj];
+                count++;
+              }
+            }
+          }
+          field[i * n + j] = sum / count;
+        }
+      }
+    }
+  }
+
+  /* ---- 步进 ---- */
+  advance() {
+    this.step++;
+    this.hour += this.dt;
+    if (this.hour >= 24) {
+      this.hour -= 24;
+      this.day++;
+    }
+
+    // 特征点漂移
+    this._driftFeatures();
+
+    // 重新计算场
+    this._recalcAll();
+
+    // 记录历史
+    for (const key of Object.keys(this.params)) {
+      const field = this.data[key];
+      let avg = 0;
+      for (let i = 0; i < field.length; i++) avg += field[i];
+      avg /= field.length;
+      this.history[key].push(avg);
+      if (this.history[key].length > this.MAX_HISTORY) {
+        this.history[key].shift();
+      }
+    }
+  }
+
+  /* ---- 跳跃到特定小时 ---- */
+  setHour(targetHour) {
+    while (this.hour !== targetHour && this.step < 240) {
+      this.advance();
+    }
+  }
+
+  /* ---- 重置 ---- */
+  reset() {
+    this.step = 0;
+    this.hour = 6;
+    this.day = 0;
+    this._initFields();
+  }
+
+  /* ---- 获取参数场 ---- */
+  getField(key) { return this.data[key]; }
+
+  /* ---- 获取单个格子所有参数 ---- */
+  getCell(i, j) {
+    const idx = i * this.size + j;
+    return {
+      temperature: this.data.temperature[idx],
+      moisture: this.data.moisture[idx],
+      par: this.data.par[idx],
+      wind: this.data.wind[idx],
+      co2: this.data.co2[idx],
+    };
+  }
+
+  /* ---- 统计 ---- */
+  getStats(key) {
+    const field = this.data[key];
+    let min = Infinity, max = -Infinity, sum = 0;
+    for (let i = 0; i < field.length; i++) {
+      const v = field[i];
+      if (v < min) min = v;
+      if (v > max) max = v;
+      sum += v;
+    }
+    const mean = sum / field.length;
+    let sqSum = 0;
+    for (let i = 0; i < field.length; i++) sqSum += (field[i] - mean) ** 2;
+    const std = Math.sqrt(sqSum / field.length);
+    return { min, max, mean, std };
+  }
+
+  /* ---- 当前时间字符串 ---- */
+  timeString() {
+    const h = Math.floor(this.hour);
+    const m = Math.floor((this.hour - h) * 60);
+    return `DAY ${String(this.day).padStart(3, '0')} · ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+}
+
+
+// ================================================================
+//  RENDERER
+// ================================================================
+
+class GridRenderer {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.cellSize = 0;
+    this.padding = 0;
+    this.showGridlines = true;
+    this.smoothing = true;
+  }
+
+  resize(gridSize) {
+    const container = this.canvas.parentElement;
+    const maxW = container.clientWidth - 48;
+    const maxH = container.clientHeight - 60;
+    const ideal = Math.min(maxW, maxH) - 20;
+    const size = Math.max(200, Math.min(ideal, 580));
+    const px = size / gridSize;
+
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = size * dpr;
+    this.canvas.height = size * dpr;
+    this.canvas.style.width = size + 'px';
+    this.canvas.style.height = size + 'px';
+    this.ctx.scale(dpr, dpr);
+
+    this.cellSize = px;
+    this.padding = 0;
+    this.gridPx = size;
+  }
+
+  /* ---- 颜色方案 ---- */
+  static getColorMap(param) {
+    const maps = {
+      temperature: (t) => {
+        // 蓝 → 青 → 绿 → 黄 → 橙 → 红
+        if (t < 0) return [0.2, 0.2, 0.8];
+        if (t < 10) return lerpColor([0.3, 0.4, 0.9], [0.3, 0.7, 0.8], t / 10);
+        if (t < 20) return lerpColor([0.3, 0.7, 0.8], [0.4, 0.8, 0.3], (t - 10) / 10);
+        if (t < 30) return lerpColor([0.4, 0.8, 0.3], [0.9, 0.8, 0.2], (t - 20) / 10);
+        if (t < 40) return lerpColor([0.9, 0.8, 0.2], [0.9, 0.3, 0.1], (t - 30) / 10);
+        return [0.7, 0.1, 0.05];
+      },
+      moisture: (v) => {
+        // 黄褐 → 绿 → 蓝
+        if (v < 0.2) return lerpColor([0.7, 0.6, 0.3], [0.5, 0.7, 0.3], v / 0.2);
+        if (v < 0.5) return lerpColor([0.5, 0.7, 0.3], [0.3, 0.6, 0.6], (v - 0.2) / 0.3);
+        return lerpColor([0.3, 0.6, 0.6], [0.15, 0.3, 0.7], (v - 0.5) / 0.5);
+      },
+      par: (v) => {
+        // 暗 → 橙 → 黄 → 白
+        const norm = Math.min(1, v / 1000);
+        if (norm < 0.01) return [0.05, 0.05, 0.1];
+        if (norm < 0.3) return lerpColor([0.05, 0.05, 0.1], [0.6, 0.3, 0.05], norm / 0.3);
+        if (norm < 0.6) return lerpColor([0.6, 0.3, 0.05], [0.9, 0.7, 0.1], (norm - 0.3) / 0.3);
+        if (norm < 0.85) return lerpColor([0.9, 0.7, 0.1], [1, 0.95, 0.6], (norm - 0.6) / 0.25);
+        return lerpColor([1, 0.95, 0.6], [1, 1, 1], (norm - 0.85) / 0.15);
+      },
+      wind: (v) => {
+        // 浅灰 → 青 → 蓝
+        if (v < 1) return lerpColor([0.3, 0.35, 0.4], [0.4, 0.6, 0.7], v);
+        if (v < 3) return lerpColor([0.4, 0.6, 0.7], [0.2, 0.5, 0.8], (v - 1) / 2);
+        return lerpColor([0.2, 0.5, 0.8], [0.1, 0.2, 0.5], Math.min(1, (v - 3) / 2));
+      },
+      co2: (v) => {
+        // 绿 → 黄 → 橙 → 红
+        const n = (v - 350) / 150;
+        if (n < 0.33) return lerpColor([0.3, 0.7, 0.3], [0.6, 0.8, 0.2], n / 0.33);
+        if (n < 0.66) return lerpColor([0.6, 0.8, 0.2], [0.9, 0.6, 0.1], (n - 0.33) / 0.33);
+        return lerpColor([0.9, 0.6, 0.1], [0.8, 0.2, 0.1], Math.min(1, (n - 0.66) / 0.34));
+      },
+      composite: (v) => {
+        // 综合指数：红(差) → 黄 → 绿(好)
+        if (v < 0.4) return lerpColor([0.7, 0.2, 0.15], [0.8, 0.7, 0.2], v / 0.4);
+        if (v < 0.7) return lerpColor([0.8, 0.7, 0.2], [0.4, 0.75, 0.3], (v - 0.4) / 0.3);
+        return lerpColor([0.4, 0.75, 0.3], [0.2, 0.5, 0.25], Math.min(1, (v - 0.7) / 0.3));
+      }
+    };
+    return maps[param] || maps.temperature;
+  }
+
+  /* ---- 渲染 ---- */
+  render(sim, param, hoverCell) {
+    const ctx = this.ctx;
+    const n = sim.size;
+    const cs = this.cellSize;
+    const gp = this.gridPx;
+    const field = sim.getField(param);
+    const colorFn = GridRenderer.getColorMap(param);
+
+    // 清除
+    ctx.clearRect(0, 0, gp, gp);
+
+    // 背景
+    ctx.fillStyle = '#0a0e14';
+    ctx.fillRect(0, 0, gp, gp);
+
+    // 绘制每个格子
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        const idx = i * n + j;
+        const val = field[idx];
+        const [r, g, b] = colorFn(val);
+        const x = j * cs;
+        const y = i * cs;
+
+        // 格子填充
+        ctx.fillStyle = `rgb(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)})`;
+        ctx.fillRect(x, y, cs, cs);
+
+        // 悬停高亮
+        if (hoverCell && hoverCell[0] === i && hoverCell[1] === j) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x + 1, y + 1, cs - 2, cs - 2);
+        }
+      }
+    }
+
+    // 网格线
+    if (this.showGridlines) {
+      ctx.strokeStyle = 'rgba(42, 58, 74, 0.4)';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= n; i++) {
+        const pos = i * cs;
+        ctx.beginPath();
+        ctx.moveTo(pos, 0);
+        ctx.lineTo(pos, gp);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, pos);
+        ctx.lineTo(gp, pos);
+        ctx.stroke();
+      }
+    }
+
+    // 边框
+    ctx.strokeStyle = 'rgba(42, 58, 74, 0.6)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, gp, gp);
+  }
+}
+
+function lerpColor(a, b, t) {
+  return [
+    a[0] + (b[0] - a[0]) * t,
+    a[1] + (b[1] - a[1]) * t,
+    a[2] + (b[2] - a[2]) * t,
+  ];
+}
+
+
+// ================================================================
+//  LEGEND RENDERER
+// ================================================================
+
+function renderLegend(canvas, param, min, max) {
+  const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+  const h = canvas.height = canvas.clientHeight * (window.devicePixelRatio || 1);
+  const ctx = canvas.getContext('2d');
+  const colorFn = GridRenderer.getColorMap(param);
+
+  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+  const cw = canvas.clientWidth;
+  const ch = canvas.clientHeight;
+
+  const steps = 60;
+  for (let i = 0; i < steps; i++) {
+    const t = i / steps;
+    const val = min + (max - min) * t;
+    const [r, g, b] = colorFn(val);
+    const x = (i / steps) * cw;
+    const ww = cw / steps + 0.5;
+    ctx.fillStyle = `rgb(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)})`;
+    ctx.fillRect(x, 0, ww, ch);
+  }
+
+  document.getElementById('legendMin').textContent = formatValue(min, param);
+  document.getElementById('legendMax').textContent = formatValue(max, param);
+}
+
+function formatValue(v, param) {
+  const fmt = {
+    temperature: d => d.toFixed(1) + '°C',
+    moisture: d => (d * 100).toFixed(0) + '%',
+    par: d => d.toFixed(0),
+    wind: d => d.toFixed(1) + ' m/s',
+    co2: d => d.toFixed(0) + ' ppm',
+    composite: d => (d * 100).toFixed(0) + '%',
+  };
+  return (fmt[param] || (d => d.toFixed(2)))(v);
+}
+
+
+// ================================================================
+//  MAIN APP
+// ================================================================
+
+(function main() {
+  const sim = new EnvironmentSimulator(10);
+  const canvas = document.getElementById('gridCanvas');
+  const renderer = new GridRenderer(canvas);
+
+  // State
+  let currentParam = 'temperature';
+  let playing = false;
+  let animId = null;
+  let hoverCell = null;
+  let lastFrameTime = 0;
+
+  // DOM refs
+  const $ = id => document.getElementById(id);
+  const timeDisplay = $('timeDisplay');
+  const stepDisplay = $('stepDisplay');
+  const playBtn = $('playBtn');
+  const speedSlider = $('speedSlider');
+  const speedDisplay = $('speedDisplay');
+  const legendBar = $('legendBar');
+
+  // ---- Resize ----
+  function resize() {
+    renderer.resize(sim.size);
+    render(sim, currentParam, hoverCell);
+  }
+
+  // ---- Render ----
+  function render(sim, param, hover) {
+    renderer.render(sim, param, hover);
+    const stats = sim.getStats(param);
+    renderLegend(legendBar, param, stats.min, stats.max);
+    updateSidebar(sim, param, stats, hover);
+    timeDisplay.textContent = sim.timeString();
+    stepDisplay.textContent = `步 ${sim.step}`;
+  }
+
+  // ---- Sidebar update ----
+  function updateSidebar(sim, param, stats, hover) {
+    $('statMin').textContent = formatValue(stats.min, param);
+    $('statMax').textContent = formatValue(stats.max, param);
+    $('statAvg').textContent = formatValue(stats.mean, param);
+    $('statStd').textContent = stats.std.toFixed(2);
+
+    // Cell detail
+    const detail = $('cellDetail');
+    if (hover) {
+      const [i, j] = hover;
+      const cell = sim.getCell(i, j);
+      detail.innerHTML = `
+        <div class="cell-coord">[${i}, ${j}]</div>
+        <div>🌡️ 温度: <span class="value">${cell.temperature.toFixed(1)}°C</span></div>
+        <div>💧 湿度: <span class="value">${(cell.moisture * 100).toFixed(0)}%</span></div>
+        <div>☀️ PAR: <span class="value">${cell.par.toFixed(0)} μmol/m²/s</span></div>
+        <div>🌬️ 风速: <span class="value">${cell.wind.toFixed(1)} m/s</span></div>
+        <div>🌿 CO₂: <span class="value">${cell.co2.toFixed(0)} ppm</span></div>
+      `;
+    } else {
+      detail.innerHTML = `<div class="cell-coord">—</div>
+        <div>🌡️ 温度: <span class="value">--</span></div>
+        <div>💧 湿度: <span class="value">--</span></div>
+        <div>☀️ PAR: <span class="value">--</span></div>
+        <div>🌬️ 风速: <span class="value">--</span></div>
+        <div>🌿 CO₂: <span class="value">--</span></div>`;
+    }
+  }
+
+  // ---- Animation loop ----
+  function animate(timestamp) {
+    if (!playing) return;
+
+    const speed = parseInt(speedSlider.value);
+    const interval = Math.max(30, 120 - speed * 10);
+
+    if (!lastFrameTime) lastFrameTime = timestamp;
+    const elapsed = timestamp - lastFrameTime;
+
+    if (elapsed >= interval) {
+      sim.advance();
+      render(sim, currentParam, hoverCell);
+      lastFrameTime = timestamp;
+    }
+
+    animId = requestAnimationFrame(animate);
+  }
+
+  function startPlay() {
+    if (playing) return;
+    playing = true;
+    lastFrameTime = 0;
+    playBtn.textContent = '⏸';
+    playBtn.classList.add('btn-danger');
+    animId = requestAnimationFrame(animate);
+  }
+
+  function stopPlay() {
+    playing = false;
+    playBtn.textContent = '▶';
+    playBtn.classList.remove('btn-danger');
+    if (animId) {
+      cancelAnimationFrame(animId);
+      animId = null;
+    }
+  }
+
+  function togglePlay() {
+    if (playing) stopPlay(); else startPlay();
+  }
+
+  function stepOnce() {
+    stopPlay();
+    sim.advance();
+    render(sim, currentParam, hoverCell);
+  }
+
+  function resetSim() {
+    stopPlay();
+    sim.reset();
+    render(sim, currentParam, hoverCell);
+  }
+
+  // ---- Canvas mouse events ----
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const cs = renderer.cellSize;
+    const col = Math.floor(x / cs);
+    const row = Math.floor(y / cs);
+    if (row >= 0 && row < sim.size && col >= 0 && col < sim.size) {
+      hoverCell = [row, col];
+      canvas.style.cursor = 'pointer';
+    } else {
+      hoverCell = null;
+      canvas.style.cursor = 'crosshair';
+    }
+    render(sim, currentParam, hoverCell);
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hoverCell = null;
+    render(sim, currentParam, hoverCell);
+  });
+
+  // ---- Parameter tabs ----
+  document.querySelectorAll('.param-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.param-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentParam = tab.dataset.param;
+      render(sim, currentParam, hoverCell);
+    });
+  });
+
+  // ---- Controls ----
+  playBtn.addEventListener('click', togglePlay);
+  $('stepBtn').addEventListener('click', stepOnce);
+  $('resetBtn').addEventListener('click', resetSim);
+
+  // ---- Speed ----
+  speedSlider.addEventListener('input', () => {
+    speedDisplay.textContent = speedSlider.value + '×';
+  });
+
+  // ---- Time presets ----
+  document.querySelectorAll('[data-hour]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      stopPlay();
+      const target = parseInt(btn.dataset.hour);
+      // Reset and fast-forward to target hour (only for visualization)
+      while (Math.abs(sim.hour - target) > 0.5 && sim.step < 240) {
+        sim.advance();
+      }
+      render(sim, currentParam, hoverCell);
+    });
+  });
+
+  // ---- Toggles ----
+  $('gridlineToggle').addEventListener('click', function() {
+    this.classList.toggle('on');
+    renderer.showGridlines = this.classList.contains('on');
+    render(sim, currentParam, hoverCell);
+  });
+
+  $('smoothToggle').addEventListener('click', function() {
+    this.classList.toggle('on');
+    renderer.smoothing = this.classList.contains('on');
+    if (!playing && renderer.smoothing) {
+      sim.smooth();
+      render(sim, currentParam, hoverCell);
+    }
+  });
+
+  // ---- Keyboard shortcuts ----
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    switch (e.key) {
+      case ' ': e.preventDefault(); togglePlay(); break;
+      case 'ArrowRight': e.preventDefault(); stepOnce(); break;
+      case 'r': case 'R': resetSim(); break;
+    }
+  });
+
+  // ---- Init ----
+  resize();
+  render(sim, currentParam, null);
+  window.addEventListener('resize', resize);
+})();
+</script>
+</body>
+</html>

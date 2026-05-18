@@ -15,55 +15,55 @@ from core.component import Component
 
 
 class ActionType(Enum):
-    # ================= 基础 =================
+    # === 基础 ===
     IDLE = auto()
     WAIT = auto()
 
-    # ================= 移动 =================
+    # === 移动 ===
     MOVE_TO = auto()          # 移动到目标点
     MOVE_RANDOM = auto()      # 随机移动
     PATHFIND = auto()         # 路径规划（可选拆分）
 
-    # ================= 感知 =================
+    # === 感知 ===
     LOOK_AROUND = auto()      # 环顾
     SCAN = auto()             # 扫描环境
     SEARCH = auto()           # 主动搜索
 
-    # ================= 生存 =================
+    # === 生存 ===
     EAT = auto()
     DRINK = auto()
     SLEEP = auto()
     REST = auto()
 
-    # ================= 资源 =================
+    # === 资源 ===
     PICKUP = auto()
     DROP = auto()
     STORE = auto()
     HARVEST = auto()
     GATHER = auto()
 
-    # ================= 战斗 =================
+    # === 战斗 ===
     ATTACK = auto()
     DEFEND = auto()
     FLEE = auto()
     CHASE = auto()
 
-    # ================= 社交 =================
+    # === 社交 ===
     INTERACT = auto()
     TALK = auto()
     SOCIALIZE = auto()
     TRADE = auto()
 
-    # ================= 建造 =================
+    # === 建造 ===
     BUILD = auto()
     REPAIR = auto()
     CRAFT = auto()
 
-    # ================= 工作 =================
+    # === 工作 ===
     WORK = auto()
     OPERATE = auto()
 
-    # ================= 特殊 =================
+    # === 特殊 ===
     USE_ITEM = auto()
     EQUIP = auto()
     UNEQUIP = auto()

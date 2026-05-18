@@ -18,11 +18,8 @@ class GeneExpressionSystem:
     根据基因组信息计算表型特征
         目前实现简单的线性表达模型
     """
-<<<<<<< HEAD
     def update(self, world: World, dt: float = 1.0):
-=======
     def update(self, world: World):
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
         for _, [genome, phenotype] in world.get_components(GenomeComponent, PhenotypeComponent):
 

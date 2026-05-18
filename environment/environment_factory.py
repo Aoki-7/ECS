@@ -38,11 +38,7 @@ class EnvironmentFactory:
 
         包含：
         - SpaceComponent（空间位置）
-<<<<<<< HEAD
         - PhysicalWeatherComponent（天气物理量）
-=======
-        - WeatherComponent（天气参数）
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         - ClimateComponent（气候参数）
         - AtmosphereComponent（大气参数）
         - SoilComponent（土壤参数）

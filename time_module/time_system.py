@@ -28,9 +28,9 @@ class TimeSystem:
         # 更新总时间
         time.total_hours += scaled_delta
         
-        # ======================
+        # =
         # 小时推进
-        # ======================
+        # =
         total_hours = time.hour + scaled_delta
 
         # floor 除法在负数情况下仍然正确
@@ -39,9 +39,9 @@ class TimeSystem:
 
         time.hour = new_hour
 
-        # ======================
+        # =
         # 日期推进
-        # ======================
+        # =
         if day_change != 0:
             time.day_of_year += day_change
 
@@ -61,8 +61,8 @@ class TimeSystem:
             f"{time.hour:.2f}h"
         )
 
-        # ======================
+        # =
         # 统一打印
-        # ======================
+        # =
         if self.verbose and current_time_repr:
             print(f"[TimeSystem] {current_time_repr}")

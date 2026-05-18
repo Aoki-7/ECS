@@ -16,9 +16,9 @@ class LightFieldComponent(Component):
     存储光照相关的物理量
     """
 
-    # =========================
+    # ====
     # 光照强度
-    # =========================
+    # ====
 
     # 光合有效辐射 (μmol/m²/s)
     par: float = 300.0
@@ -32,9 +32,9 @@ class LightFieldComponent(Component):
     # 散射辐射 (W/m²)
     diffuse_radiation: float = 150.0
 
-    # =========================
+    # ====
     # 光照方向
-    # =========================
+    # ====
 
     # 太阳高度角 (0-90度)
     sun_elevation: float = 45.0
@@ -42,9 +42,9 @@ class LightFieldComponent(Component):
     # 太阳方位角 (0-360度)
     sun_azimuth: float = 180.0
 
-    # =========================
+    # ====
     # 光谱分布
-    # =========================
+    # ====
 
     # 红光比例 (0-1)
     red_ratio: float = 0.3
@@ -55,9 +55,9 @@ class LightFieldComponent(Component):
     # 绿光比例 (0-1)
     green_ratio: float = 0.3
 
-    # =========================
+    # ====
     # 阴影信息
-    # =========================
+    # ====
 
     # 是否在阴影中
     in_shadow: bool = False
@@ -68,9 +68,9 @@ class LightFieldComponent(Component):
     # 光照时长 (小时)
     light_duration: float = 12.0
 
-    # =========================
+    # ====
     # 光质
-    # =========================
+    # ====
 
     # 红蓝光比
     red_blue_ratio: float = 1.5

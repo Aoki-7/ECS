@@ -16,9 +16,9 @@ class SeasonComponent(Component):
     提供气候长期趋势
     """
 
-    # =========================
+    # ====
     # 当前季节
-    # =========================
+    # ====
 
     season: Season = Season.SPRING
 
@@ -31,17 +31,17 @@ class SeasonComponent(Component):
     # 当前年份时间
     year_progress: float = 0.0
 
-    # =========================
+    # ====
     # 气候偏移
-    # =========================
+    # ====
 
     temperature_offset: float = 0.0
     rainfall_factor: float = 1.0
     sunlight_factor: float = 1.0
 
-    # =========================
+    # ====
     # 工具函数
-    # =========================
+    # ====
 
     def is_spring(self):
         return self.season == Season.SPRING

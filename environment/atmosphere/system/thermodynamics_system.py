@@ -27,10 +27,7 @@
 from core.system import System
 from core.world import World
 
-<<<<<<< HEAD
-=======
 from environment.weather.components.weather_component import WeatherComponent
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
 
 

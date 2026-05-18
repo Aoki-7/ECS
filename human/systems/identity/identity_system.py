@@ -32,9 +32,9 @@ class IdentitySystem(System):
             # -------------------------
             self._update_faction(entity, identity, world)
 
-    # =============================
+    # =
     # 阵营演化
-    # =============================
+    # =
     def _update_faction(self, entity, identity: IdentityComponent, world):
         # 示例：没有阵营 → 自动归为"neutral"
         if not identity.faction:

@@ -96,11 +96,8 @@ class SimulationLoop:
         # 添加世界级环境组件，确保环境系统可读取数据
         self.world.get_world_entity().add_component(EnvironmentComponent())
 
-<<<<<<< HEAD
         # 获取空间系统引用
-=======
         # 获取SpaceSystem引用
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         self.space_system = self.world.get_system(SpaceSystem)
 
         # 初始化所有系统
@@ -122,13 +119,8 @@ class SimulationLoop:
         # 1. 时间系统（最高优先级）
         self.time_system = TimeSystem()
 
-<<<<<<< HEAD
-        # 2. 环境管线
+        # 2. 环境管线（统一编排 14 个子系统）
         self.env_pipeline = EnvironmentBuilder.build(self.world)
-=======
-        # 2. 环境系统
-        self.env_systems = EnvironmentBuilder.build(self.world)
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
         # 3. 人类系统（按处理流水线排序）
         #    感知→意图→规划→动作调度→搜索/移动/交互→决策
@@ -200,14 +192,8 @@ class SimulationLoop:
         # 1. 时间推进
         self.time_system.update(self.world, delta_hours)
 
-<<<<<<< HEAD
-        # 2. 环境管线
+        # 2. 环境管线（14 个子系统按 4 层 DAG 顺序执行）
         self.env_pipeline.update(self.world, delta_hours)
-=======
-        # 2. 环境更新
-        for system in self.env_systems:
-            system.update(self.world, delta_hours)
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
         # 3. 人类系统更新
         for system in self.human_systems:
@@ -219,14 +205,10 @@ class SimulationLoop:
 
         # 5. 生物学系统更新
         for system in self.biology_systems:
-<<<<<<< HEAD
-            system.update(self.world, delta_hours)
-=======
             try:
                 system.update(self.world, delta_hours)
             except TypeError:
                 system.update(self.world)
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
 
         # 6. 规则系统更新
         for system in self.rule_systems:
@@ -235,12 +217,9 @@ class SimulationLoop:
         # 7. 文明系统更新
         self.civilization_system.update(self.world, delta_hours)
 
-<<<<<<< HEAD
         # 8. 资源再生
         self._regenerate_resources(delta_hours)
 
-=======
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         self.step_count += 1
 
     def create_initial_resources(self, food_count: int = 30, water_count: int = 10):
@@ -270,7 +249,6 @@ class SimulationLoop:
                 amount=random.uniform(50, 200)
             )
 
-<<<<<<< HEAD
     def _regenerate_resources(self, delta_hours: float):
         """
         资源再生机制
@@ -310,8 +288,6 @@ class SimulationLoop:
                 )
             print(f"[ResourceRegen] 补充了 {need} 个食物（当前 {food_count} → {food_count + need}）")
 
-=======
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
     def create_initial_population(self, human_count: int = 10):
         """
         创建初始人口

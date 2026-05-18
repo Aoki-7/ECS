@@ -26,9 +26,9 @@ class SoilComponent(Component):
     存储土壤的物理和化学属性
     """
 
-    # =========================
+    # ====
     # 物理属性
-    # =========================
+    # ====
 
     # 土壤类型
     soil_type: str = SoilType.LOAM
@@ -42,9 +42,9 @@ class SoilComponent(Component):
     # 土壤温度 (°C)
     temperature: float = 20.0
 
-    # =========================
+    # ====
     # 化学属性
-    # =========================
+    # ====
 
     # 土壤pH值 (0-14)
     ph: float = 6.5
@@ -60,9 +60,9 @@ class SoilComponent(Component):
     # 有机质含量 (%)
     organic_matter: float = 2.0
 
-    # =========================
+    # ====
     # 水分特性
-    # =========================
+    # ====
 
     # 田间持水量 (0-1)
     field_capacity: float = 0.45

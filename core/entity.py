@@ -15,18 +15,18 @@ class Entity:
     _free_ids: list[int] = []
     _generations: list[int] = []
 
-    # =====================================
+    # ==
     # 限制不可变对象
-    # =====================================
+    # ==
 
     def __setattr__(self, key, value):
         if hasattr(self, key):
             raise AttributeError("Entity is immutable")
         super().__setattr__(key, value)
 
-    # =====================================
+    # ==
     # 创建
-    # =====================================
+    # ==
 
     @classmethod
     def create(cls):
@@ -47,9 +47,9 @@ class Entity:
         self.id = entity_id
         self.generation = generation
 
-    # =====================================
+    # ==
     # 销毁
-    # =====================================
+    # ==
 
     @classmethod
     def destroy(cls, entity):
@@ -66,9 +66,9 @@ class Entity:
             self.id < len(self._generations)
             and self.generation == self._generations[self.id]
         )
-    # =====================================
+    # ==
     # 比较 & 哈希
-    # =====================================
+    # ==
 
     def __eq__(self, other):
         return (
@@ -80,16 +80,16 @@ class Entity:
     def __hash__(self):
         return hash((self.id, self.generation))
 
-    # =====================================
+    # ==
     # 调试
-    # =====================================
+    # ==
 
     def __repr__(self):
         return f"<Entity id={self.id} gen={self.generation}>"
 
-    # =====================================
+    # ==
     # 序列化
-    # =====================================
+    # ==
 
     def to_dict(self):
         return {

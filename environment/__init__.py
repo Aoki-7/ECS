@@ -21,7 +21,8 @@ World
       ├── Weather      （天气状态）
       ├── LightField   （辐射场）
       ├── Hydrology    （水文）
-      └── Soil         （地表物质）
+      ├── Soil         （地表物质）
+      └── Continuum   （空间连续统 — 相邻单元格物质能量交换）
  └── Time
  └── Space
 """

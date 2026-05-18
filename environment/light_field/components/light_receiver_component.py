@@ -27,23 +27,23 @@ from core.component import Component
 @dataclass
 class LightReceiverComponent(Component):
 
-    # ===============================
+    # ===
     # 接收光照
-    # ===============================
+    # ===
 
     received_direct: float = 0.0
     received_diffuse: float = 0.0
     received_total: float = 0.0
 
-    # ===============================
+    # ===
     # 遮挡
-    # ===============================
+    # ===
 
     shade_ratio: float = 0.0   # 0-1 遮挡比例
 
-    # ===============================
+    # ===
     # 反射率（用于能量系统）
-    # ===============================
+    # ===
 
     albedo: float = 0.2
 

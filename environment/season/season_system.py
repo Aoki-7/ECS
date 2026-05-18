@@ -21,18 +21,18 @@ class SeasonSystem(System):
             SeasonComponent
         )
 
-        # ======================
+        # =
         # 1 更新年份时间
-        # ======================
+        # =
 
         season.year_progress += delta_hours
 
         if season.year_progress > season.year_length_hours:
             season.year_progress = 0
 
-        # ======================
+        # =
         # 2 更新季节时间
-        # ======================
+        # =
 
         season.season_remaining_hours -= delta_hours
 
@@ -42,9 +42,9 @@ class SeasonSystem(System):
 
             season.season_remaining_hours = 90 * 24
 
-        # ======================
+        # =
         # 3 更新季节气候
-        # ======================
+        # =
 
         effect = SEASON_EFFECT[season.season]
 

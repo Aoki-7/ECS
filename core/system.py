@@ -1,9 +1,8 @@
 from core.world import World
 
+
 class System:
-    """
-    ECS 基础系统类
-    """
+    """ECS 基础系统类"""
 
     priority = 0  # 默认优先级，数字越小越先执行
 
@@ -25,10 +24,8 @@ class System:
         """启用/禁用系统"""
         self._enabled = value
 
-    # ============================
-    # 生命周期
-    # ============================
-
+    #     # 生命周期
+    # 
     def on_add(self, world: World):
         """系统被添加到 world 时调用"""
         pass
@@ -37,29 +34,17 @@ class System:
         """系统从 world 移除时调用"""
         pass
 
-    # ============================
-    # 主执行入口
-    # ============================
-
-<<<<<<< HEAD
-    def update(self, world: World, dt: float = 1.0):
-=======
+    #     # 主执行入口
+    # 
     def update(self, world: World):
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         """
         不建议子类重写此方法。
         子类应重写 _update。
         """
         if not self.enabled:
             return
-<<<<<<< HEAD
-        self._update(world, dt)
-
-    def _update(self, world: World, dt: float = 1.0):
-=======
 
     def _update(self, world: World):
->>>>>>> 65a14767a91c763628f1030bcdd9bce57d718edc
         """
         子类必须实现
         """
@@ -67,10 +52,8 @@ class System:
             f"{self.__class__.__name__} 必须实现 _update 方法"
         )
 
-    # ============================
-    # 调试信息
-    # ============================
-
+    #     # 调试信息
+    # 
     @property
     def last_duration(self):
         return self._last_duration

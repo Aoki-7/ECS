@@ -45,9 +45,9 @@ class TimeComponent(Component):
         day_of_year: int = 1,      # 当前是本年的第几天（1开始）
         year: int = 1,             # 当前年份（从1开始）
     ):
-        # ==========================
+        # =====
         # 时间规则（世界基础时间单位）
-        # ==========================
+        # =====
 
         # 一天包含多少小时（用于不同世界设定）
         self.day_hours = float(day_hours)
@@ -55,9 +55,9 @@ class TimeComponent(Component):
         # 一年包含多少天
         self.days_per_year = int(days_per_year)
 
-        # ==========================
+        # =====
         # 当前时间状态
-        # ==========================
+        # =====
 
         # 当前天内时间（单位：小时）
         # 例如 6.5 表示早上6点30
@@ -73,9 +73,9 @@ class TimeComponent(Component):
         # 总小时数
         self.total_hours = float(hour)
 
-        # ==========================
+        # =====
         # 时间变化标记（系统写入）
-        # ==========================
+        # =====
 
         # 本次时间推进是否跨天
         # True 表示 hour 溢出导致进入下一天
@@ -85,9 +85,9 @@ class TimeComponent(Component):
         # True 表示 day_of_year 溢出导致进入下一年
         self.year_changed: bool = False
 
-    # ==============================
+    # ==
     # 常用派生属性
-    # ==============================
+    # ==
 
     @property
     def day_progress(self) -> float:
@@ -145,9 +145,9 @@ class TimeComponent(Component):
         """
         return self.absolute_day * self.day_hours + self.hour
 
-    # ==============================
+    # ==
     # 安全校验
-    # ==============================
+    # ==
 
     def clamp(self):
         """
@@ -164,9 +164,9 @@ class TimeComponent(Component):
         self.day_of_year = max(1, min(self.day_of_year, self.days_per_year))
         self.year = max(1, self.year)
 
-    # ==============================
+    # ==
     # 序列化支持
-    # ==============================
+    # ==
 
     def to_dict(self) -> dict:
         """

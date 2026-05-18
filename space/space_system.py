@@ -42,9 +42,9 @@ class SpaceSystem():
         # entity_id -> SpaceComponent
         self.components: Dict[int, SpaceComponent] = {}
 
-    # =====================================================
+    # ====
     # Entity lifecycle
-    # =====================================================
+    # ====
 
     def add_entity(self, entity_id: int, comp: SpaceComponent):
         """添加实体"""
@@ -65,9 +65,9 @@ class SpaceSystem():
 
         del self.components[entity_id]
 
-    # =====================================================
+    # ====
     # Movement
-    # =====================================================
+    # ====
 
     def move(self, entity_id: int, x: int, y: int, layer: int = 0):
         """空间移动"""
@@ -101,9 +101,9 @@ class SpaceSystem():
 
             comp.dirty = False
 
-    # =====================================================
+    # ====
     # Queries
-    # =====================================================
+    # ====
 
     def entities_at(self, x: int, y: int, layer: int = 0) -> Set[int]:
         """查询指定位置上的实体"""
