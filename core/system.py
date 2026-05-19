@@ -34,8 +34,7 @@ class System:
         """系统从 world 移除时调用"""
         pass
 
-    #     # 主执行入口
-    # 
+    # 主执行入口
     def update(self, world: World):
         """
         不建议子类重写此方法。

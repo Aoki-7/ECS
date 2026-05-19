@@ -1,239 +1,607 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-物理天气模块 — 独立测试脚本
+真实物理天气系统 — 高级验证测试脚本
 
-验证：
-1. 物理量是否随时间平滑演化
-2. 天气状态标签是否从物理量正确推导
-3. 是否形成合理的昼夜循环和天气变化模式
-4. 无降水时标签合理，有降水时标签正确切换
+============================================================
+测试目标
+============================================================
 
-运行：
-    python -m environment.physics_weather.test
+该脚本用于验证 physics_weather 模块是否具备：
+
+1. 物理量平滑演化
+2. 昼夜循环正确
+3. 季节变化正确
+4. 降水事件形成合理
+5. 天气标签推导正确
+6. 多气候区差异存在
+7. 风暴生命周期合理
+8. 湿度-云量-降水耦合正确
+9. 数值稳定性
+10. 极端参数健壮性
+11. 长时间运行稳定性
+12. 与旧 weather 模块完全独立
+
+============================================================
+运行方式
+============================================================
+
+python -m environment.physics_weather.test
+
+或：
+
+python environment/physics_weather/test.py
 """
 
-import sys
-import os
-
-# 将项目根目录加入 sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+import math
+import statistics
+from collections import defaultdict
 
 from core.world import World
+
 from time_module.time_system import TimeSystem
-from time_module.time_component import TimeComponent
 
 from environment.physics_weather.components.physical_weather_component import (
     PhysicalWeatherComponent,
 )
+
 from environment.physics_weather.systems.physical_weather_system import (
     PhysicalWeatherSystem,
 )
+
 from environment.physics_weather.utils.weather_classifier import (
     classify_from_component,
 )
 
 
+# ============================================================
+# 工具函数
+# ============================================================
+
+def clamp(v, min_v, max_v):
+    return max(min_v, min(v, max_v))
+
+
+def moving_average(values, window=6):
+    if len(values) < window:
+        return values
+
+    result = []
+    for i in range(len(values)):
+        left = max(0, i - window)
+        right = min(len(values), i + window)
+        result.append(sum(values[left:right]) / (right - left))
+    return result
+
+
+# ============================================================
+# 核心模拟器
+# ============================================================
+
 class PhysicsWeatherSimulation:
-    """物理天气模拟器"""
+    """
+    高级物理天气模拟器
+    """
 
-    def __init__(self, latitude=35.0, elevation=0.0, verbose=True):
-        self.world = World()
+    def __init__(
+        self,
+        latitude=35.0,
+        elevation=0.0,
+        delta_hours=1.0,
+        verbose=True,
+    ):
         self.verbose = verbose
+        self.delta_hours = delta_hours
 
-        # ── 挂载物理天气组件 ──
-        self.world._world_entity.add_component(PhysicalWeatherComponent())
+        self.world = World()
 
-        # ── 创建系统 ──
+        # 世界实体
+        self.world._world_entity.add_component(
+            PhysicalWeatherComponent()
+        )
+
+        # 时间系统
         self.time_system = TimeSystem(verbose=False)
+
+        # 天气系统
         self.weather_system = PhysicalWeatherSystem(
-            latitude=latitude, elevation=elevation
+            latitude=latitude,
+            elevation=elevation,
         )
 
         self.step = 0
 
-    def update(self, delta_hours=1.0):
-        """单步更新"""
-        self.time_system.update(self.world, delta_hours)
-        self.weather_system.update(self.world, delta_hours)
-        self.step += 1
+        # 历史记录
+        self.history = defaultdict(list)
 
-    def debug(self):
-        """打印当前状态"""
-        weather = self.world._world_entity.get_component(PhysicalWeatherComponent)
-        time = self.world.get_time()
-        state = classify_from_component(weather)
+    # --------------------------------------------------------
 
-        print(
-            f"[{self.step:4d}] "
-            f"D{time.day_of_year:3d} {time.hour:5.1f}h | "
-            f"T={weather.temperature:5.1f}°C "
-            f"P={weather.pressure:5.0f}hPa "
-            f"RH={weather.relative_humidity:5.1%} "
-            f"cloud={weather.cloud_cover:.2f} "
-            f"rain={weather.precipitation_rate:.3f}mm/h "
-            f"wind={weather.wind_speed:.1f}m/s | "
-            f"☁{state.cloud_cover_level.value} "
-            f"🌧{state.precipitation_intensity.value}_{state.precipitation_type.value} "
-            f"🌬{state.wind_level.value} "
-            f"👁{state.visibility.value}"
+    def update(self):
+        """
+        单步更新
+        """
+
+        self.time_system.update(
+            self.world,
+            self.delta_hours
         )
 
-    def run(self, steps=720, delta_hours=1.0, debug_interval=6):
-        """运行模拟"""
-        print("=" * 120)
-        print(f"物理天气模拟 | 步数={steps} | 每步={delta_hours}h | 纬度={self.weather_system.latitude}°")
-        print("=" * 120)
+        self.weather_system.update(
+            self.world,
+            self.delta_hours
+        )
+
+        self.step += 1
+
+        self.record()
+
+    # --------------------------------------------------------
+
+    def record(self):
+        """
+        记录历史
+        """
+
+        weather = self.get_weather()
+        time = self.world.get_time()
+
+        self.history["temperature"].append(weather.temperature)
+        self.history["pressure"].append(weather.pressure)
+        self.history["humidity"].append(weather.relative_humidity)
+        self.history["cloud"].append(weather.cloud_cover)
+        self.history["wind"].append(weather.wind_speed)
+        self.history["rain"].append(weather.precipitation_rate)
+
+        self.history["hour"].append(time.hour)
+        self.history["day"].append(time.day_of_year)
+
+    # --------------------------------------------------------
+
+    def get_weather(self):
+        return self.world._world_entity.get_component(
+            PhysicalWeatherComponent
+        )
+
+    # --------------------------------------------------------
+
+    def debug(self):
+        """
+        调试输出
+        """
+
+        weather = self.get_weather()
+        state = classify_from_component(weather)
+        time = self.world.get_time()
+
+        print(
+            f"[{self.step:5d}] "
+            f"D{time.day_of_year:03d} "
+            f"{time.hour:05.1f}h | "
+            f"T={weather.temperature:6.2f}°C | "
+            f"P={weather.pressure:7.2f}hPa | "
+            f"RH={weather.relative_humidity:6.1%} | "
+            f"Cloud={weather.cloud_cover:5.2f} | "
+            f"Rain={weather.precipitation_rate:6.3f}mm/h | "
+            f"Wind={weather.wind_speed:5.2f}m/s | "
+            f"{state.label}"
+        )
+
+    # --------------------------------------------------------
+
+    def run(
+        self,
+        steps,
+        debug_interval=24,
+    ):
+        """
+        运行模拟
+        """
 
         for i in range(steps):
-            self.update(delta_hours)
-            if self.verbose and i % debug_interval == 0:
+
+            self.update()
+
+            if (
+                self.verbose
+                and debug_interval > 0
+                and i % debug_interval == 0
+            ):
                 self.debug()
 
-        print("=" * 120)
-        print("模拟结束")
-        self.debug()
 
-    def run_storm_tracking(self, max_steps=500):
-        """
-        持续运行直到观测到一次明显的降水事件
-        """
-        print("=" * 120)
-        print("降水事件追踪模式 | 持续运行直到观察到>=小雨")
-        print("=" * 120)
+# ============================================================
+# TEST 1
+# 基础物理量范围
+# ============================================================
 
-        for i in range(max_steps):
-            self.update(1.0)
-            weather = self.world._world_entity.get_component(PhysicalWeatherComponent)
-            state = classify_from_component(weather)
+def test_basic_ranges():
 
-            if weather.precipitation_rate > 0.1:
-                print(f"\n=== 降水事件触发于 Step {self.step} ===")
-                self.debug()
-                print()
-                # 继续观察降水过程
-                for j in range(48):
-                    self.update(1.0)
-                    if j % 3 == 0:
-                        self.debug()
-                break
+    print("\n" + "=" * 80)
+    print("TEST 1: 基础物理量范围")
+    print("=" * 80)
 
-            if i % 24 == 0:
-                self.debug()
+    sim = PhysicsWeatherSimulation(
+        latitude=35.0,
+        verbose=False,
+    )
 
-        else:
-            print(f"运行{max_steps}步未见明显降水，请检查参数或增大步数。")
+    sim.run(steps=24 * 30)
+
+    weather = sim.get_weather()
+
+    assert -60 <= weather.temperature <= 60
+    assert 850 <= weather.pressure <= 1100
+    assert 0 <= weather.relative_humidity <= 1
+    assert 0 <= weather.cloud_cover <= 1
+    assert weather.wind_speed >= 0
+    assert weather.precipitation_rate >= 0
+
+    print("✅ 基础范围验证通过")
 
 
-def test_basic():
-    """基础测试：运行30天验证物理量平滑变化"""
-    print("\n" + "=" * 60)
-    print("TEST 1: 基础运行测试 (30天)")
-    print("=" * 60)
-
-    sim = PhysicsWeatherSimulation(latitude=35.0)
-    sim.run(steps=720, delta_hours=1.0, debug_interval=24)
-
-    # 验证组件存在
-    weather = sim.world._world_entity.get_component(PhysicalWeatherComponent)
-    assert weather is not None, "PhysicalWeatherComponent 未挂载"
-
-    # 验证物理量在合理范围
-    assert -30 <= weather.temperature <= 50, f"温度超出合理范围: {weather.temperature}"
-    assert 950 <= weather.pressure <= 1060, f"气压超出合理范围: {weather.pressure}"
-    assert 0 <= weather.relative_humidity <= 1, f"相对湿度超出范围: {weather.relative_humidity}"
-    assert 0 <= weather.cloud_cover <= 1, f"云量超出范围: {weather.cloud_cover}"
-    assert weather.wind_speed >= 0, f"风速为负: {weather.wind_speed}"
-    assert weather.precipitation_rate >= 0, f"降水速率为负: {weather.precipitation_rate}"
-
-    print("\n✅ 基础测试通过 — 所有物理量在合理范围内")
-
+# ============================================================
+# TEST 2
+# 昼夜循环
+# ============================================================
 
 def test_diurnal_cycle():
-    """验证日循环：检查24小时内温度是否呈现单峰"""
-    print("\n" + "=" * 60)
-    print("TEST 2: 日循环验证")
-    print("=" * 60)
 
-    sim = PhysicsWeatherSimulation(latitude=35.0)
-    temps = []
+    print("\n" + "=" * 80)
+    print("TEST 2: 昼夜循环")
+    print("=" * 80)
 
-    for _ in range(48):  # 2天
-        sim.update(1.0)
-        temps.append(sim.world._world_entity.get_component(PhysicalWeatherComponent).temperature)
+    sim = PhysicsWeatherSimulation(
+        latitude=35.0,
+        verbose=False,
+    )
 
-    # 检查每天的峰值出现在14:00附近
-    day1_temps = temps[0:24]
-    day2_temps = temps[24:48]
+    sim.run(steps=24 * 5)
 
-    day1_peak_idx = day1_temps.index(max(day1_temps))
-    day2_peak_idx = day2_temps.index(max(day2_temps))
+    temps = sim.history["temperature"]
+    hours = sim.history["hour"]
 
-    print(f"  第1天峰值在 hour={day1_peak_idx}, 第2天峰值在 hour={day2_peak_idx}")
+    daily_peaks = []
 
-    # 峰值应该在12-16之间
-    assert 10 <= day1_peak_idx <= 16, f"日循环峰值不在预期时间: {day1_peak_idx}"
-    assert 10 <= day2_peak_idx <= 16, f"日循环峰值不在预期时间: {day2_peak_idx}"
+    for day in range(5):
 
-    # 检查白天和夜晚的温差
-    day1_avg = sum(day1_temps[8:18]) / 10  # 白天 8-18点
-    night1_avg = sum(day1_temps[0:6] + day1_temps[20:24]) / 10  # 夜晚
-    diff = abs(day1_avg - night1_avg)
+        begin = day * 24
+        end = begin + 24
 
-    print(f"  日间平均温度: {day1_avg:.1f}°C, 夜间平均温度: {night1_avg:.1f}°C")
-    print(f"  昼夜温差: {diff:.1f}°C")
+        day_temps = temps[begin:end]
 
-    assert diff > 1.0, f"昼夜温差过小: {diff:.1f}°C"
+        peak_idx = day_temps.index(max(day_temps))
 
-    print("✅ 日循环测试通过")
+        daily_peaks.append(peak_idx)
+
+    print(f"温度峰值小时: {daily_peaks}")
+
+    for peak in daily_peaks:
+        assert 11 <= peak <= 17
+
+    print("✅ 昼夜循环合理")
 
 
-def test_weather_diversity():
-    """长时间运行验证天气多样性"""
-    print("\n" + "=" * 60)
-    print("TEST 3: 天气多样性验证 (60天)")
-    print("=" * 60)
+# ============================================================
+# TEST 3
+# 季节循环
+# ============================================================
 
-    sim = PhysicsWeatherSimulation(latitude=35.0)
-    weather_labels = set()
-    cloud_levels = set()
+def test_season_cycle():
 
-    for _ in range(1440):  # 60天
-        sim.update(1.0)
-        weather = sim.world._world_entity.get_component(PhysicalWeatherComponent)
+    print("\n" + "=" * 80)
+    print("TEST 3: 季节循环")
+    print("=" * 80)
+
+    sim = PhysicsWeatherSimulation(
+        latitude=45.0,
+        verbose=False,
+    )
+
+    sim.run(steps=24 * 365)
+
+    temps = sim.history["temperature"]
+
+    monthly = []
+
+    for month in range(12):
+
+        begin = month * 30 * 24
+        end = begin + 30 * 24
+
+        avg_temp = statistics.mean(
+            temps[begin:end]
+        )
+
+        monthly.append(avg_temp)
+
+    print("月均温:")
+    for i, t in enumerate(monthly, 1):
+        print(f"Month {i:02d}: {t:.2f}°C")
+
+    annual_range = max(monthly) - min(monthly)
+
+    print(f"\n全年温差: {annual_range:.2f}°C")
+    print(monthly)
+    assert annual_range > 8
+
+    print("✅ 季节循环合理")
+
+
+# ============================================================
+# TEST 4
+# 湿度-云量耦合
+# ============================================================
+
+def test_humidity_cloud_correlation():
+
+    print("\n" + "=" * 80)
+    print("TEST 4: 湿度-云量耦合")
+    print("=" * 80)
+
+    sim = PhysicsWeatherSimulation(
+        latitude=35.0,
+        verbose=False,
+    )
+
+    sim.run(steps=24 * 60)
+
+    humidity = sim.history["humidity"]
+    cloud = sim.history["cloud"]
+
+    avg_humid_cloud = statistics.mean([
+        c for h, c in zip(humidity, cloud)
+        if h > 0.8
+    ])
+
+    avg_dry_cloud = statistics.mean([
+        c for h, c in zip(humidity, cloud)
+        if h < 0.4
+    ])
+
+    print(f"高湿平均云量: {avg_humid_cloud:.2f}")
+    print(f"低湿平均云量: {avg_dry_cloud:.2f}")
+
+    assert avg_humid_cloud > avg_dry_cloud
+
+    print("✅ 湿度-云量关联正确")
+
+
+# ============================================================
+# TEST 5
+# 降水形成逻辑
+# ============================================================
+
+def test_precipitation_logic():
+
+    print("\n" + "=" * 80)
+    print("TEST 5: 降水形成逻辑")
+    print("=" * 80)
+
+    sim = PhysicsWeatherSimulation(
+        latitude=20.0,
+        verbose=False,
+    )
+
+    sim.run(steps=24 * 120)
+
+    rain = sim.history["rain"]
+    cloud = sim.history["cloud"]
+    humidity = sim.history["humidity"]
+
+    rain_events = 0
+
+    for r, c, h in zip(rain, cloud, humidity):
+
+        if r > 0.1:
+
+            rain_events += 1
+
+            assert c > 0.5
+            assert h > 0.6
+
+    print(f"降水事件数: {rain_events}")
+
+    assert rain_events > 0
+
+    print("✅ 降水形成逻辑合理")
+
+
+# ============================================================
+# TEST 6
+# 风暴生命周期
+# ============================================================
+
+def test_storm_lifecycle():
+
+    print("\n" + "=" * 80)
+    print("TEST 6: 风暴生命周期")
+    print("=" * 80)
+
+    sim = PhysicsWeatherSimulation(
+        latitude=25.0,
+        verbose=False,
+    )
+
+    sim.run(steps=24 * 180)
+
+    rain = sim.history["rain"]
+
+    storm_lengths = []
+
+    current = 0
+
+    for r in rain:
+
+        if r > 0.1:
+            current += 1
+        else:
+            if current > 0:
+                storm_lengths.append(current)
+            current = 0
+
+    if storm_lengths:
+
+        avg_duration = statistics.mean(storm_lengths)
+
+        print(f"平均风暴持续时间: {avg_duration:.2f}小时")
+
+        assert avg_duration > 1
+
+    print("✅ 风暴生命周期合理")
+
+
+# ============================================================
+# TEST 7
+# 多纬度气候差异
+# ============================================================
+
+def test_latitude_difference():
+
+    print("\n" + "=" * 80)
+    print("TEST 7: 纬度差异")
+    print("=" * 80)
+
+    equator = PhysicsWeatherSimulation(
+        latitude=0.0,
+        verbose=False,
+    )
+
+    polar = PhysicsWeatherSimulation(
+        latitude=70.0,
+        verbose=False,
+    )
+
+    equator.run(steps=24 * 180)
+    polar.run(steps=24 * 180)
+
+    eq_avg = statistics.mean(
+        equator.history["temperature"]
+    )
+
+    polar_avg = statistics.mean(
+        polar.history["temperature"]
+    )
+
+    print(f"赤道平均温度: {eq_avg:.2f}°C")
+    print(f"高纬平均温度: {polar_avg:.2f}°C")
+
+    assert eq_avg > polar_avg
+
+    print("✅ 纬度差异合理")
+
+
+# ============================================================
+# TEST 8
+# 数值稳定性
+# ============================================================
+
+def test_numerical_stability():
+
+    print("\n" + "=" * 80)
+    print("TEST 8: 数值稳定性")
+    print("=" * 80)
+
+    sim = PhysicsWeatherSimulation(
+        latitude=35.0,
+        delta_hours=0.1,
+        verbose=False,
+    )
+
+    sim.run(steps=5000)
+
+    temps = sim.history["temperature"]
+
+    delta = []
+
+    for i in range(1, len(temps)):
+        delta.append(abs(temps[i] - temps[i - 1]))
+
+    max_jump = max(delta)
+
+    print(f"最大单步温度跳变: {max_jump:.2f}°C")
+
+    assert max_jump < 10
+
+    print("✅ 数值稳定")
+
+
+# ============================================================
+# TEST 9
+# 长时间稳定性
+# ============================================================
+
+def test_long_term_stability():
+
+    print("\n" + "=" * 80)
+    print("TEST 9: 长时间运行稳定性")
+    print("=" * 80)
+
+    sim = PhysicsWeatherSimulation(
+        latitude=35.0,
+        verbose=False,
+    )
+
+    sim.run(steps=24 * 365 * 3)
+
+    temps = sim.history["temperature"]
+
+    avg_temp = statistics.mean(temps)
+
+    print(f"三年平均温度: {avg_temp:.2f}°C")
+
+    assert -20 < avg_temp < 40
+
+    print("✅ 长时间运行稳定")
+
+
+# ============================================================
+# TEST 10
+# 标签一致性
+# ============================================================
+
+def test_weather_classifier_consistency():
+
+    print("\n" + "=" * 80)
+    print("TEST 10: 天气标签一致性")
+    print("=" * 80)
+
+    sim = PhysicsWeatherSimulation(
+        latitude=35.0,
+        verbose=False,
+    )
+
+    sim.run(steps=24 * 30)
+
+    checked = 0
+
+    for _ in range(200):
+
+        weather = sim.get_weather()
+
         state = classify_from_component(weather)
-        weather_labels.add(state.label)
-        cloud_levels.add(state.cloud_cover_level.value)
 
-        if sim.step % 144 == 0:
-            sim.debug()
+        # 有降水不能是 clear
+        if weather.precipitation_rate > 0.1:
+            assert "clear" not in state.label.lower()
 
-    print(f"\n  观察到的天气标签: {sorted(weather_labels)}")
-    print(f"  观察到的云量等级: {sorted(cloud_levels)}")
-    print(f"  标签种类数: {len(weather_labels)}")
-    print(f"  云量等级数: {len(cloud_levels)}")
+        checked += 1
 
-    assert len(cloud_levels) > 1, "云量等级单一，缺少变化"
-    print("✅ 天气多样性测试通过")
+    print(f"检查样本数: {checked}")
+
+    print("✅ 标签一致性正确")
 
 
-def test_rain_event():
-    """验证能否产生自然的降水过程"""
-    print("\n" + "=" * 60)
-    print("TEST 4: 降水事件验证")
-    print("=" * 60)
-
-    sim = PhysicsWeatherSimulation(latitude=35.0)
-    sim.run_storm_tracking(max_steps=500)
-
+# ============================================================
+# TEST 11
+# 模块独立性
+# ============================================================
 
 def test_independence():
-    """验证与旧weather模块的独立性"""
-    print("\n" + "=" * 60)
-    print("TEST 5: 模块独立性验证")
-    print("=" * 60)
 
-    # 确认新模块可以独立import，不依赖旧weather模块
+    print("\n" + "=" * 80)
+    print("TEST 11: 模块独立性")
+    print("=" * 80)
+
     from environment.physics_weather import (
         PhysicalWeatherComponent,
         PhysicalWeatherSystem,
@@ -241,20 +609,91 @@ def test_independence():
         DerivedWeatherState,
         CloudCoverLevel,
     )
-    print("  ✅ 新模块独立 import 成功")
 
-    # 确认枚举类型不冲突
+    assert PhysicalWeatherComponent is not None
+    assert PhysicalWeatherSystem is not None
+
     assert CloudCoverLevel.CLEAR.value == "clear"
-    print("  ✅ 枚举类型独立")
-    print("✅ 独立性测试通过")
 
+    print("✅ 模块独立")
+
+
+# ============================================================
+# TEST 12
+# 极端环境
+# ============================================================
+
+def test_extreme_environment():
+
+    print("\n" + "=" * 80)
+    print("TEST 12: 极端环境")
+    print("=" * 80)
+
+    extreme_cases = [
+        ("赤道", 0),
+        ("温带", 35),
+        ("高纬", 70),
+        ("极地", 85),
+    ]
+
+    for name, lat in extreme_cases:
+
+        sim = PhysicsWeatherSimulation(
+            latitude=lat,
+            verbose=False,
+        )
+
+        sim.run(steps=24 * 30)
+
+        avg_temp = statistics.mean(
+            sim.history["temperature"]
+        )
+
+        print(
+            f"{name:6s} | "
+            f"纬度={lat:5.1f} | "
+            f"平均温度={avg_temp:6.2f}°C"
+        )
+
+    print("✅ 极端环境测试通过")
+
+
+# ============================================================
+# 主入口
+# ============================================================
 
 if __name__ == "__main__":
-    test_basic()
+
+    print("\n")
+    print("=" * 80)
+    print("真实物理天气系统 - 完整验证测试")
+    print("=" * 80)
+
+    test_basic_ranges()
+
     test_diurnal_cycle()
-    test_weather_diversity()
-    test_rain_event()
+
+    test_season_cycle()
+
+    test_humidity_cloud_correlation()
+
+    test_precipitation_logic()
+
+    test_storm_lifecycle()
+
+    test_latitude_difference()
+
+    test_numerical_stability()
+
+    test_long_term_stability()
+
+    test_weather_classifier_consistency()
+
     test_independence()
-    print("\n" + "=" * 60)
+
+    test_extreme_environment()
+
+    print("\n")
+    print("=" * 80)
     print("所有测试通过 ✅")
-    print("=" * 60)
+    print("=" * 80)

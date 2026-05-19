@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:physics_weather_builder.py
-@说明:物理天气系统构建器（原 weather/config/weather_builder.py 迁移至此）
+@说明:物理天气系统构建器
       挂载 PhysicalWeatherComponent + PhysicalWeatherSystem + 极端天气系统
 @时间:2026/05/16
 @作者:Sherry

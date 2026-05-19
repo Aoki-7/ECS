@@ -3,7 +3,7 @@ import traceback
 
 
 from collections import defaultdict
-import bisect
+
 from core.entity import Entity
 from core.component import Component
 
@@ -132,9 +132,9 @@ class World:
 
         print("====== 打印结束 ======\n")
         
-    # ====
+    # ===================================
     # Component
-    # ====
+    # ===================================
 
     def add_component(self, entity: Entity, component):
         if not self.has_entity(entity):
