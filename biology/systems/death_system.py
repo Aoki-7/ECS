@@ -1,69 +1,147 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-"""
-死亡系统（统一版）
 
-处理以下死亡条件：
-1. HealthComponent.hp <= 0 → 生命值归零
-2. PhysiologyNeedsComponent.energy <= 0 → 体力耗尽
-3. PhysiologyNeedsComponent.hunger >= 100 → 饥饿致死
-4. EnergyComponent.value <= 0 → 植物等生物能量耗尽
+"""
+@文件:death_system.py
+@说明:统一死亡系统
+@时间:2026/03/18
+@作者:Sherry
+@版本:2.0
 """
 
 from core.system import System
 from core.world import World
-from biology.components.energy_component import EnergyComponent
-from human.components.physiological.health_component import HealthComponent
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
 
+from biology.components.energy_component import (
+    EnergyComponent,
+)
 
+from human.components.physiological.health_component import (
+    HealthComponent,
+)
 
-
-from biology.components.energy_component import EnergyComponent
-from core.world import World
-from core.system import System
+from human.components.physiological.physiology_needs_component import (
+    PhysiologyNeedsComponent,
+)
 
 
 class DeathSystem(System):
     """
     统一死亡判定系统
-    检查所有实体的生存状态，将应死亡的实体从世界中移除。
+
+    死亡条件：
+    1. hp <= 0
+    2. energy <= 0
+    3. hunger >= 100
+    4. biological energy <= 0
     """
 
-    def _update(self, world: World, dt: float = 1.0):
-        dead = set()
+    def __init__(self):
+        super().__init__()
 
-        # 1. 检查 HealthComponent（hp <= 0）
-        for entity, [health] in world.get_components(HealthComponent):
+        self.enable_log = True
+
+    # =========================================================
+    # ECS Update
+    # =========================================================
+
+    def update(self, world: World, dt: float = 1.0):
+        """
+        检查死亡实体并移除
+        """
+
+        dead_entities = {}
+
+        # =====================================================
+        # 1. HealthComponent
+        # =====================================================
+
+        for entity, components in world.get_components(
+            HealthComponent
+        ):
+            health = components[0]
+
             if health.hp <= 0:
-                dead.add(entity)
+                dead_entities[entity] = "hp_depleted"
 
-        # 2. 检查 PhysiologyNeedsComponent（体力耗尽 or 饥饿致死）
-        for entity, [needs] in world.get_components(PhysiologyNeedsComponent):
-            if needs.energy <= 0 or needs.hunger >= 100:
-                dead.add(entity)
+        # =====================================================
+        # 2. PhysiologyNeedsComponent
+        # =====================================================
 
-        # 3. 检查 EnergyComponent（植物等生物能量耗尽）
-        for entity, [energy] in world.get_components(EnergyComponent):
+        for entity, components in world.get_components(
+            PhysiologyNeedsComponent
+        ):
+            needs = components[0]
+
+            # 体力耗尽
+            if needs.energy <= 0:
+                dead_entities[entity] = "exhaustion"
+
+            # 饥饿致死
+            elif needs.hunger >= 100:
+                dead_entities[entity] = "starvation"
+
+            # 极端脱水
+            elif hasattr(needs, "thirst"):
+                if needs.thirst >= 100:
+                    dead_entities[entity] = "dehydration"
+
+        # =====================================================
+        # 3. 生物 EnergyComponent
+        # =====================================================
+
+        for entity, components in world.get_components(
+            EnergyComponent
+        ):
+            energy = components[0]
+
             if energy.value <= 0:
-                dead.add(entity)
+                dead_entities[entity] = "energy_depleted"
 
-        # 移除所有已死亡实体
-        for e in dead:
-            if world.has_entity(e):
-                world.remove_entity(e)
+        # =====================================================
+        # 4. 执行死亡
+        # =====================================================
 
-        if dead:
-            print(f"[DeathSystem] 移除了 {len(dead)} 个死亡实体")
-        死亡系统
-    """
-    def update(self, world: World):
-        """所有包含 Energy 组件的实体，如果能量小于等于 0，则移除该实体"""
-        dead = []
+        removed_count = 0
 
-        for entity, [energy] in world.get_components(EnergyComponent):
-            if energy.value <= 0:
-                dead.append(entity)
+        for entity, reason in dead_entities.items():
 
-        for e in dead:
-            world.remove_entity(e)
+            if not world.has_entity(entity):
+                continue
+
+            # 可选：标记死亡原因
+            if hasattr(entity, "death_reason"):
+                entity.death_reason = reason
+
+            # Debug 日志
+            if self.enable_log:
+                entity_name = getattr(
+                    entity,
+                    "name",
+                    f"Entity<{entity.id}>"
+                )
+
+                print(
+                    f"[DeathSystem] "
+                    f"{entity_name} died: {reason}"
+                )
+
+            try:
+                world.remove_entity(entity)
+                removed_count += 1
+
+            except Exception as e:
+                print(
+                    f"[DeathSystem] "
+                    f"remove_entity failed: {e}"
+                )
+
+        # =====================================================
+        # 5. Summary
+        # =====================================================
+
+        if removed_count > 0 and self.enable_log:
+            print(
+                f"[DeathSystem] "
+                f"removed {removed_count} dead entities"
+            )

@@ -3,15 +3,15 @@
 """
 @文件: weather_event_components.py
 @说明:
-    physics_weather 极端天气事件组件
+    physics_weather 天气事件组件
 
 设计原则：
-1. 事件是“诊断层”，不是直接天气结果
-2. forcing 才是天气系统驱动力
-3. 支持 ECS 高性能运行
-4. 支持空间化天气系统
-5. 支持事件生命周期演化
-6. 支持未来 AI / 灾害 / 新闻 / NPC 扩展
+1. 仅保留“天气事件”相关组件
+2. 移除大气 forcing 系统
+3. 不包含气候/大气动力学抽象
+4. ECS 高性能组件化设计
+5. 支持天气事件生命周期
+6. 支持空间化天气事件
 
 @时间: 2026/05/18
 """
@@ -53,10 +53,10 @@ _EVENT_LABELS = {
 
 
 # ============================================================
-# 事件生命周期阶段
+# 生命周期阶段
 # ============================================================
 
-class EventPhase(StrEnum):
+class EventPhase(Enum):
 
     FORMING = "forming"
 
@@ -71,11 +71,9 @@ class EventPhase(StrEnum):
 # 事件来源类型
 # ============================================================
 
-class WeatherEventSourceType(StrEnum):
+class WeatherEventSourceType(Enum):
 
     NATURAL = "natural"
-
-    CLIMATE_SYSTEM = "climate_system"
 
     SCRIPTED = "scripted"
 
@@ -86,7 +84,6 @@ class WeatherEventSourceType(StrEnum):
 
 _SOURCE_LABELS = {
     WeatherEventSourceType.NATURAL: "自然生成",
-    WeatherEventSourceType.CLIMATE_SYSTEM: "气候系统",
     WeatherEventSourceType.SCRIPTED: "剧情脚本",
     WeatherEventSourceType.PLAYER: "玩家触发",
     WeatherEventSourceType.DEBUG: "调试生成",
@@ -94,18 +91,21 @@ _SOURCE_LABELS = {
 
 
 # ============================================================
-# 事件诊断组件
+# 天气事件诊断组件
 # ============================================================
 
 @dataclass(slots=True, frozen=True)
 class WeatherEventDiagnosticComponent(Component):
     """
-    天气事件诊断组件
+    天气事件识别组件
 
-    注意：
-    该组件仅用于“识别天气模式”。
+    仅用于标识：
+        当前存在什么天气事件
 
-    不直接修改天气物理量。
+    不负责：
+        物理模拟
+        数值演化
+        天气 forcing
     """
 
     event_id: int
@@ -121,10 +121,14 @@ class WeatherEventDiagnosticComponent(Component):
     def __post_init__(self):
 
         if not 0.0 <= self.severity <= 1.0:
-            raise ValueError("severity must be in [0,1]")
+            raise ValueError(
+                "severity must be in [0,1]"
+            )
 
         if not 0.0 <= self.confidence <= 1.0:
-            raise ValueError("confidence must be in [0,1]")
+            raise ValueError(
+                "confidence must be in [0,1]"
+            )
 
     @property
     def label(self) -> str:
@@ -167,6 +171,11 @@ class WeatherEventLifecycleComponent(Component):
                 "remaining_hours must be >= 0"
             )
 
+        if not 0.0 <= self.intensity_progress <= 1.0:
+            raise ValueError(
+                "intensity_progress must be in [0,1]"
+            )
+
     @property
     def normalized_age(self) -> float:
         """
@@ -188,6 +197,10 @@ class WeatherEventLifecycleComponent(Component):
 
     @property
     def expired(self) -> bool:
+        """
+        是否结束
+        """
+
         return self.remaining_hours <= 0.0
 
 
@@ -213,77 +226,12 @@ class WeatherEventSpatialComponent(Component):
 
     velocity_y_kmh: float = 0.0
 
-    pressure_center_hpa: Optional[float] = None
-
     def __post_init__(self):
 
         if self.radius_km <= 0:
-            raise ValueError("radius_km must be > 0")
-
-
-# ============================================================
-# 大气 forcing 组件
-# ============================================================
-
-@dataclass(slots=True)
-class AtmosphericForcingComponent(Component):
-    """
-    大气驱动力组件
-
-    注意：
-    不直接修改最终天气结果。
-
-    而是作为：
-        物理场演化输入
-    """
-
-    event_id: int
-
-    # 热力 forcing
-    thermal_forcing: float = 0.0
-
-    # 水汽通量 forcing
-    moisture_flux: float = 0.0
-
-    # 气压 forcing
-    pressure_forcing: float = 0.0
-
-    # 风场 forcing
-    wind_forcing_x: float = 0.0
-
-    wind_forcing_y: float = 0.0
-
-    # 云形成 forcing
-    cloud_forcing: float = 0.0
-
-    # 垂直运动 forcing
-    vertical_motion_forcing: float = 0.0
-
-    priority: int = 100
-
-    def is_extreme(self) -> bool:
-
-        return any([
-            abs(self.thermal_forcing) > 8.0,
-            abs(self.moisture_flux) > 5.0,
-            abs(self.pressure_forcing) > 20.0,
-            abs(self.wind_forcing_x) > 20.0,
-            abs(self.wind_forcing_y) > 20.0,
-        ])
-
-    def __repr__(self):
-
-        return (
-            "AtmosphericForcing("
-            f"thermal={self.thermal_forcing:+.2f}, "
-            f"moisture={self.moisture_flux:+.2f}, "
-            f"pressure={self.pressure_forcing:+.2f}, "
-            f"wind_x={self.wind_forcing_x:+.2f}, "
-            f"wind_y={self.wind_forcing_y:+.2f}, "
-            f"cloud={self.cloud_forcing:+.2f}, "
-            f"vertical={self.vertical_motion_forcing:+.2f}"
-            ")"
-        )
+            raise ValueError(
+                "radius_km must be > 0"
+            )
 
 
 # ============================================================
@@ -293,7 +241,7 @@ class AtmosphericForcingComponent(Component):
 @dataclass(slots=True, frozen=True)
 class WeatherEventSourceComponent(Component):
     """
-    天气事件来源组件
+    天气事件来源
     """
 
     event_id: int
@@ -346,9 +294,14 @@ class WeatherEventSeverityComponent(Component):
                 "damage_multiplier must be >= 0"
             )
 
+        if self.emergency_level < 0:
+            raise ValueError(
+                "emergency_level must be >= 0"
+            )
+
 
 # ============================================================
-# 可选：天气事件统计组件
+# 天气事件统计组件
 # ============================================================
 
 @dataclass(slots=True)
@@ -361,7 +314,7 @@ class WeatherEventStatisticsComponent(Component):
 
     max_temperature: Optional[float] = None
 
-    min_pressure: Optional[float] = None
+    min_temperature: Optional[float] = None
 
     max_wind_speed: Optional[float] = None
 
@@ -370,6 +323,23 @@ class WeatherEventStatisticsComponent(Component):
     affected_population: int = 0
 
     affected_area_km2: float = 0.0
+
+    def __post_init__(self):
+
+        if self.accumulated_rainfall_mm < 0:
+            raise ValueError(
+                "accumulated_rainfall_mm must be >= 0"
+            )
+
+        if self.affected_population < 0:
+            raise ValueError(
+                "affected_population must be >= 0"
+            )
+
+        if self.affected_area_km2 < 0:
+            raise ValueError(
+                "affected_area_km2 must be >= 0"
+            )
 
 
 # ============================================================
@@ -387,7 +357,6 @@ __all__ = [
     "WeatherEventDiagnosticComponent",
     "WeatherEventLifecycleComponent",
     "WeatherEventSpatialComponent",
-    "AtmosphericForcingComponent",
     "WeatherEventSourceComponent",
     "WeatherEventSeverityComponent",
     "WeatherEventStatisticsComponent",

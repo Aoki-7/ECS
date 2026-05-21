@@ -19,7 +19,6 @@ class GeneExpressionSystem:
         目前实现简单的线性表达模型
     """
     def update(self, world: World, dt: float = 1.0):
-    def update(self, world: World):
 
         for _, [genome, phenotype] in world.get_components(GenomeComponent, PhenotypeComponent):
 

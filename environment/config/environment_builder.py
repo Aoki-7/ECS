@@ -188,20 +188,12 @@ class EnvironmentBuilder:
         ))
 
         # — Layer 3: 极端事件 —
-        from environment.physics_weather.systems.weather_modifier_bridge import (
-            WeatherModifierBridgeSystem,
-        )
-        entries.append((
-            WeatherModifierBridgeSystem(),
-            "ModifierBridge",
-            "WeatherModifierComponent → PhysicalWeatherComponent (叠加 deltas)",
-        ))
 
         from environment.physics_weather.systems.weather_event_system import (
             WeatherEventSystem,
         )
         entries.append((
-            WeatherEventSystem(world),
+            WeatherEventSystem(),
             "WeatherEventGen",
             "PhysicalWeatherComponent → WeatherModifierComponent (创建事件)",
         ))

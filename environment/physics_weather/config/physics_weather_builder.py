@@ -51,6 +51,6 @@ class PhysicsWeatherBuilder:
             elevation=elevation,
         )
         modifier_bridge = WeatherModifierBridgeSystem()
-        event_system = WeatherEventSystem(world)
+        event_system = WeatherEventSystem()
 
         return [weather_system, modifier_bridge, event_system]
