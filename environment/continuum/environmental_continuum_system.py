@@ -118,9 +118,9 @@ class EnvironmentalContinuumSystem(System):
 
         # 阶段 1-5
         self._apply_thermal_diffusion(world, grid, dt, bounds)
-        self._apply_humidity_diffusion(world, grid, dt, bounds)
-        self._apply_gravity_water_flow(world, grid, dt, bounds)
-        self._apply_wind_advection(world, grid, dt, bounds)
+        self._apply_humidity_diffusion(world, grid, dt)
+        self._apply_gravity_water_flow(world, grid, dt)
+        self._apply_wind_advection(world, grid, dt)
         self._apply_self_recovery(world, grid, dt)
 
     # ═══════════════════════════════════════════════

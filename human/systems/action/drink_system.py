@@ -78,9 +78,10 @@ class DrinkSystem(System):
                 sip = water_component.drink()
                 needs.thirst = max(0, needs.thirst - 50)
 
-                if water_source == "inventory":
-                    inventory.remove(water_entity)
+                # 仅当水量耗尽时才从背包移除或销毁实体
                 if water_component.amount <= 0:
+                    if water_source == "inventory":
+                        inventory.remove(water_entity)
                     world.remove_entity(water_entity)
 
                 action.progress = 1.0

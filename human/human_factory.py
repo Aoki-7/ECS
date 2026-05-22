@@ -53,7 +53,7 @@ class HumanFactory:
         # 创建一个纯背包水实体（无 SpaceComponent，不出现在地图上）
         water_bottle = world.create_entity()
         from resource.water.components.water_component import WaterComponent
-        water_amount = random.uniform(30, 80)
+        water_amount = random.uniform(60, 120)
         world.add_component(water_bottle, WaterComponent(
             amount=water_amount, temperature=20.0, purity=1.0
         ))
@@ -66,6 +66,18 @@ class HumanFactory:
         inventory = world.get_component(entity, InventoryComponent)
         if inventory is not None:
             inventory.add(water_bottle)
+
+        # 为人类添加初始食物
+        food_ration = world.create_entity()
+        from resource.food.components.food_component import FoodComponent
+        food_amount = random.uniform(20, 40)
+        world.add_component(food_ration, FoodComponent(amount=food_amount))
+        world.add_component(food_ration, NameComponent(name="浆果", category="food"))
+        world.add_component(food_ration, ResourceComponent(
+            resource_type="food", amount=food_amount
+        ))
+        if inventory is not None:
+            inventory.add(food_ration)
 
         return entity
 

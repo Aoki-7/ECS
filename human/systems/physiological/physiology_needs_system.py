@@ -18,6 +18,7 @@ from core.world import World
 
 from environment.environment_component import EnvironmentComponent
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from human.components.action.action_component import ActionComponent, ActionType
 
 class PhysiologyNeedsSystem(System):
     """
@@ -27,6 +28,11 @@ class PhysiologyNeedsSystem(System):
     def update(self, world: World, dt: float):
         for entity, [needs] in world.get_components(PhysiologyNeedsComponent):
             needs: PhysiologyNeedsComponent
+
+            # --- 检测睡眠状态（睡眠时代谢率降低） ---
+            action = world.get_component(entity, ActionComponent)
+            is_sleeping = (action is not None and action.current_action == ActionType.SLEEP)
+            metabolic_mult = 0.4 if is_sleeping else 1.0  # 睡眠时代谢降至40%
 
             # --- 归一化（假设范围0~100） ---
             h = needs.hunger / 100.0
@@ -52,17 +58,17 @@ class PhysiologyNeedsSystem(System):
             # --- 更新 ---
             needs.hunger += (
                 base_hunger * (1 - 0.3 * energy_feedback)
-            ) * dt
+            ) * dt * metabolic_mult
 
             needs.thirst += (
                 base_thirst + hunger_to_thirst
-            ) * (1 - 0.2 * energy_feedback) * dt
+            ) * (1 - 0.2 * energy_feedback) * dt * metabolic_mult
 
             needs.energy -= (
                 base_energy_decay
                 + hunger_to_energy
                 + thirst_to_energy
-            ) * dt
+            ) * dt * metabolic_mult
 
             # --- 环境耦合 ---
             env = world.get_environment()

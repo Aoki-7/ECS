@@ -18,7 +18,11 @@ from core.world import World
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.economic.inventory.inventory_component import InventoryComponent
+from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
 from space.space_component import SpaceComponent
+from resource.food.components.food_component import FoodComponent
+from resource.water.components.water_component import WaterComponent
 
 
 class PlanningSystem(System):
@@ -38,37 +42,77 @@ class PlanningSystem(System):
             action: ActionComponent
             space: SpaceComponent
 
-            # 已有任务且正在执行就不重复规划
-            if action.action_queue or action.current_action != ActionType.IDLE:
+            # 已有明确的后续任务队列时不重复规划
+            if action.action_queue:
                 continue
+            # 检查当前是否处于危险生理状态，如果是则允许中断任何动作
+            needs = world.get_component(entity, PhysiologyNeedsComponent)
+            is_critical = needs and (needs.hunger > 90 or needs.thirst > 90)
+            
+            # 当前正在执行某些具体动作（非移动/非空闲/非睡眠/非进食/非饮水）时不规划
+            if not is_critical and action.current_action not in (ActionType.IDLE, ActionType.MOVE_TO, ActionType.SLEEP, ActionType.EAT, ActionType.DRINK):
+                continue
+            
+            # 如果正在移动/进食/饮水但生理需求达到危险水平，中断当前动作
+            if is_critical and action.current_action in (ActionType.MOVE_TO, ActionType.EAT, ActionType.DRINK):
+                action.current_action = ActionType.IDLE
+                action.status = ActionStatus.IDLE
+                action.progress = 0.0
+            
+            # 如果正在移动中（非危险），中断当前移动以便执行新规划
+            if action.current_action == ActionType.MOVE_TO:
+                action.current_action = ActionType.IDLE
+                action.status = ActionStatus.IDLE
+                action.progress = 0.0
+            
+            # 如果正在睡眠但生理需求达到危险水平，中断睡眠
+            if action.current_action == ActionType.SLEEP:
+                if needs and (needs.hunger > 85 or needs.thirst > 85):
+                    action.current_action = ActionType.IDLE
+                    action.status = ActionStatus.IDLE
+                    action.progress = 0.0
+                else:
+                    continue
 
             if intent.intent == IntentType.EAT:
                 task.task = TaskType.FIND_FOOD
                 task.status = TaskStatus.RUNNING
 
-                action.action_queue = [
-                    ActionType.SEARCH,
-                    ActionType.MOVE_TO,
-                    ActionType.PICKUP,
-                    ActionType.EAT
-                ]
+                # 如果背包有食物，直接吃，无需搜索
+                inventory = world.get_component(entity, InventoryComponent)
+                has_food = inventory is not None and inventory.find(FoodComponent, world) is not None
+                if has_food:
+                    action.action_queue = [ActionType.EAT]
+                else:
+                    action.action_queue = [
+                        ActionType.SEARCH,
+                        ActionType.MOVE_TO,
+                        ActionType.PICKUP,
+                        ActionType.EAT
+                    ]
 
             elif intent.intent == IntentType.DRINK:
                 task.task = TaskType.DRINK_WATER
                 task.status = TaskStatus.RUNNING
 
-                action.action_queue = [
-                    ActionType.SEARCH,
-                    ActionType.MOVE_TO,
-                    ActionType.DRINK
-                ]
+                # 如果背包有水，直接喝，无需搜索
+                inventory = world.get_component(entity, InventoryComponent)
+                has_water = inventory is not None and inventory.find(WaterComponent, world) is not None
+                if has_water:
+                    action.action_queue = [ActionType.DRINK]
+                else:
+                    action.action_queue = [
+                        ActionType.SEARCH,
+                        ActionType.MOVE_TO,
+                        ActionType.DRINK
+                    ]
 
             elif intent.intent == IntentType.SLEEP:
                 task.task = TaskType.SLEEP
                 task.status = TaskStatus.RUNNING
 
+                # 原地睡眠，无需移动
                 action.action_queue = [
-                    ActionType.MOVE_TO,
                     ActionType.SLEEP
                 ]
 

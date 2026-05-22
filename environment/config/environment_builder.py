@@ -171,6 +171,14 @@ class EnvironmentBuilder:
             "SeasonComponent + ClimateComponent → PhysicalWeatherComponent (T, P, RH, cloud, precip, wind)",
         ))
 
+        # 大气微观物理层（辅助天气模块，基于 PhysicalWeather 计算精细大气参数）
+        from environment.atmosphere.system.atmosphere_system import AtmosphereSystem
+        entries.append((
+            AtmosphereSystem(),
+            "Atmosphere",
+            "PhysicalWeatherComponent → AtmosphereComponent (ISA气压, 空气密度, 风场, 对流, 云密度)",
+        ))
+
         from environment.light_field.system.light_atmosphere_coupling_system import (
             LightAtmosphereCouplingSystem,
         )

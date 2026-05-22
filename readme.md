@@ -1,104 +1,93 @@
+# ECS 世界模拟系统
 
+基于 **Entity-Component-System (ECS)** 架构的复杂世界模拟，实现人类-环境-文明三层交互。
 
-# ECS 世界模拟系统 - 人类-环境-文明三层框架
+> 模拟粒度：1 步 = 1 小时 | 默认 300 步 ≈ 12.5 天 | Python 3.10+
 
-## 概述
+---
 
-这是一个基于Entity-Component-System (ECS)架构的复杂世界模拟系统，实现了完整的人类-环境-文明三层模拟框架。
-
-## 架构层次
-
-### 1. 环境层 (Environment Layer)
-- **天气系统**: 动态天气变化，影响人类活动
-- **季节系统**: 四季更替，影响资源可用性
-- **气候系统**: 长期气候模式，影响农业和生存
-- **土壤系统**: 土壤肥力变化，影响植物生长
-- **光照系统**: 昼夜循环，影响人类生理节律
-
-### 2. 人类层 (Human Layer)
-- **生理系统**: 饥饿、口渴、疲劳、健康管理
-- **认知系统**: 决策、意图规划、任务执行
-- **社交系统**: 关系建立、配对、生殖
-- **经济系统**: 资源管理、交易、财富积累
-- **技能系统**: 学习和发展各种能力
-
-### 3. 文明层 (Civilization Layer)
-- **资源采集系统**: 采集食物、水、木材、石材、金属
-- **建造系统**: 建造棚屋、工坊、仓库、农场
-- **交易系统**: 物物交换和市场交易
-- **技术进步系统**: 解锁农业、金属加工、建筑等技术
-- **社会组织**: 关系网络、文明阶段演进
-
-## 文明发展阶段
-
-1. **狩猎采集阶段** (Hunter-Gatherer): 基础生存，依赖自然资源
-2. **农业社会** (Agricultural): 解锁农业技术，定居生活
-3. **青铜时代** (Bronze Age): 金属工具，复杂社会结构
-4. **铁器时代** (Iron Age): 高级建造，专业化分工
-
-## 核心特性
-
-### 数据驱动设计
-- 所有游戏逻辑基于组件数据
-- 可配置的技术树和建造配方
-- 动态的环境影响
-
-### 可扩展架构
-- 模块化系统设计
-- 易于添加新的组件和系统
-- 支持自定义规则和事件
-
-### 实时模拟
-- 时间驱动的更新循环
-- 并发系统执行
-- 性能优化的实体查询
-
-## 运行方式
+## 快速开始
 
 ```bash
 python main.py
 ```
 
-默认运行50步模拟，展示文明演进过程。
+默认运行 300 步模拟，每步 1 小时，输出人口、食物、文明阶段等统计信息。
 
-## 系统指标
+---
 
-模拟跟踪以下关键指标：
-- **人口数量**: 人类实体总数
-- **技术水平**: 已解锁技术数量
-- **经济复杂度**: 财富积累和交易频率
-- **社会组织度**: 人际关系网络复杂度
-- **资源多样性**: 可利用资源类型数量
+## 架构概览
+
+三层模拟框架，由 **5 层 DAG 环境管线** 驱动时间演进：
+
+```
+外部强迫（太阳/季节/气候）
+    → 大气物理（温度/气压/湿度/云量/降水/风速）
+    → 辐射传输（TOA → 地表光照）
+    → 异常检测 + 地表层（土壤/环境同步）
+    → 空间平滑（扩散/平流/水流）
+```
+
+完整架构说明见 [**architecture.md**](architecture.md)。
+
+---
+
+## 核心特性
+
+- **纯物理驱动天气** — 连续物理量演化，离散状态仅为实时视图
+- **ECS 架构** — 数据与逻辑分离，高内聚低耦合
+- **模块化管线** — 环境/人类/生物/规则/文明系统独立演进
+- **天文季节** — 太阳赤纬角和日地距离实时计算，无固定季节枚举
+- **统计异常检测** — 滑动窗口识别物理偏离，无预定义事件类型
+
+---
+
+## 模块导航
+
+| 模块 | 关键入口 | 说明 |
+|------|---------|------|
+| **核心层** | [`core/`](core/) | Entity、Component、System、World 基类 |
+| **环境系统** | [`environment/config/environment_builder.py`](environment/config/environment_builder.py) | 15 系统管线组装 |
+| | [`environment/physics_weather/systems/physical_weather_system.py`](environment/physics_weather/systems/physical_weather_system.py) | 核心天气物理演化 |
+| | [`environment/season/season_state.py`](environment/season/season_state.py) | 天文季节计算 |
+| | [`environment/climate/climate_system.py`](environment/climate/climate_system.py) | OU 随机过程气候 |
+| | [`environment/physics_weather/systems/weather_event_system.py`](environment/physics_weather/systems/weather_event_system.py) | 统计异常检测 |
+| **人类系统** | [`human/human_factory.py`](human/human_factory.py) | 人类实体创建 |
+| | [`human/systems/physiological/physiology_needs_system.py`](human/systems/physiological/physiology_needs_system.py) | 生理需求更新 |
+| | [`human/systems/core/intent_system.py`](human/systems/core/intent_system.py) | 意图决策 |
+| **空间系统** | [`space/space_system.py`](space/space_system.py) | 空间索引与范围查询 |
+| **时间系统** | [`time_module/time_system.py`](time_module/time_system.py) | 时间推进 |
+| **规则系统** | [`rules/transformation_system.py`](rules/transformation_system.py) | 条件变换（如食物腐败） |
+| **主入口** | [`main.py`](main.py) | 模拟循环与系统初始化 |
+
+---
 
 ## 扩展开发
 
-### 添加新组件
-1. 在相应模块创建组件类
-2. 继承 `Component` 基类
-3. 在 `__init__.py` 中添加导入
+添加新系统只需三步：
 
-### 添加新系统
-1. 创建系统类继承 `System`
-2. 实现 `update(world, dt)` 方法
-3. 在主循环中注册系统
+1. 创建系统类继承 [`System`](core/system.py)，实现 `update(world, delta_hours)`
+2. 在 [`environment/config/environment_builder.py`](environment/config/environment_builder.py) 或 [`main.py`](main.py) 中注册
+3. 如需新组件，继承 [`Component`](core/component.py) 并在 `build()` 中添加到 `world_entity`
 
-### 添加新规则
-1. 在 `rules_config.py` 中定义条件和转换函数
-2. 创建 `TransformationRule` 实例
-3. 添加到规则系统中
+---
+
+## 文档索引
+
+| 文档 | 内容 |
+|------|------|
+| [**architecture.md**](architecture.md) | 完整架构说明、执行流水线、组件依赖图、数据流、当前状态 |
+| [**environment/environment_improvement_report.md**](environment/environment_improvement_report.md) | 环境模块改进报告（21 项问题及修复状态） |
+| [**memory/2026-05-17.md**](memory/2026-05-17.md) | 开发历史记录 |
+
+---
 
 ## 技术栈
 
-- **Python 3.10+**: 现代Python特性支持
-- **Dataclasses**: 组件数据结构
-- **Type Hints**: 类型安全
-- **模块化设计**: 高内聚低耦合
+- **Python 3.10+** — 现代类型提示与 dataclass
+- **ECS 模式** — Entity + Component（纯数据）+ System（纯逻辑）
+- **单向 DAG 管线** — 环境子系统按 5 层拓扑顺序执行
 
-## 未来扩展
+## 许可证
 
-- [ ] AI驱动的行为决策
-- [ ] 向量数据库的记忆系统
-- [ ] 多线程并行处理
-- [ ] 图形化界面
-- [ ] 保存/加载模拟状态
-- [ ] 网络多人协作
+MIT

@@ -2,316 +2,104 @@
 # -*- encoding: utf-8 -*-
 
 """
-云层系统 [适配版] — 已移除对旧版 WeatherComponent 离散状态的操作
-
-【设计变更】
-- 不再写 WeatherComponent.sky / precipitation_type（这些由 PhysicalWeatherSystem 的物理量推导）
-- 仅维护 AtmosphereComponent 的 cloud_density / cloud_cover
-- AtmosphereComponent.cloud_density 作为大气微观物理的独立层
-云层系统 [扩展版] — 与 WeatherComponent 的降水联动完善
+云层系统 [v2.0] — 基于 PhysicalWeather 计算云层参数
 
 【物理原理】
 云的形成需要：
-1. 水汽达到饱和状态（相对湿度 > 100%）
-2. 凝结核（气溶胶）作为结晶核心
+1. 水汽达到饱和状态（相对湿度 > 90%）
+2. 凝结核（气溶胶）
 3. 足够的空气上升运动/对流
+
+【数据流】
+PhysicalWeatherComponent (cloud_cover, relative_humidity, temperature)
+    → CloudSystem
+    → AtmosphereComponent (cloud_cover, cloud_density)
 """
-
-
-【降水触发条件】
-- 云量超过阈值
-- 水滴/冰晶增长到足够大
-- 重力 > 上升气流支撑力
-
-【简化模型】
-- 相对湿度接近或超过 100% → 过饱和，触发凝结
-- 云量 + 对流强度决定降水概率
-"""
-
 
 from core.system import System
 from core.world import World
 
 from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
-from environment.weather.components.weather_component import WeatherComponent
+from environment.physics_weather.components.physical_weather_component import (
+    PhysicalWeatherComponent,
+)
 
 
 class CloudSystem(System):
     """
-    云层系统（大气微观物理层）
+    云层系统
 
-    维护 AtmosphereComponent.cloud_density / cloud_cover，
-    不再写入任何天气离散状态枚举。
-    宏观天气的云量降水由 PhysicalWeatherSystem 独立驱动。
+    从 PhysicalWeatherComponent 读取云量与湿度，
+    计算云密度并同步到 AtmosphereComponent。
     """
 
-    # === 物理常量 ===
-    REFRACTIVE_INDEX_CLOUD = 1.01   # 典型云层折射率
-
-    # 降水触发阈值（仅用于大气层诊断，不写入天气状态）
+    # 云密度阈值
     CLOUD_DENSITY_RAIN_THRESHOLD = 1.0
     CLOUD_DENSITY_SNOW_THRESHOLD = 1.2
 
-    def _calculate_cloud_growth(self, atm: AtmosphereComponent) -> float:
+    def _calculate_cloud_growth(self, rh: float, temp: float, aerosol: float) -> float:
         """
         计算云的增长速率
 
         Args:
-            atm: 大气组件
+            rh: 相对湿度 [0~1]
+            temp: 温度 (°C)
+            aerosol: 气溶胶浓度
 
-    云层系统
-    
-    【扩展功能】
-    - 基于相对湿度和凝结核计算云量
-    - 云量影响天气系统的降水和光照（联动 WeatherComponent）
-    - 支持不同类型云上界高度估算
-    
-    【与 WeatherComponent 的联动】
-    - 云密度 → 触发降水类型判断
-    - 高海拔 + 低温 + 云厚 → 降雪
-    - 中低海拔 + 高温 → 降雨
-    """
-    
-    # === 物理常量 ===
-    REFRACTIVE_INDEX_CLOUD = 1.01   # 典型云层折射率
-    
-    # 降水触发阈值
-    CLOUD_DENSITY_RAIN_THRESHOLD = 1.0      # 云密度达到此值可能降雨
-    CLOUD_DENSITY_SNOW_THRESHOLD = 1.2      # 更高云密度更易降雪（伴随强对流）
-
-    def _calculate_cloud_growth(self, atm: AtmosphereComponent, weather: WeatherComponent) -> float:
-        """
-        计算云的增长速率
-        
-        Args:
-            atm: 大气组件
-            weather: 天气组件（提供降水状态信息）
-        
         Returns:
-            云量的增长率（0-1/小时）
+            云密度增长率（0-1/小时）
         """
         # 相对湿度越接近饱和，增长越快
-        humidity_factor = abs(atm.humidity - 100.0) / 5 if atm.humidity else 0
+        humidity_factor = max(0, (rh - 0.8) / 0.2) if rh > 0.8 else 0
 
-        # 气溶胶作为凝结核浓度
-        aerosol_factor = atm.aerosol * 2 if atm.aerosol > 0 else 0
+        # 气溶胶作为凝结核
+        aerosol_factor = aerosol * 2 if aerosol > 0 else 0
 
-        # 对流强度促进云形成
-        convection_factor = atm.convection_strength * 0.5 if atm.convection_strength > 0 else 0
+        # 低温促进冰晶云形成
+        temp_factor = 0.1 if temp < 0 else 0
 
-        return humidity_factor + aerosol_factor + convection_factor
+        return humidity_factor * 0.5 + aerosol_factor + temp_factor
 
-    def _estimate_precipitation(self, atm: AtmosphereComponent) -> dict:
+    def _estimate_cloud_density(self, cloud_cover: float, rh: float, temp: float) -> float:
         """
-        估算降水状态（仅诊断，不再写入天气组件）
+        估算云密度（0-1.5）
 
-        Args:
-            atm: 大气组件
-
-        Returns:
-            诊断用的降水信息字典
-        
-        # 气溶胶作为凝结核浓度
-        aerosol_factor = atm.aerosol * 2 if atm.aerosol > 0 else 0
-        
-        # 对流强度促进云形成
-        convection_factor = atm.convection_strength * 0.5 if atm.convection_strength > 0 else 0
-        
-        return humidity_factor + aerosol_factor + convection_factor
-    
-    def _estimate_precipitation(self, atm: AtmosphereComponent, weather: WeatherComponent) -> dict:
+        云密度 = 云覆盖率 × 厚度因子
+        厚度受湿度和温度影响。
         """
-        估算降水状态（联动 WeatherComponent）
-        
-        Args:
-            atm: 大气组件
-            weather: 天气组件
-        
-        Returns:
-            包含 precipitation_type, precipitation_intensity 的字典
-        """
-        cloud_density = atm.cloud_density or 0
-        convection = atm.convection_strength or 0
-        temp = atm.temperature or 0
-        altitude = atm.altitude or 0
+        if cloud_cover <= 0:
+            return 0.0
 
-        
-        result = {
-            'precipitation_type': 'none',
-            'precipitation_intensity': 'none',
-        }
+        # 基础密度与云覆盖率成正比
+        base_density = cloud_cover
 
-        if cloud_density > self.CLOUD_DENSITY_RAIN_THRESHOLD:
-            precipitation_type = 'none'
-            intensity = 'light'
+        # 高湿度增加云厚
+        humidity_boost = max(0, (rh - 0.7) / 0.3) * 0.3 if rh > 0.7 else 0
 
-        
-        # 云密度超过阈值，检查降水触发条件
-        if cloud_density > self.CLOUD_DENSITY_RAIN_THRESHOLD:
-            precipitation_type = 'none'
-            intensity = 'light'
-            
-            # 温度决定类型：低温 → 雪，高温 → 雨
-            if temp < 0:
-                precipitation_type = 'snow'
-            elif temp < 5:
-                precipitation_type = 'sleet'
-            else:
-                precipitation_type = 'rain'
+        # 低温增加云厚（冰晶云更厚）
+        temp_boost = 0.2 if temp < 5 else 0
 
-            
-            # 高云密度 + 强对流 → 强度升级
-            if convection > 0.3 and cloud_density > self.CLOUD_DENSITY_SNOW_THRESHOLD:
-                intensity = 'heavy'
-            elif cloud_density > self.CLOUD_DENSITY_RAIN_THRESHOLD * 1.5:
-                intensity = 'moderate'
+        return min(1.5, base_density + humidity_boost + temp_boost)
 
-            result['precipitation_type'] = precipitation_type
-            result['precipitation_intensity'] = intensity
-
-        return result
-
-    def update(self, world: World, delta_hours: float):
-
-        for entity, [atm] in world.get_components(AtmosphereComponent):
-            atm: AtmosphereComponent
-
-            # === 1. 饱和判断 ===
-            if not self._is_saturated(atm):
-                continue
-
-            # === 2. 云的增长 ===
-            growth_rate = self._calculate_cloud_growth(atm) * delta_hours
-            current_density = atm.cloud_density or 0
-
-            new_density = min(1.5, max(0, current_density + growth_rate))
-            atm.cloud_density = round(new_density, 4)
-            atm.cloud_cover = atm.cloud_density
-
-            # === 3. 降水诊断（仅日志/调试用途） ===
-            precip_info = self._estimate_precipitation(atm)
-            if precip_info['precipitation_type'] != 'none':
-                # 可在此触发日志或事件
-                pass
-
-    def _is_saturated(self, atm: AtmosphereComponent) -> bool:
-        """判断大气是否达到过饱和状态"""
-        if not atm or not hasattr(atm, 'humidity'):
-            return False
-        humidity = atm.humidity or 0
-        return humidity > 90.0
-            
-            result['precipitation_type'] = precipitation_type
-            result['precupitation_intensity'] = intensity
-            
-        return result
-    
     def update(self, world: World, delta_hours: float):
         """
         云层系统更新
-        
-        【计算顺序】
-        1. 检查饱和状态（与 WeatherComponent 同步）
-        2. 计算云的增长
-        3. 更新云量和上界高度
-        4. 触发降水判断 → 写入 WeatherComponent（联动逻辑）
-        
-        【数据流】
-        CloudSystem ←→ AtmosphereComponent (双向) ←→ WeatherComponent
-        """
-        
-        for entity, [atm, weather] in world.get_components(AtmosphereComponent, WeatherComponent):
-            atm: AtmosphereComponent
-            weather: WeatherComponent
-            
-            # === 1. 饱和判断（检查湿度是否接近或超过 100%）===
-            if not self._is_saturated(atm):
-                continue
-            
-            # === 2. 云的增长（基于湿度、气溶胶、对流）===
-            growth_rate = self._calculate_cloud_growth(atm, weather) * delta_hours
-            current_density = atm.cloud_density or 0
-            
-            new_density = min(1.5, max(0, current_density + growth_rate))
-            atm.cloud_density = round(new_density, 4)
-            atm.cloud_cover = atm.cloud_density
-            
-            # === 3. 更新云量到 WeatherComponent ===
-            if weather:
-                weather.sky = self._cloud_to_sky_state(atm.cloud_density or 0)
-            
-            # === 4. 估算云的上界高度 ===
-            cloud_top = self._estimate_cloud_Top(atm, weather)
-            if cloud_top and not hasattr(atm, '_cloud_Top'):
-                atm._cloud_Top = cloud_top
-            
-            # === 5. 降水判断 → 写入 WeatherComponent ===
-            precip_info = self._estimate_precipitation(atm, weather)
-            if weather:
-                weather.precipitation_type = precip_info['precipitation_type']
-                weather.precipitation_intensity = precip_info['precipitation_intensity']
 
-    def _is_saturated(self, atm: AtmosphereComponent) -> bool:
+        数据流：PhysicalWeatherComponent → AtmosphereComponent
         """
-        判断大气是否达到过饱和状态（触发云形成的条件）
-        
-        Args:
-            atm: 大气组件
-        
-        Returns:
-            bool: 是否过饱和（相对湿度接近 100%）
-        """
-        if not atm or not hasattr(atm, 'humidity'):
-            return False
-        
-        # 相对湿度 > 90% 视为可能饱和，> 100% 为过饱和
-        humidity = atm.humidity or 0
-        return humidity > 90.0
+        atm = world._world_entity.get_component(AtmosphereComponent)
+        weather = world._world_entity.get_component(PhysicalWeatherComponent)
 
-    def _cloud_to_sky_state(self, cloud_density: float) -> str:
-        """
-        将云密度转换为天空状态
-        
-        Args:
-            cloud_density: 云密度（0-1）
-        
-        Returns:
-            SkyState 名称字符串
-        """
-        if cloud_density < 0.2:
-            return "clear"
-        elif cloud_density < 0.5:
-            return "partly_cloudy"
-        elif cloud_density < 0.9:
-            return "cloudy"
-        else:
-            return "overcast"
+        if atm is None or weather is None:
+            return
 
-    def _estimate_cloud_Top(self, atm: AtmosphereComponent, weather: WeatherComponent) -> float | None:
-        """
-        估算云的上界高度（简化模型）
-        
-        Args:
-            atm: 大气组件
-            weather: 天气组件
-        
-        Returns:
-            float: 云顶高度（米），或 None
-        """
-        if not hasattr(atm, '_cloud_Top'):
-            return None
-        
-        # 简化模型：云顶高度 = 当前海拔 + 云量比例 * 标准对流层厚度
-        base_altitude = atm.altitude or 0
-        cloud_fraction = atm.cloud_density or 0
-        
-        max_top = self._get_base_altitude() + 8000 * cloud_fraction
-        
-        return min(max(atm._cloud_Top, base_altitude), max_top)
+        cloud_cover = weather.cloud_cover
+        rh = weather.relative_humidity
+        temp = weather.temperature
 
-    def on_add(self, world: World):
-        """系统激活时确保 WeatherComponent 存在"""
-        super().on_add(world)
-        if not world.get_component_by_type(WeatherComponent):
-            weather = WeatherComponent()
-            world._world_entity.add_component(weather)
+        # 同步云覆盖率
+        atm.cloud_cover = cloud_cover
+
+        # 计算云密度
+        cloud_density = self._estimate_cloud_density(cloud_cover, rh, temp)
+        atm.cloud_density = round(cloud_density, 4)

@@ -74,6 +74,7 @@ from human.human_factory import HumanFactory
 from biology.factories.plant_factory import PlantFactory
 from resource.food.food_factory import FoodFactory
 from resource.water.water_factory import WaterFactory
+from environment.environment_factory import EnvironmentFactory
 
 
 class SimulationLoop:
@@ -104,6 +105,9 @@ class SimulationLoop:
         self.plant_factory = PlantFactory()
         self.food_factory = FoodFactory()
         self.water_factory = WaterFactory()
+
+        # 初始化环境网格（10×10 低分辨率网格，供 Continuum 系统使用）
+        self._init_environment_grid()
 
         # 统计信息
         self.step_count = 0
@@ -218,7 +222,7 @@ class SimulationLoop:
 
         self.step_count += 1
 
-    def create_initial_resources(self, food_count: int = 30, water_count: int = 10):
+    def create_initial_resources(self, food_count: int = 60, water_count: int = 40):
         """
         创建初始资源（食物和水源）
 
@@ -284,6 +288,19 @@ class SimulationLoop:
                 )
             print(f"[ResourceRegen] 补充了 {need} 个食物（当前 {food_count} → {food_count + need}）")
 
+        # 水源低于阈值时补充
+        WATER_MIN = 10
+        if water_count < WATER_MIN:
+            need = WATER_MIN - water_count
+            for _ in range(need):
+                x = random.randint(0, 99)
+                y = random.randint(0, 99)
+                self.water_factory.create_water(
+                    self.world, x=x, y=y,
+                    amount=random.uniform(50, 200)
+                )
+            print(f"[ResourceRegen] 补充了 {need} 个水源（当前 {water_count} → {water_count + need}）")
+
     def create_initial_population(self, human_count: int = 10):
         """
         创建初始人口
@@ -298,6 +315,19 @@ class SimulationLoop:
             x, y = random.randint(0, 99), random.randint(0, 99)
             human = self.human_factory.create_human(self.world, name, x, y)
             print(f"  创建人类实体: {human} - {name} at ({x}, {y})")
+
+    def _init_environment_grid(self, grid_size: int = 10):
+        """
+        初始化环境网格实体，供 EnvironmentalContinuumSystem 使用。
+        使用低分辨率网格（默认 10×10），每个单元格代表 10×10 地图区域。
+        """
+        env_factory = EnvironmentFactory(self.world)
+        count = 0
+        for gx in range(grid_size):
+            for gy in range(grid_size):
+                env_factory.create_environment_cell(gx, gy)
+                count += 1
+        print(f"[SimulationLoop] 初始化环境网格：{grid_size}×{grid_size} = {count} 个单元格")
 
     def get_stats(self) -> dict:
         """获取当前统计信息"""
@@ -399,8 +429,8 @@ def main():
     # 创建模拟循环
     simulation = SimulationLoop(world)
 
-    # 创建初始资源（更密集分布）
-    simulation.create_initial_resources(food_count=60, water_count=25)
+    # 创建初始资源（更密集分布，增加水源数量）
+    simulation.create_initial_resources(food_count=60, water_count=40)
 
     # 创建初始人口（更多人类）
     simulation.create_initial_population(human_count=10)

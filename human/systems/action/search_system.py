@@ -87,26 +87,36 @@ class SearchSystem(System):
                     nearest_pos = (target_space.x, target_space.y)
 
             if nearest_entity is not None:
-                # 找到目标了！设置移动目标
-                action.target_entity = nearest_entity.id
-                action.target_pos = nearest_pos
-                action.current_action = ActionType.MOVE_TO
-                action.progress = 0.0
-                action.status = ActionStatus.RUNNING
-                task.status = TaskStatus.RUNNING
-                search.result_entity = nearest_entity.id
+                # 找到目标了！
+                # 对于饮水任务，如果目标太远，直接失败回退到背包水源
+                # 避免在长途移动中渴死
+                if task.task == TaskType.DRINK_WATER and nearest_distance > 3:
+                    self._fail_search(action, task, search)
+                else:
+                    action.target_entity = nearest_entity.id
+                    action.target_pos = nearest_pos
+                    action.current_action = ActionType.MOVE_TO
+                    action.progress = 0.0
+                    action.status = ActionStatus.RUNNING
+                    task.status = TaskStatus.RUNNING
+                    search.result_entity = nearest_entity.id
             else:
-                # 视野内无目标 → 随机走一步扩大搜索范围
-                roam_x = space.x + random.randint(-3, 3)
-                roam_y = space.y + random.randint(-3, 3)
-                roam_x = max(0, min(99, roam_x))
-                roam_y = max(0, min(99, roam_y))
-                
-                action.target_pos = (roam_x, roam_y)
-                action.current_action = ActionType.MOVE_TO
-                action.progress = 0.0
-                action.status = ActionStatus.RUNNING
-                search.result_entity = None
+                # 视野内无目标
+                # 对于饮水任务，直接失败以便回退到背包水源
+                if task.task == TaskType.DRINK_WATER:
+                    self._fail_search(action, task, search)
+                else:
+                    # 随机走一步扩大搜索范围
+                    roam_x = space.x + random.randint(-3, 3)
+                    roam_y = space.y + random.randint(-3, 3)
+                    roam_x = max(0, min(99, roam_x))
+                    roam_y = max(0, min(99, roam_y))
+                    
+                    action.target_pos = (roam_x, roam_y)
+                    action.current_action = ActionType.MOVE_TO
+                    action.progress = 0.0
+                    action.status = ActionStatus.RUNNING
+                    search.result_entity = None
 
     def _resolve_target_component(self, task: TaskComponent):
         """根据当前任务类型解析需要搜索的目标组件类型"""
@@ -117,9 +127,14 @@ class SearchSystem(System):
         return None
 
     def _fail_search(self, action: ActionComponent, task: TaskComponent, search: SearchComponent):
-        """失败处理：只重置当前动作，保留队列"""
+        """失败处理：重置当前动作，移除队列中冗余的搜索/移动步骤，保留最终交互动作"""
         action.current_action = ActionType.IDLE
         action.status = ActionStatus.FAILED
         action.progress = 0.0
+        action.target_pos = None
+        action.target_entity = None
+        # 移除队列前端的 SEARCH/MOVE_TO，保留最终的 EAT/DRINK/SOCIALIZE 等
+        while action.action_queue and action.action_queue[0] in (ActionType.SEARCH, ActionType.MOVE_TO):
+            action.action_queue.pop(0)
         task.status = TaskStatus.FAILED
         search.result_entity = None
