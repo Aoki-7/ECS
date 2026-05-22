@@ -1,516 +1,191 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-@文件: weather_event_system.py
-@说明:
-    极端天气诊断系统
+物理异常检测系统
 
-设计思想：
---------------------------------------------------------
+旧系统：预定义事件类型（台风/暴雪/热浪...）+ 固定阈值检测
+新系统：滑动窗口统计 + 实时偏离检测
 
-旧系统：
-    概率生成事件
-        ↓
-    事件修改天气
+核心思想：
+- 维护每个物理量的近期历史统计（均值、标准差）
+- 当 |当前值 - 均值| > N * 标准差 时标记为异常
+- 异常标签由物理量名称自动生成，无预设枚举
+- 异常存在时间由物理异常持续时长决定
 
-新系统：
-    物理天气自然演化
-        ↓
-    系统检测异常模式
-        ↓
-    推导天气事件
-        ↓
-    创建诊断事件实体
-
-即：
-
-    physics field -> diagnose -> event
-
-而不是：
-
-    random event -> modify weather
-
---------------------------------------------------------
-
-该系统职责：
-1. 从 PhysicalWeatherComponent 中识别极端天气
-2. 创建 WeatherEventDiagnosticComponent
-3. 管理事件生命周期
-4. 避免重复生成相同事件
-5. 提供灾害/NPC/UI系统事件源
-
-注意：
---------------------------------------------------------
-该系统：
-
-不直接修改天气物理量。
+不修改任何天气物理量，只作诊断记录。
 """
 
 from __future__ import annotations
 
-from typing import Optional
+import math
+from collections import deque
+from typing import Dict, List, Optional, Tuple
 
 from core.system import System
 from core.world import World
 
-from time_module.time_component import TimeComponent
-
 from environment.physics_weather.components.physical_weather_component import (
     PhysicalWeatherComponent,
 )
-
 from environment.physics_weather.components.weather_event_components import (
-    EventPhase,
-    WeatherEventDiagnosticComponent,
-    WeatherEventLifecycleComponent,
-    WeatherEventSeverityComponent,
-    WeatherEventSourceComponent,
-    WeatherEventSourceType,
-    WeatherEventType,
+    PhysicalAnomalyComponent,
+    AnomalyStatisticsComponent,
 )
 
-from environment.physics_weather.utils.weather_classifier import (
-    classify_from_component,
-)
-
-
-# ============================================================
-# 极端天气诊断系统
-# ============================================================
 
 class WeatherEventSystem(System):
     """
-    极端天气事件诊断系统
+    物理异常检测系统
+
+    跟踪天气物理量的统计分布，识别偏离历史常态的时段。
     """
 
+    # 滑动窗口大小（样本数）
+    WINDOW_SIZE: int = 720  # 约30天（每小时一个样本）
+
+    # 异常判定阈值（偏离几个标准差）
+    ANOMALY_THRESHOLD_SIGMA: float = 2.5
+
+    # 异常结束阈值（回到几个标准差内）
+    END_THRESHOLD_SIGMA: float = 1.5
+
+    # 最小持续时间（小时）才创建记录
+    MIN_DURATION_HOURS: float = 3.0
+
     def __init__(self):
+        self._next_anomaly_id = 1
 
-        self._next_event_id = 1
+        # 每个物理量的历史滑动窗口
+        self._history: Dict[str, deque] = {
+            "temperature": deque(maxlen=self.WINDOW_SIZE),
+            "pressure": deque(maxlen=self.WINDOW_SIZE),
+            "wind_speed": deque(maxlen=self.WINDOW_SIZE),
+            "precipitation_rate": deque(maxlen=self.WINDOW_SIZE),
+            "relative_humidity": deque(maxlen=self.WINDOW_SIZE),
+            "cloud_cover": deque(maxlen=self.WINDOW_SIZE),
+        }
 
-    # ========================================================
-    # update
-    # ========================================================
+        # 当前活跃异常：variable -> entity_id
+        self._active_anomalies: Dict[str, int] = {}
 
-    def update(
-        self,
-        world: World,
-        delta_hours: float,
-    ):
-
-        weather = world._world_entity.get_component(
-            PhysicalWeatherComponent
-        )
-
+    def update(self, world: World, delta_hours: float):
+        weather = world._world_entity.get_component(PhysicalWeatherComponent)
         if weather is None:
             return
 
-        current_time = world.get_time()
+        current_time = world.get_time().total_hours
 
-        # ----------------------------------------------------
-        # 1. 更新生命周期
-        # ----------------------------------------------------
+        # 当前物理量快照
+        snapshot = {
+            "temperature": weather.temperature,
+            "pressure": weather.pressure,
+            "wind_speed": weather.wind_speed,
+            "precipitation_rate": weather.precipitation_rate,
+            "relative_humidity": weather.relative_humidity,
+            "cloud_cover": weather.cloud_cover,
+        }
 
-        self._update_lifecycles(
-            world,
-            delta_hours,
-        )
+        # 更新历史窗口并检测异常
+        for variable, value in snapshot.items():
+            history = self._history[variable]
+            history.append(value)
 
-        # ----------------------------------------------------
-        # 2. 检测天气事件
-        # ----------------------------------------------------
+            # 窗口足够大时才做统计检测
+            if len(history) < 48:  # 至少2天数据
+                continue
 
-        detected_event = self._detect_event(
-            weather=weather,
-            world=world,
-        )
+            mean = sum(history) / len(history)
+            variance = sum((x - mean) ** 2 for x in history) / len(history)
+            std = math.sqrt(variance) if variance > 0 else 1.0
 
-        if detected_event is None:
-            return
+            # 防止 std 过小导致噪声触发
+            std = max(std, abs(mean) * 0.05 + 0.01)
 
-        event_type, severity = detected_event
+            deviation = abs(value - mean)
+            sigma = deviation / std
 
-        # ----------------------------------------------------
-        # 3. 检查是否已存在同类事件
-        # ----------------------------------------------------
+            has_active = variable in self._active_anomalies
 
-        if self._has_active_event(
-            world,
-            event_type,
-        ):
-            return
+            if not has_active and sigma > self.ANOMALY_THRESHOLD_SIGMA:
+                # 新异常开始
+                entity = world.create_entity()
+                anomaly_id = self._allocate_anomaly_id()
 
-        # ----------------------------------------------------
-        # 4. 创建诊断事件
-        # ----------------------------------------------------
+                severity = min(1.0, (sigma - self.ANOMALY_THRESHOLD_SIGMA) / 2.0)
 
-        self._create_event(
-            world=world,
-            event_type=event_type,
-            severity=severity,
-            current_hour=current_time.total_hours,
-        )
-
-    # ========================================================
-    # 检测事件
-    # ========================================================
-
-    def _detect_event(
-        self,
-        weather: PhysicalWeatherComponent,
-        world: World,
-    ) -> Optional[tuple]:
-
-        temp = weather.temperature
-        humidity = weather.relative_humidity
-        pressure = weather.pressure
-        rain = weather.precipitation_rate
-        wind = weather.wind_speed
-        cloud = weather.cloud_cover
-
-        # ----------------------------------------------------
-        # 台风
-        # ----------------------------------------------------
-
-        if (
-            pressure <= 970
-            and wind >= 28
-            and humidity >= 0.85
-        ):
-
-            severity = min(
-                1.0,
-                (
-                    (1000 - pressure) / 50
-                    + wind / 60
-                ) * 0.5
-            )
-
-            return (
-                WeatherEventType.TYPHOON,
-                severity,
-            )
-
-        # ----------------------------------------------------
-        # 暴雪
-        # ----------------------------------------------------
-
-        if (
-            temp <= -2
-            and rain >= 5
-            and cloud >= 0.8
-        ):
-
-            severity = min(
-                1.0,
-                abs(temp) / 20 + rain / 50
-            )
-
-            return (
-                WeatherEventType.SNOWSTORM,
-                severity,
-            )
-
-        # ----------------------------------------------------
-        # 暴雨
-        # ----------------------------------------------------
-
-        if (
-            rain >= 20
-            and humidity >= 0.9
-        ):
-
-            severity = min(
-                1.0,
-                rain / 100
-            )
-
-            return (
-                WeatherEventType.STORM,
-                severity,
-            )
-
-        # ----------------------------------------------------
-        # 热浪
-        # ----------------------------------------------------
-
-        if (
-            temp >= 35
-            and humidity <= 0.6
-        ):
-
-            severity = min(
-                1.0,
-                (temp - 35) / 15
-            )
-
-            return (
-                WeatherEventType.HEAT_WAVE,
-                severity,
-            )
-
-        # ----------------------------------------------------
-        # 寒潮
-        # ----------------------------------------------------
-
-        if (
-            temp <= -10
-            and wind >= 8
-        ):
-
-            severity = min(
-                1.0,
-                abs(temp + 10) / 20
-            )
-
-            return (
-                WeatherEventType.COLD_WAVE,
-                severity,
-            )
-
-        # ----------------------------------------------------
-        # 干旱
-        # ----------------------------------------------------
-
-        if (
-            humidity <= 0.2
-            and rain <= 0.01
-            and cloud <= 0.2
-            and temp >= 28
-        ):
-
-            severity = min(
-                1.0,
-                (
-                    (28 - humidity * 100)
-                    / 50
+                world.add_component(
+                    entity,
+                    PhysicalAnomalyComponent(
+                        anomaly_id=anomaly_id,
+                        variable=variable,
+                        current_value=value,
+                        baseline_value=mean,
+                        baseline_std=std,
+                        deviation_sigma=sigma,
+                        start_hour=current_time,
+                        duration_hours=0.0,
+                        severity=severity,
+                    )
                 )
-            )
-
-            return (
-                WeatherEventType.DROUGHT,
-                severity,
-            )
-
-        return None
-
-    # ========================================================
-    # 是否存在同类事件
-    # ========================================================
-
-    def _has_active_event(
-        self,
-        world: World,
-        event_type: WeatherEventType,
-    ) -> bool:
-
-        events = world.get_components(
-            WeatherEventDiagnosticComponent
-        )
-
-        for entity, comps in events:
-
-            comp: WeatherEventDiagnosticComponent = comps[0]
-
-            if comp.event_type == event_type:
-                return True
-
-        return False
-
-    # ========================================================
-    # 创建事件
-    # ========================================================
-
-    def _create_event(
-        self,
-        world: World,
-        event_type: WeatherEventType,
-        severity: float,
-        current_hour: float,
-    ):
-
-        event_id = self._allocate_event_id()
-
-        entity = world.create_entity()
-
-        # ----------------------------------------------------
-        # 诊断组件
-        # ----------------------------------------------------
-
-        entity.add_component(
-
-            WeatherEventDiagnosticComponent(
-                event_id=event_id,
-                event_type=event_type,
-                severity=severity,
-                confidence=1.0,
-                detected_hour=current_hour,
-            )
-        )
-
-        # ----------------------------------------------------
-        # 生命周期
-        # ----------------------------------------------------
-
-        duration = self._estimate_duration(
-            event_type,
-            severity,
-        )
-
-        entity.add_component(
-
-            WeatherEventLifecycleComponent(
-                event_id=event_id,
-                total_duration_hours=duration,
-                remaining_hours=duration,
-                phase=EventPhase.FORMING,
-            )
-        )
-
-        # ----------------------------------------------------
-        # 严重等级
-        # ----------------------------------------------------
-
-        entity.add_component(
-
-            WeatherEventSeverityComponent(
-                event_id=event_id,
-                severity=severity,
-                category=self._severity_to_category(
-                    severity
-                ),
-                damage_multiplier=1.0 + severity,
-                emergency_level=int(
-                    severity * 5
-                ),
-            )
-        )
-
-        # ----------------------------------------------------
-        # 来源组件
-        # ----------------------------------------------------
-
-        entity.add_component(
-
-            WeatherEventSourceComponent(
-                event_id=event_id,
-                source_type=WeatherEventSourceType.NATURAL,
-            )
-        )
-
-        print(
-            f"[WeatherEvent] "
-            f"{event_type.value} "
-            f"severity={severity:.2f} "
-            f"duration={duration:.1f}h"
-        )
-
-    # ========================================================
-    # 生命周期更新
-    # ========================================================
-
-    def _update_lifecycles(
-        self,
-        world: World,
-        delta_hours: float,
-    ):
-
-        events = list(
-            world.get_components(
-                WeatherEventLifecycleComponent
-            )
-        )
-
-        for entity, comps in events:
-
-            lifecycle: WeatherEventLifecycleComponent = comps[0]
-
-            lifecycle.remaining_hours -= delta_hours
-
-            progress = lifecycle.normalized_age
-
-            # ------------------------------------------------
-            # 生命周期阶段
-            # ------------------------------------------------
-
-            if progress < 0.2:
-                lifecycle.phase = EventPhase.FORMING
-
-            elif progress < 0.7:
-                lifecycle.phase = EventPhase.MATURE
-
-            elif progress < 1.0:
-                lifecycle.phase = EventPhase.DECAYING
-
-            else:
-                lifecycle.phase = EventPhase.DISSIPATED
-
-            # ------------------------------------------------
-            # 删除结束事件
-            # ------------------------------------------------
-
-            if lifecycle.expired:
-
-                world.remove_entity(entity)
-
-    # ========================================================
-    # duration 估计
-    # ========================================================
-
-    def _estimate_duration(
-        self,
-        event_type: WeatherEventType,
-        severity: float,
-    ) -> float:
-
-        base = {
-
-            WeatherEventType.STORM: 12,
-
-            WeatherEventType.TYPHOON: 72,
-
-            WeatherEventType.HEAT_WAVE: 120,
-
-            WeatherEventType.COLD_WAVE: 96,
-
-            WeatherEventType.DROUGHT: 240,
-
-            WeatherEventType.SNOWSTORM: 48,
-
-        }.get(event_type, 24)
-
-        return base * (0.5 + severity)
-
-    # ========================================================
-    # severity -> category
-    # ========================================================
-
-    def _severity_to_category(
-        self,
-        severity: float,
-    ) -> int:
-
-        if severity < 0.2:
-            return 1
-
-        if severity < 0.4:
-            return 2
-
-        if severity < 0.6:
-            return 3
-
-        if severity < 0.8:
-            return 4
-
-        return 5
-
-    # ========================================================
-    # event id
-    # ========================================================
-
-    def _allocate_event_id(self) -> int:
-
-        eid = self._next_event_id
-
-        self._next_event_id += 1
-
-        return eid
+                world.add_component(
+                    entity,
+                    AnomalyStatisticsComponent(
+                        anomaly_id=anomaly_id,
+                        max_value=value,
+                        min_value=value,
+                        peak_severity=severity,
+                    )
+                )
+
+                self._active_anomalies[variable] = entity.id
+
+                print(
+                    f"[Anomaly] {variable}="
+                    f"{value:.2f} deviated {sigma:.2f}σ "
+                    f"(baseline={mean:.2f}±{std:.2f}) "
+                    f"severity={severity:.2f}"
+                )
+
+            elif has_active:
+                entity_id = self._active_anomalies[variable]
+                entity = world.query_entity(entity_id)
+
+                if entity is None:
+                    del self._active_anomalies[variable]
+                    continue
+
+                anomaly = world.get_component(entity, PhysicalAnomalyComponent)
+                stats = world.get_component(entity, AnomalyStatisticsComponent)
+
+                if anomaly is None:
+                    del self._active_anomalies[variable]
+                    continue
+
+                if sigma < self.END_THRESHOLD_SIGMA:
+                    # 异常结束
+                    if anomaly.duration_hours >= self.MIN_DURATION_HOURS:
+                        print(
+                            f"[AnomalyEnd] {variable} lasted "
+                            f"{anomaly.duration_hours:.1f}h, "
+                            f"peak={stats.peak_severity:.2f}"
+                        )
+                    world.remove_entity(entity)
+                    del self._active_anomalies[variable]
+                else:
+                    # 异常持续，更新状态
+                    anomaly.current_value = value
+                    anomaly.duration_hours += delta_hours
+                    anomaly.deviation_sigma = sigma
+                    anomaly.severity = min(
+                        1.0, (sigma - self.ANOMALY_THRESHOLD_SIGMA) / 2.0
+                    )
+
+                    if stats is not None:
+                        stats.max_value = max(stats.max_value, value)
+                        stats.min_value = min(stats.min_value, value)
+                        stats.peak_severity = max(stats.peak_severity, anomaly.severity)
+
+    def _allocate_anomaly_id(self) -> int:
+        aid = self._next_anomaly_id
+        self._next_anomaly_id += 1
+        return aid

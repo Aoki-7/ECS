@@ -31,7 +31,6 @@ from time_module.time_system import TimeSystem
 
 # 环境系统
 from environment.config.environment_builder import EnvironmentBuilder
-from environment.environment_component import EnvironmentComponent
 
 # 人类系统
 from human.systems.social.social_system import SocialSystem
@@ -92,9 +91,6 @@ class SimulationLoop:
 
     def __init__(self, world: World):
         self.world = world
-
-        # 添加世界级环境组件，确保环境系统可读取数据
-        self.world.get_world_entity().add_component(EnvironmentComponent())
 
         # 获取空间系统引用
         # 获取SpaceSystem引用

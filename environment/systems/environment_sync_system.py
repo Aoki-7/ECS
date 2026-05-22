@@ -76,39 +76,51 @@ class EnvironmentSyncSystem(System):
         # 降水速率 mm/h → mm/day (24小时累加)
         rainfall_mm_day = weather.precipitation_rate * 24.0
 
-        # ── 遍历所有单元格 ──
+        # ── 同步 world_entity 的环境组件（供人类/生物系统读取） ──
+        world_env = world.get_environment()
+        if world_env is not None:
+            self._sync_env(world_env, weather, vpd_kpa, cloud_par, effective_diurnal_range,
+                          rainfall_mm_day, hour, delta_hours)
+
+        # ── 遍历所有普通单元格实体 ──
         for entity, (env,) in world.get_components(EnvironmentComponent):
             env: EnvironmentComponent
+            self._sync_env(env, weather, vpd_kpa, cloud_par, effective_diurnal_range,
+                          rainfall_mm_day, hour, delta_hours)
 
-            # 温度
-            env.air_temperature = weather.temperature
+    def _sync_env(self, env: EnvironmentComponent, weather, vpd_kpa: float,
+                  cloud_par: float, effective_diurnal_range: float,
+                  rainfall_mm_day: float, hour: float, delta_hours: float):
+        """将天气数据同步到单个 EnvironmentComponent"""
+        # 温度
+        env.air_temperature = weather.temperature
 
-            # 土壤温度（一阶滞后，缓慢跟随气温）
-            env.soil_temperature = env.soil_temperature * 0.95 + weather.temperature * 0.05
+        # 土壤温度（一阶滞后，缓慢跟随气温）
+        env.soil_temperature = env.soil_temperature * 0.95 + weather.temperature * 0.05
 
-            # 昼夜温差
-            env.day_night_temp_diff = effective_diurnal_range
+        # 昼夜温差
+        env.day_night_temp_diff = effective_diurnal_range
 
-            # 湿度
-            env.air_humidity = weather.relative_humidity
-            env.vpd = vpd_kpa
+        # 湿度
+        env.air_humidity = weather.relative_humidity
+        env.vpd = vpd_kpa
 
-            # 光照
+        # 光照
+        env.par = cloud_par
+
+        # 光周期（从时间系统获取）
+        # 简化：日出(~6:00)到日落(~18:00)
+        env.photoperiod = 12.0
+        if 6 <= hour < 18:
             env.par = cloud_par
+        else:
+            env.par = max(5.0, cloud_par * 0.02)  # 夜间极低
 
-            # 光周期（从时间系统获取）
-            # 简化：日出(~6:00)到日落(~18:00)
-            env.photoperiod = 12.0
-            if 6 <= hour < 18:
-                env.par = cloud_par
-            else:
-                env.par = max(5.0, cloud_par * 0.02)  # 夜间极低
+        # 日累计光量（增量累加）
+        env.dli += env.par * delta_hours * 0.0036  # μmol/m²/s * h → mol/m²/day
 
-            # 日累计光量（增量累加）
-            env.dli += env.par * delta_hours * 0.0036  # μmol/m²/s * h → mol/m²/day
+        # 风速
+        env.wind_speed = weather.wind_speed
 
-            # 风速
-            env.wind_speed = weather.wind_speed
-
-            # 降水 (mm/day)
-            env.rainfall = rainfall_mm_day
+        # 降水 (mm/day)
+        env.rainfall = rainfall_mm_day

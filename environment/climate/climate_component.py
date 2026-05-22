@@ -1,39 +1,36 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+气候组件 — 长期趋势版
 
-
-
+不再使用 ENSO 等硬编码相位。
+所有气候波动由 Ornstein-Uhlenbeck 随机过程驱动，
+模拟自然的长期记忆性和均值回归特性。
+"""
 
 from dataclasses import dataclass
-
 from core.component import Component
 
-
-"""
-控制长期气候波动：
-
-例如：
-
-厄尔尼诺
-小冰期
-湿润周期
-干旱周期
-
-它只影响 气候基线。
-
-ElNino
-LaNina
-Neutral
-"""
 
 @dataclass
 class ClimateComponent(Component):
     """
-    长期气候基线（10-100年）
+    气候趋势组件
 
-    决定地区整体气候类型
+    存储长期气候趋势的当前值，由 ClimateSystem 通过
+    Ornstein-Uhlenbeck 过程更新。
     """
-    mean_temp: float = 15.0
-    humidity_bias: float = 0.0
-    rainfall_bias: float = 0.0
 
-    climate_phase: str  = "Neutral"
-    phase_remaining_days: float = 0.0
+    # 温度长期趋势 (°C)
+    temp_trend: float = 0.0
+
+    # 湿度长期趋势 (0-1 偏置)
+    humidity_trend: float = 0.0
+
+    # 降雨长期趋势 (乘数)
+    rainfall_trend: float = 1.0
+
+    # 内部状态：OU 过程的当前速度
+    _temp_velocity: float = 0.0
+    _humidity_velocity: float = 0.0
+    _rainfall_velocity: float = 0.0

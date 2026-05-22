@@ -81,6 +81,7 @@ from environment.physics_weather.config.physics_constants import (
     saturation_vapor_pressure,
 )
 from environment.season.season_component import SeasonComponent
+from environment.season.season_state import seasonal_insolation_factor, earth_sun_distance_factor
 from environment.climate.climate_component import ClimateComponent
 
 
@@ -119,28 +120,30 @@ class PhysicalWeatherSystem(System):
         season_comp = world._world_entity.get_component(SeasonComponent)
         climate_comp = world._world_entity.get_component(ClimateComponent)
 
-        # 获取季节信息（可选耦合）
-        season_offset = 0.0
-        season_rainfall_factor = 1.0
-        if season_comp is not None:
-            season_offset = season_comp.temperature_offset
-            season_rainfall_factor = season_comp.rainfall_factor
-
-        # 获取气候偏移（长期气候波动，可选耦合）
-        climate_temp_bias = 0.0
-        climate_humidity_bias = 0.0
-        climate_rainfall_bias = 0.0
-        if climate_comp is not None:
-            climate_temp_bias = getattr(climate_comp, 'mean_temp', 0.0) - 15.0
-            climate_humidity_bias = getattr(climate_comp, 'humidity_bias', 0.0)
-            climate_rainfall_bias = getattr(climate_comp, 'rainfall_bias', 0.0)
-
-        # 综合偏移：季节 + 气候
-        total_temp_offset = season_offset + climate_temp_bias
-        total_rainfall_factor = season_rainfall_factor * (1.0 + climate_rainfall_bias)
-
+        # 天文参数计算（替代硬编码季节偏移）
         hour = time.hour
         day_of_year = time.day_of_year
+
+        # 季节辐射因子：由太阳赤纬角和纬度实时计算，夏至≈1，冬至≈-1
+        seasonal_factor = seasonal_insolation_factor(day_of_year, self.latitude)
+        # 日地距离因子：近日点辐射稍强，远日点稍弱
+        distance_factor = earth_sun_distance_factor(day_of_year)
+
+        # 气候趋势（OU 过程驱动，替代硬编码 ENSO 相位）
+        climate_temp_bias = 0.0
+        climate_humidity_bias = 0.0
+        climate_rainfall_factor = 1.0
+        if climate_comp is not None:
+            climate_temp_bias = climate_comp.temp_trend
+            climate_humidity_bias = climate_comp.humidity_trend
+            climate_rainfall_factor = climate_comp.rainfall_trend
+
+        # 综合季节-气候温度偏移
+        total_temp_offset = (
+            SEASONAL_TEMP_AMPLITUDE * seasonal_factor * distance_factor
+            + climate_temp_bias
+        )
+        total_rainfall_factor = climate_rainfall_factor
 
         # =
         # 1️⃣ 温度演化
@@ -188,21 +191,18 @@ class PhysicalWeatherSystem(System):
         weather: PhysicalWeatherComponent,
         hour: float,
         day_of_year: int,
-        season_offset: float,
+        temp_offset: float,
         delta_hours: float,
     ):
         """
-        温度演化：日循环 + 季节偏置 + 云量阻尼 + 噪声
+        温度演化：日循环 + 天文季节偏置 + 云量阻尼 + 噪声
 
-        【🟡 改进 #12】日较差动态化：
-        - 季节因子：夏季日较差大，冬季小
-        - 纬度因子：中纬度日较差大，赤道/极地小
-        - 雪盖因子：积雪覆盖显著减小日较差
-        - 云量阻尼：厚云减少日间升温
+        季节温度偏移由太阳赤纬角和日地距离实时计算，
+        不再依赖预定义的春夏秋冬枚举。
         """
 
-        # 基准温度：季节偏置
-        base_temp = 18.0 + season_offset
+        # 基准温度：天文推导的季节偏移
+        base_temp = 18.0 + temp_offset
 
         # 日循环：正弦波，峰值在 14:00，谷值在 5:00
         hour_angle = 2.0 * math.pi * (hour - DIURNAL_PEAK_HOUR) / 24.0
@@ -332,14 +332,7 @@ class PhysicalWeatherSystem(System):
             from environment.soil.components.soil_moisture_component import (
                 SoilMoistureComponent,
             )
-            # 尝试获取 world entity 上的土壤湿度组件
-            world_entity = None
-            soil_moisture = None
-            # 通过内省获取世界实体上的组件
-            if hasattr(weather, '_world_entity'):
-                world_entity = getattr(weather, '_world_entity')
-            if world_entity is not None:
-                soil_moisture = world_entity.get_component(SoilMoistureComponent)
+            soil_moisture = world._world_entity.get_component(SoilMoistureComponent)
 
             if soil_moisture is not None and soil_moisture.moisture > 0.01:
                 # 土壤蒸发回馈率 = 基础率 * 土壤湿度比 * 风速增强

@@ -1,255 +1,50 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-@文件: weather_lifecycle_system.py
-@说明:
-    极端天气生命周期管理系统（Physics Weather Version）
+物理异常生命周期管理（精简版）
 
-职责：
---------------------------------------------------------
+旧系统：管理事件阶段切换（FORMING/MATURE/DECAYING/DISSIPATED）
+新系统：只清理持续时间过长或实体已失效的异常记录
 
-1. 更新天气事件生命周期
-2. 管理事件阶段切换
-3. 清理结束事件
-4. 输出事件演化日志
-5. 支持长期持续事件保护
-6. 支持未来事件链扩展
-
-设计原则：
---------------------------------------------------------
-
-旧系统：
-    事件 == 天气修改器
-
-新系统：
-    事件 == 物理天气诊断结果
-
-因此：
-    本系统只管理“事件实体”
-
-不负责：
-    修改天气物理场
-
---------------------------------------------------------
+异常的存在/结束完全由物理量是否回归常态决定，
+不需要人工定义生命周期阶段。
 """
-
-from __future__ import annotations
-
-from typing import Optional
-from typing import Set
 
 from core.system import System
 from core.world import World
 
 from environment.physics_weather.components.weather_event_components import (
-    EventPhase,
-    WeatherEventDiagnosticComponent,
-    WeatherEventLifecycleComponent,
+    PhysicalAnomalyComponent,
 )
 
 
-# ============================================================
-# 生命周期系统
-# ============================================================
-
 class WeatherLifetimeSystem(System):
     """
-    天气事件生命周期系统
+    异常生命周期系统
+
+    仅做两件事：
+    1. 清理持续时间超过上限的异常（防止无限累积）
+    2. 清理实体已失效的异常引用
     """
 
-    def __init__(
+    # 异常最大持续时间（小时），超过自动清理
+    MAX_ANOMALY_DURATION_HOURS: float = 720.0  # 30天
 
-        self,
+    def update(self, world: World, delta_hours: float):
+        expired = []
 
-        protected_event_types: Optional[Set[str]] = None,
+        for entity, (anomaly,) in world.get_components(PhysicalAnomalyComponent):
+            anomaly: PhysicalAnomalyComponent
 
-        enable_log: bool = True,
-    ):
+            # 持续时间检查
+            if anomaly.duration_hours > self.MAX_ANOMALY_DURATION_HOURS:
+                expired.append(entity)
+                continue
 
-        # 不自动清理的事件
-        self.protected_event_types = (
-            protected_event_types or set()
-        )
+            # 实体有效性检查（已由异常检测系统处理大部分）
+            if not world.has_entity(entity):
+                expired.append(entity)
 
-        self.enable_log = enable_log
-
-    # ========================================================
-    # update
-    # ========================================================
-
-    def update(
-        self,
-        world: World,
-        delta_hours: float,
-    ):
-
-        entities = list(
-
-            world.get_components(
-
-                WeatherEventDiagnosticComponent,
-                WeatherEventLifecycleComponent,
-            )
-        )
-
-        for entity, comps in entities:
-
-            diagnostic = comps[0]
-            lifecycle = comps[1]
-
-            diagnostic: WeatherEventDiagnosticComponent
-            lifecycle: WeatherEventLifecycleComponent
-
-            # ------------------------------------------------
-            # 生命周期推进
-            # ------------------------------------------------
-
-            lifecycle.remaining_hours -= delta_hours
-
-            if lifecycle.remaining_hours < 0:
-                lifecycle.remaining_hours = 0
-
-            # ------------------------------------------------
-            # 生命周期阶段更新
-            # ------------------------------------------------
-
-            self._update_phase(
-                lifecycle
-            )
-
-            # ------------------------------------------------
-            # 生命周期日志
-            # ------------------------------------------------
-
-            self._log_phase(
-                diagnostic,
-                lifecycle,
-            )
-
-            # ------------------------------------------------
-            # 是否结束
-            # ------------------------------------------------
-
-            if lifecycle.expired:
-
-                if (
-                    diagnostic.event_type.value
-                    in self.protected_event_types
-                ):
-
-                    if self.enable_log:
-
-                        print(
-                            "[WeatherLifetimeSystem] "
-                            f"事件 {diagnostic.label} "
-                            "已结束但受保护，不自动清理"
-                        )
-
-                    continue
-
-                self._cleanup_entity(
-                    world=world,
-                    entity=entity,
-                    diagnostic=diagnostic,
-                )
-
-    # ========================================================
-    # phase update
-    # ========================================================
-
-    def _update_phase(
-        self,
-        lifecycle: WeatherEventLifecycleComponent,
-    ):
-
-        progress = lifecycle.normalized_age
-
-        old_phase = lifecycle.phase
-
-        # ----------------------------------------------------
-        # 生命周期阶段
-        # ----------------------------------------------------
-
-        if progress < 0.15:
-
-            lifecycle.phase = EventPhase.FORMING
-
-        elif progress < 0.70:
-
-            lifecycle.phase = EventPhase.MATURE
-
-        elif progress < 1.0:
-
-            lifecycle.phase = EventPhase.DECAYING
-
-        else:
-
-            lifecycle.phase = EventPhase.DISSIPATED
-
-        # ----------------------------------------------------
-        # 强度进度
-        # ----------------------------------------------------
-
-        if progress < 0.5:
-
-            lifecycle.intensity_progress = (
-                progress / 0.5
-            )
-
-        else:
-
-            lifecycle.intensity_progress = (
-                1.0 - (progress - 0.5) / 0.5
-            )
-
-        lifecycle.intensity_progress = max(
-            0.0,
-            min(
-                1.0,
-                lifecycle.intensity_progress
-            )
-        )
-
-        return old_phase != lifecycle.phase
-
-    # ========================================================
-    # 日志
-    # ========================================================
-
-    def _log_phase(
-        self,
-        diagnostic: WeatherEventDiagnosticComponent,
-        lifecycle: WeatherEventLifecycleComponent,
-    ):
-
-        if not self.enable_log:
-            return
-
-        print(
-            "[WeatherLifetimeSystem] "
-            f"{diagnostic.label:<6s} | "
-            f"phase={lifecycle.phase.value:<10s} | "
-            f"remaining={lifecycle.remaining_hours:7.1f}h | "
-            f"intensity={lifecycle.intensity_progress:.2f}"
-        )
-
-    # ========================================================
-    # cleanup
-    # ========================================================
-
-    def _cleanup_entity(
-        self,
-        world: World,
-        entity,
-        diagnostic: WeatherEventDiagnosticComponent,
-    ):
-
-        if self.enable_log:
-
-            print(
-                "[WeatherLifetimeSystem] "
-                f"天气事件结束: "
-                f"{diagnostic.label}"
-            )
-
-        world.remove_entity(entity)
+        for entity in expired:
+            if world.has_entity(entity):
+                world.remove_entity(entity)

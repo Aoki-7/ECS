@@ -12,24 +12,24 @@
     Layer 1: 外部强迫
         0. SolarPositionSystem     Time → 太阳位置 (高度角, 方位角, 昼长)
         1. SolarRadiationSystem    太阳位置 → 大气顶辐射 (TOA)
-        2. SeasonSystem            Time → 季节偏置 (温度/降雨/日照因子)
-        3. ClimateSystem           Time → 气候偏移 (ENSO相位, 湿度/降雨偏置)
+        2. SeasonSystem            Time → 年份进度（无固定季节枚举）
+        3. ClimateSystem           Time → 气候趋势 (OU 随机过程)
 
     Layer 2: 大气物理
-        4. PhysicalWeatherSystem   季节+气候+太阳 → 连续天气物理量
+        4. PhysicalWeatherSystem   天文参数+气候趋势 → 连续天气物理量
         5. AtmosphereCouplingSystem 云量+湿度+气溶胶 → 光学散射参数
         6. LightFieldSystem        TOA辐射+散射 → 地表光照 (直射/散射)
 
-    Layer 3: 极端事件 (覆盖层)
-        7. WeatherModifierBridgeSystem   极端事件 modifier → 天气物理量叠加
-        8. WeatherEventSystem           天气状态 → 极端事件创建
-        9. WeatherLifetimeSystem        过期事件清理
+    Layer 3: 异常检测 (覆盖层)
+        7. [预留] WeatherModifierBridgeSystem
+        8. WeatherEventSystem      物理量统计 → 异常检测（无预定义事件类型）
+        9. WeatherLifetimeSystem   异常记录清理
 
     Layer 4: 地表层
        10. SoilTemperatureSystem    天气温度 → 土壤温度
        11. SoilWaterBalanceSystem   天气降水 → 土壤水分
        12. SoilSystem               环境温度 → 土壤养分/pH
-       13. EnvironmentSyncSystem    天气+光照 → 单元格环境 (EnvironmentComponent)
+       13. EnvironmentSyncSystem    天气+光照 → 环境组件同步
 """
 
 

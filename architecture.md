@@ -24,7 +24,8 @@ core/
 - `world.get_components(CompType1, CompType2, ...)` → 联合查询
 - `world.get_system(SystemType)` → 获取已注册的系统实例
 - `world.query_entity(eid)` → 按 ID 查询实体
-- `world.get_environment()` → 获取环境组件
+- `world.get_environment()` → 获取 world_entity 上的 EnvironmentComponent
+- `world._world_entity` → 世界级单例实体（存储全局组件）
 
 ---
 
@@ -52,12 +53,125 @@ query_radius(x, y, r)
 
 ```
 time_module/
-├── time_system.py          #  年/月/日/时 推进
-├── time_component.py       #  时间数据
-└── time_utils.py           #  辅助函数
+├── time_system.py          # 年/日/时推进，支持时间倍率
+├── time_component.py       # 时间数据（day_of_year, hour, year, total_hours）
+└── time_component_v2/v3.py # 历史版本
 ```
 
-### 2.3 人类系统 (Human)
+### 2.3 环境系统 (Environment)
+
+**设计理念：** 底层只有连续物理量的自然演化，所有离散状态（晴/雨/季节/事件）都是物理量的实时视图，不存储、不驱动逻辑。
+
+```
+environment/
+├── environment_component.py       # 全局环境数据（温度/湿度/光照/风速/降水）
+├── environment_factory.py
+├── config/
+│   ├── environment_builder.py     # 构建环境管线（15 系统 DAG）
+│   ├── environment_profile.py     # 环境配置对象
+│   └── weather_builder.py
+│
+├── light_field/                   # 光照系统
+│   ├── components/                # SolarPosition, SolarRadiation, LightScatter, SurfaceLight
+│   └── system/                    # SolarPositionSystem, SolarRadiationSystem, LightFieldSystem, LightAtmosphereCouplingSystem
+│
+├── season/                        # 季节系统 — 纯天文版
+│   ├── season_component.py        # 仅保存年份进度（无季节枚举）
+│   ├── season_state.py            # 天文计算函数（太阳赤纬角、日地距离、辐射因子）
+│   └── season_system.py           # 只推进年份进度
+│
+├── climate/                       # 气候系统 — OU 随机过程版
+│   ├── climate_component.py       # 长期趋势（temp_trend, humidity_trend, rainfall_trend）
+│   └── climate_system.py          # Ornstein-Uhlenbeck 过程驱动
+│
+├── physics_weather/               # 物理天气系统 — 核心
+│   ├── components/
+│   │   ├── physical_weather_component.py   # 6 个连续物理量（T, P, AH, RH, cloud, precip, wind）
+│   │   └── weather_event_components.py     # PhysicalAnomalyComponent（通用异常，无预定义事件类型）
+│   ├── systems/
+│   │   ├── physical_weather_system.py      # 温度/气压/湿度/云量/降水/风速 物理演化
+│   │   ├── weather_event_system.py         # 滑动窗口统计异常检测（无固定阈值）
+│   │   └── weather_lifetime_system.py      # 异常超时清理（无生命周期状态机）
+│   ├── utils/
+│   │   └── weather_classifier.py           # 纯视图层：物理量→离散标签（不影响逻辑）
+│   └── config/
+│       ├── physics_constants.py            # 物理常数与辅助函数
+│       └── weather_thresholds.py           # 分类器阈值（纯显示用）
+│
+├── soil/                          # 土壤系统
+│   ├── components/                # SoilMoisture, SoilTemperature, SoilFertility, SoilQuality
+│   └── systems/                   # SoilTemperatureSystem, SoilWaterBalanceSystem, SoilSystem
+│
+├── terrain/                       # 地形系统
+│   ├── components/                # TerrainComponent, PlateComponent, SedimentComponent
+│   └── config/                    # 地形分类器、生成器、类型定义
+│
+├── continuum/                     # 环境连续统 — 空间平滑
+│   ├── environmental_continuum_system.py   # 热扩散/湿度扩散/重力水流/风驱平流/生态自恢复
+│   └── continuum_config.py
+│
+├── atmosphere/                    # 大气系统（散射耦合）
+│   ├── components/
+│   └── system/
+│
+└── systems/
+    └── environment_sync_system.py   # PhysicalWeatherComponent → EnvironmentComponent 同步
+```
+
+#### 环境管线数据流（5 层 DAG）
+
+```
+Layer 1: 外部强迫
+    SolarPositionSystem     Time → 太阳位置 (elevation, azimuth, day_length)
+    SolarRadiationSystem    太阳位置 → 大气顶辐射 (TOA)
+    SeasonSystem            Time → 年份进度（无固定季节枚举）
+    ClimateSystem           OU 过程 → 气候趋势 (temp/humidity/rainfall trend)
+
+Layer 2: 大气物理
+    PhysicalWeatherSystem   天文参数+气候趋势 → 连续天气物理量 (T, P, RH, cloud, precip, wind)
+    LightAtmosphereCouplingSystem  云量+气溶胶 → 光学散射参数
+
+Layer 3: 辐射
+    LightFieldSystem        TOA辐射+散射 → 地表光照 (直射/散射)
+
+Layer 4: 异常检测 + 地表层
+    WeatherEventSystem      滑动窗口统计 → 物理异常检测（无预定义事件类型）
+    WeatherLifetimeSystem   异常超时清理
+    SoilTemperatureSystem   天气温度 → 土壤温度
+    SoilWaterBalanceSystem  天气降水 → 土壤水分
+    SoilSystem              环境温度 → 土壤养分/pH
+    EnvironmentSyncSystem   天气+光照 → EnvironmentComponent 同步
+
+Layer 5: 空间平滑
+    EnvironmentalContinuumSystem  相邻单元格扩散/平流/水流/自恢复
+```
+
+#### 物理天气演化机制
+
+| 物理量 | 演化机制 | 驱动因素 |
+|--------|---------|---------|
+| 温度 | 日循环(正弦波) + 天文季节因子(赤纬角×日地距离) + 云量阻尼 + 随机游走 | 太阳辐射、气候趋势 |
+| 气压 | 年周期 + 中周期(~5天天气系统) + 随机噪声 | 内在振荡 |
+| 绝对湿度 | 蒸发 - 降水消耗 + 平流回归 + 土壤蒸发回馈 | 风速、温度、土壤湿度 |
+| 相对湿度 | 从绝对湿度和温度**实时计算**（Clausius-Clapeyron） | 温度、绝对湿度 |
+| 云量 | RH滞后驱动 + 气压下降促进 + 日间太阳消散 | 相对湿度、气压梯度 |
+| 降水 | 云量+RH超阈值触发，正比于超出量，消耗水汽自抑制 | 云量、湿度 |
+| 风速 | 气压梯度驱动 + 季节基线 + 随机回归 | 气压异常 |
+
+#### 异常检测机制（替代旧事件系统）
+
+```
+旧系统：预定义事件类型（台风/暴雪/热浪...）+ 固定阈值
+新系统：滑动窗口统计 + 实时偏离检测
+
+维护每个物理量的 720 样本滑动窗口（约30天）
+    → 计算均值 μ 和标准差 σ
+    → 当 |当前值 - μ| > 2.5σ 时创建异常记录
+    → 当偏离回到 1.5σ 内时结束异常
+    → 异常标签 = "{物理量}_{high/low}"（无预定义类型）
+```
+
+### 2.4 人类系统 (Human)
 
 ```
 human/
@@ -88,6 +202,7 @@ human/
 │   │   └── decision_system.py    # 高层决策
 │   ├── physiological/      # 生理层
 │   │   ├── physiology_needs_system.py  # 每步更新: 饥饿+8/h, 口渴+12/h, 能量-7/h(耦合项)
+│   │   │                          # 环境耦合：干热加剧口渴，极端温度消耗能量
 │   │   └── health_system.py            # 健康状态
 │   └── social/             # 社交层
 │       ├── social_system.py
@@ -100,7 +215,7 @@ human/
 └── human_factory.py        # 创建人类: 实体+组件+初始水壶
 ```
 
-### 2.4 资源系统 (Resource)
+### 2.5 资源系统 (Resource)
 
 ```
 resource/
@@ -109,27 +224,10 @@ resource/
 │   ├── food_factory.py                # 创建食物实体
 │   └── food_types.py
 ├── water/
-│   ├── components/water_component.py  # WaterComponent(amount, temperature, purity)
+│   ├── components/water_component.py  # WaterComponent(amount, max_amount, temperature, purity)
 │   └── water_factory.py               # 创建水源实体
 └── components/
     └── resource_component.py          # ResourceComponent(resource_type, amount)
-```
-
-### 2.5 环境系统 (Environment)
-
-```
-environment/
-├── environment_component.py    # 全局环境数据
-├── environment_factory.py
-├── day_night_system.py         # 昼夜循环
-├── weather__init__.py
-├── config/
-│   └── environment_builder.py  # 构建所有环境子系统
-├── atmosphere/                 # (部分损坏, 已跳过初始化)
-├── weather/                    # 部分工作
-│   ├── weather_system.py
-│   └── ... (weather_lifetime_system, 等)
-└── season/                     # 季节系统
 ```
 
 ### 2.6 生物学系统 (Biology)
@@ -163,7 +261,7 @@ rules/
 ├── transformation_system.py   # 条件变换(如食物腐败)
 ├── transformation_rule.py     # 规则引擎
 ├── rules_config.py            # 预设规则
-└── ...
+└── main.py                    # 规则入口
 ```
 
 ---
@@ -175,36 +273,52 @@ rules/
 ```
 更新顺序 → 系统                                  → 作用
 ─────────────────────────────────────────────────────────────
- 1. PreceptionSystem      视野: SpaceSystem.query_radius → vision.entities
- 2. IntentSystem          需求→意图: 紧急度评分, 选最高
- 3. PlanningSystem        意图→动作队列
- 4. ActionSystem          调度: 出队下一个动作
- 5. SearchSystem          执行 SEARCH: 视野内找 Food/WaterComponent
- 6. MovementSystem        执行 MOVE_TO: 向 target_pos 移动
- 7. EatSystem             执行 EAT: 背包找 FoodComponent → 消耗
- 8. DrinkSystem           执行 DRINK: 背包找 WaterComponent → 消耗
- 9. SleepSystem           执行 SLEEP: 3h 恢复 100 能量
-10. PickupSystem          执行 PICKUP: 拾取→背包→所有权→移出空间索引
-11. SocializeSystem       执行 SOCIALIZE
+ 0. SpaceSystem.update()   同步 dirty 位置到空间索引
 ─────────────────────────────────────────────────────────────
-12. SocialSystem          社交关系更新
-13. PairingSystem         配对
-14. ReproductionSystem    繁衍
-15. DecisionSystem        高层决策
+ 1. TimeSystem             推进时间: hour += delta, day_of_year 循环
 ─────────────────────────────────────────────────────────────
-16. PhysiologyNeedsSystem  生理需求更新: 饥+8/h, 渴+12/h, 能-7/h
-17. HealthSystem           健康状态
+ 2. 环境管线(15系统)        见上文环境管线 DAG
+    - SolarPosition → SolarRadiation → Season → Climate
+    - PhysicalWeather → LightAtmosphereCoupling → LightField
+    - WeatherEventGen → WeatherLifetime
+    - SoilTemperature → SoilWaterBalance → Soil → EnvironmentSync
+    - Continuum
 ─────────────────────────────────────────────────────────────
-18. GeneExpressionSystem   基因表达
-19. GrowthSystem           生长
-20. MorphologySystem       形态
-21. DeathSystem            死亡判定
+ 3. 人类流水线
+    PreceptionSystem       视野: SpaceSystem.query_radius → vision.entities
+    IntentSystem           需求→意图: 紧急度评分, 选最高
+    PlanningSystem         意图→动作队列
+    ActionSystem           调度: 出队下一个动作
+    SearchSystem           执行 SEARCH: 视野内找 Food/WaterComponent
+    MovementSystem         执行 MOVE_TO: 向 target_pos 移动
+    EatSystem              执行 EAT: 背包找 FoodComponent → 消耗
+    DrinkSystem            执行 DRINK: 背包→地面水源
+    SleepSystem            执行 SLEEP: 3h 恢复 100 能量
+    PickupSystem           执行 PICKUP: 拾取→背包→所有权→移出空间索引
+    SocializeSystem        执行 SOCIALIZE
+    SocialSystem           社交关系更新
+    PairingSystem          配对
+    ReproductionSystem     繁衍
+    DecisionSystem         高层决策
 ─────────────────────────────────────────────────────────────
-22. TransformationSystem   规则变换(腐败等)
+ 4. 生理系统
+    PhysiologyNeedsSystem  生理需求更新: 饥+8/h, 渴+12/h, 能-7/h(耦合项)
+    HealthSystem           健康状态
 ─────────────────────────────────────────────────────────────
-23. CivilizationSystem     文明阶段
+ 5. 生物学系统
+    GeneExpressionSystem   基因表达
+    GrowthSystem           生长
+    MorphologySystem       形态
+    DeathSystem            死亡判定
 ─────────────────────────────────────────────────────────────
-24. SpaceSystem.update()   同步 dirty 位置
+ 6. 规则系统
+    TransformationSystem   规则变换(腐败等)
+─────────────────────────────────────────────────────────────
+ 7. 文明系统
+    CivilizationSystem     文明阶段
+─────────────────────────────────────────────────────────────
+ 8. 资源再生
+    _regenerate_resources  # 食物<15时自动补充，水源缓慢恢复
 ```
 
 ---
@@ -213,7 +327,7 @@ rules/
 
 ```
 PhysiologyNeedsSystem
-    ↓ 更新饥/渴/能
+    ↓ 更新饥/渴/能，环境耦合（干热/极端温度）
 IntentSystem
     ↓ 计算紧急度: EAT(×1.0), DRINK(×1.15), SLEEP(×1.3), SOCIALIZE(×0.8)
 PlanningSystem
@@ -258,6 +372,24 @@ Entity
 │   └── entities[] (视野内的实体)
 ├── SearchComponent         ← SearchSystem 使用
 └── VelocityComponent       ← MovementSystem 使用
+
+WorldEntity（世界级单例）
+├── TimeComponent           ← TimeSystem 读写
+├── EnvironmentComponent    ← EnvironmentSyncSystem 写入, 人类/生物系统读取
+├── PhysicalWeatherComponent ← PhysicalWeatherSystem 读写
+│   ├── temperature, pressure, absolute_humidity
+│   ├── relative_humidity, cloud_cover
+│   ├── precipitation_rate, wind_speed
+│   └── _temp_noise, _pressure_phase, _wind_noise
+├── SolarPositionComponent  ← SolarPositionSystem 写入
+├── SolarRadiationComponent ← SolarRadiationSystem 写入
+├── LightScatterComponent   ← LightAtmosphereCouplingSystem 写入
+├── SurfaceLightComponent   ← LightFieldSystem 写入
+├── SeasonComponent         ← SeasonSystem 读写（年份进度）
+├── ClimateComponent        ← ClimateSystem 读写（OU 趋势）
+├── SoilMoistureComponent   ← SoilWaterBalanceSystem 读写
+├── SoilTemperatureComponent ← SoilTemperatureSystem 读写
+└── AtmosphereComponent     ← LightAtmosphereCouplingSystem 读取
 ```
 
 ---
@@ -288,29 +420,69 @@ PhysiologyNeedsSystem 每步: energy -= (4 + hunger_coupling + thirst_coupling)
     → 唤醒后 energy=93(扣除生理衰减) → 继续活动 ~8h
 ```
 
+### 环境数据流（物理驱动）
+```
+TimeSystem (day_of_year, hour)
+    ↓
+SolarPositionSystem → 太阳赤纬角 + 高度角
+    ↓
+SolarRadiationSystem → TOA辐射
+    ↓
+PhysicalWeatherSystem → 6个连续物理量（温度/气压/湿度/云量/降水/风速）
+    │   季节温度由太阳赤纬角和日地距离实时计算
+    │   气候偏移由 OU 随机过程驱动
+    ↓
+EnvironmentSyncSystem → EnvironmentComponent（供人类/生物系统读取）
+    ↓
+PhysiologyNeedsSystem → 干热加剧口渴，极端温度消耗能量
+```
+
 ---
 
-## 七、当前已验证的状态 (2026-04-28)
+## 七、当前已验证的状态 (2026-05-22)
 
 | 指标 | 值 |
 |------|-----|
 | 模拟步数 | 300 步 (12.5 天) |
-| 人口存活率 | 10/10 |
-| 实体总数 | ~105 |
+| 程序稳定性 | 300 步无异常，完整运行 |
+| 环境管线 | 15 系统全部正常执行 |
+| 人口存活率 | 0/10（脱水死亡，人类行为系统问题，非环境模块） |
+| 实体总数 | ~95 |
 | 地图大小 | 100 × 100 |
-| 行为多样性 | EAT / DRINK / SLEEP / EXPLORE 交替 |
-| 饮水验证 | 口渴从 100 → 61 (背包水壶) |
-| 进食验证 | SEARCH → MOVE_TO → PICKUP → EAT 全链路 |
-| 睡眠验证 | 3h 能量 0 → 100 |
-| 模拟速度 | ~2000 步/秒 |
+| 天气物理演化 | 温度/气压/湿度/云量/降水/风速 连续演化正常 |
+| 季节系统 | 天文参数驱动，无固定枚举 |
+| 气候系统 | OU 随机过程驱动，无 ENSO 硬编码 |
+| 异常检测 | 滑动窗口统计检测，无预定义事件类型 |
+| 环境同步 | PhysicalWeather → EnvironmentComponent 正确同步 |
+| 模拟速度 | ~5000+ 步/秒 |
 
 ---
 
 ## 八、待修复/优化的模块
 
-- **DeathSystem**: 死亡判定存在但未生效(无饥饿致死的条件检查)
-- **Atmosphere/Convection 子系统**: 初始化时抛出异常，已跳过
-- **ReproductionSystem**: 配对逻辑存在但未触发(社交需求不被优先响应)
-- **TransformationSystem**: 食物腐败规则存在但未验证
-- **资源再生**: 消耗完的食物/水源不会刷新
-- **SleepSystem 效率**: 3h 睡眠期间生理需求继续增长，导致醒来后立即触发其它需求
+### 已修复（近期）
+- ✅ **环境模块崩溃**：`WeatherEventDiagnosticComponent` frozen dataclass 继承错误
+- ✅ **环境同步失效**：`EnvironmentSyncSystem` 不同步 `world_entity` 的环境数据
+- ✅ **main.py 属性错误**：`WaterComponent.max_amount` 缺失
+- ✅ **季节系统硬编码**：移除 `Season` 枚举和 `SEASON_EFFECT`，改为天文参数驱动
+- ✅ **气候系统硬编码**：移除 ENSO 三相位，改为 OU 随机过程
+- ✅ **极端事件硬编码**：移除 6 种预定义事件类型和固定阈值，改为统计异常检测
+- ✅ **事件生命周期状态机**：移除 `EventPhase` 四阶段，异常存在由物理偏离决定
+- ✅ **PhysicalWeatherSystem 季节耦合**：温度计算直接基于太阳赤纬角和日地距离
+
+### 仍存在问题
+- **人类行为系统**：
+  - 所有人类在 ~9 小时内因脱水死亡 → `SearchSystem`/`MovementSystem` 未能有效找到水源
+  - `DrinkSystem` 可能未正确从地面水源饮水（只从背包查找？）
+  - 寻路/搜索逻辑可能需要优化
+- **DeathSystem**：死亡判定已生效（ dehydration 致死），但人口无法维持
+- **ReproductionSystem**：配对逻辑存在但未触发（人口存活时间太短）
+- **SleepSystem 效率**：3h 睡眠期间生理需求继续增长，导致醒来后立即触发其它需求
+- **EnvironmentalContinuumSystem**：当前 `main.py` 未创建环境网格实体，该系统实际未生效
+- **Atmosphere 子系统**：部分模块存在但未接入主管线
+- **资源分布**：水源仅 25 个且分布随机，人类初始位置可能远离水源
+
+### 架构层面建议
+- 考虑为人类添加初始背包水源（提高初期存活率）
+- 环境连续统系统需要初始化时创建带 `SpaceComponent` + `EnvironmentComponent` 的网格实体
+- `weather_classifier.py` 中的离散标签（晴/多云/阴/小雨）仍依赖硬编码阈值，但已明确为纯视图层，不影响物理演化

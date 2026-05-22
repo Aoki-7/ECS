@@ -28,6 +28,7 @@ class WaterComponent(Component):
 
     # ===== 基础消耗 =====
     amount: float = 1.0          # 剩余份数（被喝完后销毁）
+    max_amount: float = 200.0    # 最大容量
     sip_size: float = 0.25       # 每次喝掉多少
 
     # ===== 水分属性 =====

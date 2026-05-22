@@ -1,15 +1,17 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
-@文件:climate_system.py
-@说明:气候系统 — 长期气候震荡（厄尔尼诺/拉尼娜/中性）
-      继承 core.system.System 以适配环境管线
-@时间:2026/05/16
-@作者:Sherry
-@版本:2.0
+气候系统 — Ornstein-Uhlenbeck 随机过程版
+
+不再使用 ElNino/LaNina/Neutral 等硬编码相位。
+通过 OU 过程模拟气候的自然波动：
+- 均值回归：趋势不会无限偏离
+- 持续记忆：变化有惯性
+- 无预设模式：不依赖任何命名气候现象
 """
 
 import random
+import math
 
 from core.world import World
 from core.system import System
@@ -18,45 +20,67 @@ from environment.climate.climate_component import ClimateComponent
 
 class ClimateSystem(System):
     """
-    气候系统
+    气候趋势系统
 
-    模拟 ENSO (厄尔尼诺-南方涛动) 对气候基线的长期调制:
-    - Neutral:     无偏置 (rainfall_bias=0, humidity_bias=0)
-    - ElNino:      降雨偏多 +0.3, 湿度偏大 +0.2
-    - LaNina:      降雨偏少 -0.2, 湿度偏小 -0.1
-
-    Input:  TimeComponent → 推进相位
-    Output: ClimateComponent (rainfall_bias, humidity_bias, climate_phase)
+    使用 Ornstein-Uhlenbeck 过程生成长期气候趋势：
+        dx = -θ * x * dt + σ * dW
+    其中 x 是趋势值，θ 是回归速率，σ 是波动强度，dW 是维纳过程增量。
     """
 
-    PHASE_DURATION = (90, 400)  # 各阶段持续天数范围
-    PHASES = ("Neutral", "ElNino", "LaNina")
+    # OU 过程参数
+    THETA: float = 0.005       # 回归速率（每小时）
+    SIGMA_TEMP: float = 0.008  # 温度趋势波动强度
+    SIGMA_HUMID: float = 0.005 # 湿度趋势波动强度
+    SIGMA_RAIN: float = 0.006  # 降雨趋势波动强度
 
-    EL_NINO_RAIN = 0.3
-    EL_NINO_HUMIDITY = 0.2
-    LA_NINA_RAIN = -0.2
-    LA_NINA_HUMIDITY = -0.1
+    # 趋势有效范围
+    TEMP_TREND_MIN: float = -3.0
+    TEMP_TREND_MAX: float = 3.0
+    HUMID_TREND_MIN: float = -0.2
+    HUMID_TREND_MAX: float = 0.2
+    RAIN_TREND_MIN: float = 0.7
+    RAIN_TREND_MAX: float = 1.3
 
     def update(self, world: World, delta_hours: float):
-        climate = world._world_entity.get_component(ClimateComponent)
+        climate: ClimateComponent = world._world_entity.get_component(ClimateComponent)
         if climate is None:
             return
 
-        # 推进相位剩余天数
-        climate.phase_remaining_days -= delta_hours / 24.0
+        dt = delta_hours
 
-        if climate.phase_remaining_days <= 0:
-            # 过渡到新相位
-            climate.climate_phase = random.choice(self.PHASES)
-            climate.phase_remaining_days = random.uniform(*self.PHASE_DURATION)
+        # ── 温度趋势 OU 更新 ──
+        climate._temp_velocity += (
+            -self.THETA * climate.temp_trend * dt
+            + random.gauss(0, self.SIGMA_TEMP * math.sqrt(dt))
+        )
+        climate.temp_trend += climate._temp_velocity * dt
+        climate.temp_trend = max(
+            self.TEMP_TREND_MIN,
+            min(self.TEMP_TREND_MAX, climate.temp_trend)
+        )
+        # 速度阻尼防止爆炸
+        climate._temp_velocity *= 0.95
 
-        # 应用相位偏置
-        if climate.climate_phase == "ElNino":
-            climate.rainfall_bias = self.EL_NINO_RAIN
-            climate.humidity_bias = self.EL_NINO_HUMIDITY
-        elif climate.climate_phase == "LaNina":
-            climate.rainfall_bias = self.LA_NINA_RAIN
-            climate.humidity_bias = self.LA_NINA_HUMIDITY
-        else:  # Neutral
-            climate.rainfall_bias = 0.0
-            climate.humidity_bias = 0.0
+        # ── 湿度趋势 OU 更新 ──
+        climate._humidity_velocity += (
+            -self.THETA * climate.humidity_trend * dt
+            + random.gauss(0, self.SIGMA_HUMID * math.sqrt(dt))
+        )
+        climate.humidity_trend += climate._humidity_velocity * dt
+        climate.humidity_trend = max(
+            self.HUMID_TREND_MIN,
+            min(self.HUMID_TREND_MAX, climate.humidity_trend)
+        )
+        climate._humidity_velocity *= 0.95
+
+        # ── 降雨趋势 OU 更新 ──
+        climate._rainfall_velocity += (
+            -self.THETA * (climate.rainfall_trend - 1.0) * dt
+            + random.gauss(0, self.SIGMA_RAIN * math.sqrt(dt))
+        )
+        climate.rainfall_trend += climate._rainfall_velocity * dt
+        climate.rainfall_trend = max(
+            self.RAIN_TREND_MIN,
+            min(self.RAIN_TREND_MAX, climate.rainfall_trend)
+        )
+        climate._rainfall_velocity *= 0.95
