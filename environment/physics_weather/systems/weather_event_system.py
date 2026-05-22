@@ -139,12 +139,7 @@ class WeatherEventSystem(System):
 
                 self._active_anomalies[variable] = entity.id
 
-                print(
-                    f"[Anomaly] {variable}="
-                    f"{value:.2f} deviated {sigma:.2f}σ "
-                    f"(baseline={mean:.2f}±{std:.2f}) "
-                    f"severity={severity:.2f}"
-                )
+                pass  # 异常检测输出已精简
 
             elif has_active:
                 entity_id = self._active_anomalies[variable]
@@ -163,12 +158,7 @@ class WeatherEventSystem(System):
 
                 if sigma < self.END_THRESHOLD_SIGMA:
                     # 异常结束
-                    if anomaly.duration_hours >= self.MIN_DURATION_HOURS:
-                        print(
-                            f"[AnomalyEnd] {variable} lasted "
-                            f"{anomaly.duration_hours:.1f}h, "
-                            f"peak={stats.peak_severity:.2f}"
-                        )
+                    pass  # 异常结束输出已精简
                     world.remove_entity(entity)
                     del self._active_anomalies[variable]
                 else:

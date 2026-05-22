@@ -47,14 +47,12 @@ class EatSystem(System):
             food_entity = inventory.find(FoodComponent, world)
             if food_entity is not None:
                 food_source = "inventory"
-                print(f"[EatSystem] Found food in inventory: entity_id={food_entity.id}")
             else:
                 # 从相同坐标找食物
                 for f_ent, (f_comp, f_space) in world.get_components(FoodComponent, SpaceComponent):
                     if f_space.x == space.x and f_space.y == space.y and f_space.layer == space.layer:
                         food_entity = f_ent
                         food_source = "ground"
-                        print(f"[EatSystem] Found food on ground: entity_id={food_entity.id}")
                         break
             
             if food_entity is None:
@@ -62,7 +60,6 @@ class EatSystem(System):
                 action.status = ActionStatus.FAILED
                 action.progress = 0.0
                 task.status = TaskStatus.FAILED
-                print(f"Entity {entity} failed to eat: no food found in inventory or on ground at location.")
                 continue
 
             food_component: FoodComponent = world.get_component(food_entity, FoodComponent)
@@ -86,14 +83,8 @@ class EatSystem(System):
                 
                 # 释放所有权
                 ownership: OwnershipComponent | None = world.get_component(food_entity, OwnershipComponent)
-
                 if ownership is not None:
                     ownership.release_ownership()
-                    print(f"Entity {entity} finished eating food from {food_source}, ownership released, hunger now {needs.hunger:.1f}")
-                else:
-                    print(f"Entity {entity} finished eating food from {food_source}, hunger now {needs.hunger:.1f}")
-            else:
-                print(f"Entity {entity} ate food from {food_source}, hunger now {needs.hunger:.1f}, thirst now {needs.thirst:.1f}, energy now {needs.energy:.1f}, food amount remaining {food_component.amount:.1f}")
 
             # 标记动作完成，由 ActionSystem 处理状态切换
             action.progress = 1.0

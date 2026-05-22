@@ -230,7 +230,7 @@ class SimulationLoop:
             food_count: 食物实体数量
             water_count: 水源实体数量
         """
-        print(f"[SimulationLoop] 创建初始资源：{food_count} 食物，{water_count} 水源")
+        print(f"[Init] 资源: {food_count} 食物, {water_count} 水源")
 
         for i in range(food_count):
             x = random.randint(0, 99)
@@ -286,7 +286,7 @@ class SimulationLoop:
                     food_type="berry",
                     amount=random.uniform(10, 50)
                 )
-            print(f"[ResourceRegen] 补充了 {need} 个食物（当前 {food_count} → {food_count + need}）")
+            print(f"[Regen] 补充 {need} 食物 ({food_count}+{need})")
 
         # 水源低于阈值时补充
         WATER_MIN = 10
@@ -299,7 +299,7 @@ class SimulationLoop:
                     self.world, x=x, y=y,
                     amount=random.uniform(50, 200)
                 )
-            print(f"[ResourceRegen] 补充了 {need} 个水源（当前 {water_count} → {water_count + need}）")
+            print(f"[Regen] 补充 {need} 水源 ({water_count}+{need})")
 
     def create_initial_population(self, human_count: int = 10):
         """
@@ -308,13 +308,12 @@ class SimulationLoop:
         Args:
             human_count: 初始人类数量
         """
-        print(f"[SimulationLoop] 创建初始人口：{human_count} 人类")
+        print(f"[Init] 人口: {human_count} 人类")
 
         for i in range(human_count):
             name = f"Human_{i+1}"
             x, y = random.randint(0, 99), random.randint(0, 99)
-            human = self.human_factory.create_human(self.world, name, x, y)
-            print(f"  创建人类实体: {human} - {name} at ({x}, {y})")
+            self.human_factory.create_human(self.world, name, x, y)
 
     def _init_environment_grid(self, grid_size: int = 10):
         """
@@ -327,7 +326,7 @@ class SimulationLoop:
             for gy in range(grid_size):
                 env_factory.create_environment_cell(gx, gy)
                 count += 1
-        print(f"[SimulationLoop] 初始化环境网格：{grid_size}×{grid_size} = {count} 个单元格")
+        print(f"[Init] 环境网格: {grid_size}×{grid_size}={count} 单元")
 
     def get_stats(self) -> dict:
         """获取当前统计信息"""
@@ -374,68 +373,35 @@ class SimulationLoop:
             delta_hours: 每步时间增量
             verbose: 是否打印详细信息
         """
-        print(f"[SimulationLoop] 开始运行模拟：{steps} 步，每步 {delta_hours} 小时")
+        print(f"[Run] 模拟: {steps} 步 × {delta_hours}h")
 
         for step in range(steps):
-            if verbose and step % 20 == 0:
+            if verbose and step % 50 == 0:
                 stats = self.get_stats()
-                print(f"步 {step}/{steps} - 实体:{stats['total_entities']} "
-                      f"人口:{stats['human_count']} 食物:{stats['food_count']} "
-                      f"文明:{stats['civilization_stage']} "
-                      f"速度:{stats['steps_per_second']:.1f}步/秒")
-            
-            # 每50步打印一次人类行为状态
-            if verbose and step % 50 == 0 and step > 0:
-                self._debug_human_status()
+                print(f"  Step {step:>4}/{steps} | 实体:{stats['total_entities']:>3} "
+                      f"人口:{stats['human_count']:>2} 食物:{stats['food_count']:>2} "
+                      f"{stats['steps_per_second']:>6.1f}步/s")
 
             self.update(delta_hours)
 
-        print("[SimulationLoop] 模拟完成")
         final_stats = self.get_stats()
-        print(f"最终统计: 实体={final_stats['total_entities']} "
-              f"人口={final_stats['human_count']} "
-              f"文明={final_stats['civilization_stage']}")
-
-        # Final debug
-        self._debug_human_status()
+        print(f"[Done] 实体:{final_stats['total_entities']} 人口:{final_stats['human_count']} "
+              f"文明:{final_stats['civilization_stage']} "
+              f"{final_stats['steps_per_second']:.0f}步/s")
 
     def _debug_human_status(self):
-        """打印所有人类的完整状态"""
-        from human.components.basic.human_component import HumanComponent
-        from human.components.cognitive.intent_component import IntentComponent
-        from human.components.action.action_component import ActionComponent, ActionType
-        from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
-        from space.space_component import SpaceComponent
-
-        print(f"\n--- 人类状态 (步 {self.step_count}) ---")
-        for entity, (hc, intent, action, needs, space) in self.world.get_components(
-            HumanComponent, IntentComponent, ActionComponent,
-            PhysiologyNeedsComponent, SpaceComponent
-        ):
-            print(f"  H{entity.id} @({space.x:.0f},{space.y:.0f}) "
-                  f"意:{intent.intent.name} 动:{action.current_action.name} "
-                  f"队:{len(action.action_queue)} "
-                  f"饥:{needs.hunger:.0f} 渴:{needs.thirst:.0f} 能:{needs.energy:.0f}")
-        print("---\n")
+        """打印所有人类的完整状态（调试用）"""
+        pass  # 默认关闭，避免输出过多
 
 
 def main():
     """主函数"""
-    print("=== ECS 世界模拟系统 ===")
+    print("=== ECS 世界模拟 ===")
 
-    # 创建世界
     world = World()
-
-    # 创建模拟循环
     simulation = SimulationLoop(world)
-
-    # 创建初始资源（更密集分布，增加水源数量）
     simulation.create_initial_resources(food_count=60, water_count=40)
-
-    # 创建初始人口（更多人类）
     simulation.create_initial_population(human_count=10)
-
-    # 运行模拟（更多步，验证行为触发）
     simulation.run_simulation(steps=300, delta_hours=1.0, verbose=True)
 
 

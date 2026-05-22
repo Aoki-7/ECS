@@ -121,8 +121,6 @@ class PickupSystem(System):
                 # 标记完成，由 ActionSystem 处理
                 action.progress = 1.0
                 action.target_entity = None
-                
-                print(f"Pickup successful: Entity {picker_entity.id} picked up item {target_entity.id}, now in inventory, ownership set, inventory now has {len(inventory.items)} items")
             else:
                 # 库存已满，拾取失败
                 action.status = ActionStatus.FAILED

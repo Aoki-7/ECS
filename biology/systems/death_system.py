@@ -113,35 +113,12 @@ class DeathSystem(System):
             if hasattr(entity, "death_reason"):
                 entity.death_reason = reason
 
-            # Debug 日志
             if self.enable_log:
-                entity_name = getattr(
-                    entity,
-                    "name",
-                    f"Entity<{entity.id}>"
-                )
-
-                print(
-                    f"[DeathSystem] "
-                    f"{entity_name} died: {reason}"
-                )
+                entity_name = getattr(entity, "name", f"E{entity.id}")
+                print(f"[Death] {entity_name}: {reason}")
 
             try:
                 world.remove_entity(entity)
                 removed_count += 1
-
-            except Exception as e:
-                print(
-                    f"[DeathSystem] "
-                    f"remove_entity failed: {e}"
-                )
-
-        # =====================================================
-        # 5. Summary
-        # =====================================================
-
-        if removed_count > 0 and self.enable_log:
-            print(
-                f"[DeathSystem] "
-                f"removed {removed_count} dead entities"
-            )
+            except Exception:
+                pass

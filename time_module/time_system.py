@@ -61,8 +61,4 @@ class TimeSystem:
             f"{time.hour:.2f}h"
         )
 
-        # =
-        # 统一打印
-        # =
-        if self.verbose and current_time_repr:
-            print(f"[TimeSystem] {current_time_repr}")
+        # 时间打印已精简，不再每步输出
