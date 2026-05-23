@@ -52,12 +52,14 @@ class ReproductionSystem(System):
             age: AgeComponent
             gender: GenderComponent
 
-            # 检查是否具备怀孕条件
-            if relation.status in (RelationshipStatus.MARRIED, RelationshipStatus.DATING) and age.is_reproductive_age():
+            # 检查是否具备怀孕条件（仅限女性）
+            if (gender.gender == Gender.FEMALE and
+                relation.status in (RelationshipStatus.MARRIED, RelationshipStatus.DATING) and
+                age.is_reproductive_age()):
                 # 检查是否可以生育（不在怀孕、冷却期已过）
                 if not repro.is_pregnant and current_time - repro.last_birth_time > repro.birth_cooldown:
-                    # 随机生育几率（基于dt）
-                    if random.random() < 0.001 * dt:  # 低概率
+                    # 随机生育几率（基于dt，适度提高）
+                    if random.random() < 0.005 * dt:
                         self.start_pregnancy(world, entity, relation, repro)
 
             # 处理怀孕进度
@@ -90,9 +92,6 @@ class ReproductionSystem(System):
             entity: 生育者entity
             repro: 繁衍组件
         """
-        # 延迟导入，避免循环导入
-        from human.entities.human_entity import HumanEntity
-        
         current_time = world.get_time().total_hours
         
         # 获取生育者的信息
@@ -104,32 +103,26 @@ class ReproductionSystem(System):
         except:
             pass
         
-        # 创建新entity
-        child = world.create_entity()
-        
         # 生成新人类的名字（简化）
         if parent_identity:
             child_name = f"{parent_identity.name}_Child"
         else:
-            child_name = f"Child_{child.id}"
+            child_name = f"Child_{entity.id}"
         
-        # 计算新生儿的位置（在父母附近）
-        child_x = parent_space.x if parent_space else 0
-        child_y = parent_space.y if parent_space else 0
+        # 计算新生儿的位置（在父母附近，随机偏移1格）
+        child_x = (parent_space.x + random.randint(-1, 1)) if parent_space else 0
+        child_y = (parent_space.y + random.randint(-1, 1)) if parent_space else 0
+        child_x = max(0, min(99, child_x))
+        child_y = max(0, min(99, child_y))
         
-        # 随机性别
-        child_gender = random.choice([Gender.MALE, Gender.FEMALE])
+        # 使用 HumanFactory 创建完整新生儿（含初始水/食物/背包）
+        from human.human_factory import HumanFactory
+        child = HumanFactory.create_human(world, child_name, child_x, child_y)
         
-        # 创建新生儿的所有组件
-        HumanEntity.create_components(
-            world, 
-            child, 
-            name=child_name,
-            x=child_x, 
-            y=child_y,
-            age=0,  # 新生儿年龄为0
-            gender=child_gender
-        )
+        # 修正新生儿年龄为0
+        age_comp = world.get_component(child, AgeComponent)
+        if age_comp:
+            age_comp.age = 0
         
         # 重置生育者的繁衍状态
         repro.is_pregnant = False

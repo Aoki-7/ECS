@@ -22,10 +22,10 @@ class ReproductionComponent(Component):
     """
     is_pregnant: bool = False
     pregnancy_time: float = 0.0  # 怀孕时间（小时）
-    pregnancy_duration: float = 270.0 * 24.0  # 9个月 ≈ 270天
+    pregnancy_duration: float = 72.0  # 3天（模拟可观测周期，原270天）
 
     partner_id: Optional[int] = None  # 生育伴侣ID
 
     # 生育间隔（避免连续生育）
     last_birth_time: float = 0.0
-    birth_cooldown: float = 365.0 * 24.0  # 1年冷却
+    birth_cooldown: float = 168.0  # 7天（模拟可观测周期，原1年）

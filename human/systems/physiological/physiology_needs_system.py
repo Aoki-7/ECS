@@ -32,7 +32,7 @@ class PhysiologyNeedsSystem(System):
             # --- 检测睡眠状态（睡眠时代谢率降低） ---
             action = world.get_component(entity, ActionComponent)
             is_sleeping = (action is not None and action.current_action == ActionType.SLEEP)
-            metabolic_mult = 0.4 if is_sleeping else 1.0  # 睡眠时代谢降至40%
+            metabolic_mult = 0.2 if is_sleeping else 1.0  # 睡眠时代谢降至20%
 
             # --- 归一化（假设范围0~100） ---
             h = needs.hunger / 100.0
@@ -88,6 +88,9 @@ class PhysiologyNeedsSystem(System):
                     needs.thirst += 1.5 * dt
                 elif env.air_humidity > 0.9:
                     needs.add_comfort(-0.3 * dt)
+
+            # --- 社交需求自然衰减 ---
+            needs.social -= 0.3 * dt
 
             # --- 极端饥饿/口渴惩罚 ---
             if needs.thirst > 80:

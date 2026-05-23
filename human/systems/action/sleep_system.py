@@ -45,7 +45,10 @@ class SleepSystem(System):
                 # 睡眠完成额外恢复
                 needs.add_energy(30)  # 额外恢复
                 needs.add_fatigue(-10)  # 额外减少疲劳
+                needs.add_thirst(-10)  # 睡眠中减少口渴
+                needs.add_hunger(-5)   # 睡眠中减少饥饿
 
-                # 标记完成，由 ActionSystem 处理
+                # 标记完成
                 action.progress = 1.0
+                action.status = ActionStatus.SUCCESS
                 task.status = TaskStatus.DONE

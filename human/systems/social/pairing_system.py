@@ -43,23 +43,47 @@ class PairingSystem(System):
             if relation.status == RelationshipStatus.SINGLE and age.is_reproductive_age():
                 singles.append((entity, intent, needs, relation, age, gender))
 
+        # 追踪本帧已配对的实体，避免一人被多人配对
+        paired_this_frame = set()
+
         # 为每个单身者寻找配对机会
         for entity, intent, needs, relation, age, gender in singles:
-            # 只有当社会需求高且没有其他意图时，才触发配对
-            if needs.social < 30 and intent.intent == IntentType.IDLE:
-                # 寻找合适的伴侣
-                partner = self.find_partner(entity, gender.gender, singles)
+            # 跳过本帧已配对的人
+            if entity in paired_this_frame:
+                continue
+
+            # 只有当社会需求中等偏低且没有紧急生存意图时，才触发配对
+            if (needs.social < 60 and
+                intent.intent not in (IntentType.EAT, IntentType.DRINK, IntentType.SLEEP)):
+                # 寻找合适的伴侣（排除已配对的候选者）
+                partner = self.find_partner(entity, gender.gender, singles, paired_this_frame)
                 if partner:
+                    partner_entity = partner[0]
                     # 建立关系
                     self.form_relationship(world, entity, partner, relation, partner[3])
                     # 设置意图为配对
                     intent.intent = IntentType.PAIR
-                    intent.target_entity = partner[0]
+                    intent.target_entity = partner_entity
+                    # 标记双方已配对
+                    paired_this_frame.add(entity)
+                    paired_this_frame.add(partner_entity)
 
-    def find_partner(self, self_entity, self_gender, singles):
-        """寻找合适的伴侣"""
+    def find_partner(self, self_entity, self_gender, singles, paired_this_frame=None):
+        """寻找合适的伴侣（排除已配对的人）"""
         opposite_gender = Gender.FEMALE if self_gender == Gender.MALE else Gender.MALE
-        candidates = [s for s in singles if s[5].gender == opposite_gender and s[0] != self_entity]
+        candidates = []
+        for s in singles:
+            candidate_entity = s[0]
+            candidate_relation = s[3]
+            # 排除自己、已配对的人、以及非单身状态的人
+            if candidate_entity == self_entity:
+                continue
+            if paired_this_frame and candidate_entity in paired_this_frame:
+                continue
+            if candidate_relation.status != RelationshipStatus.SINGLE:
+                continue
+            if s[5].gender == opposite_gender:
+                candidates.append(s)
         if candidates:
             # 简单选择第一个（可以扩展为更复杂的匹配逻辑）
             return candidates[0]

@@ -45,15 +45,19 @@ class DrinkSystem(System):
 
             # 先从inventory找水
             water_entity = inventory.find(WaterComponent, world)
-            water_source = "inventory"
+            water_source = "inventory" if water_entity is not None else None
 
-            # 再从地面同位置找水
+            # 再从地面邻近位置找水（允许1格范围内）
             if water_entity is None:
+                best_dist = float("inf")
                 for w_ent, (w_comp, w_space) in world.get_components(WaterComponent, SpaceComponent):
-                    if w_space.x == space.x and w_space.y == space.y and w_space.layer == space.layer:
+                    if w_space.layer != space.layer:
+                        continue
+                    dist = abs(w_space.x - space.x) + abs(w_space.y - space.y)  # 曼哈顿距离
+                    if dist <= 1 and dist < best_dist:
+                        best_dist = dist
                         water_entity = w_ent
                         water_source = "ground"
-                        break
 
             if water_entity is None:
                 action.current_action = ActionType.IDLE

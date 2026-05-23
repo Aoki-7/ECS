@@ -145,15 +145,15 @@ class HumanEntity:
         world.add_component(entity, IdentityComponent(name=name))
         world.add_component(entity, BodyComponent(kwargs.get('height', 170), kwargs.get('weight', 70)))
         world.add_component(entity, GenderComponent(kwargs.get('gender', None)))
-        world.add_component(entity, AgeComponent(kwargs.get('age', 0)))
+        world.add_component(entity, AgeComponent(kwargs.get('age', 18)))
 
         # 生理组件
         world.add_component(entity, HealthComponent())
         world.add_component(entity, PhysiologyNeedsComponent())
 
         # 能力组件
-        world.add_component(entity, VelocityComponent(speed=kwargs.get('speed', 1.0)))
-        world.add_component(entity, VisionComponent(radius=kwargs.get('vision_radius', 5)))
+        world.add_component(entity, VelocityComponent(speed=kwargs.get('speed', 1.5)))
+        world.add_component(entity, VisionComponent(radius=kwargs.get('vision_radius', 12)))
         world.add_component(entity, SkillComponent())
         world.add_component(entity, SearchComponent())
 

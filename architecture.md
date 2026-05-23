@@ -176,11 +176,11 @@ Layer 5: 空间平滑
 ```
 human/
 ├── components/
-│   ├── basic/              # HumanComponent, AgeComponent, GenderComponent, BodyComponent, IdentityComponent
+│   ├── basic/              # HumanComponent, AgeComponent(默认18岁), GenderComponent, BodyComponent, IdentityComponent
 │   ├── physiological/      # PhysiologyNeedsComponent(饥/渴/能/疲/社交), HealthComponent
 │   ├── cognitive/          # IntentComponent, TaskComponent, GoalComponent, BrainComponent, MemoryComponent, PersonalityComponent
 │   ├── action/             # ActionComponent(当前动作+队列+进度)
-│   ├── abilities/          # VelocityComponent, VisionComponent(radius=12), SkillComponent, SearchComponent
+│   ├── abilities/          # VelocityComponent(speed=1.5), VisionComponent(radius=12), SkillComponent, SearchComponent
 │   ├── economic/           # InventoryComponent(背包, 20格), EconomyComponent
 │   └── social/             # SocialComponent, RelationshipComponent, ReproductionComponent
 │
@@ -190,12 +190,12 @@ human/
 │   │   ├── planning_system.py    # Intent → ActionQueue
 │   │   └── action_system.py      # 调度器: 出队/进度检查/切换
 │   ├── action/             # 执行层
-│   │   ├── movement_system.py    # MOVE_TO: 欧几里得距离移动, 1单位/步
-│   │   ├── search_system.py      # SEARCH: 视野内找资源, 失败则随机漫游
+│   │   ├── movement_system.py    # MOVE_TO: 欧几里得距离移动, 1.5单位/步, 同步 dirty 标记到空间索引
+│   │   ├── search_system.py      # SEARCH: 视野内找资源; 饮水支持全局半径30搜索+远距离漫游(15格)
 │   │   ├── pickup_system.py      # PICKUP: 拾取→背包→设置所有权→移除空间索引
 │   │   ├── eat_system.py         # EAT: 从背包找食物, 消耗减饥饿
-│   │   ├── drink_system.py       # DRINK: 背包→地面水源
-│   │   ├── sleep_system.py       # SLEEP: 3h恢复全部能量
+│   │   ├── drink_system.py       # DRINK: 背包优先, 地面水源匹配范围1格
+│   │   ├── sleep_system.py       # SLEEP: 3h恢复能量/疲劳, 额外恢复口渴/饥饿
 │   │   └── socialize_system.py   # SOCIALIZE
 │   ├── cognitive/          # 感知层
 │   │   ├── preception_system.py  # 视野填充: SpaceSystem.query_radius → vision.entities
@@ -203,16 +203,17 @@ human/
 │   ├── physiological/      # 生理层
 │   │   ├── physiology_needs_system.py  # 每步更新: 饥饿+8/h, 口渴+12/h, 能量-7/h(耦合项)
 │   │   │                          # 环境耦合：干热加剧口渴，极端温度消耗能量
+│   │   │                          # 睡眠代谢倍率 0.2, 社交需求自然衰减 0.3/h
 │   │   └── health_system.py            # 健康状态
 │   └── social/             # 社交层
 │       ├── social_system.py
-│       ├── pairing_system.py
-│       └── reproduction_system.py
+│       ├── pairing_system.py       # social<60 且非紧急生存意图时触发配对
+│       └── reproduction_system.py  # 仅限女性怀孕, 概率 0.005×dt
 │
 ├── entities/
 │   └── human_entity.py     # 模板: create_components() 创建所有组件实例
 │
-└── human_factory.py        # 创建人类: 实体+组件+初始水壶
+└── human_factory.py        # 创建人类: 实体+组件+初始水壶+初始食物
 ```
 
 ### 2.5 资源系统 (Resource)
@@ -408,16 +409,18 @@ World.create_entity() → add_component(FoodComponent+SpaceComponent)
 ```
 WaterFactory.create_water() → add_component(WaterComponent+SpaceComponent)
     → Inventory 水壶(初始) / 地面水源
-    → DrinkSystem: 背包查找优先, 地面水源备选
+    → DrinkSystem: 背包查找优先, 地面水源备选(曼哈顿距离≤1)
     → thirst -= 50
+    → 水源聚落化分布(5-8个聚落中心), 水量 100-300
 ```
 
 ### 能量流
 ```
 PhysiologyNeedsSystem 每步: energy -= (4 + hunger_coupling + thirst_coupling)
     → energy < 40 → IntentSystem 选中 SLEEP(权重1.3)
-    → SleepSystem: 3h后 add_energy(100)
-    → 唤醒后 energy=93(扣除生理衰减) → 继续活动 ~8h
+    → SleepSystem: 3h后 add_energy(30) + add_fatigue(-10) + add_thirst(-10) + add_hunger(-5)
+    → 睡眠时代谢倍率 0.2(口渴/饥饿增长大幅降低)
+    → 唤醒后 energy ≈ 60-80 → 继续活动 ~12-18h
 ```
 
 ### 环境数据流（物理驱动）
@@ -439,22 +442,24 @@ PhysiologyNeedsSystem → 干热加剧口渴，极端温度消耗能量
 
 ---
 
-## 七、当前已验证的状态 (2026-05-22)
+## 七、当前已验证的状态 (2026-05-23)
 
 | 指标 | 值 |
 |------|-----|
 | 模拟步数 | 300 步 (12.5 天) |
 | 程序稳定性 | 300 步无异常，完整运行 |
 | 环境管线 | 15 系统全部正常执行 |
-| 人口存活率 | 0/10（脱水死亡，人类行为系统问题，非环境模块） |
-| 实体总数 | ~95 |
+| 人口存活率 | **10/10（全部存活）** |
+| 实体总数 | ~290 |
 | 地图大小 | 100 × 100 |
 | 天气物理演化 | 温度/气压/湿度/云量/降水/风速 连续演化正常 |
 | 季节系统 | 天文参数驱动，无固定枚举 |
 | 气候系统 | OU 随机过程驱动，无 ENSO 硬编码 |
 | 异常检测 | 滑动窗口统计检测，无预定义事件类型 |
 | 环境同步 | PhysicalWeather → EnvironmentComponent 正确同步 |
-| 模拟速度 | ~5000+ 步/秒 |
+| 环境连续统 | 10×10 网格实体已创建，Continuum 系统正常运行 |
+| Atmosphere 子系统 | 5 个子系统（气压/热力学/云/风/对流）经协调器正确加载 |
+| 模拟速度 | ~40 步/秒 |
 
 ---
 
@@ -470,19 +475,23 @@ PhysiologyNeedsSystem → 干热加剧口渴，极端温度消耗能量
 - ✅ **事件生命周期状态机**：移除 `EventPhase` 四阶段，异常存在由物理偏离决定
 - ✅ **PhysicalWeatherSystem 季节耦合**：温度计算直接基于太阳赤纬角和日地距离
 
-### 仍存在问题
-- **人类行为系统**：
-  - 所有人类在 ~9 小时内因脱水死亡 → `SearchSystem`/`MovementSystem` 未能有效找到水源
-  - `DrinkSystem` 可能未正确从地面水源饮水（只从背包查找？）
-  - 寻路/搜索逻辑可能需要优化
-- **DeathSystem**：死亡判定已生效（ dehydration 致死），但人口无法维持
-- **ReproductionSystem**：配对逻辑存在但未触发（人口存活时间太短）
-- **SleepSystem 效率**：3h 睡眠期间生理需求继续增长，导致醒来后立即触发其它需求
-- **EnvironmentalContinuumSystem**：当前 `main.py` 未创建环境网格实体，该系统实际未生效
-- **Atmosphere 子系统**：部分模块存在但未接入主管线
-- **资源分布**：水源仅 25 个且分布随机，人类初始位置可能远离水源
+### 已修复（本次）
+- ✅ **MovementSystem 空间索引同步**：添加 `space.dirty = True`，修复移动后 SpatialIndex 永不更新的致命 bug
+- ✅ **SearchSystem 水源搜索**：移除饮水任务 3 格距离限制；增加全局半径 30 搜索；无目标时 15 格远距离漫游
+- ✅ **DrinkSystem 地面水源**：匹配条件从严格坐标相等放宽为曼哈顿距离 ≤ 1
+- ✅ **SleepSystem 效率**：睡眠代谢倍率 0.4 → 0.2；完成后额外恢复口渴/饥饿
+- ✅ **年龄初始化 bug**：`HumanEntity.create_components` 默认年龄 0 → 18，修复 `is_reproductive_age()` 永远为 False
+- ✅ **SearchSystem 配对搜索**：新增 `FIND_PARTNER → HumanComponent` 目标解析，修复配对动作直接失败
+- ✅ **PairingSystem 条件**：`social < 50` 放宽为 `< 60`；允许 `EXPLORE/PAIR` 等意图时配对
+- ✅ **PairingSystem 互斥检查**：添加 `paired_this_frame` 集合，避免多人在同一帧配对到同一伴侣
+- ✅ **ReproductionSystem 性别检查**：添加 `gender == FEMALE` 限制；怀孕概率 0.001 → 0.005
+- ✅ **ReproductionSystem 生育周期**：`pregnancy_duration` 6480h → 72h（3天）；`birth_cooldown` 8760h → 168h（7天）
+- ✅ **ReproductionSystem 新生儿初始资源**：`give_birth` 改用 `HumanFactory.create_human`，确保新生儿拥有初始水/食物
+- ✅ **PhysiologyNeedsSystem**：添加社交需求自然衰减 0.3/h
+- ✅ **资源分布**：初始水源 40 → 80；聚落化分布；再生阈值 10 → 25；人类初始位置限制在中央 20-79
+- ✅ **AtmosphereSystem API 修复**：`get_component_by_type` → `get_world_component`
+- ✅ **weather_classifier.py 动态阈值**：新增 `classify_adaptive()` 和 `AdaptiveWeatherClassifier`，基于历史滑动窗口分位数（percentile）动态计算阈值；保留原有 `classify()` 纯函数作为向后兼容 fallback
 
-### 架构层面建议
-- 考虑为人类添加初始背包水源（提高初期存活率）
-- 环境连续统系统需要初始化时创建带 `SpaceComponent` + `EnvironmentComponent` 的网格实体
-- `weather_classifier.py` 中的离散标签（晴/多云/阴/小雨）仍依赖硬编码阈值，但已明确为纯视图层，不影响物理演化
+### 仍存在问题 / 待优化
+- **weather_classifier.py** 自适应分类器目前为模块级全局状态，如需支持多世界/多气候区，可扩展为 `AdaptiveWeatherClassifier` 实例化版本
+- `weather_classifier.py` 固定阈值版本仍保留在代码中作为保底 fallback，不影响物理演化

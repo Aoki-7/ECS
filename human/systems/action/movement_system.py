@@ -86,8 +86,9 @@ class MovementSystem(System):
             move_dist = velocity.speed * dt
 
             if move_dist >= dist:
-                space.x = target_x
-                space.y = target_y
+                space.x = round(target_x)
+                space.y = round(target_y)
+                space.dirty = True
                 action.current_action = ActionType.IDLE
                 action.status = ActionStatus.SUCCESS
                 action.progress = 1.0
@@ -95,9 +96,7 @@ class MovementSystem(System):
             else:
                 space.x += dir_x * move_dist
                 space.y += dir_y * move_dist
-                # 对齐到网格：四舍五入保留整数坐标，确保空间索引查询一致
-                space.x = round(space.x)
-                space.y = round(space.y)
+                space.dirty = True
                 new_dx = target_x - space.x
                 new_dy = target_y - space.y
                 remain = math.hypot(new_dx, new_dy)

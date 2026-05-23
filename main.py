@@ -222,7 +222,7 @@ class SimulationLoop:
 
         self.step_count += 1
 
-    def create_initial_resources(self, food_count: int = 60, water_count: int = 40):
+    def create_initial_resources(self, food_count: int = 80, water_count: int = 80):
         """
         创建初始资源（食物和水源）
 
@@ -241,12 +241,21 @@ class SimulationLoop:
                 amount=random.uniform(10, 50)
             )
 
+        # 水源聚落化分布：创建5-8个聚落中心，每个中心附近生成多个水源
+        import math
+        num_clusters = random.randint(5, 8)
+        cluster_centers = [(random.randint(10, 89), random.randint(10, 89)) for _ in range(num_clusters)]
         for i in range(water_count):
-            x = random.randint(0, 99)
-            y = random.randint(0, 99)
+            # 随机选择一个聚落中心
+            cx, cy = random.choice(cluster_centers)
+            # 在中心附近生成水源（正态分布，sigma=8）
+            x = int(random.gauss(cx, 8))
+            y = int(random.gauss(cy, 8))
+            x = max(0, min(99, x))
+            y = max(0, min(99, y))
             water = self.water_factory.create_water(
                 self.world, x=x, y=y,
-                amount=random.uniform(50, 200)
+                amount=random.uniform(100, 300)
             )
 
     def _regenerate_resources(self, delta_hours: float):
@@ -289,7 +298,7 @@ class SimulationLoop:
             print(f"[Regen] 补充 {need} 食物 ({food_count}+{need})")
 
         # 水源低于阈值时补充
-        WATER_MIN = 10
+        WATER_MIN = 25
         if water_count < WATER_MIN:
             need = WATER_MIN - water_count
             for _ in range(need):
@@ -297,7 +306,7 @@ class SimulationLoop:
                 y = random.randint(0, 99)
                 self.water_factory.create_water(
                     self.world, x=x, y=y,
-                    amount=random.uniform(50, 200)
+                    amount=random.uniform(100, 300)
                 )
             print(f"[Regen] 补充 {need} 水源 ({water_count}+{need})")
 
@@ -310,9 +319,10 @@ class SimulationLoop:
         """
         print(f"[Init] 人口: {human_count} 人类")
 
+        # 让人类初始位置分布在地图中央区域，避免边缘（提高早期找到资源的概率）
         for i in range(human_count):
             name = f"Human_{i+1}"
-            x, y = random.randint(0, 99), random.randint(0, 99)
+            x, y = random.randint(20, 79), random.randint(20, 79)
             self.human_factory.create_human(self.world, name, x, y)
 
     def _init_environment_grid(self, grid_size: int = 10):
@@ -400,7 +410,7 @@ def main():
 
     world = World()
     simulation = SimulationLoop(world)
-    simulation.create_initial_resources(food_count=60, water_count=40)
+    simulation.create_initial_resources(food_count=80, water_count=80)
     simulation.create_initial_population(human_count=10)
     simulation.run_simulation(steps=300, delta_hours=1.0, verbose=True)
 

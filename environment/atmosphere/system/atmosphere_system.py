@@ -71,7 +71,7 @@ class AtmosphereSystem(System):
     def on_add(self, world: World):
         """系统被添加到 world 时调用"""
         super().on_add(world)
-        if not world.get_component_by_type(AtmosphereComponent):
+        if not world.get_world_component(AtmosphereComponent):
             atm = AtmosphereComponent()
             world._world_entity.add_component(atm)
 
@@ -91,4 +91,4 @@ class AtmosphereSystem(System):
 
     def get_atmosphere_state(self, world: World) -> AtmosphereComponent | None:
         """获取当前大气的物理状态"""
-        return world.get_component_by_type(AtmosphereComponent)
+        return world.get_world_component(AtmosphereComponent)
