@@ -163,7 +163,7 @@ class GoalSystem(System):
             # 性格影响
             if personality and personality.extraversion > 60:
                 goals.append("扩展社交圈子")
-            if personality and personality.openness > 60:
+            if personality and personality.curiosity > 60:
                 goals.append("尝试新事物")
         
         elif life_stage == "adulthood":
@@ -186,9 +186,9 @@ class GoalSystem(System):
             
             # 根据性格调整
             if personality:
-                if personality.conscientiousness > 70:
+                if personality.discipline > 70:
                     goals.append("建造和改进设施")
-                if personality.openness > 70:
+                if personality.curiosity > 70:
                     goals.append("发现新的地方")
         
         elif life_stage == "elderhood":
@@ -210,10 +210,10 @@ class GoalSystem(System):
         # 根据性格调整
         if personality:
             # 高成就需求
-            if personality.conscientiousness > 75:
+            if personality.discipline > 75:
                 goals.append("成为社区的重要成员")
             # 高社交需求
-            if personality.extraversion > 75:
+            if personality.kindness > 75:
                 goals.append("成为社交的中心")
         
         # 从目标列表中随机选择（或选择第一个）

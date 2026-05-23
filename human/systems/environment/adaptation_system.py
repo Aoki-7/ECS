@@ -129,7 +129,7 @@ class EnvironmentAdaptationSystem(System):
         inventory = self._get_inventory(entity_id, None)
         if inventory:
             food_items = [item for item in inventory.items() 
-                         if any(f关键词 in item.name.lower() for f关键词 in ["food", "storage", "dry"])
+                         if any(f_keyword in item.name.lower() for f_keyword in ["food", "storage", "dry"])]
             if len(food_items) >= 3:
                 score += 15
         

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import List, Tuple, Optional, Dict
 import math
+import random
 
 from human.components.basic.body_component import BodyComponent
 from human.components.abilities.velocity_component import VelocityComponent
@@ -28,7 +29,7 @@ class NavigationSystem(System):
 
     def update(self, world: World, dt):
         """每帧更新导航状态"""
-        for _, action in world.get_components(ActionComponent):
+        for entity, (action,) in world.get_components(ActionComponent):
             if action is None:
                 continue
             
@@ -36,21 +37,24 @@ class NavigationSystem(System):
             
             # 检查当前动作是否需要移动
             if action.current_action == ActionType.MOVE_TO and action.target_pos:
-                self._move_to_target(action)
+                self._move_to_target(world, entity, action, dt)
             
             elif action.current_action == ActionType.MOVE_RANDOM:
-                self._random_move(action)
+                self._random_move(world, entity, action, dt)
             
             elif action.current_action in [ActionType.SEARCH, ActionType.EXPLORE]:
-                self._search_explore(action)
+                self._search_explore(world, entity, action, dt)
 
-    def _move_to_target(self, action: ActionComponent):
+    def _move_to_target(self, world: World, entity, action: ActionComponent, dt: float):
         """移动到目标点
         
         Args:
             action: 当前动作组件
         """
         if not action.target_pos or action.progress >= 1.0:
+            return
+        
+        if not hasattr(action, 'start_pos') or action.start_pos is None:
             return
         
         # 计算到目标的距离
@@ -74,63 +78,53 @@ class NavigationSystem(System):
         new_z = start[2] if len(start) > 2 else 0
         
         # 更新实体的位置（通过 SpaceComponent）
-        for entity, components in world.get_entities():
-            if components and hasattr(components, 'space'):
-                sc = components.space
-                if hasattr(sc, 'x') and hasattr(sc, 'y') and hasattr(sc, 'z'):
-                    sc.x = new_x
-                    sc.y = new_y
-                    sc.z = new_z
+        sc = world.get_component(entity, SpaceComponent)
+        if sc and hasattr(sc, 'x') and hasattr(sc, 'y'):
+            sc.x = new_x
+            sc.y = new_y
+            if hasattr(sc, 'z'):
+                sc.z = new_z
 
-    def _random_move(self, action: ActionComponent):
+    def _random_move(self, world: World, entity, action: ActionComponent, dt: float):
         """随机移动
         
         Args:
             action: 当前动作组件
         """
         # 生成随机方向
-        angle = math.random() * 2 * math.pi
+        angle = random.random() * 2 * math.pi
         speed = 0.5  # 移动速度
-        
-        if not hasattr(action, 'start_pos'):
-            action.start_pos = (0, 0, 0)
         
         dx = math.cos(angle) * speed
         dy = math.sin(angle) * speed
         dz = 0
         
         # 更新位置
-        for entity, components in world.get_entities():
-            if components and hasattr(components, 'space'):
-                sc = components.space
-                if hasattr(sc, 'x') and hasattr(sc, 'y') and hasattr(sc, 'z'):
-                    sc.x += dx
-                    sc.y += dy
-                    sc.z += dz
+        sc = world.get_component(entity, SpaceComponent)
+        if sc and hasattr(sc, 'x') and hasattr(sc, 'y'):
+            sc.x += dx
+            sc.y += dy
+            if hasattr(sc, 'z'):
+                sc.z += dz
 
-    def _search_explore(self, action: ActionComponent):
+    def _search_explore(self, world: World, entity, action: ActionComponent, dt: float):
         """搜索/探索行为
         
         Args:
             action: 当前动作组件
         """
         # 随机选择探索方向，但避免返回安全区
-        angle = math.random() * 2 * math.pi
+        angle = random.random() * 2 * math.pi
         speed = 0.8  # 探索移动速度
-        
-        if not hasattr(action, 'start_pos'):
-            action.start_pos = (0, 0, 0)
         
         dx = math.cos(angle) * speed
         dy = math.sin(angle) * speed
         
         # 更新位置
-        for entity, components in world.get_entities():
-            if components and hasattr(components, 'space'):
-                sc = components.space
-                if hasattr(sc, 'x') and hasattr(sc, 'y') and hasattr(sc, 'z'):
-                    sc.x += dx
-                    sc.y += dy
+        sc = world.get_component(entity, SpaceComponent)
+        if sc and hasattr(sc, 'x') and hasattr(sc, 'y'):
+            sc.x += dx
+            sc.y += dy
 
     def calculate_path(self, start: Tuple[float, float], end: Tuple[float, float]) -> List[Tuple[float, float]]:
         """简单的路径规划（A*算法简化版）
@@ -179,7 +173,7 @@ class NavigationSystem(System):
         nearest = None
         nearest_dist = float('inf')
         
-        for resource in world.get_components(ResourceComponent):
+        for _, (resource,) in world.get_components(ResourceComponent):
             if not resource or resource.resource_type not in resource_types:
                 continue
             
@@ -203,7 +197,7 @@ class NavigationSystem(System):
         Returns:
             是否安全
         """
-        for danger in world.get_components(DangerComponent):
+        for _, (danger,) in world.get_components(DangerComponent):
             if not danger:
                 continue
             

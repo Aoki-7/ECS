@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from enum import Enum, auto
 
+from core.system import System
+
 
 # 疾病类型定义
 class DiseaseType(Enum):
@@ -57,6 +59,10 @@ class HealthcareSystem(System):
         self.treatment_plan = None
         self.medication_log = []
         self.health_history = []
+
+    def update(self, world, dt: float = 0.0):
+        """系统更新（医疗保健系统暂不执行每帧逻辑）"""
+        pass
 
     def diagnose(self, symptoms: Dict[str, float], patient_data: Dict) -> List[Disease]:
         """根据症状和患者数据诊断疾病"""

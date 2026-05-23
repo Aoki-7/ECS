@@ -198,5 +198,9 @@ class DialogueSystem:
         )
         self.turn_history.append(turn)
 
+    def update(self, world, dt: float = 0.0):
+        """系统更新（对话系统暂不执行每帧逻辑）"""
+        pass
+
 if __name__ == "__main__":
     print("对话系统已加载")

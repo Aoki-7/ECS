@@ -66,8 +66,7 @@ class ConflictManagementSystem:
     - 评估关系影响
     """
     
-    def __init__(self, entity_id: int):
-        self.entity_id = entity_id
+    def __init__(self):
         self.active_conflicts: List[ConflictInstance] = []
         self.resolved_conflicts: List[ConflictInstance] = []
         self.resolution_history: List[Dict] = []
@@ -245,6 +244,10 @@ class ConflictManagementSystem:
                     risk_sum += 15
         
         return min(100, risk_sum + random.uniform(0, 20))
+
+    def update(self, world, dt: float = 0.0):
+        """系统更新（冲突管理系统暂不执行每帧逻辑）"""
+        pass
 
 
 if __name__ == "__main__":

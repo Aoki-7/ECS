@@ -14,14 +14,14 @@ class CurrencyBalance:
 
 @dataclass
 class TradeRecord:
-    id = field(default_factory=lambda: str(uuid.uuid4())[:8])
-    type = ""
-    item = ""
-    quantity = 0.0
-    price = 0.0
-    total_value = 0.0
-    from_entity = None
-    to_entity = None
+    id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
+    type: str = ""
+    item: str = ""
+    quantity: float = 0.0
+    price: float = 0.0
+    total_value: float = 0.0
+    from_entity: int = None
+    to_entity: int = None
 
 class MoneySystem:
     def __init__(self):
@@ -84,3 +84,7 @@ class MoneySystem:
     @property
     def market_prices_dict(self):
         return dict(self.market_prices)
+
+    def update(self, world, dt: float = 0.0):
+        """系统更新（货币系统暂不执行每帧逻辑）"""
+        pass

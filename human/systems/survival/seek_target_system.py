@@ -50,7 +50,7 @@ class SeekTargetSystem(System):
             # -------------------------
             # 1. 必须处于 SEEK 行为
             # -------------------------
-            if action.current_action != ActionType.SEEK:
+            if action.current_action != ActionType.SEARCH:
                 continue
 
             # -------------------------
