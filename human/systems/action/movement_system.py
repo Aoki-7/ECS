@@ -18,6 +18,8 @@ from human.components.action.action_component import (
     ActionComponent, ActionType, ActionStatus
 )
 from human.components.abilities.velocity_component import VelocityComponent
+from human.components.cognitive.task_component import TaskComponent, TaskType
+from human.components.cognitive.memory_component import MemoryComponent
 
 
 class MovementSystem(System):
@@ -93,6 +95,13 @@ class MovementSystem(System):
                 action.status = ActionStatus.SUCCESS
                 action.progress = 1.0
                 action.target_pos = None
+                
+                # 如果当前任务是探索，记录探索成功
+                task = world.get_component(entity, TaskComponent)
+                if task and task.task == TaskType.EXPLORE:
+                    memory = world.get_component(entity, MemoryComponent)
+                    if memory:
+                        memory.record_success("explore")
             else:
                 space.x += dir_x * move_dist
                 space.y += dir_y * move_dist

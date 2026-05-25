@@ -36,8 +36,12 @@ from environment.config.environment_builder import EnvironmentBuilder
 from human.systems.social.social_system import SocialSystem
 from human.systems.social.pairing_system import PairingSystem
 from human.systems.social.reproduction_system import ReproductionSystem
+from human.systems.social.tribe_system import TribeSystem
 from human.systems.cognitive.decision_system import DecisionSystem
 from human.systems.cognitive.preception_system import PreceptionSystem
+from human.systems.cognitive.emotion_system import EmotionSystem
+from human.systems.cognitive.thought_system import ThoughtSystem
+from human.systems.cognitive.goal_system import GoalSystem
 from human.systems.core.intent_system import IntentSystem
 from human.systems.core.planning_system import PlanningSystem
 from human.systems.core.action_system import ActionSystem
@@ -68,10 +72,12 @@ from resource.food.components.food_component import FoodComponent
 
 # 文明系统
 from civilization import CivilizationSystem
+from human.systems.visualization.human_panel import HumanStatePanel
+from core.event_log_component import EventLogComponent, EventLog
 
 # 工厂
 from human.human_factory import HumanFactory
-from biology.factories.plant_factory import PlantFactory
+from plant.plant_factory import PlantFactory
 from resource.food.food_factory import FoodFactory
 from resource.water.water_factory import WaterFactory
 from environment.environment_factory import EnvironmentFactory
@@ -96,6 +102,10 @@ class SimulationLoop:
         # 获取空间系统引用
         # 获取SpaceSystem引用
         self.space_system = self.world.get_system(SpaceSystem)
+
+        # 初始化全局事件日志
+        if world.get_world_component(EventLogComponent) is None:
+            world.get_world_entity().add_component(EventLogComponent())
 
         # 初始化所有系统
         self._init_systems()
@@ -123,12 +133,20 @@ class SimulationLoop:
         self.env_pipeline = EnvironmentBuilder.build(self.world)
 
         # 3. 人类系统（按处理流水线排序）
-        #    感知→意图→规划→动作调度→搜索/移动/交互→决策
+        #    感知→情绪→思维→目标→意图→决策→规划→动作调度→搜索/移动/交互→社交
         self.human_systems = [
             # 感知层
             PreceptionSystem(),
+            # 情绪层：根据生理/环境/行为/社交更新情绪
+            EmotionSystem(),
+            # 思维层：生成内心独白，更新心理状态
+            ThoughtSystem(),
+            # 目标层：根据人生阶段和状态更新长期目标
+            GoalSystem(),
             # 需求→意图层
             IntentSystem(),
+            # 决策层：情绪/性格/记忆/目标→调整意图
+            DecisionSystem(),
             # 规划层：意图→任务动作队列
             PlanningSystem(),
             # 动作调度层
@@ -145,9 +163,12 @@ class SimulationLoop:
             SocialSystem(),
             PairingSystem(),
             ReproductionSystem(),
-            # 高层决策
-            DecisionSystem(),
         ]
+        
+        # 部落系统单独保存引用并注册到 world，以便 ReproductionSystem 调用
+        self.tribe_system = TribeSystem()
+        self.world.add_system(self.tribe_system)
+        self.human_systems.append(self.tribe_system)
 
         # 4. 生理系统
         self.physiology_systems = [
@@ -177,6 +198,9 @@ class SimulationLoop:
 
         # 7. 文明系统（最高层级）
         self.civilization_system = CivilizationSystem()
+        
+        # 8. 可视化面板
+        self.human_panel = HumanStatePanel()
 
     def update(self, delta_hours: float = 1.0):
         """
@@ -185,6 +209,8 @@ class SimulationLoop:
         Args:
             delta_hours: 时间增量（小时）
         """
+        # 同步步数到 world，供 EventLog 使用
+        self.world._step_count = self.step_count
 
         # 0. 空间系统同步（确保所有dirty实体位置更新到空间索引）
         self.space_system.update()
@@ -374,14 +400,18 @@ class SimulationLoop:
             'discovered_technologies': civilization_status.get('discovered_technologies', [])
         }
 
-    def run_simulation(self, steps: int = 100, delta_hours: float = 1.0, verbose: bool = True):
+    def run_simulation(self, steps: int = 100, delta_hours: float = 1.0, 
+                        verbose: bool = True, show_panel: bool = False, 
+                        panel_interval: int = 50):
         """
         运行模拟
 
         Args:
             steps: 运行步数
             delta_hours: 每步时间增量
-            verbose: 是否打印详细信息
+            verbose: 是否打印简要统计
+            show_panel: 是否定期打印人类状态面板
+            panel_interval: 面板刷新间隔（步数）
         """
         print(f"[Run] 模拟: {steps} 步 × {delta_hours}h")
 
@@ -391,6 +421,9 @@ class SimulationLoop:
                 print(f"  Step {step:>4}/{steps} | 实体:{stats['total_entities']:>3} "
                       f"人口:{stats['human_count']:>2} 食物:{stats['food_count']:>2} "
                       f"{stats['steps_per_second']:>6.1f}步/s")
+            
+            if show_panel and step % panel_interval == 0 and step > 0:
+                self.human_panel.print_panel(self.world, step)
 
             self.update(delta_hours)
 

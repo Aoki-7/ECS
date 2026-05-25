@@ -11,6 +11,7 @@
 
 from core.system import System
 from core.world import World
+from core.event_log_component import EventLog
 
 from biology.components.energy_component import (
     EnergyComponent,
@@ -116,6 +117,15 @@ class DeathSystem(System):
             if self.enable_log:
                 entity_name = getattr(entity, "name", f"E{entity.id}")
                 print(f"[Death] {entity_name}: {reason}")
+                
+                # 记录到全局事件日志
+                EventLog.log(
+                    world, event_type="death",
+                    description=f"{entity_name} 死亡，原因: {reason}",
+                    entity_id=entity.id,
+                    data={"reason": reason, "entity_name": entity_name},
+                    severity="critical"
+                )
 
             try:
                 world.remove_entity(entity)

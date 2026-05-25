@@ -15,6 +15,7 @@ from human.components.physiological.physiology_needs_component import Physiology
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
+from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
 
 from resource.water.components.water_component import WaterComponent
@@ -88,5 +89,22 @@ class DrinkSystem(System):
                         inventory.remove(water_entity)
                     world.remove_entity(water_entity)
 
+                # 记录成功到记忆
+                memory = world.get_component(entity, MemoryComponent)
+                current_time = world.get_time().total_hours
+                if memory:
+                    memory.add_event(
+                        current_time, "found_water",
+                        f"在 ({space.x}, {space.y}) 饮水",
+                        impact=0.5,
+                        location=(space.x, space.y)
+                    )
+                    memory.record_place(
+                        (space.x, space.y), "water_source",
+                        current_time, sentiment=0.7
+                    )
+                    memory.record_success("find_water")
+
                 action.progress = 1.0
+                action.status = ActionStatus.SUCCESS
                 task.status = TaskStatus.DONE

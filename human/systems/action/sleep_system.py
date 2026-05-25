@@ -14,6 +14,8 @@ from core.world import World
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
+from human.components.cognitive.memory_component import MemoryComponent
+from space.space_component import SpaceComponent
 
 
 class SleepSystem(System):
@@ -24,7 +26,7 @@ class SleepSystem(System):
     """
 
     def update(self, world: World, dt: float):
-        for _, (needs, action, task) in world.get_components(
+        for entity, (needs, action, task) in world.get_components(
             PhysiologyNeedsComponent, ActionComponent, TaskComponent
         ):
             needs: PhysiologyNeedsComponent
@@ -47,6 +49,19 @@ class SleepSystem(System):
                 needs.add_fatigue(-10)  # 额外减少疲劳
                 needs.add_thirst(-10)  # 睡眠中减少口渴
                 needs.add_hunger(-5)   # 睡眠中减少饥饿
+
+                # 记录到记忆
+                memory = world.get_component(entity, MemoryComponent)
+                space = world.get_component(entity, SpaceComponent)
+                current_time = world.get_time().total_hours
+                if memory:
+                    memory.add_event(
+                        current_time, "slept",
+                        f"在 ({space.x if space else '?'}, {space.y if space else '?'}) 休息恢复体力",
+                        impact=0.4,
+                        location=(space.x, space.y) if space else None
+                    )
+                    memory.record_success("rest")
 
                 # 标记完成
                 action.progress = 1.0

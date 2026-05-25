@@ -10,10 +10,13 @@
 
 from core.system import System
 from core.world import World
+from core.event_log_component import EventLog
 
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
+from human.components.social.social_component import SocialComponent
+from human.components.social.tribe_membership_component import TribeMembershipComponent
 from human.components.basic.age_component import AgeComponent
 from human.components.basic.gender_component import GenderComponent, Gender
 from human.components.action.action_component import ActionComponent, ActionType
@@ -56,7 +59,7 @@ class PairingSystem(System):
             if (needs.social < 60 and
                 intent.intent not in (IntentType.EAT, IntentType.DRINK, IntentType.SLEEP)):
                 # 寻找合适的伴侣（排除已配对的候选者）
-                partner = self.find_partner(entity, gender.gender, singles, paired_this_frame)
+                partner = self.find_partner(entity, gender.gender, singles, paired_this_frame, world)
                 if partner:
                     partner_entity = partner[0]
                     # 建立关系
@@ -68,10 +71,18 @@ class PairingSystem(System):
                     paired_this_frame.add(entity)
                     paired_this_frame.add(partner_entity)
 
-    def find_partner(self, self_entity, self_gender, singles, paired_this_frame=None):
-        """寻找合适的伴侣（排除已配对的人）"""
+    def find_partner(self, self_entity, self_gender, singles, paired_this_frame=None, world=None):
+        """寻找合适的伴侣（排除已配对的人，同部落优先）"""
         opposite_gender = Gender.FEMALE if self_gender == Gender.MALE else Gender.MALE
         candidates = []
+        
+        # 获取自己的部落
+        self_tribe = None
+        if world:
+            self_mem = world.get_component(self_entity, TribeMembershipComponent)
+            if self_mem:
+                self_tribe = self_mem.tribe_id
+        
         for s in singles:
             candidate_entity = s[0]
             candidate_relation = s[3]
@@ -84,10 +95,20 @@ class PairingSystem(System):
                 continue
             if s[5].gender == opposite_gender:
                 candidates.append(s)
-        if candidates:
-            # 简单选择第一个（可以扩展为更复杂的匹配逻辑）
-            return candidates[0]
-        return None
+        
+        if not candidates:
+            return None
+        
+        # 同部落优先排序
+        if world and self_tribe is not None:
+            def _tribe_priority(s):
+                mem = world.get_component(s[0], TribeMembershipComponent)
+                if mem and mem.tribe_id == self_tribe:
+                    return 0  # 同部落优先
+                return 1
+            candidates.sort(key=_tribe_priority)
+        
+        return candidates[0]
 
     def form_relationship(self, world, entity1, entity2_info, relation1: RelationshipComponent, relation2: RelationshipComponent):
         """建立关系"""
@@ -99,3 +120,24 @@ class PairingSystem(System):
         relation2.status = RelationshipStatus.MARRIED
         relation2.partner_id = entity1
         relation2.relationship_strength = 50.0
+        
+        # 在社交组件中将对方标记为家庭成员
+        social1 = world.get_component(entity1, SocialComponent)
+        social2 = world.get_component(entity2, SocialComponent)
+        if social1:
+            if entity2.id not in social1.family:
+                social1.family.append(entity2.id)
+            social1.update_relation(entity2.id, 50)
+        if social2:
+            if entity1.id not in social2.family:
+                social2.family.append(entity1.id)
+            social2.update_relation(entity1.id, 50)
+        
+        # 记录事件日志
+        EventLog.log(
+            world, event_type="pairing",
+            description=f"实体 {entity1.id} 与 {entity2.id} 结为伴侣",
+            entity_id=entity1.id,
+            target_id=entity2.id,
+            severity="info"
+        )

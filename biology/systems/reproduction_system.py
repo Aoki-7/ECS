@@ -19,7 +19,7 @@ from core.world import World
 
 from biology.components.energy_component import EnergyComponent
 from biology.components.genome_component import GenomeComponent
-from biology.factories.plant_factory import PlantFactory
+from plant.plant_factory import PlantFactory
 
 class ReproductionSystem(System):
     """

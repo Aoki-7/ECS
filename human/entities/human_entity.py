@@ -33,9 +33,11 @@ from human.components.cognitive.task_component import TaskComponent
 from human.components.cognitive.goal_component import GoalComponent
 from human.components.cognitive.memory_component import MemoryComponent
 from human.components.cognitive.personality_component import PersonalityComponent
+from human.components.cognitive.emotion_component import EmotionComponent
 from human.components.social.social_component import SocialComponent
 from human.components.social.relationship_component import RelationshipComponent
 from human.components.social.reproduction_component import ReproductionComponent
+from human.components.social.tribe_membership_component import TribeMembershipComponent
 from human.components.action.action_component import ActionComponent
 from space.space_component import SpaceComponent
 
@@ -91,6 +93,7 @@ class HumanEntity:
         SocialComponent,          # 社交状态
         RelationshipComponent,    # 关系状态
         ReproductionComponent,    # 繁衍状态
+        TribeMembershipComponent, # 部落成员身份
     ]
 
     # 行动组件 (Action Components)
@@ -168,11 +171,13 @@ class HumanEntity:
         world.add_component(entity, GoalComponent())
         world.add_component(entity, MemoryComponent())
         world.add_component(entity, PersonalityComponent())
+        world.add_component(entity, EmotionComponent())
 
         # 社交组件
         world.add_component(entity, SocialComponent())
         world.add_component(entity, RelationshipComponent())
         world.add_component(entity, ReproductionComponent())
+        world.add_component(entity, TribeMembershipComponent())
 
         # 行动组件
         world.add_component(entity, ActionComponent())

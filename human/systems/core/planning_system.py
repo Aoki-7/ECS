@@ -20,6 +20,7 @@ from human.components.cognitive.task_component import TaskComponent, TaskType, T
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
 from resource.food.components.food_component import FoodComponent
 from resource.water.components.water_component import WaterComponent
@@ -120,14 +121,32 @@ class PlanningSystem(System):
                 task.task = TaskType.EXPLORE
                 task.status = TaskStatus.RUNNING
 
-                # 随机选择一个探索目标
-                target_x = space.x + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
-                target_y = space.y + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
-                # 限制在地图范围内
-                target_x = max(0, min(99, target_x))
-                target_y = max(0, min(99, target_y))
+                # 优先参考记忆中的高情感地点作为探索目标
+                memory = world.get_component(entity, MemoryComponent)
+                explore_target = None
+                if memory and memory.places:
+                    # 筛选有正面情感的地点，按情感排序
+                    positive_places = [
+                        (pos, info) for pos, info in memory.places.items()
+                        if info.get("sentiment", 0) > 0.2
+                    ]
+                    if positive_places:
+                        positive_places.sort(key=lambda x: x[1]["sentiment"], reverse=True)
+                        # 从前3个好地点中随机选一个（避免总是去同一个地方）
+                        best = random.choice(positive_places[:3])
+                        explore_target = best[0]
+                
+                if explore_target:
+                    action.target_pos = explore_target
+                else:
+                    # 无记忆时随机选择一个探索目标
+                    target_x = space.x + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
+                    target_y = space.y + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
+                    # 限制在地图范围内
+                    target_x = max(0, min(99, target_x))
+                    target_y = max(0, min(99, target_y))
+                    action.target_pos = (target_x, target_y)
 
-                action.target_pos = (target_x, target_y)
                 action.action_queue = [
                     ActionType.MOVE_TO,
                 ]

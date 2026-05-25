@@ -181,7 +181,7 @@ class GoalSystem(System):
                 goals.append("为家庭提供保护")
             
             # 根据经济状况调整
-            if economy.money < 100:
+            if economy and economy.wealth < 100:
                 goals.insert(0, "赚取足够的资金")
             
             # 根据性格调整
@@ -247,7 +247,7 @@ class GoalSystem(System):
             return relation.status in [RelationshipStatus.MARRIED, RelationshipStatus.ENGAGED]
         
         if "资源" in current or "金钱" in current or "资金" in current:
-            return economy.money >= 500
+            return economy and economy.wealth >= 500
         
         # 其他目标判断可在这里添加
         

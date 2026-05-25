@@ -177,18 +177,33 @@ Layer 5: 空间平滑
 human/
 ├── components/
 │   ├── basic/              # HumanComponent, AgeComponent(默认18岁), GenderComponent, BodyComponent, IdentityComponent
-│   ├── physiological/      # PhysiologyNeedsComponent(饥/渴/能/疲/社交), HealthComponent
-│   ├── cognitive/          # IntentComponent, TaskComponent, GoalComponent, BrainComponent, MemoryComponent, PersonalityComponent
-│   ├── action/             # ActionComponent(当前动作+队列+进度)
+│   ├── physiological/      # PhysiologyNeedsComponent(饥/渴/能/疲/社交/舒适), HealthComponent
+│   ├── cognitive/          # 
+│   │   ├── intent_component.py     # 高层意图 (EAT/DRINK/SLEEP/EXPLORE/SOCIALIZE/PAIR...)
+│   │   ├── task_component.py       # 中层任务 (FIND_FOOD/DRINK_WATER/SLEEP/...)
+│   │   ├── goal_component.py       # 长期目标 (字符串描述, 按人生阶段生成)
+│   │   ├── brain_component.py      # 思维状态 (current_thought, mental_state, behavior_mode, decision_confidence)
+│   │   ├── memory_component.py     # 事件/地点/人物记忆 + 成功记录
+│   │   ├── personality_component.py # 性格五维 (bravery, greed, kindness, curiosity, discipline)
+│   │   └── emotion_component.py    # 情绪系统 v2.0
+│   │       ├── 基础情绪: happiness, anger, fear, joy, sadness, disgust, surprise
+│   │       └── 复合情绪: stress, calmness, trust, loneliness, excitement, hope, frustration
+│   ├── action/             # ActionComponent(当前动作+队列+进度+目标)
 │   ├── abilities/          # VelocityComponent(speed=1.5), VisionComponent(radius=12), SkillComponent, SearchComponent
 │   ├── economic/           # InventoryComponent(背包, 20格), EconomyComponent
 │   └── social/             # SocialComponent, RelationshipComponent, ReproductionComponent
 │
 ├── systems/
 │   ├── core/               # 行为流水线
-│   │   ├── intent_system.py      # Need → Intent (紧急度评分)
+│   │   ├── intent_system.py      # Need → Intent (紧急度评分, EAT>DRINK>SLEEP>SOCIALIZE>EXPLORE)
 │   │   ├── planning_system.py    # Intent → ActionQueue
 │   │   └── action_system.py      # 调度器: 出队/进度检查/切换
+│   ├── cognitive/          # 认知层 (新增)
+│   │   ├── preception_system.py  # 视野填充: SpaceSystem.query_radius → vision.entities
+│   │   ├── emotion_system.py     # 情绪演化: 生理→情绪, 环境→情绪, 行为→情绪, 社交→情绪
+│   │   ├── thought_system.py     # 思维生成: 根据情绪+需求+行为生成内心独白
+│   │   ├── goal_system.py        # 目标管理: 按人生阶段(童年/青少年/成年/老年)生成长期目标
+│   │   └── decision_system.py    # 多层决策: 生理+情绪+性格+记忆+目标 → 意图调整
 │   ├── action/             # 执行层
 │   │   ├── movement_system.py    # MOVE_TO: 欧几里得距离移动, 1.5单位/步, 同步 dirty 标记到空间索引
 │   │   ├── search_system.py      # SEARCH: 视野内找资源; 饮水支持全局半径30搜索+远距离漫游(15格)
@@ -196,10 +211,7 @@ human/
 │   │   ├── eat_system.py         # EAT: 从背包找食物, 消耗减饥饿
 │   │   ├── drink_system.py       # DRINK: 背包优先, 地面水源匹配范围1格
 │   │   ├── sleep_system.py       # SLEEP: 3h恢复能量/疲劳, 额外恢复口渴/饥饿
-│   │   └── socialize_system.py   # SOCIALIZE
-│   ├── cognitive/          # 感知层
-│   │   ├── preception_system.py  # 视野填充: SpaceSystem.query_radius → vision.entities
-│   │   └── decision_system.py    # 高层决策
+│   │   └── socialize_system.py   # SOCIALIZE: 社交质量(性格+情绪), 影响双方情绪, 记录记忆
 │   ├── physiological/      # 生理层
 │   │   ├── physiology_needs_system.py  # 每步更新: 饥饿+8/h, 口渴+12/h, 能量-7/h(耦合项)
 │   │   │                          # 环境耦合：干热加剧口渴，极端温度消耗能量
@@ -207,11 +219,11 @@ human/
 │   │   └── health_system.py            # 健康状态
 │   └── social/             # 社交层
 │       ├── social_system.py
-│       ├── pairing_system.py       # social<60 且非紧急生存意图时触发配对
-│       └── reproduction_system.py  # 仅限女性怀孕, 概率 0.005×dt
+│       ├── pairing_system.py       # social<60 且非紧急生存意图时触发配对, 互斥检查避免重复
+│       └── reproduction_system.py  # 仅限女性怀孕, 概率 0.005×dt, 周期72h/冷却168h
 │
 ├── entities/
-│   └── human_entity.py     # 模板: create_components() 创建所有组件实例
+│   └── human_entity.py     # 模板: create_components() 创建所有组件实例(含EmotionComponent)
 │
 └── human_factory.py        # 创建人类: 实体+组件+初始水壶+初始食物
 ```
@@ -231,16 +243,21 @@ resource/
     └── resource_component.py          # ResourceComponent(resource_type, amount)
 ```
 
-### 2.6 生物学系统 (Biology)
+### 2.6 植物系统 (Plant)
+
+```
+plant/
+└── plant_factory.py   # 植物工厂
+```
+
+### 2.7 生物学系统 (Biology)
 
 ```
 biology/
 ├── components/    # EnergyComponent, GenomeComponent, GrowthComponent, MorphologyComponent, PhenotypeComponent
 ├── systems/       # DeathSystem, GeneExpressionSystem, GrowthSystem, MorphologySystem, MutationSystem, ReproductionSystem
 ├── genetics/      # Gene
-├── traits/        # Trait
-└── factories/
-    └── plant_factory.py   # 植物工厂
+└── traits/        # Trait
 ```
 
 ### 2.7 文明系统 (Civilization)
@@ -491,7 +508,20 @@ PhysiologyNeedsSystem → 干热加剧口渴，极端温度消耗能量
 - ✅ **资源分布**：初始水源 40 → 80；聚落化分布；再生阈值 10 → 25；人类初始位置限制在中央 20-79
 - ✅ **AtmosphereSystem API 修复**：`get_component_by_type` → `get_world_component`
 - ✅ **weather_classifier.py 动态阈值**：新增 `classify_adaptive()` 和 `AdaptiveWeatherClassifier`，基于历史滑动窗口分位数（percentile）动态计算阈值；保留原有 `classify()` 纯函数作为向后兼容 fallback
+- ✅ **认知系统 v2.0 重构**：
+  - `EmotionComponent` 新增复合情绪（stress, calmness, trust, loneliness, excitement, hope, frustration）
+  - `BrainComponent` 新增思维系统（current_thought, mental_state, behavior_mode, thought_history）
+  - `MemoryComponent` 增强事件/地点/人物记忆，支持情感影响和成功记录
+  - `HumanEntity` 添加 `EmotionComponent` 到默认组件列表
+- ✅ **EmotionSystem v2.0**：重写为四层驱动（生理→环境→行为→社交），情绪自然衰减与复合情绪联动
+- ✅ **ThoughtSystem 新增**：根据情绪+需求+行为生成内心独白，更新心理状态和行为模式
+- ✅ **GoalSystem 整合**：接入人类系统流水线，目标根据人生阶段和性格动态生成
+- ✅ **SocializeSystem v2.0**：社交质量由性格和情绪决定，互动后更新双方情绪、关系强度和记忆
+- ✅ **DecisionSystem v2.0**：多层决策模型（生理+情绪+性格+记忆+目标），与 IntentSystem 协同工作
+- ✅ **人类系统流水线重组**：感知→情绪→思维→目标→意图→决策→规划→执行→社交
 
 ### 仍存在问题 / 待优化
 - **weather_classifier.py** 自适应分类器目前为模块级全局状态，如需支持多世界/多气候区，可扩展为 `AdaptiveWeatherClassifier` 实例化版本
 - `weather_classifier.py` 固定阈值版本仍保留在代码中作为保底 fallback，不影响物理演化
+- **DecisionSystem** 中的部分意图（WORK, BUILD, CRAFT, ATTACK, DEFEND, COLLECT, STORE）尚未配置对应的执行系统，当前仅影响意图选择权重
+- **ThoughtSystem** 的思维生成目前为规则模板，后续可接入 LLM 生成更丰富的内心独白

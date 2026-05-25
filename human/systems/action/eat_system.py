@@ -15,6 +15,7 @@ from human.components.physiological.physiology_needs_component import Physiology
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
+from human.components.cognitive.memory_component import MemoryComponent
 from resource.food.components.food_component import FoodComponent
 from space.space_component import SpaceComponent
 from equipment.components.ownership_component import OwnershipComponent
@@ -86,8 +87,25 @@ class EatSystem(System):
                 if ownership is not None:
                     ownership.release_ownership()
 
-            # 标记动作完成，由 ActionSystem 处理状态切换
+            # 记录成功到记忆
+            memory = world.get_component(entity, MemoryComponent)
+            current_time = world.get_time().total_hours
+            if memory:
+                memory.add_event(
+                    current_time, "found_food",
+                    f"在 ({space.x}, {space.y}) 进食",
+                    impact=0.5,
+                    location=(space.x, space.y)
+                )
+                memory.record_place(
+                    (space.x, space.y), "food_source",
+                    current_time, sentiment=0.6
+                )
+                memory.record_success("find_food")
+
+            # 标记动作完成
             action.progress = 1.0
+            action.status = ActionStatus.SUCCESS
             task.status = TaskStatus.DONE
 
 

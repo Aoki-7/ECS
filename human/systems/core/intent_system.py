@@ -12,9 +12,9 @@
 from core.system import System
 from core.world import World
 
-
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.cognitive.intent_component import IntentComponent, IntentType
+from human.components.cognitive.memory_component import MemoryComponent
 
 
 
@@ -83,6 +83,28 @@ class IntentSystem(System):
             intent: IntentComponent
 
             candidates = self._urgency(needs)
+
+            # 记忆驱动的偏好调整：在非紧急状态下，参考记忆中的成功经历
+            is_critical = needs.thirst > 70 or needs.hunger > 70 or needs.energy < 30
+            if not is_critical:
+                memory = world.get_component(e, MemoryComponent)
+                if memory and candidates:
+                    adjusted = []
+                    for cand in candidates:
+                        intent_type, score, desc = cand
+                        success_count = 0
+                        if intent_type == IntentType.EAT:
+                            success_count = memory.recent_successes.get("find_food", 0)
+                        elif intent_type == IntentType.DRINK:
+                            success_count = memory.recent_successes.get("find_water", 0)
+                        elif intent_type == IntentType.SOCIALIZE:
+                            success_count = memory.recent_successes.get("socialize", 0)
+                        elif intent_type == IntentType.EXPLORE:
+                            success_count = memory.recent_successes.get("explore", 0)
+                        # 每次成功增加 0.1 的优先级（上限 0.5）
+                        bonus = min(success_count * 0.1, 0.5)
+                        adjusted.append((intent_type, score + bonus, desc))
+                    candidates = adjusted
 
             if candidates:
                 # 选取紧急度最高的需求

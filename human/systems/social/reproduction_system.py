@@ -10,6 +10,7 @@
 
 from core.system import System
 from core.world import World
+from core.event_log_component import EventLog
 import random
 
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
@@ -82,6 +83,13 @@ class ReproductionSystem(System):
         repro.pregnancy_time = 0.0
         repro.partner_id = relation.partner_id
         print(f"[生育] 实体 {entity} 开始怀孕（伴侣：{relation.partner_id}）")
+        EventLog.log(
+            world, event_type="pregnancy_start",
+            description=f"实体 {entity.id} 开始怀孕",
+            entity_id=entity.id,
+            target_id=relation.partner_id,
+            severity="info"
+        )
 
     def give_birth(self, world: World, entity, repro: ReproductionComponent):
         """
@@ -124,6 +132,12 @@ class ReproductionSystem(System):
         if age_comp:
             age_comp.age = 0
         
+        # 分配部落（继承母亲部落）
+        from human.systems.social.tribe_system import TribeSystem
+        tribe_system = world.get_system(TribeSystem)
+        if tribe_system:
+            tribe_system.assign_birth_tribe(world, child, entity, current_time)
+        
         # 重置生育者的繁衍状态
         repro.is_pregnant = False
         repro.pregnancy_time = 0.0
@@ -131,3 +145,12 @@ class ReproductionSystem(System):
         repro.partner_id = None
         
         print(f"[生育成功] 实体 {entity} 生育了新生儿 {child}（名字：{child_name}，时间：{current_time}）")
+        EventLog.log(
+            world, event_type="birth",
+            description=f"{child_name} 出生",
+            entity_id=child.id,
+            target_id=entity.id,
+            location=(child_x, child_y),
+            data={"child_name": child_name, "parent_id": entity.id},
+            severity="milestone"
+        )
