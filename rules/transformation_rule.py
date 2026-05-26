@@ -31,5 +31,5 @@ class TransformationRule:
     # 条件判断函数
     condition: Callable[[Component], bool]
 
-    # 转化逻辑（对 component 操作）
-    transform: Callable[['Entity'], None]
+    # 转化逻辑（对 entity + world 操作）
+    transform: Callable[['Entity', 'World'], None]

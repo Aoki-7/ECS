@@ -79,9 +79,9 @@ class PhysiologyNeedsSystem(System):
 
                 # 极端温度消耗能量
                 if env.air_temperature > 30:
-                    needs.energy -= 1.0 * (env.air_temperature - 30) * dt
+                    needs.energy -= 0.15 * (env.air_temperature - 30) * dt
                 elif env.air_temperature < 10:
-                    needs.energy -= 0.5 * (10 - env.air_temperature) * dt
+                    needs.energy -= 0.08 * (10 - env.air_temperature) * dt
 
                 # 湿度影响
                 if env.air_humidity < 0.3:

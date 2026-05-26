@@ -45,7 +45,7 @@ class FoodCleanupSystem(System):
 
         # 遍历所有带 FoodComponent 的实体
         for entity in world.get_entities_with(FoodComponent):
-            food: FoodComponent = entity.get(FoodComponent)
+            food: FoodComponent = world.get_component(entity, FoodComponent)
 
             if food is None:
                 continue

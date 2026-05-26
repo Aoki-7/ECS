@@ -28,4 +28,4 @@ class ReproductionComponent(Component):
 
     # 生育间隔（避免连续生育）
     last_birth_time: float = 0.0
-    birth_cooldown: float = 168.0  # 7天（模拟可观测周期，原1年）
+    birth_cooldown: float = 96.0  # 4天（模拟可观测周期，原1年）

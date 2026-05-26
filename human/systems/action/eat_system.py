@@ -78,7 +78,7 @@ class EatSystem(System):
 
             food_component.amount -= food_component.bite_size
             if food_component.amount <= 0:
-                # 食物消耗完毕
+                # 食物消耗完毕，从背包移除并销毁实体
                 if food_source == "inventory":
                     inventory.remove(food_entity)
                 
@@ -86,6 +86,9 @@ class EatSystem(System):
                 ownership: OwnershipComponent | None = world.get_component(food_entity, OwnershipComponent)
                 if ownership is not None:
                     ownership.release_ownership()
+                
+                # 销毁已消耗的食物实体，防止僵尸实体泄漏
+                world.remove_entity(food_entity)
 
             # 记录成功到记忆
             memory = world.get_component(entity, MemoryComponent)

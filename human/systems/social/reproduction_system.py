@@ -60,7 +60,7 @@ class ReproductionSystem(System):
                 # 检查是否可以生育（不在怀孕、冷却期已过）
                 if not repro.is_pregnant and current_time - repro.last_birth_time > repro.birth_cooldown:
                     # 随机生育几率（基于dt，适度提高）
-                    if random.random() < 0.005 * dt:
+                    if random.random() < 0.015 * dt:
                         self.start_pregnancy(world, entity, relation, repro)
 
             # 处理怀孕进度

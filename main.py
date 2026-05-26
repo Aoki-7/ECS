@@ -19,6 +19,10 @@ from __future__ import annotations
 import time
 import math
 import random
+import sys
+
+# 修复 Windows 终端中文乱码
+sys.stdout.reconfigure(encoding='utf-8')
 
 from core.world import World
 from core.system import System
@@ -378,6 +382,9 @@ class SimulationLoop:
         for eid, entity in self.world.entities.items():
             if self.world.get_component(entity, FoodComponent):
                 food_count += 1
+            from resource.water.components.water_component import WaterComponent
+            if self.world.get_component(entity, WaterComponent):
+                water_count += 1
 
         from human.components.basic.human_component import HumanComponent
         for entity, _ in self.world.query_components(HumanComponent):
@@ -395,6 +402,7 @@ class SimulationLoop:
             'total_entities': total_entities,
             'human_count': human_count,
             'food_count': food_count,
+            'water_count': water_count,
             'civilization_stage': civilization_status['stage'],
             'civilization_metrics': civilization_status.get('metrics', {}),
             'discovered_technologies': civilization_status.get('discovered_technologies', [])
@@ -420,6 +428,7 @@ class SimulationLoop:
                 stats = self.get_stats()
                 print(f"  Step {step:>4}/{steps} | 实体:{stats['total_entities']:>3} "
                       f"人口:{stats['human_count']:>2} 食物:{stats['food_count']:>2} "
+                      f"水源:{stats['water_count']:>2} "
                       f"{stats['steps_per_second']:>6.1f}步/s")
             
             if show_panel and step % panel_interval == 0 and step > 0:
@@ -429,6 +438,7 @@ class SimulationLoop:
 
         final_stats = self.get_stats()
         print(f"[Done] 实体:{final_stats['total_entities']} 人口:{final_stats['human_count']} "
+              f"食物:{final_stats['food_count']} 水源:{final_stats['water_count']} "
               f"文明:{final_stats['civilization_stage']} "
               f"{final_stats['steps_per_second']:.0f}步/s")
 
