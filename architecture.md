@@ -243,24 +243,130 @@ resource/
     └── resource_component.py          # ResourceComponent(resource_type, amount)
 ```
 
-### 2.6 植物系统 (Plant)
-
-```
-plant/
-└── plant_factory.py   # 植物工厂
-```
-
-### 2.7 生物学系统 (Biology)
+### 2.6 生物学系统 (Biology) — 通用层
 
 ```
 biology/
-├── components/    # EnergyComponent, GenomeComponent, GrowthComponent, MorphologyComponent, PhenotypeComponent
-├── systems/       # DeathSystem, GeneExpressionSystem, GrowthSystem, MorphologySystem, MutationSystem, ReproductionSystem
-├── genetics/      # Gene
-└── traits/        # Trait
+├── components/
+│   ├── genome_component.py       # 基因组：16 维基因 + copy/mutate/crossover 方法
+│   ├── life_cycle_component.py   # 生命周期阶段：SEED→SPROUT→VEGETATIVE→MATURE→SENESCENCE→DEAD
+│   ├── energy_component.py       # 能量储量组件
+│   ├── growth_component.py       # 生长进度组件（biomass, height, growth_rate）
+│   ├── morphology_component.py   # 形态表现型组件（height, stem_thickness, canopy_radius）
+│   └── phenotype_component.py    # 表现型组件
+│
+├── systems/
+│   ├── life_cycle_system.py      # 生命周期推进：GDD + 年龄双维度
+│   ├── growth_system.py          # 光合/呼吸/生长：读取 16 维基因响应环境
+│   ├── morphology_system.py      # 形态生长：身高/茎粗/冠幅因子
+│   ├── reproduction_system.py    # 繁殖系统：遗传+变异+空间分布
+│   ├── senescence_system.py      # 衰老系统：光合效率退化、黄化枯萎
+│   ├── mutation_system.py        # 基因变异系统：随机漂变
+│   ├── death_system.py           # 死亡判定系统
+│   └── gene_expression_system.py # 基因表达：基因→表现型映射
+│
+├── genetics/
+│   └── gene.py                   # Gene 数据类（name, strength, mutation_rate）
+│
+└── traits/
+    └── trait.py                  # 性状定义
 ```
 
-### 2.7 文明系统 (Civilization)
+#### 16 维基因体系
+
+| 基因 | 维度 | 影响系统 | 说明 |
+|------|------|---------|------|
+| `max_photosynthesis_rate` | 光合 | GrowthSystem | 最大光合速率上限 |
+| `light_use_efficiency` | 光合 | GrowthSystem | 光照利用效率斜率 |
+| `shade_tolerance` | 光合 | GrowthSystem | 低光补偿点，降低光饱点 |
+| `optimal_temp` | 温度 | GrowthSystem | 最适光合温度 |
+| `cold_tolerance` | 温度 | GrowthSystem | 低温光合停止阈值 |
+| `heat_tolerance` | 温度 | GrowthSystem | 高温光合停止阈值 |
+| `water_use_efficiency` | 水分 | GrowthSystem | CO₂/H₂O 交换比 |
+| `metabolism_rate` | 代谢 | GrowthSystem | 呼吸速率倍率 |
+| `growth_partition` | 代谢 | MorphologySystem | 光合产物生长/维持分配比 |
+| `leaf_bias` | 形态 | MorphologySystem | 叶生物量分配比例 |
+| `root_bias` | 形态 | MorphologySystem | 根生物量分配比例 |
+| `stem_bias` | 形态 | MorphologySystem | 茎生物量分配比例 |
+| `max_height` | 形态 | MorphologySystem | 最大株高上限 |
+| `stem_thickness_factor` | 形态 | MorphologySystem | 茎粗/株高比因子 |
+| `seed_production` | 繁殖 | ReproductionSystem | 单次种子产量倍率 |
+| `dispersal_radius` | 繁殖 | ReproductionSystem | 种子扩散网格半径 |
+
+#### 生命周期推进机制
+
+采用 **GDD（Growing Degree Days）+ 年龄双维度**推进：
+
+```
+每小时累积 GDD：
+  effective_temp = max(0, air_temp - base_temp)  # base_temp = 5°C
+  accumulated_gdd += effective_temp / 24          # 小时折算到天
+
+阶段推进阈值：
+  SEED → SPROUT:         accumulated_gdd ≥ 50 + 随机偏移
+  SPROUT → VEGETATIVE:   accumulated_gdd ≥ 150 + 随机偏移
+  VEGETATIVE → MATURE:   accumulated_gdd ≥ 400 + 随机偏移
+  MATURE → SENESCENCE:   accumulated_gdd ≥ 800 + 随机偏移（或年龄兜底）
+  SENESCENCE → DEAD:     年龄 ≥ 生存期 × 1.5 或 biomass ≤ 0
+```
+
+#### 繁殖与遗传变异模型
+
+```
+无性繁殖流程：
+  亲本 GenomeComponent
+      ↓ genome.copy()          # 深度复制 16 维基因数组
+  子代 GenomeComponent
+      ↓ 遍历每个基因
+  以 mutation_rate 概率变异
+      ↓ gene.strength *= random.uniform(0.8, 1.2)  # ±20%
+  变异后的子代基因组
+      ↓ PlantFactory.create_plant_from_genome()
+  子代实体（继承亲本策略 + 随机变异）
+
+有性繁殖（预留）：
+  亲本A × 亲本B → genome.crossover(genomeB) → 子代
+```
+
+### 2.7 植物系统 (Plant)
+
+```
+plant/
+├── plant_factory.py   # 植物实体工厂：9 种物种预设 + 基因继承创建
+└── __init__.py        # 模块入口
+```
+
+#### 9 种物种预设
+
+| 预设 | 基因特征 | 适用环境 |
+|------|---------|----------|
+| `basic` | 各项均衡（光合25, 适温25°C, 耐寒5°C, 耐热35°C） | 一般陆地 |
+| `fast` | 高光合(35)，早熟(种子80)，短寿，高扩散 | 扰动环境 |
+| `tree` | 低光合(18)，高大(15m)，晚熟(种子15)，长寿 | 稳定森林 |
+| `cold_resistant` | 耐寒(-10°C)，适温15°C，高冷耐受(0.8) | 高寒地区 |
+| `drought_resistant` | 高水效(0.9)，深根(root_bias 0.45) | 干旱区 |
+| `succulent` | 极高水效(1.5)，高耐热(45°C)，极低代谢(0.03) | 沙漠 |
+| `aquatic` | 喜水(水效0.15)，耐阴(0.8)，高代谢(0.15) | 水域 |
+| `shade_tolerant` | 极高耐阴(1.5)，低光效(12)，低矮(1.5m) | 林下 |
+| `pioneer` | 高光合(40)，阳性(耐阴0.15)，高扩散(12) | 裸地/灾后 |
+
+### 2.7 动物系统 (Animal)
+
+```
+animal/
+├── animal_factory.py   # 动物实体工厂：3 种物种预设
+└── __init__.py         # 模块入口
+```
+
+#### 3 种物种预设
+
+| 预设 | 特点 | 应用场景 |
+|------|------|----------|
+| `basic` | 基础型，各项均衡 | 通用动物模型 |
+| `fast` | 高敏捷，高代谢，短寿命 | 小型掠食者/食草动物 |
+| `tank` | 高防御，高耐力，慢速 | 大型动物/防御型 |
+
+### 2.8 文明系统 (Civilization)
 
 ```
 civilization/
@@ -324,10 +430,14 @@ rules/
     HealthSystem           健康状态
 ─────────────────────────────────────────────────────────────
  5. 生物学系统
-    GeneExpressionSystem   基因表达
-    GrowthSystem           生长
-    MorphologySystem       形态
-    DeathSystem            死亡判定
+    LifeCycleSystem         生命周期推进：GDD + 年龄双维度
+    GrowthSystem            光合/呼吸：读取 16 维基因响应环境
+    MorphologySystem        形态生长：身高/茎粗/冠幅
+    SenescenceSystem        衰老降解：光合效率退化、黄化枯萎
+    ReproductionSystem      繁殖系统：遗传+变异+空间分布
+    MutationSystem          基因变异：随机漂变
+    GeneExpressionSystem    基因表达
+    DeathSystem             死亡判定
 ─────────────────────────────────────────────────────────────
  6. 规则系统
     TransformationSystem   规则变换(腐败等)
@@ -459,7 +569,7 @@ PhysiologyNeedsSystem → 干热加剧口渴，极端温度消耗能量
 
 ---
 
-## 七、当前已验证的状态 (2026-05-23)
+## 七、当前已验证的状态
 
 | 指标 | 值 |
 |------|-----|
@@ -477,6 +587,19 @@ PhysiologyNeedsSystem → 干热加剧口渴，极端温度消耗能量
 | 环境连续统 | 10×10 网格实体已创建，Continuum 系统正常运行 |
 | Atmosphere 子系统 | 5 个子系统（气压/热力学/云/风/对流）经协调器正确加载 |
 | 模拟速度 | ~40 步/秒 |
+
+### 生物学系统验证状态
+
+| 验证项 | 状态 | 说明 |
+|--------|------|------|
+| 植物模块创建 | ✅ | 9 种物种预设全部可创建，含 LifeCycleComponent + SpaceComponent |
+| 生命周期推进 | ✅ | GDD 累积推进阶段：SEED → SPROUT → VEGETATIVE → ... |
+| 环境响应 | ✅ | 高温(40°C)、低温(5°C)、阴蔽(50PAR)、干旱等条件对各物种影响合理 |
+| 衰老系统 | ✅ | 成熟后光合效率逐步下降，黄化枯萎 |
+| 繁殖/遗传/变异 | ✅ | 子代继承亲本 16 维基因，变异 ±20%，多代积累多样性 |
+| 基因表达 | ✅ | 基因→表现型映射正确 |
+| 形态生长 | ✅ | 读取 max_height、stem_thickness_factor 等基因 |
+| 动物模块创建 | ✅ | 3 种物种预设全部可创建 |
 
 ---
 

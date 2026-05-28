@@ -16,7 +16,6 @@ class MutationSystem:
         所有包含基因组的实体都会受到此系统的影响
     """
     def update(self, world: World, dt: float = 1.0):
-    def update(self, world: World):
         for entity, [genome] in world.get_components(GenomeComponent):
             genome: GenomeComponent
 
