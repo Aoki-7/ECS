@@ -35,6 +35,15 @@ class ActionSystem(System):
 
             action: ActionComponent
             needs: PhysiologyNeedsComponent
+
+            # 能量过低保底：强制睡眠恢复体力
+            if needs.energy < 15:
+                if action.current_action not in (ActionType.SLEEP, ActionType.IDLE):
+                    action.current_action = ActionType.IDLE
+                    action.status = ActionStatus.IDLE
+                    action.progress = 0.0
+                if ActionType.SLEEP not in action.action_queue:
+                    action.action_queue.insert(0, ActionType.SLEEP)
             
             # 没任务且当前空闲
             if not action.action_queue and action.current_action == ActionType.IDLE:

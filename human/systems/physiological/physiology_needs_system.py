@@ -40,10 +40,11 @@ class PhysiologyNeedsSystem(System):
             e = needs.energy / 100.0
 
             # --- 基础变化率（校准值） ---
-            # 9小时空腹→hunger=72, 6小时不喝→thirst=72
-            base_hunger = 8.0
-            base_thirst = 12.0
-            base_energy_decay = 4.0
+            # 12小时空腹→hunger=60, 10小时不喝→thirst=60
+            # 降低速率以留出更多搜索/移动时间，避免人口密度低时饿死
+            base_hunger = 4.0
+            base_thirst = 3.5
+            base_energy_decay = 1.5
 
             # --- 耦合项 ---
             # 饥饿 → 额外消耗体力
@@ -74,7 +75,7 @@ class PhysiologyNeedsSystem(System):
             env = world.get_environment()
             if isinstance(env, EnvironmentComponent):
                 # 干热环境加剧口渴
-                needs.thirst += 2.0 * env.water_stress_index * dt
+                needs.thirst += 1.0 * env.water_stress_index * dt
                 needs.fatigue += 0.5 * max(0.0, env.air_temperature - 25.0) * dt
 
                 # 极端温度消耗能量
@@ -85,7 +86,7 @@ class PhysiologyNeedsSystem(System):
 
                 # 湿度影响
                 if env.air_humidity < 0.3:
-                    needs.thirst += 1.5 * dt
+                    needs.thirst += 0.5 * dt
                 elif env.air_humidity > 0.9:
                     needs.add_comfort(-0.3 * dt)
 
@@ -94,8 +95,8 @@ class PhysiologyNeedsSystem(System):
 
             # --- 极端饥饿/口渴惩罚 ---
             if needs.thirst > 80:
-                needs.energy -= 5.0 * dt
+                needs.energy -= 3.0 * dt
             if needs.hunger > 80:
-                needs.energy -= 2.0 * dt
+                needs.energy -= 1.5 * dt
 
             needs._clamp_all()

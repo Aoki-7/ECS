@@ -124,43 +124,89 @@ class SearchSystem(System):
                             found_memory = True
                 
                 if not found_memory:
-                    # 记忆中也无目标，进行大范围搜索和漫游
+                    # 记忆中也无目标，使用空间索引进行大范围全局搜索
                     space_system = world.get_system(SpaceSystem)
                     found_global = False
-                    if space_system is not None and task.task == TaskType.DRINK_WATER:
-                        # 使用空间索引进行大范围查询（半径30）
-                        ids = space_system.query_radius(space.x, space.y, 30)
-                        best_id = None
-                        best_dist = float("inf")
-                        for eid in ids:
-                            if eid == entity.id:
-                                continue
-                            candidate = world.query_entity(eid)
-                            if candidate is None:
-                                continue
-                            if world.get_component(candidate, WaterComponent) is None:
-                                continue
-                            c_space = world.get_component(candidate, SpaceComponent)
-                            if c_space is None:
-                                continue
-                            d = math.hypot(c_space.x - space.x, c_space.y - space.y)
-                            if d < best_dist:
-                                best_dist = d
-                                best_id = candidate
-                        if best_id is not None:
-                            c_space = world.get_component(best_id, SpaceComponent)
-                            action.target_entity = best_id.id
-                            action.target_pos = (c_space.x, c_space.y)
-                            action.current_action = ActionType.MOVE_TO
-                            action.progress = 0.0
-                            action.status = ActionStatus.RUNNING
-                            task.status = TaskStatus.RUNNING
-                            search.result_entity = best_id.id
-                            found_global = True
+                    if space_system is not None:
+                        # 对食物和水源都使用 query_radius(30) 全局搜索最近目标
+                        if task.task == TaskType.DRINK_WATER:
+                            ids = space_system.query_radius(space.x, space.y, 50)
+                            best_id = None
+                            best_dist = float("inf")
+                            for eid in ids:
+                                if eid == entity.id:
+                                    continue
+                                candidate = world.query_entity(eid)
+                                if candidate is None:
+                                    continue
+                                if world.get_component(candidate, WaterComponent) is None:
+                                    continue
+                                c_space = world.get_component(candidate, SpaceComponent)
+                                if c_space is None:
+                                    continue
+                                d = math.hypot(c_space.x - space.x, c_space.y - space.y)
+                                if d < best_dist:
+                                    best_dist = d
+                                    best_id = candidate
+                            # 兜底：遍历所有地面水源
+                            if best_id is None:
+                                for w_ent, (w_comp, w_space) in world.get_components(WaterComponent, SpaceComponent):
+                                    d = math.hypot(w_space.x - space.x, w_space.y - space.y)
+                                    if d < best_dist:
+                                        best_dist = d
+                                        best_id = w_ent
+                            if best_id is not None:
+                                c_space = world.get_component(best_id, SpaceComponent)
+                                action.target_entity = best_id.id
+                                action.target_pos = (c_space.x, c_space.y)
+                                action.current_action = ActionType.MOVE_TO
+                                action.progress = 0.0
+                                action.status = ActionStatus.RUNNING
+                                task.status = TaskStatus.RUNNING
+                                search.result_entity = best_id.id
+                                found_global = True
+
+                        elif task.task == TaskType.FIND_FOOD:
+                            # 先用空间索引查询半径50内的食物
+                            ids = space_system.query_radius(space.x, space.y, 50)
+                            best_id = None
+                            best_dist = float("inf")
+                            for eid in ids:
+                                if eid == entity.id:
+                                    continue
+                                candidate = world.query_entity(eid)
+                                if candidate is None:
+                                    continue
+                                if world.get_component(candidate, FoodComponent) is None:
+                                    continue
+                                c_space = world.get_component(candidate, SpaceComponent)
+                                if c_space is None:
+                                    continue
+                                d = math.hypot(c_space.x - space.x, c_space.y - space.y)
+                                if d < best_dist:
+                                    best_dist = d
+                                    best_id = candidate
+                            # 如果空间索引没找到，直接遍历所有地面食物（兜底，确保不饿死）
+                            if best_id is None:
+                                for f_ent, (f_comp, f_space) in world.get_components(FoodComponent, SpaceComponent):
+                                    d = math.hypot(f_space.x - space.x, f_space.y - space.y)
+                                    if d < best_dist:
+                                        best_dist = d
+                                        best_id = f_ent
+                            if best_id is not None:
+                                c_space = world.get_component(best_id, SpaceComponent)
+                                action.target_entity = best_id.id
+                                action.target_pos = (c_space.x, c_space.y)
+                                action.current_action = ActionType.MOVE_TO
+                                action.progress = 0.0
+                                action.status = ActionStatus.RUNNING
+                                task.status = TaskStatus.RUNNING
+                                search.result_entity = best_id.id
+                                found_global = True
 
                     if not found_global:
                         # 随机向较远位置漫游以扩大搜索范围
-                        roam_range = 15 if task.task == TaskType.DRINK_WATER else 5
+                        roam_range = 15
                         roam_x = space.x + random.randint(-roam_range, roam_range)
                         roam_y = space.y + random.randint(-roam_range, roam_range)
                         roam_x = max(0, min(99, roam_x))

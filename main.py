@@ -311,32 +311,61 @@ class SimulationLoop:
             water_count += 1
             # 水源量缓慢恢复
             if water.amount < water.max_amount:
-                water.amount = min(water.max_amount, water.amount + 0.5 * delta_hours)
+                water.amount = min(water.max_amount, water.amount + 1.0 * delta_hours)
 
-        # 食物低于阈值时补充
-        FOOD_MIN = 15
+        # 食物低于阈值时补充（阈值与人口挂钩，每人保底3份食物）
+        human_count = 0
+        from human.components.basic.human_component import HumanComponent
+        for _ in self.world.get_components(HumanComponent):
+            human_count += 1
+        FOOD_MIN = max(20, human_count * 3)
         if food_count < FOOD_MIN:
             need = FOOD_MIN - food_count
+            # 收集现有地面食物位置，用于聚落化生成
+            existing_food_positions = []
+            for e, [f, s] in self.world.get_components(FoodComponent, SpaceComponent):
+                existing_food_positions.append((s.x, s.y))
             for _ in range(need):
-                x = random.randint(0, 99)
-                y = random.randint(0, 99)
+                if existing_food_positions and random.random() < 0.7:
+                    # 70% 概率在已有食物附近生成（聚落化）
+                    fx, fy = random.choice(existing_food_positions)
+                    x = int(random.gauss(fx, 5))
+                    y = int(random.gauss(fy, 5))
+                else:
+                    # 30% 概率完全随机（探索新区域）
+                    x = random.randint(0, 99)
+                    y = random.randint(0, 99)
+                x = max(0, min(99, x))
+                y = max(0, min(99, y))
                 self.food_factory.create_food(
                     self.world, x=x, y=y,
                     food_type="berry",
-                    amount=random.uniform(10, 50)
+                    amount=random.uniform(20, 60)
                 )
-            print(f"[Regen] 补充 {need} 食物 ({food_count}+{need})")
+            print(f"[Regen] 补充 {need} 食物 ({food_count}+{need})，人口:{human_count}")
 
-        # 水源低于阈值时补充
-        WATER_MIN = 25
+        # 水源低于阈值时补充（阈值与人口挂钩，同时设置上限避免无限积累）
+        WATER_MIN = max(30, human_count * 4)
+        WATER_MAX = max(80, human_count * 10)
         if water_count < WATER_MIN:
-            need = WATER_MIN - water_count
+            need = min(WATER_MAX - water_count, WATER_MIN - water_count)
+            # 收集现有水源位置，用于聚落化生成
+            existing_water_positions = []
+            for e, [w, s] in self.world.get_components(WaterComponent, SpaceComponent):
+                existing_water_positions.append((s.x, s.y))
             for _ in range(need):
-                x = random.randint(0, 99)
-                y = random.randint(0, 99)
+                if existing_water_positions and random.random() < 0.7:
+                    wx, wy = random.choice(existing_water_positions)
+                    x = int(random.gauss(wx, 8))
+                    y = int(random.gauss(wy, 8))
+                else:
+                    x = random.randint(0, 99)
+                    y = random.randint(0, 99)
+                x = max(0, min(99, x))
+                y = max(0, min(99, y))
                 self.water_factory.create_water(
                     self.world, x=x, y=y,
-                    amount=random.uniform(100, 300)
+                    amount=random.uniform(80, 150)
                 )
             print(f"[Regen] 补充 {need} 水源 ({water_count}+{need})")
 
@@ -375,20 +404,13 @@ class SimulationLoop:
 
         total_entities = len(self.world.entities)
 
-        # 统计数据
-        human_count = 0
-        food_count = 0
-        water_count = 0
-        for eid, entity in self.world.entities.items():
-            if self.world.get_component(entity, FoodComponent):
-                food_count += 1
-            from resource.water.components.water_component import WaterComponent
-            if self.world.get_component(entity, WaterComponent):
-                water_count += 1
-
+        # 统计数据 —— 使用 get_components() 避免 O(E) 全量遍历
+        from resource.water.components.water_component import WaterComponent
         from human.components.basic.human_component import HumanComponent
-        for entity, _ in self.world.query_components(HumanComponent):
-            human_count += 1
+
+        human_count = sum(1 for _ in self.world.query_components(HumanComponent))
+        food_count = sum(1 for _ in self.world.get_components(FoodComponent))
+        water_count = sum(1 for _ in self.world.get_components(WaterComponent))
 
         try:
             civilization_status = self.civilization_system.get_civilization_status()

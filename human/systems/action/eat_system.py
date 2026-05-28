@@ -18,6 +18,7 @@ from human.components.cognitive.task_component import TaskComponent, TaskType, T
 from human.components.cognitive.memory_component import MemoryComponent
 from resource.food.components.food_component import FoodComponent
 from space.space_component import SpaceComponent
+from space.space_system import SpaceSystem
 from equipment.components.ownership_component import OwnershipComponent
 
 
@@ -29,6 +30,7 @@ class EatSystem(System):
     """
 
     def update(self, world: World, dt):
+        space_system = world.get_system(SpaceSystem)
         for entity, (needs, action, inventory, task, space) in world.get_components(
             PhysiologyNeedsComponent, ActionComponent, InventoryComponent, TaskComponent, SpaceComponent
         ):
@@ -49,12 +51,17 @@ class EatSystem(System):
             if food_entity is not None:
                 food_source = "inventory"
             else:
-                # 从相同坐标找食物
-                for f_ent, (f_comp, f_space) in world.get_components(FoodComponent, SpaceComponent):
-                    if f_space.x == space.x and f_space.y == space.y and f_space.layer == space.layer:
-                        food_entity = f_ent
-                        food_source = "ground"
-                        break
+                # 使用空间索引 O(1) 查询同坐标食物，替代 O(F) 全量扫描
+                if space_system is not None:
+                    for candidate_id in space_system.entities_at(space.x, space.y, space.layer):
+                        candidate = world.entities.get(candidate_id)
+                        if candidate is None:
+                            continue
+                        food_comp = world.get_component(candidate, FoodComponent)
+                        if food_comp is not None:
+                            food_entity = candidate
+                            food_source = "ground"
+                            break
             
             if food_entity is None:
                 action.current_action = ActionType.IDLE

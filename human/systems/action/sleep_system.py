@@ -37,10 +37,10 @@ class SleepSystem(System):
                 continue
 
             # 模拟睡眠过程（约3小时睡够）
-            action.progress += dt * 0.3
+            action.progress += dt * 0.5
 
             # 睡眠期间逐步恢复能量（避免在睡完前能量耗尽死亡）
-            needs.add_energy(25 * dt)  # 每小时恢复25能量
+            needs.add_energy(40 * dt)  # 每小时恢复40能量
             needs.add_fatigue(-30 * dt)  # 每小时减少30疲劳
 
             if action.progress >= 1.0:

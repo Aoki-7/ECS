@@ -40,9 +40,11 @@ from resource.food.systems.food_decay_system import FoodDecaySystem
 from resource.wood.systems.wood_decay_system import WoodDecaySystem
 from resource.stone.systems.stone_weather_system import StoneWeatherSystem
 from resource.metal.systems.metal_oxidation_system import MetalOxidationSystem
+from garbage.systems.garbage_cleanup_system import GarbageCleanupSystem
 
 # 人类额外系统
 from human.systems.identity.identity_system import IdentitySystem
+from human.systems.identity.age_system import AgeSystem
 
 # 额外工厂
 from plant.plant_factory import PlantFactory
@@ -101,6 +103,7 @@ class FullSimulationLoop(SimulationLoop):
             WoodDecaySystem(),        # 木材腐朽
             StoneWeatherSystem(),     # 石头风化
             MetalOxidationSystem(),   # 金属氧化
+            GarbageCleanupSystem(max_garbage=30),  # 清理垃圾实体，防止无限积累
         ]
         for system in self.resource_decay_systems:
             self.world.add_system(system)
@@ -108,6 +111,10 @@ class FullSimulationLoop(SimulationLoop):
         # 4. 人类身份系统（阵营合法性约束）
         self.identity_system = IdentitySystem()
         self.world.add_system(self.identity_system)
+
+        # 5. 年龄增长系统
+        self.age_system = AgeSystem()
+        self.world.add_system(self.age_system)
 
     # -----------------------------------------------------
     # 初始资源创建扩展
@@ -178,6 +185,9 @@ class FullSimulationLoop(SimulationLoop):
         # 4. 身份系统
         self.identity_system.update(self.world, delta_hours)
 
+        # 5. 年龄增长系统
+        self.age_system.update(self.world, delta_hours)
+
     # -----------------------------------------------------
     # 统计信息扩展
     # -----------------------------------------------------
@@ -185,23 +195,12 @@ class FullSimulationLoop(SimulationLoop):
         """获取当前统计信息（扩展版）"""
         stats = super().get_stats()
 
-        plant_count = 0
-        wood_count = 0
-        stone_count = 0
-        metal_count = 0
-        env_cell_count = 0
-
-        for eid, entity in self.world.entities.items():
-            if self.world.get_component(entity, GenomeComponent):
-                plant_count += 1
-            if self.world.get_component(entity, WoodComponent):
-                wood_count += 1
-            if self.world.get_component(entity, StoneComponent):
-                stone_count += 1
-            if self.world.get_component(entity, MetalComponent):
-                metal_count += 1
-            if self.world.get_component(entity, EnvironmentComponent):
-                env_cell_count += 1
+        # 使用 get_components() 避免 O(E) 全量遍历
+        plant_count = sum(1 for _ in self.world.get_components(GenomeComponent))
+        wood_count = sum(1 for _ in self.world.get_components(WoodComponent))
+        stone_count = sum(1 for _ in self.world.get_components(StoneComponent))
+        metal_count = sum(1 for _ in self.world.get_components(MetalComponent))
+        env_cell_count = sum(1 for _ in self.world.get_components(EnvironmentComponent))
 
         stats.update({
             'plant_count': plant_count,

@@ -26,17 +26,17 @@ class IntentSystem(System):
         优先级：EAT > DRINK > SLEEP > SOCIALIZE > EXPLORE > IDLE
         - 当无紧急需求时，人类会探索周围环境以发现资源
     """
-    # 需求触发阈值
-    HUNGER_THRESHOLD = 50
-    THIRST_THRESHOLD = 50
-    ENERGY_THRESHOLD = 40
+    # 需求触发阈值（降低阈值，给人类更多搜索/移动时间）
+    HUNGER_THRESHOLD = 30
+    THIRST_THRESHOLD = 30
+    ENERGY_THRESHOLD = 55
     SOCIAL_THRESHOLD = 30
 
     # 紧急权重乘数（用于平局时打破优先级）
     CRITICAL_WEIGHTS = {
-        IntentType.SLEEP: 1.3,    # 疲劳危及生命，优先级最高
-        IntentType.DRINK: 1.15,   # 脱水比饥饿更快致命
-        IntentType.EAT: 1.0,      # 基准
+        IntentType.DRINK: 1.25,   # 脱水致命快，优先级最高
+        IntentType.EAT: 1.15,     # 饥饿次之
+        IntentType.SLEEP: 1.0,    # 疲劳可缓，优先级低于生存需求
         IntentType.SOCIALIZE: 0.8,
     }
 

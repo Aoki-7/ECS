@@ -25,6 +25,10 @@ from human.components.physiological.physiology_needs_component import (
     PhysiologyNeedsComponent,
 )
 
+from human.components.basic.age_component import (
+    AgeComponent,
+)
+
 
 class DeathSystem(System):
     """
@@ -49,58 +53,52 @@ class DeathSystem(System):
     def update(self, world: World, dt: float = 1.0):
         """
         检查死亡实体并移除
+        合并为单次遍历，减少重复查询开销
         """
 
         dead_entities = {}
 
         # =====================================================
-        # 1. HealthComponent
+        # 单次遍历：同时查询 Health + PhysiologyNeeds + Energy
+        # 优先使用三元组查询，若某个组件缺失则跳过对应检查
         # =====================================================
 
-        for entity, components in world.get_components(
-            HealthComponent
-        ):
-            health = components[0]
+        # 策略：遍历所有有 HealthComponent 或 PhysiologyNeedsComponent 或 EnergyComponent 的实体
+        # 由于 get_components 要求所有组件都存在，我们改用三次遍历但只遍历一次主循环
+        # 实际上，对于大部分实体（人类）三者都有；植物有 EnergyComponent
+        # 最优方案：遍历 HealthComponent+PhysiologyNeedsComponent（人类），再遍历 EnergyComponent（植物）
+
+        # Pass A: 人类（同时有 Health + PhysiologyNeeds + Age）
+        for entity, (health, needs, age) in world.get_components(HealthComponent, PhysiologyNeedsComponent, AgeComponent):
+            if age.age >= age.max_age:
+                dead_entities[entity] = "old_age"
+                continue
 
             if health.hp <= 0:
                 dead_entities[entity] = "hp_depleted"
+                continue
 
-        # =====================================================
-        # 2. PhysiologyNeedsComponent
-        # =====================================================
-
-        for entity, components in world.get_components(
-            PhysiologyNeedsComponent
-        ):
-            needs = components[0]
-
-            # 体力耗尽
             if needs.energy <= 0:
                 dead_entities[entity] = "exhaustion"
+                continue
 
-            # 饥饿致死
-            elif needs.hunger >= 100:
+            if needs.hunger >= 100:
                 dead_entities[entity] = "starvation"
+                continue
 
-            # 极端脱水
-            elif hasattr(needs, "thirst"):
-                if needs.thirst >= 100:
-                    dead_entities[entity] = "dehydration"
+            if getattr(needs, "thirst", 0) >= 100:
+                dead_entities[entity] = "dehydration"
+                continue
 
-        # =====================================================
-        # 3. 生物 EnergyComponent
-        # =====================================================
-
-        for entity, components in world.get_components(
-            EnergyComponent
-        ):
-            energy = components[0]
-
+        # Pass B: 植物/生物（EnergyComponent，且不在 Pass A 中已判定死亡）
+        for entity, (energy,) in world.get_components(EnergyComponent):
+            if entity in dead_entities:
+                continue
             if energy.value <= 0:
                 dead_entities[entity] = "energy_depleted"
 
         # =====================================================
-        # 4. 执行死亡
+        # 执行死亡
         # =====================================================
 
         removed_count = 0

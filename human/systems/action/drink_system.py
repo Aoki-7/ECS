@@ -17,6 +17,7 @@ from human.components.economic.inventory.inventory_component import InventoryCom
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
+from space.space_system import SpaceSystem
 
 from resource.water.components.water_component import WaterComponent
 from resource.components.resource_component import ResourceComponent
@@ -30,6 +31,7 @@ class DrinkSystem(System):
     """
 
     def update(self, world: World, dt):
+        space_system = world.get_system(SpaceSystem)
         for entity, (needs, action, inventory, task, space) in world.get_components(
             PhysiologyNeedsComponent, ActionComponent, InventoryComponent, TaskComponent, SpaceComponent
         ):
@@ -48,16 +50,23 @@ class DrinkSystem(System):
             water_entity = inventory.find(WaterComponent, world)
             water_source = "inventory" if water_entity is not None else None
 
-            # 再从地面邻近位置找水（允许1格范围内）
-            if water_entity is None:
+            # 使用空间索引 neighbors() O(9) 查询周围水源，替代 O(W) 全量扫描
+            if water_entity is None and space_system is not None:
                 best_dist = float("inf")
-                for w_ent, (w_comp, w_space) in world.get_components(WaterComponent, SpaceComponent):
-                    if w_space.layer != space.layer:
+                for candidate_id in space_system.neighbors(space.x, space.y, 2, space.layer):
+                    candidate = world.entities.get(candidate_id)
+                    if candidate is None:
                         continue
-                    dist = abs(w_space.x - space.x) + abs(w_space.y - space.y)  # 曼哈顿距离
-                    if dist <= 1 and dist < best_dist:
+                    water_comp = world.get_component(candidate, WaterComponent)
+                    if water_comp is None:
+                        continue
+                    c_space = world.get_component(candidate, SpaceComponent)
+                    if c_space is None:
+                        continue
+                    dist = abs(c_space.x - space.x) + abs(c_space.y - space.y)
+                    if dist < best_dist:
                         best_dist = dist
-                        water_entity = w_ent
+                        water_entity = candidate
                         water_source = "ground"
 
             if water_entity is None:

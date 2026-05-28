@@ -235,16 +235,17 @@ class World:
             bisect.insort_left(self.systems, system, key=lambda s: getattr(s, 'priority', 0))
         else:
             self.systems.append(system)
+        # 清除系统查询缓存
+        self._system_cache = {}
+
 
     def update(self, dt: float):
         """
         更新所有 System（按优先级排序）
         使用 copy 防止系统内部删除实体导致迭代异常
         """
-        # 按 priority 排序，数字越小越先执行
-        sorted_systems = sorted(self.systems, key=lambda s: getattr(s, 'priority', 0))
-
-        for system in sorted_systems:
+        # systems 已通过 add_system() 的 bisect 保持有序，无需每帧排序
+        for system in self.systems:
 
             try:
 
@@ -265,10 +266,18 @@ class World:
                 raise
 
     def get_system(self, system_type):
-        for system in self.systems:
-            if isinstance(system, system_type):
-                return system
-            
+        # 使用缓存避免每帧线性扫描
+        if not hasattr(self, '_system_cache'):
+            self._system_cache = {}
+        if system_type not in self._system_cache:
+            for system in self.systems:
+                if isinstance(system, system_type):
+                    self._system_cache[system_type] = system
+                    return system
+            self._system_cache[system_type] = None
+            return None
+        return self._system_cache[system_type]
+    
     # ====
     # Search
     # ====

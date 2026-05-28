@@ -38,7 +38,7 @@ class FoodComponent(Component):
 
     # ===== 状态属性 =====
     freshness: float = 1.0       # 新鲜度 [0,1]
-    decay_rate: float = 0.002    # 腐败速度（每tick），降低以避免短时间内全部腐败
+    decay_rate: float = 0.0005   # 腐败速度（每tick），2000步后才触发腐败
 
     is_perishable: bool = True   # 是否会腐败
 

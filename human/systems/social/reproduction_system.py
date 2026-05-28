@@ -111,9 +111,14 @@ class ReproductionSystem(System):
         except:
             pass
         
-        # 生成新人类的名字（简化）
+        # 生成新人类的名字（简化，避免无限叠加 _Child）
         if parent_identity:
-            child_name = f"{parent_identity.name}_Child"
+            base_name = parent_identity.name
+            # 如果名字已经包含 _Child，截断到原始名字 + 代际标记
+            if "_Child" in base_name:
+                # 提取原始名字（第一个 _Child 之前的部分）
+                base_name = base_name.split("_Child")[0]
+            child_name = f"{base_name}_Child"
         else:
             child_name = f"Child_{entity.id}"
         

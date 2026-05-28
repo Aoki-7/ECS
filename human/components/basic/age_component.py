@@ -25,5 +25,8 @@ class AgeComponent(Component):
     min_reproductive_age: float = 18.0
     max_reproductive_age: float = 50.0
 
+    # 最大寿命（超过此年龄自然死亡）
+    max_age: float = 80.0
+
     def is_reproductive_age(self) -> bool:
         return self.min_reproductive_age <= self.age <= self.max_reproductive_age

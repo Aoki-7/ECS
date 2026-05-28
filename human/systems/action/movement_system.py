@@ -103,8 +103,9 @@ class MovementSystem(System):
                     if memory:
                         memory.record_success("explore")
             else:
-                space.x += dir_x * move_dist
-                space.y += dir_y * move_dist
+                # Round to int to keep SpatialIndex keys valid
+                space.x = round(space.x + dir_x * move_dist)
+                space.y = round(space.y + dir_y * move_dist)
                 space.dirty = True
                 new_dx = target_x - space.x
                 new_dy = target_y - space.y

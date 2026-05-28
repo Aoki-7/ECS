@@ -155,8 +155,8 @@ class HumanEntity:
         world.add_component(entity, PhysiologyNeedsComponent())
 
         # 能力组件
-        world.add_component(entity, VelocityComponent(speed=kwargs.get('speed', 1.5)))
-        world.add_component(entity, VisionComponent(radius=kwargs.get('vision_radius', 12)))
+        world.add_component(entity, VelocityComponent(speed=kwargs.get('speed', 2.5)))
+        world.add_component(entity, VisionComponent(radius=kwargs.get('vision_radius', 15)))
         world.add_component(entity, SkillComponent())
         world.add_component(entity, SearchComponent())
 
