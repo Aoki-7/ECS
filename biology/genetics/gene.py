@@ -1,19 +1,16 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-'''
-@文件:gene.py
+"""
+@文件:biology/genetics/gene.py
 @说明:基因原子基类
-@时间:2026/03/09 13:40:06
-@作者:Sherry
-@版本:1.0
-'''
 
-
-
-
+Gene 是遗传信息的最小单位，包含表达目标、表达强度、
+显性系数、突变率等属性。由 GenomeComponent 聚合存储，
+通过 GeneExpressionSystem 计算表达值后写入 PhenotypeComponent。
+"""
 
 from dataclasses import dataclass, field
-from typing import Dict, Callable
+from typing import Dict, Callable, Optional
 import random
 
 
@@ -22,34 +19,18 @@ class Gene:
     """
     基因原子
 
-    Attributes
-    ----------
-    name : str
-        基因名称
-
-    expression_target : str
-        影响的表型 trait 名称
-
-    strength : float
-        基因表达强度
-
-    dominance : float
-        显性系数
-
-    mutation_rate : float
-        突变概率
-
-    min_value : float
-        表达最小值
-
-    max_value : float
-        表达最大值
-
-    regulators : dict[str, float]
-        调控因子 (其他trait或gene)
-
-    metadata : dict
-        扩展字段
+    Attributes:
+        name: 基因名称，通常用于调试和日志。
+        expression_target: 影响的表型 trait 名称，
+                           如 "max_photosynthesis_rate", "metabolism_rate"。
+        strength: 基因表达强度，是计算 trait 值的核心参数。
+        dominance: 显性系数，strength * dominance 为实际表达值。
+        mutation_rate: 单次突变概率 (0~1)。
+        min_value: 表达最小值约束（默认 -inf）。
+        max_value: 表达最大值约束（默认 +inf）。
+        regulators: 调控因子，其他 trait/gene 对该基因的影响权重。
+        metadata: 扩展字段，供外部系统附加自定义数据。
+        expression_fn: 可选的非线性表达函数，对 (strength * dominance) 做变换。
     """
 
     name: str
@@ -76,6 +57,10 @@ class Gene:
     def express(self) -> float:
         """
         计算基因表达值
+
+        公式：value = strength * dominance
+        若配置了 expression_fn，则对结果做非线性变换。
+        最后通过 clamp 限制在 [min_value, max_value] 范围内。
         """
         value = self.strength * self.dominance
 
@@ -89,6 +74,7 @@ class Gene:
     # ------------------------------------------------
 
     def clamp(self, value: float) -> float:
+        """将值限制在 [min_value, max_value] 范围内"""
         if value < self.min_value:
             return self.min_value
         if value > self.max_value:
@@ -99,18 +85,30 @@ class Gene:
     # 突变
     # ------------------------------------------------
 
-    def mutate(self):
+    def mutate(self, rng: Optional[random.Random] = None) -> bool:
         """
         基因突变
+
+        以 mutation_rate 的概率触发 strength 的随机波动。
+        波动量服从均值为 0、标准差为 0.1 的正态分布。
+
+        Args:
+            rng: 可选的局部随机数生成器。传入时可避免污染全局 random 状态。
+
+        Returns:
+            是否发生了突变。
         """
-        if random.random() > self.mutation_rate:
-            return
+        _rng = rng if rng is not None else random
+
+        if _rng.random() > self.mutation_rate:
+            return False
 
         # strength 突变
-        delta = random.gauss(0, 0.1)
+        delta = _rng.gauss(0, 0.1)
         self.strength += delta
 
         self.strength = self.clamp(self.strength)
+        return True
 
     # ------------------------------------------------
     # 复制（遗传）
@@ -119,6 +117,9 @@ class Gene:
     def copy(self) -> "Gene":
         """
         创建基因副本（用于繁殖）
+
+        深拷贝所有可变字段（regulators, metadata），
+        expression_fn 引用保持不变（假设为纯函数或不可变）。
         """
         return Gene(
             name=self.name,

@@ -1,11 +1,19 @@
-# biology/systems/morphology_system.py
-#
-# 根据生长池能量 + 基因分配策略更新形态组件
-#
-# 读取的基因：
-#   leaf_bias, root_bias, stem_bias  — 器官分配偏向
-#   max_height                        — 高度上限
-#   stem_thickness_factor             — 茎粗系数
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+"""
+@文件:biology/systems/morphology_system.py
+@说明:形态更新系统
+
+根据生长池能量与基因分配策略，更新植物实体的形态参数：
+    - 叶片大小、数量
+    - 根系深度
+    - 高度（受 max_height 上限约束）
+    - 茎干粗细
+    - 枯萎状态
+
+读取的表型性状：
+    leaf_bias, root_bias, stem_bias, max_height, stem_thickness_factor
+"""
 
 from core.world import World
 from core.system import System
@@ -17,12 +25,27 @@ from biology.components.energy_component import EnergyComponent
 
 class MorphologySystem(System):
     """
-    根据基因、环境条件和能量更新形态。
-    """
-    def update(self, world: World, delta_hours: float = 1.0):
+    形态更新系统
 
+    职责：
+        - 读取 phenotype 中的器官分配偏向基因
+        - 按 growth_pool 中的能量分配至叶、根、茎
+        - 更新 MorphologyComponent 的各项参数
+        - 处理能量耗尽时的枯萎逻辑
+    """
+
+    def update(self, world: World, delta_hours: float = 1.0):
+        """
+        执行形态更新
+
+        Args:
+            world: World 实例
+            delta_hours: 时间步长（当前模型与时间无关，预留参数）
+        """
         for entity, (pheno, energy, morph) in \
-            world.get_components(PhenotypeComponent, EnergyComponent, MorphologyComponent):
+            world.get_components(
+                PhenotypeComponent, EnergyComponent, MorphologyComponent
+            ):
 
             growth_energy = energy.growth_pool
 

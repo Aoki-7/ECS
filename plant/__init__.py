@@ -7,5 +7,6 @@
 '''
 
 from .plant_factory import PlantFactory
+from .presets import SPECIES_PRESETS, SPECIES_LIFECYCLE
 
-__all__ = ["PlantFactory"]
+__all__ = ["PlantFactory", "SPECIES_PRESETS", "SPECIES_LIFECYCLE"]

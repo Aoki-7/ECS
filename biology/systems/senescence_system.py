@@ -1,11 +1,19 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-'''
-@文件:senescence_system.py
+"""
+@文件:biology/systems/senescence_system.py
 @说明:衰老系统，驱动植物进入衰老并逐步退化
-@时间:2026/05/28
-@版本:1.0
-'''
+
+作用：
+    - 植物进入衰老期后，逐步降低光合效率
+    - 黄化叶片、枯萎
+    - 能量入不敷出加速死亡
+
+触发条件（由 LifeCycleSystem 推进）：
+    - 超龄（current_age >= max_age）
+    - 长期能量为负（energy.value <= 0 且仍存活）
+    - 环境胁迫累积
+"""
 
 from core.world import World
 from core.system import System
@@ -14,21 +22,17 @@ from biology.components.life_cycle_component import LifeCycleComponent
 from biology.components.energy_component import EnergyComponent
 from biology.components.morphology_component import MorphologyComponent
 from biology.components.phenotype_component import PhenotypeComponent
+from biology.traits.trait import Trait
 
 
 class SenescenceSystem(System):
     """
     衰老系统
 
-    作用：
-    - 植物进入衰老期后，逐步降低光合效率
-    - 黄化叶片、枯萎
-    - 能量入不敷出加速死亡
-
-    触发条件（由 LifeCycleSystem 推进）：
-    - 超龄（current_age >= max_age）
-    - 长期能量为负
-    - 环境胁迫累积
+    职责：
+        1. 处理已进入 SENESCENCE 阶段的实体，逐步退化其生理状态
+        2. 检测长期能量不足的存活实体，触发 senescence_triggered 标志
+           （供 LifeCycleSystem 在下一帧推进到 SENESCENCE 阶段）
     """
 
     def __init__(self):
@@ -38,9 +42,11 @@ class SenescenceSystem(System):
         """
         更新衰老状态
 
-        只处理已进入 SENESCENCE 阶段的实体
+        Args:
+            world: World 实例
+            dt: 时间步长（小时）
         """
-        # ========== 衰老植物：退化生长&光合 ==========
+        # ========== 衰老植物：退化生长 & 光合 ==========
         for entity, (lifecycle, pheno, energy, morph) in \
                 world.get_components(
                     LifeCycleComponent,
@@ -50,11 +56,11 @@ class SenescenceSystem(System):
                 ):
             self._process_senescence(entity, lifecycle, pheno, energy, morph, dt)
 
-        # ========== 能量耗尽触发衰老 ==========
+        # ========== 能量耗尽触发衰老标志 ==========
         for entity, (lifecycle, energy) in \
                 world.get_components(LifeCycleComponent, EnergyComponent):
 
-            # 跳过已有生命周期组件（已在上面处理过）或已在衰老/死亡
+            # 跳过已在衰老/死亡的实体
             if lifecycle.is_senescence or lifecycle.is_dead:
                 continue
 
@@ -75,8 +81,11 @@ class SenescenceSystem(System):
         morph: MorphologyComponent,
         dt: float,
     ):
-        """衰老期间的逐帧退化"""
+        """
+        衰老期间的逐帧退化
 
+        退化程度与衰老持续时间成正比（senescence_ratio: 0→1）。
+        """
         if not lifecycle.is_senescence:
             return
 
@@ -94,13 +103,11 @@ class SenescenceSystem(System):
         morph.wilting = min(1.0, senescence_ratio * 0.5)
 
         # ---------- 光合效率衰减 ----------
-        # 从表型中获取光合速率，衰老期按比例衰减
         current_photo = pheno.get("max_photosynthesis_rate", 20.0)
 
         if current_photo > 0:
             senesced_photo = current_photo * (1.0 - senescence_ratio * 0.8)
-            # 更新表型中的光合速率值
-            from biology.traits.trait import Trait
+            # 更新表型中的光合速率值（来源标记为 senescence）
             pheno.set_trait(Trait(
                 name="max_photosynthesis_rate",
                 value=max(0.5, senesced_photo),

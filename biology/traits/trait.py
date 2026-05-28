@@ -1,3 +1,18 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+"""
+@文件:biology/traits/trait.py
+@说明:性状基类
+
+Trait 表示基因表达后的数值性状，是 Genome → Gene 表达之后的中间层结果。
+由 GeneExpressionSystem 写入 PhenotypeComponent，
+被 GrowthSystem、EnvironmentSystem、SenescenceSystem 等系统读取。
+
+注意：
+    - Trait 不是基因本身，而是"当前表达状态"
+    - 每一帧都可能被重新计算
+    - 来源标记 (source) 用于区分基因表达、环境调制、系统动态修改等不同来源
+"""
 
 from dataclasses import dataclass
 from typing import Optional
@@ -6,54 +21,36 @@ from typing import Optional
 @dataclass
 class Trait:
     """
-    Trait 表示“基因表达后的数值性状”。
+    数值性状
 
-    它是 Genome → Gene 表达之后的中间层结果，
-    由 GeneExpressionSystem 写入，
-    被 GrowthSystem / EnvironmentSystem 等系统读取。
-
-    ⚠ 注意：
-    - Trait 不是基因本身
-    - Trait 是“当前表达状态”
-    - 每一帧都可能被重新计算
+    Attributes:
+        name: 性状名称（例如: growth_rate, leaf_size）
+        value: 当前表达值
+        min_value: 可选下界约束（防止出现物理不合理值）
+        max_value: 可选上界约束
+        source: 来源标记，如 "gene", "environment", "mutation", "system", "senescence"
+        auto_clamp: 是否启用自动约束
+        weight: 表达权重（用于后期做 dominance / 环境调制）
+        mutable: 是否允许被系统修改（用于区分遗传性状和临时性状）
     """
 
-    # 性状名称（例如: growth_rate, leaf_size）
     name: str
-
-    # 当前表达值
     value: float
-
-    # 可选：下界约束（防止出现物理不合理值）
     min_value: Optional[float] = None
-
-    # 可选：上界约束
     max_value: Optional[float] = None
-
-    # 来源标记：
-    # gene         -> 基因表达
-    # environment  -> 环境调制
-    # mutation     -> 突变产生
-    # system       -> 其他系统动态修改
     source: str = "gene"
-
-    # 是否启用自动约束
     auto_clamp: bool = True
-
-    # 可选：表达权重（用于后期做 dominance / 环境调制）
     weight: float = 1.0
-
-    # 是否允许被系统修改（用于区分“遗传性状”和“临时性状”）
     mutable: bool = True
 
     def apply_delta(self, delta: float):
         """
-        对 Trait 进行增量修改。
+        对 Trait 进行增量修改
 
         常用于：
-        - 环境调制
-        - 突变叠加
-        - 系统动态影响
+            - 环境调制
+            - 突变叠加
+            - 系统动态影响
         """
         if not self.mutable:
             return
@@ -65,11 +62,12 @@ class Trait:
 
     def clamp(self):
         """
-        将 value 限制在 min_value / max_value 范围内。
+        将 value 限制在 [min_value, max_value] 范围内
+
         用于防止：
-        - 负生长率
-        - 无限增长
-        - 非物理数值
+            - 负生长率
+            - 无限增长
+            - 非物理数值
         """
         if self.min_value is not None:
             self.value = max(self.min_value, self.value)
@@ -78,19 +76,18 @@ class Trait:
             self.value = min(self.max_value, self.value)
 
     def reset(self, new_value: float):
-        """
-        重置数值（通常在每帧基因重新表达时使用）。
-        """
+        """重置数值（通常在每帧基因重新表达时使用）"""
         self.value = new_value
         if self.auto_clamp:
             self.clamp()
 
-    def copy(self):
+    def copy(self) -> "Trait":
         """
-        返回 Trait 的拷贝。
+        返回 Trait 的深拷贝
+
         用于：
-        - 代际遗传
-        - 快照
+            - 代际遗传快照
+            - 状态回溯
         """
         return Trait(
             name=self.name,

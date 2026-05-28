@@ -66,7 +66,14 @@ from biology.systems.gene_expression_system import GeneExpressionSystem
 from biology.systems.growth_system import GrowthSystem
 from biology.systems.morphology_system import MorphologySystem
 from biology.systems.death_system import DeathSystem
+from biology.systems.life_cycle_system import LifeCycleSystem
+from biology.systems.senescence_system import SenescenceSystem
+from biology.systems.mutation_system import MutationSystem
 from biology.systems.reproduction_system import ReproductionSystem as BiologyReproductionSystem
+from biology.systems.immune_system import ImmuneSystem
+from biology.systems.damage_repair_system import DamageRepairSystem
+from biology.systems.nutrient_system import NutrientSystem
+from biology.systems.competition_system import CompetitionSystem
 
 # 规则系统
 from rules.transformation_system import TransformationSystem
@@ -181,11 +188,21 @@ class SimulationLoop:
         ]
 
         # 5. 生物学系统
+        # 执行顺序：
+        #   基因表达 → 竞争 → 生长 → 形态 → 营养 → 生命周期 → 衰老 → 损伤修复 → 变异 → 繁殖 → 免疫 → 死亡
         self.biology_systems = [
-            GeneExpressionSystem(),
-            GrowthSystem(),
-            MorphologySystem(),
-            DeathSystem(),
+            GeneExpressionSystem(),      # 基因型 → 表型
+            CompetitionSystem(),         # 生态竞争（影响 phenotype）
+            GrowthSystem(),              # 光合作用 + 呼吸 + 能量分配
+            MorphologySystem(),          # 生长池 → 形态更新
+            NutrientSystem(),            # N/P/K 吸收与消耗
+            LifeCycleSystem(),           # 积温累积 + 阶段推进
+            SenescenceSystem(),          # 衰老退化
+            DamageRepairSystem(),        # 损伤修复（消耗能量）
+            MutationSystem(),            # 持续环境诱变
+            BiologyReproductionSystem(), # 成熟期繁殖
+            ImmuneSystem(),              # 感染传播与免疫反应
+            DeathSystem(),               # 死亡判定（最后执行，移除实体）
         ]
 
         # 6. 规则系统
