@@ -8,9 +8,13 @@
 @版本:1.0
 '''
 
+import logging
+
 from core.system import System
 from core.world import World
 from typing import List
+
+logger = logging.getLogger(__name__)
 
 from human.components.basic.human_component import HumanComponent
 from human.components.economic.economy_component import EconomyComponent
@@ -142,7 +146,7 @@ class CivilizationSystem(System):
 
     def _on_stage_transition(self, new_stage: str, world: World):
         """文明阶段转换事件"""
-        print(f"[CivilizationSystem] Civilization advanced to: {new_stage}")
+        logger.info(f"[CivilizationSystem] Civilization advanced to: {new_stage}")
 
         # 触发阶段特定事件
         if new_stage == "agricultural":
@@ -173,31 +177,31 @@ class CivilizationSystem(System):
 
     def _trigger_population_event(self, milestone: int, world: World):
         """触发人口里程碑事件"""
-        print(f"[CivilizationSystem] Population milestone reached: {milestone} humans")
+        logger.info(f"[CivilizationSystem] Population milestone reached: {milestone} humans")
 
         # 增加社会复杂度
         self.civilization_metrics['social_organization'] *= 1.2
 
     def _trigger_technology_event(self, milestone: int, world: World):
         """触发技术里程碑事件"""
-        print(f"[CivilizationSystem] Technology milestone reached: {milestone} technologies")
+        logger.info(f"[CivilizationSystem] Technology milestone reached: {milestone} technologies")
 
         # 增加技术水平
         self.civilization_metrics['technology_level'] *= 1.1
 
     def _unlock_agricultural_behaviors(self, world: World):
         """解锁农业行为"""
-        print("[CivilizationSystem] Agricultural behaviors unlocked")
+        logger.info("[CivilizationSystem] Agricultural behaviors unlocked")
         # 这里可以添加农业相关的行为解锁逻辑
 
     def _unlock_metalworking_behaviors(self, world: World):
         """解锁金属加工行为"""
-        print("[CivilizationSystem] Metalworking behaviors unlocked")
+        logger.info("[CivilizationSystem] Metalworking behaviors unlocked")
         # 这里可以添加金属加工相关的行为解锁逻辑
 
     def _unlock_advanced_construction(self, world: World):
         """解锁高级建造"""
-        print("[CivilizationSystem] Advanced construction unlocked")
+        logger.info("[CivilizationSystem] Advanced construction unlocked")
         # 这里可以添加高级建造相关的行为解锁逻辑
 
     def get_civilization_status(self) -> dict:

@@ -55,7 +55,7 @@ from core.world import World
 PipelineEntry = Tuple[System, str, str]
 
 
-class EnvironmentPipeline:
+class EnvironmentPipeline(System):
     """
     环境管线 — 编排执行的权威来源
 
@@ -71,6 +71,7 @@ class EnvironmentPipeline:
             entries: [(system_instance, "name", "I/O description"), ...]
                      顺序即执行顺序，由 builder 决定。
         """
+        super().__init__()
         self._entries = entries
 
     def update(self, world: World, delta_hours: float):

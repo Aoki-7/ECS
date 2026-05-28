@@ -35,21 +35,15 @@ class System:
         pass
 
     # 主执行入口
-    def update(self, world: World):
+    def update(self, world: World, dt: float = 1.0):
         """
-        不建议子类重写此方法。
-        子类应重写 _update。
+        系统主更新入口。
+        
+        子类应直接重写此方法，实现具体的系统逻辑。
+        基类保留 enabled 检查作为统一前置条件。
         """
         if not self.enabled:
             return
-
-    def _update(self, world: World):
-        """
-        子类必须实现
-        """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} 必须实现 _update 方法"
-        )
 
     #     # 调试信息
     # 

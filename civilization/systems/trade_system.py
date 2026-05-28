@@ -8,10 +8,14 @@
 @版本:1.0
 '''
 
+import logging
+
 from core.system import System
 from core.world import World
 from typing import List, Tuple, Dict, Any
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
@@ -188,7 +192,7 @@ class TradeSystem(System):
         # 记录交易历史
         self._record_trade_history(entity, partner_entity, offered, requested, world)
 
-        print(f"[TradeSystem] Trade completed between {entity.id} and {partner_entity.id}")
+        logger.info(f"[TradeSystem] Trade completed between {entity.id} and {partner_entity.id}")
 
     def _transfer_resource(self, from_inventory: InventoryComponent,
                           to_inventory: InventoryComponent, resource_type: str, amount: float):

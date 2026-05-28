@@ -15,10 +15,13 @@
 - 新生儿自动继承（由 ReproductionSystem 触发）
 '''
 
+import logging
 import random
 import math
 
 from core.system import System
+
+logger = logging.getLogger(__name__)
 from core.world import World
 from core.entity import Entity
 
@@ -85,7 +88,7 @@ class TribeSystem(System):
             # 6. 记录部落事件
             if tribe.get_member_count() >= 5 and not hasattr(tribe, '_milestone_5'):
                 tribe._milestone_5 = True
-                print(f"[TribeSystem] 部落 '{tribe.name}' 达到5人里程碑")
+                logger.info(f"[TribeSystem] 部落 '{tribe.name}' 达到5人里程碑")
     
     def _init_tribes(self, world: World):
         """初始化：为所有无部落的人类创建一个初始部落"""
@@ -136,7 +139,7 @@ class TribeSystem(System):
                 membership.loyalty = 60.0 + random.uniform(-10, 10)
         
         self._tribe_entity_cache = tribe_entity
-        print(f"[TribeSystem] 初始部落 '{tribe.name}' 成立，成员 {len(humans)} 人，领袖: {oldest.id if oldest else '无'}")
+        logger.info(f"[TribeSystem] 初始部落 '{tribe.name}' 成立，成员 {len(humans)} 人，领袖: {oldest.id if oldest else '无'}")
         EventLog.log(
             world, event_type="tribe_formed",
             description=f"部落 '{tribe.name}' 成立，成员 {len(humans)} 人",
@@ -252,7 +255,7 @@ class TribeSystem(System):
             
             identity = world.get_component(best_candidate, IdentityComponent)
             name = identity.name if identity else f"Human_{best_candidate.id}"
-            print(f"[TribeSystem] 部落 '{tribe.name}' 领袖更替: {name} (得分 {best_score:.0f})")
+            logger.info(f"[TribeSystem] 部落 '{tribe.name}' 领袖更替: {name} (得分 {best_score:.0f})")
             
             # 记录到全局事件日志
             EventLog.log(
@@ -357,7 +360,7 @@ class TribeSystem(System):
             
             identity = world.get_component(entity, IdentityComponent)
             name = identity.name if identity else f"Human_{entity.id}"
-            print(f"[TribeSystem] {name} 加入部落 '{tribe.name}'")
+            logger.info(f"[TribeSystem] {name} 加入部落 '{tribe.name}'")
             
             # 记录到全局事件日志
             EventLog.log(

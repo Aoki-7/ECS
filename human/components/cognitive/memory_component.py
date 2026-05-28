@@ -74,17 +74,22 @@ class MemoryComponent(Component):
         ][-n:]
         return events
     
-    def get_event_sentiment(self, event_type: str, hours: float = 48) -> float:
+    def get_event_sentiment(self, event_type: str, current_time: float = None, hours: float = 48) -> float:
         """
         获取某类事件在最近hours小时内的平均情感影响
+        
+        Args:
+            event_type: 事件类型
+            current_time: 当前世界时间（总小时），为None时不过滤时间
+            hours: 时间窗口（小时）
         
         Returns:
             float: -1 (负面) ~ 1 (正面)，0 表示无记录
         """
-        import time as time_module
-        current_time = time_module.time()  # fallback
-        # 实际应从外部传入当前时间，这里简化处理
-        recent = [e for e in self.events[-50:] if e["type"] == event_type]
+        if current_time is not None:
+            recent = [e for e in self.events if e["type"] == event_type and current_time - e["time"] <= hours]
+        else:
+            recent = [e for e in self.events[-50:] if e["type"] == event_type]
         if not recent:
             return 0.0
         return sum(e["impact"] for e in recent) / len(recent)

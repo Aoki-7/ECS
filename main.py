@@ -20,9 +20,18 @@ import time
 import math
 import random
 import sys
+import logging
 
 # 修复 Windows 终端中文乱码
 sys.stdout.reconfigure(encoding='utf-8')
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 from core.world import World
 from core.system import System
@@ -60,6 +69,7 @@ from human.systems.action.socialize_system import SocializeSystem
 # 生理系统
 from human.systems.physiological.physiology_needs_system import PhysiologyNeedsSystem
 from human.systems.physiological.health_system import HealthSystem
+from human.systems.physiological.human_death_system import HumanDeathSystem
 
 # 生物学系统
 from biology.systems.gene_expression_system import GeneExpressionSystem
@@ -135,15 +145,19 @@ class SimulationLoop:
         self.start_time = time.time()
 
     def _init_systems(self):
-        """初始化所有系统，按执行顺序分组"""
+        """初始化所有系统，按执行顺序分组并注册到 world"""
 
-        # 1. 时间系统（最高优先级）
+        # 1. 时间系统（priority 5，仅次于空间系统）
         self.time_system = TimeSystem()
+        self.time_system.priority = 5
+        self.world.add_system(self.time_system)
 
-        # 2. 环境管线（统一编排 14 个子系统）
+        # 2. 环境管线（统一编排 14 个子系统，priority 20）
         self.env_pipeline = EnvironmentBuilder.build(self.world)
+        self.env_pipeline.priority = 20
+        self.world.add_system(self.env_pipeline)
 
-        # 3. 人类系统（按处理流水线排序）
+        # 3. 人类系统（按处理流水线排序，priority 30）
         #    感知→情绪→思维→目标→意图→决策→规划→动作调度→搜索/移动/交互→社交
         self.human_systems = [
             # 感知层
@@ -175,19 +189,27 @@ class SimulationLoop:
             PairingSystem(),
             ReproductionSystem(),
         ]
+        for system in self.human_systems:
+            system.priority = 30
+            self.world.add_system(system)
         
-        # 部落系统单独保存引用并注册到 world，以便 ReproductionSystem 调用
+        # 部落系统单独保存引用并注册到 world（priority 39，人类系统末尾）
         self.tribe_system = TribeSystem()
+        self.tribe_system.priority = 39
         self.world.add_system(self.tribe_system)
         self.human_systems.append(self.tribe_system)
 
-        # 4. 生理系统
+        # 4. 生理系统（priority 40）
         self.physiology_systems = [
             PhysiologyNeedsSystem(),
             HealthSystem(),
+            HumanDeathSystem(),
         ]
+        for system in self.physiology_systems:
+            system.priority = 40
+            self.world.add_system(system)
 
-        # 5. 生物学系统
+        # 5. 生物学系统（priority 50）
         # 执行顺序：
         #   基因表达 → 竞争 → 生长 → 形态 → 营养 → 生命周期 → 衰老 → 损伤修复 → 变异 → 繁殖 → 免疫 → 死亡
         self.biology_systems = [
@@ -204,8 +226,11 @@ class SimulationLoop:
             ImmuneSystem(),              # 感染传播与免疫反应
             DeathSystem(),               # 死亡判定（最后执行，移除实体）
         ]
+        for system in self.biology_systems:
+            system.priority = 50
+            self.world.add_system(system)
 
-        # 6. 规则系统
+        # 6. 规则系统（priority 60）
         self.transformation_rules = [
             TransformationRule(
                 source_component=FoodComponent,
@@ -216,9 +241,14 @@ class SimulationLoop:
         self.rule_systems = [
             TransformationSystem(self.transformation_rules),
         ]
+        for system in self.rule_systems:
+            system.priority = 60
+            self.world.add_system(system)
 
-        # 7. 文明系统（最高层级）
+        # 7. 文明系统（最高层级，priority 70）
         self.civilization_system = CivilizationSystem()
+        self.civilization_system.priority = 70
+        self.world.add_system(self.civilization_system)
         
         # 8. 可视化面板
         self.human_panel = HumanStatePanel()
@@ -233,38 +263,10 @@ class SimulationLoop:
         # 同步步数到 world，供 EventLog 使用
         self.world._step_count = self.step_count
 
-        # 0. 空间系统同步（确保所有dirty实体位置更新到空间索引）
-        self.space_system.update()
+        # 所有 ECS System 由 world 统一调度（按 priority 排序执行）
+        self.world.update(delta_hours)
 
-        # 1. 时间推进
-        self.time_system.update(self.world, delta_hours)
-
-        # 2. 环境管线（14 个子系统按 4 层 DAG 顺序执行）
-        self.env_pipeline.update(self.world, delta_hours)
-
-        # 3. 人类系统更新
-        for system in self.human_systems:
-            system.update(self.world, delta_hours)
-
-        # 4. 生理系统更新
-        for system in self.physiology_systems:
-            system.update(self.world, delta_hours)
-
-        # 5. 生物学系统更新
-        for system in self.biology_systems:
-            try:
-                system.update(self.world, delta_hours)
-            except TypeError:
-                system.update(self.world)
-
-        # 6. 规则系统更新
-        for system in self.rule_systems:
-            system.update(self.world, delta_hours)
-
-        # 7. 文明系统更新
-        self.civilization_system.update(self.world, delta_hours)
-
-        # 8. 资源再生
+        # 资源再生（非 System，手动调用）
         self._regenerate_resources(delta_hours)
 
         self.step_count += 1
@@ -277,7 +279,7 @@ class SimulationLoop:
             food_count: 食物实体数量
             water_count: 水源实体数量
         """
-        print(f"[Init] 资源: {food_count} 食物, {water_count} 水源")
+        logger.info(f"[Init] 资源: {food_count} 食物, {water_count} 水源")
 
         for i in range(food_count):
             x = random.randint(0, 99)
@@ -359,7 +361,7 @@ class SimulationLoop:
                     food_type="berry",
                     amount=random.uniform(20, 60)
                 )
-            print(f"[Regen] 补充 {need} 食物 ({food_count}+{need})，人口:{human_count}")
+            logger.info(f"[Regen] 补充 {need} 食物 ({food_count}+{need})，人口:{human_count}")
 
         # 水源低于阈值时补充（阈值与人口挂钩，同时设置上限避免无限积累）
         WATER_MIN = max(30, human_count * 4)
@@ -384,7 +386,7 @@ class SimulationLoop:
                     self.world, x=x, y=y,
                     amount=random.uniform(80, 150)
                 )
-            print(f"[Regen] 补充 {need} 水源 ({water_count}+{need})")
+            logger.info(f"[Regen] 补充 {need} 水源 ({water_count}+{need})")
 
     def create_initial_population(self, human_count: int = 10):
         """
@@ -393,7 +395,7 @@ class SimulationLoop:
         Args:
             human_count: 初始人类数量
         """
-        print(f"[Init] 人口: {human_count} 人类")
+        logger.info(f"[Init] 人口: {human_count} 人类")
 
         # 让人类初始位置分布在地图中央区域，避免边缘（提高早期找到资源的概率）
         for i in range(human_count):
@@ -412,7 +414,7 @@ class SimulationLoop:
             for gy in range(grid_size):
                 env_factory.create_environment_cell(gx, gy)
                 count += 1
-        print(f"[Init] 环境网格: {grid_size}×{grid_size}={count} 单元")
+        logger.info(f"[Init] 环境网格: {grid_size}×{grid_size}={count} 单元")
 
     def get_stats(self) -> dict:
         """获取当前统计信息"""
@@ -460,15 +462,15 @@ class SimulationLoop:
             show_panel: 是否定期打印人类状态面板
             panel_interval: 面板刷新间隔（步数）
         """
-        print(f"[Run] 模拟: {steps} 步 × {delta_hours}h")
+        logger.info(f"[Run] 模拟: {steps} 步 × {delta_hours}h")
 
         for step in range(steps):
             if verbose and step % 50 == 0:
                 stats = self.get_stats()
-                print(f"  Step {step:>4}/{steps} | 实体:{stats['total_entities']:>3} "
-                      f"人口:{stats['human_count']:>2} 食物:{stats['food_count']:>2} "
-                      f"水源:{stats['water_count']:>2} "
-                      f"{stats['steps_per_second']:>6.1f}步/s")
+                logger.info(f"  Step {step:>4}/{steps} | 实体:{stats['total_entities']:>3} "
+                            f"人口:{stats['human_count']:>2} 食物:{stats['food_count']:>2} "
+                            f"水源:{stats['water_count']:>2} "
+                            f"{stats['steps_per_second']:>6.1f}步/s")
             
             if show_panel and step % panel_interval == 0 and step > 0:
                 self.human_panel.print_panel(self.world, step)
@@ -476,10 +478,10 @@ class SimulationLoop:
             self.update(delta_hours)
 
         final_stats = self.get_stats()
-        print(f"[Done] 实体:{final_stats['total_entities']} 人口:{final_stats['human_count']} "
-              f"食物:{final_stats['food_count']} 水源:{final_stats['water_count']} "
-              f"文明:{final_stats['civilization_stage']} "
-              f"{final_stats['steps_per_second']:.0f}步/s")
+        logger.info(f"[Done] 实体:{final_stats['total_entities']} 人口:{final_stats['human_count']} "
+                    f"食物:{final_stats['food_count']} 水源:{final_stats['water_count']} "
+                    f"文明:{final_stats['civilization_stage']} "
+                    f"{final_stats['steps_per_second']:.0f}步/s")
 
     def _debug_human_status(self):
         """打印所有人类的完整状态（调试用）"""
@@ -488,7 +490,7 @@ class SimulationLoop:
 
 def main():
     """主函数"""
-    print("=== ECS 世界模拟 ===")
+    logger.info("=== ECS 世界模拟 ===")
 
     world = World()
     simulation = SimulationLoop(world)

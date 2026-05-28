@@ -8,10 +8,14 @@
 @版本:1.0
 '''
 
+import logging
+
 from core.system import System
 from core.world import World
 from typing import Dict, Any, Tuple
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
@@ -232,7 +236,7 @@ class ConstructionSystem(System):
         # 添加建筑组件（这里需要扩展建筑组件）
         # TODO: 创建建筑组件系统
 
-        print(f"[ConstructionSystem] Built {building_type.value} at position {space.position}")
+        logger.info(f"[ConstructionSystem] Built {building_type.value} at position {space.position}")
 
     def _complete_crafting(self, entity, tool_type: ToolType, recipe: Dict[str, float],
                           inventory: InventoryComponent, world: World):
@@ -254,7 +258,7 @@ class ConstructionSystem(System):
         # 将工具添加到人类库存
         inventory.add_equipment(tool_entity)
 
-        print(f"[ConstructionSystem] Crafted {tool_type.value}")
+        logger.info(f"[ConstructionSystem] Crafted {tool_type.value}")
 
     def _record_construction_experience(self, entity, skill_type: str, target_type: str, world: World):
         """记录建造/制造经验"""

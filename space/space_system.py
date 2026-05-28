@@ -36,7 +36,6 @@ class SpaceSystem():
 
     """
     def __init__(self):
-
         self.index = SpatialIndex()
 
         # entity_id -> SpaceComponent
@@ -87,7 +86,7 @@ class SpaceSystem():
 
     # -----------------------------------------------------
 
-    def update(self):
+    def update(self, world=None, dt=None):
         """
         同步所有dirty实体
         """

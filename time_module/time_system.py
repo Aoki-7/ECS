@@ -1,9 +1,10 @@
 
+from core.system import System
 from core.world import World
 from time_module.time_component import TimeComponent
 
 
-class TimeSystem:
+class TimeSystem(System):
     """
     纯时间推进系统
     - 支持时间倍率
@@ -19,7 +20,8 @@ class TimeSystem:
         self.time_scale = time_scale
         self.verbose = verbose
 
-    def update(self, world: World, delta_hours: float):
+    def update(self, world: World, dt: float = 1.0):
+        delta_hours = dt
 
         scaled_delta = delta_hours * self.time_scale
 

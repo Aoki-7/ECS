@@ -8,10 +8,14 @@
 @版本:1.0
 '''
 
+import logging
+import random
+
 from core.system import System
 from core.world import World
 from core.event_log_component import EventLog
-import random
+
+logger = logging.getLogger(__name__)
 
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 from human.components.social.reproduction_component import ReproductionComponent
@@ -82,7 +86,7 @@ class ReproductionSystem(System):
         repro.is_pregnant = True
         repro.pregnancy_time = 0.0
         repro.partner_id = relation.partner_id
-        print(f"[生育] 实体 {entity} 开始怀孕（伴侣：{relation.partner_id}）")
+        logger.info(f"[生育] 实体 {entity} 开始怀孕（伴侣：{relation.partner_id}）")
         EventLog.log(
             world, event_type="pregnancy_start",
             description=f"实体 {entity.id} 开始怀孕",
@@ -108,8 +112,8 @@ class ReproductionSystem(System):
         try:
             from human.components.basic.identity_component import IdentityComponent
             parent_identity = world.get_component(entity, IdentityComponent)
-        except:
-            pass
+        except Exception:
+            parent_identity = None
         
         # 生成新人类的名字（简化，避免无限叠加 _Child）
         if parent_identity:
@@ -149,7 +153,7 @@ class ReproductionSystem(System):
         repro.last_birth_time = current_time
         repro.partner_id = None
         
-        print(f"[生育成功] 实体 {entity} 生育了新生儿 {child}（名字：{child_name}，时间：{current_time}）")
+        logger.info(f"[生育成功] 实体 {entity} 生育了新生儿 {child}（名字：{child_name}，时间：{current_time}）")
         EventLog.log(
             world, event_type="birth",
             description=f"{child_name} 出生",

@@ -8,11 +8,15 @@
 @版本:1.0
 '''
 
+import logging
+
 from core.system import System
 from core.world import World
 from typing import Dict, List, Any, Set
 from enum import Enum
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 from human.components.abilities.skill_component import SkillComponent
 from human.components.cognitive.memory_component import MemoryComponent
@@ -172,7 +176,7 @@ class TechnologySystem(System):
             if knowledge:
                 knowledge.known_technologies.add(tech_name)
 
-        print(f"[TechnologySystem] Technology unlocked: {technology.name}")
+        logger.info(f"[TechnologySystem] Technology unlocked: {technology.name}")
 
         # 触发技术解锁事件
         self._trigger_technology_events(tech_name, technology, world)

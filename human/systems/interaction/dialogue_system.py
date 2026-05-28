@@ -203,4 +203,5 @@ class DialogueSystem:
         pass
 
 if __name__ == "__main__":
-    print("对话系统已加载")
+    import logging
+    logging.getLogger(__name__).debug("对话系统已加载")

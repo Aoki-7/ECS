@@ -203,4 +203,5 @@ def get_overwintering_strategy_advice() -> str:
 
 
 if __name__ == "__main__":
-    print("环境适应系统已加载")
+    import logging
+    logging.getLogger(__name__).debug("环境适应系统已加载")

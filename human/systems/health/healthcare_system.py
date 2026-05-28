@@ -133,4 +133,5 @@ class HealthcareSystem(System):
 
 
 if __name__ == "__main__":
-    print("医疗保健系统已加载")
+    import logging
+    logging.getLogger(__name__).debug("医疗保健系统已加载")

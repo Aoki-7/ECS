@@ -251,4 +251,5 @@ class ConflictManagementSystem:
 
 
 if __name__ == "__main__":
-    print("冲突管理系统已加载")
+    import logging
+    logging.getLogger(__name__).debug("冲突管理系统已加载")
