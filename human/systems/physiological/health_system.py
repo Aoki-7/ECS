@@ -73,45 +73,11 @@ class HealthSystem(System):
             时间步长
         """
 
-        processed = set()
-
-        # =====================================================
-        # 第一遍：
-        # Health + Needs
-        # =====================================================
-
-        for entity, components in world.get_components(
-            HealthComponent,
-            PhysiologyNeedsComponent
-        ):
-            health, needs = components
-
-            processed.add(entity.id)
-
-            self._apply_health_logic(
-                health=health,
-                needs=needs,
-                dt=dt,
-            )
-
-        # =====================================================
-        # 第二遍：
-        # 仅 Health
-        # =====================================================
-
-        for entity, components in world.get_components(
-            HealthComponent
-        ):
-            if entity.id in processed:
-                continue
-
+        # 单次遍历：查询所有 HealthComponent，按需补查 Needs
+        for entity, components in world.get_components(HealthComponent):
             health = components[0]
-
-            self._apply_health_logic(
-                health=health,
-                needs=None,
-                dt=dt,
-            )
+            needs = world.get_component(entity, PhysiologyNeedsComponent)
+            self._apply_health_logic(health=health, needs=needs, dt=dt)
 
     # =========================================================
     # Internal

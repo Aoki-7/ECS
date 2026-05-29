@@ -14,18 +14,19 @@ from dataclasses import dataclass
 
 from core.component import Component
 
-@dataclass
+from typing import Dict
+
+
+@dataclass(slots=True)
 class EconomyComponent(Component):
     """
-        经济组件，包含财富、收入和支出等属性
-        影响：
-            - 消费行为
-            - 职业选择
-            - 社交关系
-        例如：
-            wealth高 -> 更倾向于奢侈消费和高端社交
+    经济组件（世界级）— 存储全局市场价格
+
+    挂载到 WorldEntity 上，管理模拟世界的经济参数。
+    实体级货币余额由 WalletComponent 管理。
     """
     wealth: float = 0.0
     income: float = 0.0
     expenses: float = 0.0
+    prices: Dict[str, float] = None  # 市场价格字典
     

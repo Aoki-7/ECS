@@ -37,17 +37,18 @@ class WeatherEffectSystem(System):
         if not isinstance(env, EnvironmentComponent):
             return
 
+        # 缓存环境参数到局部变量，避免循环内重复属性访问
+        temp = env.air_temperature
+        humidity = env.air_humidity
+        wind = env.wind_speed
+        rainfall = env.rainfall
+
         for entity, (needs, health, space) in world.get_components(
             PhysiologyNeedsComponent, HealthComponent, SpaceComponent
         ):
             needs: PhysiologyNeedsComponent
             health: HealthComponent
             space: SpaceComponent
-
-            temp = env.air_temperature
-            humidity = env.air_humidity
-            wind = env.wind_speed
-            rainfall = env.rainfall
 
             # ---------- 高温影响 ----------
             if temp > 30.0:
@@ -59,8 +60,7 @@ class WeatherEffectSystem(System):
             if temp > 35.0:
                 # 热伤害
                 heat_damage = 0.1 * (temp - 35.0) * dt
-                health.hp -= heat_damage
-                health.hp = max(0.0, health.hp)
+                health.hp = max(0.0, min(health.max_hp, health.hp - heat_damage))
 
             # ---------- 低温影响 ----------
             if temp < 10.0:
@@ -70,8 +70,7 @@ class WeatherEffectSystem(System):
             if temp < 0.0:
                 # 冻伤伤害
                 cold_damage = 0.05 * abs(temp) * dt
-                health.hp -= cold_damage
-                health.hp = max(0.0, health.hp)
+                health.hp = max(0.0, min(health.max_hp, health.hp - cold_damage))
 
             # ---------- 降雨影响 ----------
             if rainfall > 10.0:

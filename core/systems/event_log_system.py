@@ -151,18 +151,26 @@ class EventLogSystem(System):
         return log_comp.events.copy()
 
     def _prune_old_events(self, log_comp: EventLogComponent):
-        """修剪旧事件，保留最近 5000 条，重建索引"""
+        """修剪旧事件，保留最近 5000 条，重建索引与计数器"""
         keep_count = self._keep_after_prune
         log_comp.events = log_comp.events[-keep_count:]
 
+        # 重建索引
         log_comp._index_by_type = defaultdict(list)
         log_comp._index_by_entity = defaultdict(list)
+        # 重建计数器
+        log_comp.counters = defaultdict(int)
         for idx, event in enumerate(log_comp.events):
-            log_comp._index_by_type[event["type"]].append(idx)
+            event_type = event["type"]
+            log_comp._index_by_type[event_type].append(idx)
+            log_comp.counters[event_type] += 1
             if event["entity_id"] is not None:
                 log_comp._index_by_entity[event["entity_id"]].append(idx)
             if event["target_id"] is not None:
                 log_comp._index_by_entity[event["target_id"]].append(idx)
+            severity = event.get("severity")
+            if severity in ("critical", "milestone"):
+                log_comp.counters[f"severity_{severity}"] += 1
 
 
 class EventLog:

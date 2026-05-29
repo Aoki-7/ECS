@@ -90,5 +90,5 @@ class HumanDeathSystem(System):
 
             try:
                 world.remove_entity(entity)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"[HumanDeath] 删除实体 {entity.id} 失败: {e}")

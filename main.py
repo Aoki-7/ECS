@@ -66,8 +66,24 @@ from human.systems.action.pickup_system import PickupSystem
 from human.systems.action.search_system import SearchSystem
 from human.systems.action.socialize_system import SocializeSystem
 
-# 环境效果系统
+# 环境效果系统（已拆分为5个独立系统）
 from human.systems.environment.weather_effect_system import WeatherEffectSystem
+from human.systems.environment.heat_effect_system import HeatEffectSystem
+from human.systems.environment.cold_effect_system import ColdEffectSystem
+from human.systems.environment.rain_effect_system import RainEffectSystem
+from human.systems.environment.wind_effect_system import WindEffectSystem
+from human.systems.environment.humidity_effect_system import HumidityEffectSystem
+
+# 导航与认知
+from human.systems.navigation.pathfinding_system import PathfindingSystem
+from human.systems.cognitive.memory_decay_system import MemoryDecaySystem
+
+# 社交扩展
+from human.systems.social.reputation_system import ReputationSystem
+
+# 冲突管理（已拆分）
+from human.systems.interaction.conflict_detection_system import ConflictDetectionSystem
+from human.systems.interaction.conflict_resolution_system import ConflictResolutionSystem
 
 # 生理系统（拆分后）
 from human.systems.physiological.physiology_needs_system import PhysiologyNeedsHelper  # 保留辅助类
@@ -118,6 +134,7 @@ from core.event_log_component import EventLogComponent
 from core.systems.event_log_system import EventLogSystem, EventLog
 from environment.atmosphere.system.atmosphere_physics_system import AtmospherePhysicsSystem
 from human.systems.social.role_system import RoleSystem
+from human.systems.economy.economy_system import EconomySystem
 
 # 工厂
 from human.human_factory import HumanFactory
@@ -187,9 +204,27 @@ class SimulationLoop:
         self.world.add_system(self.atmosphere_physics_system)
 
         # 2.5 天气效果系统（priority 25，环境之后，人类之前）
+        # 保留原 WeatherEffectSystem 作为兼容，同时注册拆分后的子系统
         self.weather_effect_system = WeatherEffectSystem()
         self.weather_effect_system.priority = 25
         self.world.add_system(self.weather_effect_system)
+
+        # 2.6 天气效果子系统（拆分版，priority 25）
+        self.weather_subsystems = [
+            HeatEffectSystem(),
+            ColdEffectSystem(),
+            RainEffectSystem(),
+            WindEffectSystem(),
+            HumidityEffectSystem(),
+        ]
+        for system in self.weather_subsystems:
+            system.priority = 25
+            self.world.add_system(system)
+
+        # 2.7 路径规划系统（priority 28，在战斗AI之前）
+        self.pathfinding_system = PathfindingSystem()
+        self.pathfinding_system.priority = 28
+        self.world.add_system(self.pathfinding_system)
 
         # 3. 人类系统（按处理流水线排序，priority 30）
         #    感知→情绪→思维→目标→意图→决策→规划→动作调度→搜索/移动/交互→社交
@@ -238,11 +273,25 @@ class SimulationLoop:
         self.combat_ai_system.priority = 29
         self.world.add_system(self.combat_ai_system)
 
-        # 3.6 冲突管理系统（priority 31）
-        self.conflict_system = ConflictManagementSystem()
-        self.conflict_system.priority = 31
-        self.world.add_system(self.conflict_system)
-        
+        # 3.6 冲突管理系统（已拆分为检测+解决，priority 31/32）
+        self.conflict_detection_system = ConflictDetectionSystem()
+        self.conflict_detection_system.priority = 31
+        self.world.add_system(self.conflict_detection_system)
+
+        self.conflict_resolution_system = ConflictResolutionSystem()
+        self.conflict_resolution_system.priority = 32
+        self.world.add_system(self.conflict_resolution_system)
+
+        # 3.7 声誉系统（priority 35）
+        self.reputation_system = ReputationSystem()
+        self.reputation_system.priority = 35
+        self.world.add_system(self.reputation_system)
+
+        # 3.8 经济系统（priority 35，在人类核心系统之后）
+        self.economy_system = EconomySystem()
+        self.economy_system.priority = 35
+        self.world.add_system(self.economy_system)
+
         # 部落系统单独保存引用并注册到 world（priority 39，人类系统末尾）
         self.tribe_system = TribeSystem()
         self.tribe_system.priority = 39
@@ -272,6 +321,11 @@ class SimulationLoop:
         self.healthcare_system = HealthcareSystem()
         self.healthcare_system.priority = 42
         self.world.add_system(self.healthcare_system)
+
+        # 4.7 记忆衰减系统（priority 43）
+        self.memory_decay_system = MemoryDecaySystem()
+        self.memory_decay_system.priority = 43
+        self.world.add_system(self.memory_decay_system)
 
         # 5. 生物学系统（priority 50）
         # 执行顺序：

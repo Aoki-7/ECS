@@ -51,8 +51,12 @@ class Community:
         return sum(connections) / len(connections) if connections else 0.0
     
     def _get_connection_strength(self, e1: int, e2: int) -> float:
-        """获取两个实体间的连接强度"""
-        # TODO: 实现从社交网络中查询的方法
+        """获取两个实体间的连接强度（从社交网络中查询）"""
+        # 优先从 relationships 字典中查询双向关系
+        if e1 in self.relationships and e2 in self.relationships[e1]:
+            return self.relationships[e1][e2].strength
+        if e2 in self.relationships and e1 in self.relationships[e2]:
+            return self.relationships[e2][e1].strength
         return 0.0
 
 
