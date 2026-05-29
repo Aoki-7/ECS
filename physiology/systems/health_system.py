@@ -10,7 +10,7 @@
 
 from core.system import System
 from core.world import World
-from physiology.components.health_component import HealthComponent
+from physiology.components.health_component import VitalityComponent
 from physiology.components.physiology_component import PhysiologyComponent
 
 
@@ -18,7 +18,7 @@ class HealthSystem(System):
 
     def update(self, world: World, dt: float):
         for entity, [health, phys] in world.get_components(
-            HealthComponent, PhysiologyComponent
+            VitalityComponent, PhysiologyComponent
         ):
             # 自动恢复（受 energy 影响）
             energy = phys.stats["energy"].value

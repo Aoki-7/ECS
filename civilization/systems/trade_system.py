@@ -46,15 +46,22 @@ class TradeSystem(System):
 
     def update(self, world: World, dt: float):
         """更新交易行为"""
-        for entity, (action, inventory, economy, social, skill, task, space) in world.get_components(
-            ActionComponent, InventoryComponent, EconomyComponent, SocialComponent,
-            SkillComponent, TaskComponent, SpaceComponent
+        # 先查询最核心的 2 个组件，其余在循环内补查
+        for entity, (action, task) in world.get_components(
+            ActionComponent, TaskComponent
         ):
             if action.current_action != ActionType.TRADE:
                 continue
 
             if action.status != ActionStatus.IN_PROGRESS:
                 continue
+
+            # 补查其他组件
+            inventory = world.get_component(entity, InventoryComponent)
+            economy = world.get_component(entity, EconomyComponent)
+            social = world.get_component(entity, SocialComponent)
+            skill = world.get_component(entity, SkillComponent)
+            space = world.get_component(entity, SpaceComponent)
 
             # 查找交易伙伴
             trade_partner = getattr(action, 'trade_partner', None)
@@ -63,16 +70,12 @@ class TradeSystem(System):
                 task.status = TaskStatus.FAILED
                 continue
 
-            partner_components = world.get_components(
-                InventoryComponent, EconomyComponent, SocialComponent, SpaceComponent
-            )
-            partner_data = None
-            for pid, comps in partner_components:
-                if pid == trade_partner:
-                    partner_data = comps
-                    break
+            partner_inv = world.get_component(trade_partner, InventoryComponent)
+            partner_eco = world.get_component(trade_partner, EconomyComponent)
+            partner_soc = world.get_component(trade_partner, SocialComponent)
+            partner_space = world.get_component(trade_partner, SpaceComponent)
 
-            if not partner_data:
+            if not (partner_inv and partner_eco and partner_soc and partner_space):
                 action.status = ActionStatus.FAILED
                 task.status = TaskStatus.FAILED
                 continue

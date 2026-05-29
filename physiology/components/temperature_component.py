@@ -14,6 +14,6 @@ from dataclasses import dataclass
 from core.component import Component
 
 @dataclass
-class TemperatureComponent(Component):
+class BodyTempComponent(Component):
     body_temp: float = 37.0
     optimal_temp: float = 37.0

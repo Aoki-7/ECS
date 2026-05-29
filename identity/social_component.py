@@ -13,9 +13,9 @@ from core.component import Component
 
 
 @dataclass
-class SocialComponent(Component):
+class FactionComponent(Component):
     """
-    社会属性
+    阵营属性
 
     Args:
         faction: 阵营 / 组织归属

@@ -33,7 +33,7 @@ from human.components.basic.identity_component import IdentityComponent
 from human.components.basic.age_component import AgeComponent
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
-from core.event_log_component import EventLog
+from core.systems.event_log_system import EventLog
 
 
 class TribeSystem(System):

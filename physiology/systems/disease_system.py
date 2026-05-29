@@ -12,13 +12,13 @@ from core.system import System
 from core.world import World
 
 from physiology.components.physiology_component import PhysiologyComponent
-from physiology.components.disease_component import DiseaseComponent
+from physiology.components.disease_component import InfectionLevelComponent
 
 class DiseaseSystem(System):
 
     def update(self, world: World, dt: float):
         for entity, [disease, phys] in world.get_components(
-            DiseaseComponent, PhysiologyComponent
+            InfectionLevelComponent, PhysiologyComponent
         ):
             if disease.infection_level > 0:
                 phys.stats["energy"].value -= 0.2 * dt

@@ -9,11 +9,13 @@
 '''
 
 
+from core.component import Component
 
-class SedimentComponent:
+
+class SedimentComponent(Component):
 
     def __init__(self):
-
+        super().__init__()
         self.sediment = 0.0
 
         

@@ -28,5 +28,9 @@ class SolarPositionComponent(Component):
     elevation: float = 0.0
     azimuth: float = 0.0
     day_length: float = 12.0
-    is_night: bool = True
     latitude: float = 35.0
+
+    @property
+    def is_night(self) -> bool:
+        """是否夜间（elevation ≤ 0）"""
+        return self.elevation <= 0.0

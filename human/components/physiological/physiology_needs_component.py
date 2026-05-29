@@ -22,7 +22,7 @@ def clamp(value: float, min_v: float, max_v: float) -> float:
     return max(min_v, min(value, max_v))
 
 
-@dataclass
+@dataclass(slots=True)
 class PhysiologyNeedsComponent(Component):
     """
     生理需求组件（带上下限约束）

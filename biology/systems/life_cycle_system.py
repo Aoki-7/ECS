@@ -11,7 +11,7 @@ from typing import Dict
 
 from core.world import World
 from core.system import System
-from core.event_log_component import EventLog
+from core.systems.event_log_system import EventLog
 
 from biology.components.life_cycle_component import LifeCycleComponent
 from biology.components.phenotype_component import PhenotypeComponent

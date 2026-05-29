@@ -117,7 +117,7 @@ class SolarPositionSystem(System):
         solar_pos.elevation = max(-90.0, min(90.0, elevation))
         solar_pos.azimuth = max(0.0, min(360.0, azimuth))
         solar_pos.day_length = day_length
-        solar_pos.is_night = is_night
+        # is_night 由 elevation 自动推导，无需写入
 
     # ═══════════════════════════════════════════
     # 辅助方法（可供外部调用）

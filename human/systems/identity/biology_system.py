@@ -11,7 +11,7 @@
 from core.system import System
 from core.world import World
 
-from human.components.biology.biology_component import BiologyComponent
+from human.components.biology.biology_component import SpeciesComponent
 
 
 class BiologySystem(System):
@@ -20,8 +20,8 @@ class BiologySystem(System):
         self.year_per_time = 0.01
 
     def update(self, world: World, dt: float):
-        for entity, [bio] in world.get_components(BiologyComponent):
-            bio: BiologyComponent
+        for entity, [bio] in world.get_components(SpeciesComponent):
+            bio: SpeciesComponent
             
             # -------------------------
             # 1. 年龄增长
@@ -39,7 +39,7 @@ class BiologySystem(System):
             # -------------------------
             self._update_age_stage(entity, bio)
 
-    def _update_age_stage(self, entity, bio: BiologyComponent):
+    def _update_age_stage(self, entity, bio: SpeciesComponent):
         # 清理旧标签
         if hasattr(entity, "remove_tag"):
             entity.remove_tag("child")

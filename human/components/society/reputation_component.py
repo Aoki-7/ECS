@@ -5,16 +5,14 @@
 @说明:声誉组件 - 在社区中的评价
 @时间:2026/04/27
 @作者:Coder Agent
-@版本:1.0
+@版本:2.0
 '''
 
-from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from core.component import Component
 
 
-@dataclass
 class ReputationComponent(Component):
     """
     声誉组件 - 在社区中的评价系统
@@ -34,10 +32,8 @@ class ReputationComponent(Component):
     def __init__(self, 
                  reputation: float = 50.0,
                  social_status: str = "unknown"):
-        super().__init__()
-        
         self._reputation = reputation
-        self._specialties: Dict[str, int] = field(default_factory=dict)
+        self._specialties: Dict[str, int] = {}
         self._social_status = social_status
         self._known_for: List[str] = []
         self._rumors: List[Dict] = []
@@ -49,7 +45,7 @@ class ReputationComponent(Component):
     
     @reputation.setter
     def reputation(self, value: float):
-        self._reputation = max(-50, min(150, value))  # 扩展范围，但保持映射
+        self._reputation = max(-50, min(150, value))
     
     def adjust_reputation(self, delta: float, aspect: str = "general") -> None:
         """调整声誉"""
@@ -141,7 +137,6 @@ class ReputationComponent(Component):
             return "Local Person"
 
 
-@dataclass
 class FameComponent(Component):
     """
     声望组件 - 额外的知名度追踪
@@ -154,7 +149,6 @@ class FameComponent(Component):
     
     def __init__(self, 
                  regional_popularity: Dict[str, float] = None):
-        super().__init__()
         self._popularity = regional_popularity or {}
         self._regional_reach: Dict[str, int] = {"village": 0, "town": 0, "kingdom": 0}
         self._positive_reports: int = 0
@@ -171,7 +165,6 @@ class FameComponent(Component):
         return dict(self._popularity)
 
 
-@dataclass
 class SocialStandingComponent(Component):
     """
     社会地位组件 - 等级制度中的位置
@@ -187,8 +180,6 @@ class SocialStandingComponent(Component):
                  wealth_tier: str = "unknown",
                  political_influence: float = 0.0,
                  family_status: str = "origin"):
-        super().__init__()
-        
         self._class_rank = class_rank
         self._wealth_tier = wealth_tier
         self._political_influence = political_influence

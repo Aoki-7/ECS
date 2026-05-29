@@ -16,7 +16,7 @@
 from core.component import Component
 from dataclasses import dataclass
 
-@dataclass
+@dataclass(slots=True)
 class EmotionComponent(Component):
     """
     描述情绪状态的组件。

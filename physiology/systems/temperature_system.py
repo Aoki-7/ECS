@@ -13,14 +13,14 @@ from core.world import World
 
 
 from physiology.components.physiology_component import PhysiologyComponent
-from physiology.components.temperature_component import TemperatureComponent
+from physiology.components.temperature_component import BodyTempComponent
 
 
 class TemperatureSystem(System):
 
     def update(self, world: World, dt: float):
         for entity, [temp, phys] in world.get_components(
-            TemperatureComponent, PhysiologyComponent
+            BodyTempComponent, PhysiologyComponent
         ):
             diff = abs(temp.body_temp - temp.optimal_temp)
 

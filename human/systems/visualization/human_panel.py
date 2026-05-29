@@ -103,7 +103,7 @@ class HumanStatePanel:
         from human.components.social.tribe_membership_component import TribeMembershipComponent
         from space.space_component import SpaceComponent
         from human.components.social.tribe_component import TribeComponent
-        from core.event_log_component import EventLog
+        from core.systems.event_log_system import EventLog
         
         # 统计总体信息
         total_humans = 0

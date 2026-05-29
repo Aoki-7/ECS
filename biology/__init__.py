@@ -19,7 +19,7 @@ from biology.components.genome_component import GenomeComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.components.morphology_component import MorphologyComponent
 from biology.components.life_cycle_component import LifeCycleComponent
-from biology.components.growth_component import GrowthComponent
+
 from biology.components.immune_component import ImmuneComponent
 from biology.components.damage_component import DamageComponent
 from biology.components.nutrient_component import NutrientComponent
@@ -36,7 +36,7 @@ __all__ = [
     "PhenotypeComponent",
     "MorphologyComponent",
     "LifeCycleComponent",
-    "GrowthComponent",
+
     "ImmuneComponent",
     "DamageComponent",
     "NutrientComponent",

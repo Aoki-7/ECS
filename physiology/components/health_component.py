@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from core.component import Component
 
 @dataclass
-class HealthComponent(Component):
+class VitalityComponent(Component):
     hp: float = 100.0
     max_hp: float = 100.0
     regen_rate: float = 0.5

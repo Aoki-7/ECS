@@ -114,7 +114,10 @@ from resource.food.components.food_component import FoodComponent
 # 文明系统
 from civilization import CivilizationSystem
 from human.systems.visualization.human_panel import HumanStatePanel
-from core.event_log_component import EventLogComponent, EventLog
+from core.event_log_component import EventLogComponent
+from core.systems.event_log_system import EventLogSystem, EventLog
+from environment.atmosphere.system.atmosphere_physics_system import AtmospherePhysicsSystem
+from human.systems.social.role_system import RoleSystem
 
 # 工厂
 from human.human_factory import HumanFactory
@@ -144,10 +147,6 @@ class SimulationLoop:
         # 获取SpaceSystem引用
         self.space_system = self.world.get_system(SpaceSystem)
 
-        # 初始化全局事件日志
-        if world.get_world_component(EventLogComponent) is None:
-            world.get_world_entity().add_component(EventLogComponent())
-
         # 初始化所有系统
         self._init_systems()
 
@@ -172,10 +171,20 @@ class SimulationLoop:
         self.time_system.priority = 5
         self.world.add_system(self.time_system)
 
+        # 1.5 事件日志系统（priority 5，自动挂载 EventLogComponent）
+        self.event_log_system = EventLogSystem()
+        self.event_log_system.priority = 5
+        self.world.add_system(self.event_log_system)
+
         # 2. 环境管线（统一编排 14 个子系统，priority 20）
         self.env_pipeline = EnvironmentBuilder.build(self.world)
         self.env_pipeline.priority = 20
         self.world.add_system(self.env_pipeline)
+
+        # 2.5 大气物理系统（priority 20，ISA 模型与派生参数计算）
+        self.atmosphere_physics_system = AtmospherePhysicsSystem()
+        self.atmosphere_physics_system.priority = 20
+        self.world.add_system(self.atmosphere_physics_system)
 
         # 2.5 天气效果系统（priority 25，环境之后，人类之前）
         self.weather_effect_system = WeatherEffectSystem()
@@ -185,6 +194,8 @@ class SimulationLoop:
         # 3. 人类系统（按处理流水线排序，priority 30）
         #    感知→情绪→思维→目标→意图→决策→规划→动作调度→搜索/移动/交互→社交
         self.human_systems = [
+            # 角色系统（社会身份管理）
+            RoleSystem(),
             # 感知层
             PreceptionSystem(),
             # 情绪层：根据生理/环境/行为/社交更新情绪

@@ -14,9 +14,9 @@ from core.component import Component
 
 
 @dataclass
-class BiologyComponent(Component):
+class SpeciesComponent(Component):
     """
-    生物属性组件
+    物种属性组件
     
     包含物种相关的属性。年龄应使用 AgeComponent，性别应使用 GenderComponent。
     

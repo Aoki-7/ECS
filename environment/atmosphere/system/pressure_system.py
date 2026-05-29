@@ -14,6 +14,7 @@ from core.system import System
 from core.world import World
 
 from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
+from environment.atmosphere.system.atmosphere_physics_system import AtmospherePhysicsSystem
 from environment.physics_weather.components.physical_weather_component import (
     PhysicalWeatherComponent,
 )
@@ -57,7 +58,7 @@ class PressureSystem(System):
         # 这里使用简化模型：假设地面气压 = weather.pressure
         # 海拔对气压的影响已隐含在 PhysicalWeatherSystem 的气压演化中
         if atm.altitude > 0:
-            isa_pressure = atm._isa_pressure(atm.altitude)
+            isa_pressure = AtmospherePhysicsSystem.isa_pressure(atm.altitude)
             # 如果实际气压显著低于 ISA 标准，说明存在低压系统
             pressure_anomaly = weather.pressure - isa_pressure
             atm.pressure = weather.pressure

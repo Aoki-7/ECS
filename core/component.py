@@ -3,7 +3,7 @@
 
 from dataclasses import dataclass, asdict
 
-@dataclass
+@dataclass(slots=True)
 class Component:
     """
     ECS 基础组件类

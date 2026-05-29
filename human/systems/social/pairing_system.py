@@ -10,7 +10,7 @@
 
 from core.system import System
 from core.world import World
-from core.event_log_component import EventLog
+from core.systems.event_log_system import EventLog
 
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent

@@ -36,14 +36,23 @@ class ResourceGatheringSystem(System):
 
     def update(self, world: World, dt: float):
         """更新资源采集行为"""
-        for entity, (action, inventory, skill, task, needs, space) in world.get_components(
-            ActionComponent, InventoryComponent, SkillComponent,
-            TaskComponent, PhysiologyNeedsComponent, SpaceComponent
+        # 先查询最核心的 2 个组件，其余在循环内补查
+        for entity, (action, task) in world.get_components(
+            ActionComponent, TaskComponent
         ):
             if action.current_action != ActionType.GATHER:
                 continue
 
             if action.status != ActionStatus.IN_PROGRESS:
+                continue
+
+            # 补查其他组件
+            inventory = world.get_component(entity, InventoryComponent)
+            skill = world.get_component(entity, SkillComponent)
+            needs = world.get_component(entity, PhysiologyNeedsComponent)
+            space = world.get_component(entity, SpaceComponent)
+
+            if not (inventory and skill and needs and space):
                 continue
 
             # 检查是否有足够的能量进行采集

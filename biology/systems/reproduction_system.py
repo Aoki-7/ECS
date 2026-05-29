@@ -17,7 +17,7 @@ import random
 
 from core.system import System
 from core.world import World
-from core.event_log_component import EventLog
+from core.systems.event_log_system import EventLog
 
 from biology.components.energy_component import EnergyComponent
 from biology.components.genome_component import GenomeComponent

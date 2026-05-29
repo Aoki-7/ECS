@@ -13,5 +13,5 @@ from dataclasses import dataclass
 from core.component import Component
 
 @dataclass
-class DiseaseComponent(Component):
+class InfectionLevelComponent(Component):
     infection_level: float = 0.0
