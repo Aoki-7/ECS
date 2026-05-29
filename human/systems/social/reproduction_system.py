@@ -86,7 +86,7 @@ class ReproductionSystem(System):
         repro.is_pregnant = True
         repro.pregnancy_time = 0.0
         repro.partner_id = relation.partner_id
-        logger.info(f"[生育] 实体 {entity} 开始怀孕（伴侣：{relation.partner_id}）")
+        logger.debug(f"[生育] 实体 {entity} 开始怀孕（伴侣：{relation.partner_id}）")
         EventLog.log(
             world, event_type="pregnancy_start",
             description=f"实体 {entity.id} 开始怀孕",
@@ -153,7 +153,7 @@ class ReproductionSystem(System):
         repro.last_birth_time = current_time
         repro.partner_id = None
         
-        logger.info(f"[生育成功] 实体 {entity} 生育了新生儿 {child}（名字：{child_name}，时间：{current_time}）")
+        logger.debug(f"[生育成功] 实体 {entity} 生育了新生儿 {child}（名字：{child_name}，时间：{current_time}）")
         EventLog.log(
             world, event_type="birth",
             description=f"{child_name} 出生",

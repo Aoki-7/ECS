@@ -20,83 +20,38 @@ from environment.environment_component import EnvironmentComponent
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.action.action_component import ActionComponent, ActionType
 
-class PhysiologyNeedsSystem(System):
-    """
-        需求系统
-        随着时间推移，生理需求会自然增长，并且相互影响。
-    """
-    def update(self, world: World, dt: float):
-        for entity, [needs] in world.get_components(PhysiologyNeedsComponent):
-            needs: PhysiologyNeedsComponent
 
-            # --- 检测睡眠状态（睡眠时代谢率降低） ---
-            action = world.get_component(entity, ActionComponent)
-            is_sleeping = (action is not None and action.current_action == ActionType.SLEEP)
-            metabolic_mult = 0.2 if is_sleeping else 1.0  # 睡眠时代谢降至20%
+def _clamp_value(value: float, min_v: float, max_v: float) -> float:
+    value = round(value, 2)
+    return max(min_v, min(value, max_v))
 
-            # --- 归一化（假设范围0~100） ---
-            h = needs.hunger / 100.0
-            t = needs.thirst / 100.0
-            e = needs.energy / 100.0
 
-            # --- 基础变化率（校准值） ---
-            # 12小时空腹→hunger=60, 10小时不喝→thirst=60
-            # 降低速率以留出更多搜索/移动时间，避免人口密度低时饿死
-            base_hunger = 4.0
-            base_thirst = 3.5
-            base_energy_decay = 1.5
+class PhysiologyNeedsHelper:
+    """生理需求修改辅助类（ECS：逻辑放在 System 层）"""
 
-            # --- 耦合项 ---
-            # 饥饿 → 额外消耗体力
-            hunger_to_energy = 1.0 * h
-            # 口渴 → 大幅消耗体力
-            thirst_to_energy = 2.0 * t
-            # 饥饿 → 增加口渴
-            hunger_to_thirst = 0.5 * h
-            # 体力低 → 抑制需求增长（保存能量）
-            energy_feedback = (1.0 - e)
+    @staticmethod
+    def add_hunger(needs, value: float):
+        needs.hunger = _clamp_value(needs.hunger + value, 0.0, needs.max_hunger)
 
-            # --- 更新 ---
-            needs.hunger += (
-                base_hunger * (1 - 0.3 * energy_feedback)
-            ) * dt * metabolic_mult
+    @staticmethod
+    def add_thirst(needs, value: float):
+        needs.thirst = _clamp_value(needs.thirst + value, 0.0, needs.max_thirst)
 
-            needs.thirst += (
-                base_thirst + hunger_to_thirst
-            ) * (1 - 0.2 * energy_feedback) * dt * metabolic_mult
+    @staticmethod
+    def add_energy(needs, value: float):
+        needs.energy = _clamp_value(needs.energy + value, 0.0, needs.max_energy)
 
-            needs.energy -= (
-                base_energy_decay
-                + hunger_to_energy
-                + thirst_to_energy
-            ) * dt * metabolic_mult
+    @staticmethod
+    def add_fatigue(needs, value: float):
+        needs.fatigue = _clamp_value(needs.fatigue + value, 0.0, needs.max_fatigue)
 
-            # --- 环境耦合 ---
-            env = world.get_environment()
-            if isinstance(env, EnvironmentComponent):
-                # 干热环境加剧口渴
-                needs.thirst += 1.0 * env.water_stress_index * dt
-                needs.fatigue += 0.5 * max(0.0, env.air_temperature - 25.0) * dt
+    @staticmethod
+    def add_social(needs, value: float):
+        needs.social = _clamp_value(needs.social + value, 0.0, needs.max_social)
 
-                # 极端温度消耗能量
-                if env.air_temperature > 30:
-                    needs.energy -= 0.15 * (env.air_temperature - 30) * dt
-                elif env.air_temperature < 10:
-                    needs.energy -= 0.08 * (10 - env.air_temperature) * dt
+    @staticmethod
+    def add_comfort(needs, value: float):
+        needs.comfort = _clamp_value(needs.comfort + value, 0.0, needs.max_comfort)
 
-                # 湿度影响
-                if env.air_humidity < 0.3:
-                    needs.thirst += 0.5 * dt
-                elif env.air_humidity > 0.9:
-                    needs.add_comfort(-0.3 * dt)
 
-            # --- 社交需求自然衰减 ---
-            needs.social -= 0.3 * dt
 
-            # --- 极端饥饿/口渴惩罚 ---
-            if needs.thirst > 80:
-                needs.energy -= 3.0 * dt
-            if needs.hunger > 80:
-                needs.energy -= 1.5 * dt
-
-            needs._clamp_all()

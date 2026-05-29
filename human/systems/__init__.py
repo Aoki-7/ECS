@@ -17,7 +17,11 @@
     IntentSystem: 意图系统 - 根据需求生成实体的意图
 
     === 生理系统 (Physiological Systems) ===
-    PhysiologyNeedsSystem: 生理需求系统 - 管理实体的生理需求变化
+    HungerSystem: 饥饿系统 - 管理饥饿值变化
+    ThirstSystem: 口渴系统 - 管理口渴值变化
+    EnergySystem: 精力系统 - 管理精力值变化
+    ComfortSystem: 舒适度系统 - 管理舒适度和疲劳环境耦合
+    SocialNeedSystem: 社交需求系统 - 管理社交需求衰减
     HealthSystem: 健康系统 - 管理实体的健康状态
 
     === 认知系统 (Cognitive Systems) ===
@@ -90,8 +94,12 @@ from .core.action_system import ActionSystem
 from .core.planning_system import PlanningSystem
 from .core.intent_system import IntentSystem
 
-# 生理系统
-from .physiological.physiology_needs_system import PhysiologyNeedsSystem
+# 生理系统（拆分后的独立子系统）
+from .physiological.hunger_system import HungerSystem
+from .physiological.thirst_system import ThirstSystem
+from .physiological.energy_system import EnergySystem
+from .physiological.comfort_system import ComfortSystem
+from .physiological.social_need_system import SocialNeedSystem
 from .physiological.health_system import HealthSystem
 
 # 认知系统

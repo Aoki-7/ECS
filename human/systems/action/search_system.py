@@ -68,8 +68,9 @@ class SearchSystem(System):
             nearest_distance = float("inf")
             nearest_pos = None
 
-            for candidate in vision.entities:
-                if candidate is None:
+            for eid in vision.entity_ids:
+                candidate = world.query_entity(eid)
+                if candidate is None or not candidate.is_alive():
                     continue
 
                 target_comp = world.get_component(candidate, target_component)

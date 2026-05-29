@@ -32,9 +32,9 @@ class DrinkSystem(System):
 
     def update(self, world: World, dt):
         space_system = world.get_system(SpaceSystem)
-        for entity, (needs, action, inventory, task, space) in world.get_components(
+        for entity, (needs, action, inventory, task, space) in list(world.get_components(
             PhysiologyNeedsComponent, ActionComponent, InventoryComponent, TaskComponent, SpaceComponent
-        ):
+        )):
             needs: PhysiologyNeedsComponent
             action: ActionComponent
             inventory: InventoryComponent

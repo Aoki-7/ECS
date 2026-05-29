@@ -33,7 +33,13 @@ class PlanningSystem(System):
 
     EXPLORE_RADIUS = 20  # 探索半径
 
+    def __init__(self):
+        super().__init__()
+        self._planned_this_tick = set()
+
     def update(self, world: World, dt):
+        self._planned_this_tick.clear()
+
         for entity, (intent, task, action, space) in world.get_components(
             IntentComponent, TaskComponent, ActionComponent, SpaceComponent
         ):
@@ -42,6 +48,10 @@ class PlanningSystem(System):
             task: TaskComponent
             action: ActionComponent
             space: SpaceComponent
+
+            # 防止同 tick 重复规划
+            if entity.id in self._planned_this_tick:
+                continue
 
             # 已有明确的后续任务队列时不重复规划
             if action.action_queue:
@@ -160,3 +170,5 @@ class PlanningSystem(System):
                     ActionType.MOVE_TO,
                     ActionType.SOCIALIZE
                 ]
+
+            self._planned_this_tick.add(entity.id)

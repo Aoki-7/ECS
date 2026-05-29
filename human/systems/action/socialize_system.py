@@ -18,6 +18,7 @@ from core.system import System
 from core.world import World
 
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from human.systems.physiological.physiology_needs_system import PhysiologyNeedsHelper
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from human.components.cognitive.emotion_component import EmotionComponent
@@ -57,7 +58,7 @@ class SocializeSystem(System):
     def _complete_socialization(self, world: World, entity, needs, action, task, current_time: float):
         """完成社交互动"""
         # 基础社交需求恢复
-        needs.add_social(30)
+        PhysiologyNeedsHelper.add_social(needs, 30)
 
         # 获取相关组件
         emotion = world.get_component(entity, EmotionComponent)

@@ -91,6 +91,6 @@ class SeekTargetSystem(System):
             # 5. 设置行为（只做最小控制）
             # -------------------------
             if nearest_entity:
-                action.current_action = ActionType.MOVE
-                action.target = nearest_pos
+                action.current_action = ActionType.MOVE_TO
+                action.target_pos = nearest_pos
                 action.progress = 0.0

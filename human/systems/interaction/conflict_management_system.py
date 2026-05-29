@@ -7,6 +7,16 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 from enum import Enum, auto
+import random
+
+from core.system import System
+from core.world import World
+
+from human.components.social.conflict_component import ConflictComponent
+from human.components.social.relationship_component import RelationshipComponent
+from human.components.cognitive.personality_component import PersonalityComponent
+from human.components.cognitive.emotion_component import EmotionComponent
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 
 
 class ConflictType(Enum):
@@ -23,6 +33,7 @@ class ResolutionStrategy(Enum):
     COMPETITION = auto()      # 竞争
     COLLABORATION = auto()    # 协作
     ACCOMMODATION = auto()    # 迁就
+    DIALOGUE = auto()         # 对话沟通
 
 
 @dataclass
@@ -54,9 +65,9 @@ class RelationshipQuality(Enum):
     IMPROVED = "improved"     # 改善
 
 
-class ConflictManagementSystem:
+class ConflictManagementSystem(System):
     """
-    冲突管理系统 - 管理和调解实体间的人际冲突
+    冲突管理系统 - 管理和调解实体间的人际冲突（ECS 版）
     
     功能：
     - 检测潜在的冲突情境
@@ -67,6 +78,7 @@ class ConflictManagementSystem:
     """
     
     def __init__(self):
+        super().__init__()
         self.active_conflicts: List[ConflictInstance] = []
         self.resolved_conflicts: List[ConflictInstance] = []
         self.resolution_history: List[Dict] = []
@@ -245,9 +257,76 @@ class ConflictManagementSystem:
         
         return min(100, risk_sum + random.uniform(0, 20))
 
-    def update(self, world, dt: float = 0.0):
-        """系统更新（冲突管理系统暂不执行每帧逻辑）"""
-        pass
+    def update(self, world: World, dt: float = 0.0):
+        """系统更新：检测负面关系并自动创建/解决冲突"""
+        for entity, (relation, personality, emotion, action, conflict_comp) in world.get_components(
+            RelationshipComponent, PersonalityComponent, EmotionComponent,
+            ActionComponent, ConflictComponent
+        ):
+            relation: RelationshipComponent
+            personality: PersonalityComponent
+            emotion: EmotionComponent
+            action: ActionComponent
+            conflict_comp: ConflictComponent
+
+            # 清理已解决的冲突
+            for c in list(conflict_comp.active_conflicts):
+                if c.get("intensity", 0) <= 0:
+                    conflict_comp.remove_conflict(c["conflict_id"])
+
+            # 检测负面关系
+            if not hasattr(relation, 'relations') or not relation.relations:
+                continue
+
+            for other_id, score in list(relation.relations.items()):
+                if score >= -20:
+                    continue  # 关系不够差，不构成冲突
+
+                # 检查是否已有活跃冲突
+                existing = any(
+                    c.get("opponent_id") == other_id
+                    for c in conflict_comp.active_conflicts
+                )
+                if existing:
+                    continue
+
+                # 创建新冲突
+                intensity = min(100, abs(score) * 0.5 + random.uniform(0, 10))
+                strategy = self._choose_strategy(personality, emotion)
+
+                conflict = {
+                    "conflict_id": f"conflict_{entity.id}_{other_id}",
+                    "type": ConflictType.RELATIONAL.name,
+                    "opponent_id": other_id,
+                    "intensity": intensity,
+                    "strategy": strategy.name if strategy else "AVOIDANCE",
+                }
+                conflict_comp.add_conflict(conflict)
+
+                # 冲突强度高时触发攻击
+                if intensity > 60 and action.current_action in (ActionType.IDLE, ActionType.WAIT):
+                    action.current_action = ActionType.ATTACK
+                    action.status = ActionStatus.RUNNING
+                    action.target_entity = other_id
+
+                # 创建全局冲突记录
+                self.add_conflict(
+                    ConflictType.RELATIONAL,
+                    f"实体 {entity.id} 与 {other_id} 关系紧张（分数 {score:.0f}）",
+                    [entity.id, other_id]
+                )
+
+    def _choose_strategy(self, personality: PersonalityComponent, emotion: EmotionComponent) -> Optional[ResolutionStrategy]:
+        """根据性格和情绪选择解决策略"""
+        if personality.kindness > 0.7:
+            return ResolutionStrategy.COLLABORATION
+        if personality.greed > 0.7:
+            return ResolutionStrategy.COMPETITION
+        if emotion.fear > 0.6:
+            return ResolutionStrategy.AVOIDANCE
+        if emotion.anger > 0.6:
+            return ResolutionStrategy.COMPETITION
+        return ResolutionStrategy.COMPROMISE
 
 
 if __name__ == "__main__":

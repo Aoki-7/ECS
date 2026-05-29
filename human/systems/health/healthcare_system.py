@@ -14,6 +14,7 @@ from typing import Dict, List, Optional
 from enum import Enum, auto
 
 from core.system import System
+from core.world import World
 
 
 # 疾病类型定义
@@ -60,9 +61,41 @@ class HealthcareSystem(System):
         self.medication_log = []
         self.health_history = []
 
-    def update(self, world, dt: float = 0.0):
-        """系统更新（医疗保健系统暂不执行每帧逻辑）"""
-        pass
+    def update(self, world: World, dt: float = 0.0):
+        """系统更新：扫描疾病并尝试治疗"""
+        from human.components.health.disease_component import DiseaseComponent
+        from human.components.physiological.health_component import HealthComponent
+
+        for entity, (disease_comp, health) in world.get_components(
+            DiseaseComponent, HealthComponent
+        ):
+            disease_comp: DiseaseComponent
+            health: HealthComponent
+
+            for disease in list(disease_comp.diseases):
+                # 治疗：降低严重度
+                if disease.get("severity", 0) > 0:
+                    disease["severity"] = max(0, disease["severity"] - 0.5 * dt)
+
+                # 增加免疫
+                disease_comp.immunity[disease["name"]] = min(
+                    1.0,
+                    disease_comp.immunity.get(disease["name"], 0) + 0.01 * dt
+                )
+
+                # 如果严重度降为 0 且免疫足够，治愈
+                if (disease.get("severity", 0) <= 0
+                        and disease_comp.immunity.get(disease["name"], 0) > 0.5):
+                    disease_comp.remove_disease(disease["name"])
+
+                # 记录治疗历史
+                self.health_history.append({
+                    "entity_id": entity.id,
+                    "disease": disease["name"],
+                    "severity": disease.get("severity", 0),
+                    "action": "treatment",
+                    "timestamp": "now",
+                })
 
     def diagnose(self, symptoms: Dict[str, float], patient_data: Dict) -> List[Disease]:
         """根据症状和患者数据诊断疾病"""

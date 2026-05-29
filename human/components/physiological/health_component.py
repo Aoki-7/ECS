@@ -27,5 +27,4 @@ class HealthComponent(Component):
     max_hp: float = 100
     fatigue: float = 0
     injury: dict = field(default_factory=dict)
-    injury: dict = None
     

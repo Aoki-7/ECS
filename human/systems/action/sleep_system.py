@@ -12,6 +12,7 @@ from core.system import System
 from core.world import World
 
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from human.systems.physiological.physiology_needs_system import PhysiologyNeedsHelper
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from human.components.cognitive.memory_component import MemoryComponent
@@ -40,15 +41,15 @@ class SleepSystem(System):
             action.progress += dt * 0.5
 
             # 睡眠期间逐步恢复能量（避免在睡完前能量耗尽死亡）
-            needs.add_energy(40 * dt)  # 每小时恢复40能量
-            needs.add_fatigue(-30 * dt)  # 每小时减少30疲劳
+            PhysiologyNeedsHelper.add_energy(needs, 40 * dt)  # 每小时恢复40能量
+            PhysiologyNeedsHelper.add_fatigue(needs, -30 * dt)  # 每小时减少30疲劳
 
             if action.progress >= 1.0:
                 # 睡眠完成额外恢复
-                needs.add_energy(30)  # 额外恢复
-                needs.add_fatigue(-10)  # 额外减少疲劳
-                needs.add_thirst(-10)  # 睡眠中减少口渴
-                needs.add_hunger(-5)   # 睡眠中减少饥饿
+                PhysiologyNeedsHelper.add_energy(needs, 30)  # 额外恢复
+                PhysiologyNeedsHelper.add_fatigue(needs, -10)  # 额外减少疲劳
+                PhysiologyNeedsHelper.add_thirst(needs, -10)  # 睡眠中减少口渴
+                PhysiologyNeedsHelper.add_hunger(needs, -5)   # 睡眠中减少饥饿
 
                 # 记录到记忆
                 memory = world.get_component(entity, MemoryComponent)

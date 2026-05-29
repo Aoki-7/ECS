@@ -20,3 +20,29 @@ Thumbs.db
 
 # Project specific
 *.log
+
+# reports
+report/
+report.zip
+
+# temp
+temp/
+temp.zip
+
+# other
+*.pyc
+*.pyd
+*.pyo
+*.pyw
+*.pyz
+*.pyd
+*.pyi
+*.pyw
+*.pyz
+*.pyd
+*.pyi
+*.pyw
+*.pyz
+*.pyd
+*.pyi
+*.pyw

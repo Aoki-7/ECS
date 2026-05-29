@@ -37,4 +37,5 @@ class PreceptionSystem(System):
             # 从SpaceSystem查询视野范围内的实体
             id_list = space_system.query_radius(x=x, y=y, r=r)
 
-            vision.entities = [world.query_entity(eid) for eid in id_list if eid != entity.id]
+            vision.entity_ids = [eid for eid in id_list if eid != entity.id]
+            vision.entities = [world.query_entity(eid) for eid in vision.entity_ids]

@@ -59,22 +59,5 @@ class PhysiologyNeedsComponent(Component):
         self.social = clamp(self.social, 0.0, self.max_social)
         self.comfort = clamp(self.comfort, 0.0, self.max_comfort)
 
-    # ===== 对外接口（推荐统一使用） =====
-
-    def add_hunger(self, value: float):
-        self.hunger = clamp(self.hunger + value, 0.0, self.max_hunger)
-
-    def add_thirst(self, value: float):
-        self.thirst = clamp(self.thirst + value, 0.0, self.max_thirst)
-
-    def add_energy(self, value: float):
-        self.energy = clamp(self.energy + value, 0.0, self.max_energy)
-
-    def add_fatigue(self, value: float):
-        self.fatigue = clamp(self.fatigue + value, 0.0, self.max_fatigue)
-
-    def add_social(self, value: float):
-        self.social = clamp(self.social + value, 0.0, self.max_social)
-
-    def add_comfort(self, value: float):
-        self.comfort = clamp(self.comfort + value, 0.0, self.max_comfort)
+    # ===== 数据校验 =====
+    # 所有修改操作应由对应的 System 通过直接修改属性 + _clamp_all() 完成

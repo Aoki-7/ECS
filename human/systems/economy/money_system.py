@@ -62,7 +62,7 @@ class MoneySystem:
         price = self.market_prices[item] * quantity
         gold_cost = price
         if not self.remove_currency(buyer_id or seller_id, "gold", gold_cost):
-            return True, 0.0
+            return False, 0.0
         record = TradeRecord(type="buy", item=item, quantity=quantity, price=price)
         self._append_trade(record)
         return True, gold_cost

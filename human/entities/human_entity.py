@@ -21,6 +21,11 @@ from human.components.basic.body_component import BodyComponent
 from human.components.basic.human_component import HumanComponent
 from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.physiological.health_component import HealthComponent
+from human.components.physiological.temperature_component import TemperatureComponent
+from human.components.health.disease_component import DiseaseComponent
+from human.components.combat.combat_stats_component import CombatStatsComponent
+from human.components.social.dialogue_component import DialogueComponent
+from human.components.social.conflict_component import ConflictComponent
 from human.components.abilities.velocity_component import VelocityComponent
 from human.components.abilities.vision_component import VisionComponent
 from human.components.abilities.skill_component import SkillComponent
@@ -62,6 +67,8 @@ class HumanEntity:
     PHYSIOLOGICAL_COMPONENTS: List[Type[Component]] = [
         HealthComponent,          # 健康状态
         PhysiologyNeedsComponent, # 生理需求
+        TemperatureComponent,     # 体感温度
+        DiseaseComponent,         # 疾病状态
     ]
 
     # 能力组件 (Ability Components)
@@ -70,6 +77,7 @@ class HumanEntity:
         VisionComponent,          # 视觉感知
         SkillComponent,           # 技能水平
         SearchComponent,          # 搜索能力
+        CombatStatsComponent,     # 战斗属性
     ]
 
     # 经济组件 (Economic Components)
@@ -94,6 +102,8 @@ class HumanEntity:
         RelationshipComponent,    # 关系状态
         ReproductionComponent,    # 繁衍状态
         TribeMembershipComponent, # 部落成员身份
+        DialogueComponent,        # 对话状态
+        ConflictComponent,        # 冲突状态
     ]
 
     # 行动组件 (Action Components)
@@ -153,12 +163,19 @@ class HumanEntity:
         # 生理组件
         world.add_component(entity, HealthComponent())
         world.add_component(entity, PhysiologyNeedsComponent())
+        world.add_component(entity, TemperatureComponent())
+        world.add_component(entity, DiseaseComponent())
 
         # 能力组件
         world.add_component(entity, VelocityComponent(speed=kwargs.get('speed', 2.5)))
         world.add_component(entity, VisionComponent(radius=kwargs.get('vision_radius', 15)))
         world.add_component(entity, SkillComponent())
         world.add_component(entity, SearchComponent())
+        world.add_component(entity, CombatStatsComponent(
+            attack_power=kwargs.get('attack_power', 10.0),
+            defense_power=kwargs.get('defense_power', 5.0),
+            aggression=kwargs.get('aggression', 0.5),
+        ))
 
         # 经济组件
         world.add_component(entity, EconomyComponent())
@@ -178,6 +195,8 @@ class HumanEntity:
         world.add_component(entity, RelationshipComponent())
         world.add_component(entity, ReproductionComponent())
         world.add_component(entity, TribeMembershipComponent())
+        world.add_component(entity, DialogueComponent())
+        world.add_component(entity, ConflictComponent())
 
         # 行动组件
         world.add_component(entity, ActionComponent())

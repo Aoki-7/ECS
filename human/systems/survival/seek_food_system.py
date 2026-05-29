@@ -62,15 +62,18 @@ class SeekFoodSystem(System):
             # -------------------------
             # 3. 寻找最近食物，遍历视野范围内是否有食物
             # -------------------------
-            for entity in vision.entities:
-                food = world.get_component(entity=entity, component_type=FoodComponent)
+            for eid in vision.entity_ids:
+                candidate = world.query_entity(eid)
+                if candidate is None or not candidate.is_alive():
+                    continue
+                food = world.get_component(entity=candidate, component_type=FoodComponent)
                 
                 if food:
                     # -------------------------
                     # 4. 找到食物 → 移动过去
                     # 设定移动的行为，和目标的坐标。
                     # -------------------------
-                    food_space = world.get_component(entity=entity, component_type=SpaceComponent)
+                    food_space = world.get_component(entity=candidate, component_type=SpaceComponent)
                     food_space: SpaceComponent
                     action.current_action = ActionType.MOVE_TO
                     action.target_pos = (food_space.x, food_space.y)

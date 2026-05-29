@@ -18,3 +18,4 @@ class VisionComponent(Component):
     radius: int = 12
 
     entities: list = field(default_factory=list)
+    entity_ids: list = field(default_factory=list)

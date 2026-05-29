@@ -39,9 +39,9 @@ class GatheringSystem(System):
             dt: 时间增量（秒）
         """
         # 获取所有具有采集行动的实体
-        for entity, (action, gathering, space) in world.get_components(
+        for entity, (action, gathering, space) in list(world.get_components(
             ActionComponent, GatheringComponent, SpaceComponent
-        ):
+        )):
             if action.current_action == ActionType.GATHER and action.status == ActionStatus.RUNNING:
                 self._process_gathering(world, entity, action, gathering, space, dt)
     

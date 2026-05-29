@@ -66,10 +66,30 @@ from human.systems.action.pickup_system import PickupSystem
 from human.systems.action.search_system import SearchSystem
 from human.systems.action.socialize_system import SocializeSystem
 
-# 生理系统
-from human.systems.physiological.physiology_needs_system import PhysiologyNeedsSystem
+# 环境效果系统
+from human.systems.environment.weather_effect_system import WeatherEffectSystem
+
+# 生理系统（拆分后）
+from human.systems.physiological.physiology_needs_system import PhysiologyNeedsHelper  # 保留辅助类
+from human.systems.physiological.hunger_system import HungerSystem
+from human.systems.physiological.thirst_system import ThirstSystem
+from human.systems.physiological.energy_system import EnergySystem
+from human.systems.physiological.comfort_system import ComfortSystem
+from human.systems.physiological.social_need_system import SocialNeedSystem
 from human.systems.physiological.health_system import HealthSystem
 from human.systems.physiological.human_death_system import HumanDeathSystem
+
+# 疾病与医疗
+from human.systems.health.disease_spread_system import DiseaseSpreadSystem
+from human.systems.health.healthcare_system import HealthcareSystem
+
+# 战斗系统
+from human.systems.combat.combat_system import CombatSystem
+from human.systems.combat.combat_ai_system import CombatAISystem
+
+# 对话与冲突
+from human.systems.interaction.dialogue_system import DialogueSystem
+from human.systems.interaction.conflict_management_system import ConflictManagementSystem
 
 # 生物学系统
 from biology.systems.gene_expression_system import GeneExpressionSystem
@@ -157,6 +177,11 @@ class SimulationLoop:
         self.env_pipeline.priority = 20
         self.world.add_system(self.env_pipeline)
 
+        # 2.5 天气效果系统（priority 25，环境之后，人类之前）
+        self.weather_effect_system = WeatherEffectSystem()
+        self.weather_effect_system.priority = 25
+        self.world.add_system(self.weather_effect_system)
+
         # 3. 人类系统（按处理流水线排序，priority 30）
         #    感知→情绪→思维→目标→意图→决策→规划→动作调度→搜索/移动/交互→社交
         self.human_systems = [
@@ -184,14 +209,28 @@ class SimulationLoop:
             SleepSystem(),
             PickupSystem(),
             SocializeSystem(),
+            # 战斗层
+            CombatSystem(),
             # 社交/繁衍层
             SocialSystem(),
             PairingSystem(),
             ReproductionSystem(),
+            # 对话系统
+            DialogueSystem(),
         ]
         for system in self.human_systems:
             system.priority = 30
             self.world.add_system(system)
+
+        # 3.5 战斗 AI 系统（priority 29，在动作执行前生成战斗意图）
+        self.combat_ai_system = CombatAISystem()
+        self.combat_ai_system.priority = 29
+        self.world.add_system(self.combat_ai_system)
+
+        # 3.6 冲突管理系统（priority 31）
+        self.conflict_system = ConflictManagementSystem()
+        self.conflict_system.priority = 31
+        self.world.add_system(self.conflict_system)
         
         # 部落系统单独保存引用并注册到 world（priority 39，人类系统末尾）
         self.tribe_system = TribeSystem()
@@ -199,15 +238,29 @@ class SimulationLoop:
         self.world.add_system(self.tribe_system)
         self.human_systems.append(self.tribe_system)
 
-        # 4. 生理系统（priority 40）
+        # 4. 生理系统（priority 40，拆分后的独立子系统）
         self.physiology_systems = [
-            PhysiologyNeedsSystem(),
+            HungerSystem(),
+            ThirstSystem(),
+            EnergySystem(),
+            ComfortSystem(),
+            SocialNeedSystem(),
             HealthSystem(),
             HumanDeathSystem(),
         ]
         for system in self.physiology_systems:
             system.priority = 40
             self.world.add_system(system)
+
+        # 4.5 疾病传播系统（priority 41）
+        self.disease_spread_system = DiseaseSpreadSystem()
+        self.disease_spread_system.priority = 41
+        self.world.add_system(self.disease_spread_system)
+
+        # 4.6 医疗保健系统（priority 42）
+        self.healthcare_system = HealthcareSystem()
+        self.healthcare_system.priority = 42
+        self.world.add_system(self.healthcare_system)
 
         # 5. 生物学系统（priority 50）
         # 执行顺序：

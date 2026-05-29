@@ -8,6 +8,13 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 import random
 
+from core.system import System
+from core.world import World
+
+from human.components.social.dialogue_component import DialogueComponent
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.cognitive.memory_component import MemoryComponent
+
 
 # 预定义的话题和功能回应
 RESPONSE_CATEGORIES = {
@@ -66,9 +73,9 @@ class DialogueTurn:
         )
 
 
-class DialogueSystem:
+class DialogueSystem(System):
     """
-    对话系统 - 管理实体间对话交互
+    对话系统 - 管理实体间对话交互（ECS 版）
     
     功能：
     - 话题识别和转换
@@ -78,6 +85,7 @@ class DialogueSystem:
     """
     
     def __init__(self):
+        super().__init__()
         self.active_dialogue: Optional[DialogueContext] = None
         self.turn_history: List[DialogueTurn] = []
         self.knowledge_base: Dict[str, str] = {}  # 实体知识库
@@ -198,9 +206,45 @@ class DialogueSystem:
         )
         self.turn_history.append(turn)
 
-    def update(self, world, dt: float = 0.0):
-        """系统更新（对话系统暂不执行每帧逻辑）"""
-        pass
+    def update(self, world: World, dt: float = 0.0):
+        """系统更新：处理当前处于 TALK/INTERACT 状态的实体"""
+        for entity, (action, dialogue) in world.get_components(
+            ActionComponent, DialogueComponent
+        ):
+            action: ActionComponent
+            dialogue: DialogueComponent
+
+            if action.current_action not in (ActionType.TALK, ActionType.INTERACT):
+                continue
+
+            if not dialogue.is_talking:
+                dialogue.is_talking = True
+                dialogue.turn_count = 0
+
+            # 对话进度推进
+            action.progress += dt * 0.2
+            dialogue.turn_count += 1
+
+            if action.progress >= 1.0:
+                # 对话完成
+                action.progress = 1.0
+                action.status = ActionStatus.SUCCESS
+                dialogue.is_talking = False
+
+                # 记录到记忆
+                memory = world.get_component(entity, MemoryComponent)
+                if memory and dialogue.target_entity_id is not None:
+                    current_time = world.get_time().total_hours
+                    memory.add_event(
+                        current_time, "dialogue",
+                        f"与 {dialogue.target_entity_id} 进行了对话",
+                        impact=dialogue.sentiment * 0.3,
+                    )
+
+                # 清理对话状态
+                dialogue.target_entity_id = None
+                dialogue.topic = ""
+                dialogue.sentiment = 0.0
 
 if __name__ == "__main__":
     import logging
