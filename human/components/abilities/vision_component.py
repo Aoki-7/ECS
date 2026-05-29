@@ -2,20 +2,14 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:vision_component.py
-@说明:感知范围组件
-@时间:2026/03/28 17:27:08
-@作者:Sherry
-@版本:1.0
+@说明:感知范围组件（兼容代理）
+@时间:2026/03/28
+@版本:2.0
+
+已迁移至 core/components/vision_component.py
+此文件保留用于向后兼容，将在下一版本中删除。
 '''
 
-from dataclasses import dataclass, field
-from core.component import Component
+from core.components.vision_component import VisionComponent
 
-
-@dataclass
-class VisionComponent(Component):
-    """感知范围组件"""
-    radius: int = 12
-
-    entities: list = field(default_factory=list)
-    entity_ids: list = field(default_factory=list)
+__all__ = ["VisionComponent"]

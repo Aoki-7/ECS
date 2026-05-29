@@ -94,12 +94,12 @@ class HumanStatePanel:
         # 导入所有需要的组件
         from human.components.basic.human_component import HumanComponent
         from human.components.basic.identity_component import IdentityComponent
-        from human.components.basic.age_component import AgeComponent
-        from human.components.basic.gender_component import GenderComponent, Gender
-        from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+        from biology.components.age_component import AgeComponent
+        from biology.components.gender_component import GenderComponent, Gender
+        from biology.components.physiology_needs_component import PhysiologyNeedsComponent
         from human.components.cognitive.emotion_component import EmotionComponent
         from human.components.cognitive.intent_component import IntentComponent
-        from human.components.action.action_component import ActionComponent
+        from core.components.action_component import ActionComponent
         from human.components.social.tribe_membership_component import TribeMembershipComponent
         from space.space_component import SpaceComponent
         from human.components.social.tribe_component import TribeComponent

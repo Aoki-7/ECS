@@ -63,8 +63,8 @@ class HealthcareSystem(System):
 
     def update(self, world: World, dt: float = 0.0):
         """系统更新：扫描疾病并尝试治疗"""
-        from human.components.health.disease_component import DiseaseComponent
-        from human.components.physiological.health_component import HealthComponent
+        from biology.components.disease_component import DiseaseComponent
+        from biology.components.health_component import HealthComponent
 
         for entity, (disease_comp, health) in world.get_components(
             DiseaseComponent, HealthComponent

@@ -13,13 +13,13 @@ from core.world import World
 from core.systems.event_log_system import EventLog
 
 from human.components.cognitive.intent_component import IntentComponent, IntentType
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 from human.components.social.social_component import SocialComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
-from human.components.basic.age_component import AgeComponent
-from human.components.basic.gender_component import GenderComponent, Gender
-from human.components.action.action_component import ActionComponent, ActionType
+from biology.components.age_component import AgeComponent
+from biology.components.gender_component import GenderComponent, Gender
+from core.components.action_component import ActionComponent, ActionType
 
 
 class PairingSystem(System):

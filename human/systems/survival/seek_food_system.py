@@ -14,9 +14,9 @@ from core.system import System
 from core.world import World
 
 from space.space_component import SpaceComponent
-from human.components.action.action_component import ActionComponent, ActionType
+from core.components.action_component import ActionComponent, ActionType
 from human.components.economic.inventory.inventory_component import InventoryComponent
-from human.components.abilities.vision_component import VisionComponent
+from core.components.vision_component import VisionComponent
 
 
 from resource.food.components.food_component import FoodComponent

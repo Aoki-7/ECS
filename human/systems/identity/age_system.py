@@ -10,7 +10,7 @@
 from core.system import System
 from core.world import World
 
-from human.components.basic.age_component import AgeComponent
+from biology.components.age_component import AgeComponent
 
 
 class AgeSystem(System):

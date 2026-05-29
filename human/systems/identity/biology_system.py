@@ -11,7 +11,7 @@
 from core.system import System
 from core.world import World
 
-from human.components.biology.biology_component import SpeciesComponent
+from biology.components.species_component import SpeciesComponent
 
 
 class BiologySystem(System):

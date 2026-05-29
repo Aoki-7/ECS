@@ -2,23 +2,14 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:temperature_component.py
-@说明:体感温度组件
+@说明:体感温度组件（兼容代理）
 @时间:2026/05/29
-@版本:1.0
+@版本:2.0
+
+已迁移至 biology/components/temperature_component.py
+此文件保留用于向后兼容，将在下一版本中删除。
 '''
 
-from dataclasses import dataclass
-from core.component import Component
+from biology.components.temperature_component import TemperatureComponent
 
-
-@dataclass
-class TemperatureComponent(Component):
-    """
-    体感温度组件
-    存储实体核心体温和热/冷应激状态
-    """
-    body_temperature: float = 37.0      # 核心体温 °C
-    heat_stress: float = 0.0            # 热应激 0-100
-    cold_stress: float = 0.0            # 冷应激 0-100
-    is_heatstroke: bool = False
-    is_frostbite: bool = False
+__all__ = ["TemperatureComponent"]

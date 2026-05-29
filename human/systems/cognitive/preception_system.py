@@ -12,7 +12,7 @@ from core.system import System
 from core.world import World
 
 from space.space_system import SpaceSystem
-from human.components.abilities.vision_component import VisionComponent
+from core.components.vision_component import VisionComponent
 from space.space_component import SpaceComponent
 
 class PreceptionSystem(System):

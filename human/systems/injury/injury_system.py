@@ -1,6 +1,6 @@
 from core.system import System
-from human.components.injury.injury_component import InjuryComponent
-from human.components.physiological.health_component import HealthComponent
+from biology.components.injury.injury_component import InjuryComponent
+from biology.components.health_component import HealthComponent
 
 class InjurySystem(System):
     """

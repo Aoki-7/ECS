@@ -12,11 +12,11 @@
 from core.system import System
 from core.world import World
 
-from human.components.physiological.health_component import (
+from biology.components.health_component import (
     HealthComponent,
 )
 
-from human.components.physiological.physiology_needs_component import (
+from biology.components.physiology_needs_component import (
     PhysiologyNeedsComponent,
 )
 

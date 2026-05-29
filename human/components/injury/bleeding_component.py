@@ -2,19 +2,14 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:bleeding_component.py
-@说明:流血伤害组件
-@时间:2026/03/19 11:24:07
-@作者:Sherry
-@版本:1.0
+@说明:流血伤害组件（兼容代理）
+@时间:2026/03/19
+@版本:2.0
+
+已迁移至 biology/components/injury/bleeding_component.py
+此文件保留用于向后兼容，将在下一版本中删除。
 '''
 
-from dataclasses import dataclass
-from human.components.injury.injury_component import InjuryComponent
+from biology.components.injury.bleeding_component import BleedingComponent
 
-
-@dataclass
-class BleedingComponent(InjuryComponent):
-    """
-    流血：持续掉血
-    """
-    damage_per_sec: float = 0.5
+__all__ = ["BleedingComponent"]

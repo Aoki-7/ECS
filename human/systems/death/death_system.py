@@ -12,8 +12,8 @@
 from core.system import System
 from core.world import World
 
-from human.components.physiological.health_component import HealthComponent
-from human.components.physiological.death_component import DeathComponent
+from biology.components.health_component import HealthComponent
+from core.components.death_component import DeathComponent
 
 
 class DeathSystem(System):

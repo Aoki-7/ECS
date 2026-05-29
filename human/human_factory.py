@@ -12,7 +12,7 @@ HumanFactory 只负责创建实体和挂载组件。
 '''
 
 from core.world import World
-from human.components.basic.gender_component import GenderComponent, Gender
+from biology.components.gender_component import GenderComponent, Gender
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from resource.water.water_factory import WaterFactory
 from space.space_component import SpaceComponent

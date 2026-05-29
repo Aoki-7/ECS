@@ -11,8 +11,8 @@ from core.system import System
 from core.world import World
 
 from environment.environment_component import EnvironmentComponent
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
-from human.components.physiological.health_component import HealthComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.health_component import HealthComponent
 from space.space_component import SpaceComponent
 
 

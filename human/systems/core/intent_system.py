@@ -12,7 +12,7 @@
 from core.system import System
 from core.world import World
 
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.cognitive.memory_component import MemoryComponent
 

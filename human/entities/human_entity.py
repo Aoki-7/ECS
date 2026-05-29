@@ -14,20 +14,20 @@ from core.world import World
 from core.entity import Entity
 
 # 导入所有组件
-from human.components.basic.age_component import AgeComponent
-from human.components.basic.gender_component import GenderComponent
+from biology.components.age_component import AgeComponent
+from biology.components.gender_component import GenderComponent
 from human.components.basic.identity_component import IdentityComponent
-from human.components.basic.body_component import BodyComponent
+from biology.components.body_component import BodyComponent
 from human.components.basic.human_component import HumanComponent
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
-from human.components.physiological.health_component import HealthComponent
-from human.components.physiological.temperature_component import TemperatureComponent
-from human.components.health.disease_component import DiseaseComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.health_component import HealthComponent
+from biology.components.temperature_component import TemperatureComponent
+from biology.components.disease_component import DiseaseComponent
 from human.components.combat.combat_stats_component import CombatStatsComponent
 from human.components.social.dialogue_component import DialogueComponent
 from human.components.social.conflict_component import ConflictComponent
-from human.components.abilities.velocity_component import VelocityComponent
-from human.components.abilities.vision_component import VisionComponent
+from core.components.velocity_component import VelocityComponent
+from core.components.vision_component import VisionComponent
 from human.components.abilities.skill_component import SkillComponent
 from human.components.abilities.search_component import SearchComponent
 from human.components.economic.economy_component import EconomyComponent
@@ -43,7 +43,7 @@ from human.components.social.social_component import SocialComponent
 from human.components.social.relationship_component import RelationshipComponent
 from human.components.social.reproduction_component import ReproductionComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
-from human.components.action.action_component import ActionComponent
+from core.components.action_component import ActionComponent
 from space.space_component import SpaceComponent
 
 

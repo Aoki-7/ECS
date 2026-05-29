@@ -11,7 +11,7 @@
 from core.system import System
 from core.world import World
 from human.components.interaction.gathering_component import GatheringComponent
-from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
+from core.components.action_component import ActionComponent, ActionType, ActionStatus
 from resource.components.resource_component import ResourceComponent
 from space.space_component import SpaceComponent
 import math

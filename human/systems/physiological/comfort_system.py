@@ -11,7 +11,7 @@ from core.system import System
 from core.world import World
 
 from environment.environment_component import EnvironmentComponent
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 
 
 class ComfortSystem(System):

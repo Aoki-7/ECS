@@ -2,19 +2,14 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:fracture_component.py
-@说明:骨折，不一定出血，但影响行动能力
-@时间:2026/03/19 13:04:13
-@作者:Sherry
-@版本:1.0
+@说明:骨折组件（兼容代理）
+@时间:2026/03/19
+@版本:2.0
+
+已迁移至 biology/components/injury/fracture_component.py
+此文件保留用于向后兼容，将在下一版本中删除。
 '''
 
-from dataclasses import dataclass
-from core.component import Component
+from biology.components.injury.fracture_component import FractureComponent
 
-
-@dataclass
-class FractureComponent(Component):
-    """
-    骨折：影响移动能力（不直接掉血）
-    """
-    severity: float = 1.0  # 影响强度（0~1）
+__all__ = ["FractureComponent"]

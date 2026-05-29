@@ -17,9 +17,9 @@
 from core.system import System
 from core.world import World
 
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from human.systems.physiological.physiology_needs_system import PhysiologyNeedsHelper
-from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
+from core.components.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from human.components.cognitive.emotion_component import EmotionComponent
 from human.components.cognitive.memory_component import MemoryComponent

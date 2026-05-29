@@ -15,12 +15,12 @@ import random
 from core.system import System
 from core.world import World
 
-from human.components.action.action_component import (
+from core.components.action_component import (
     ActionComponent, ActionType, ActionStatus
 )
-from human.components.physiological.health_component import HealthComponent
+from biology.components.health_component import HealthComponent
 from human.components.combat.combat_stats_component import CombatStatsComponent
-from human.components.injury.injury_component import InjuryComponent
+from biology.components.injury.injury_component import InjuryComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 
@@ -99,7 +99,7 @@ class CombatSystem(System):
         # 给目标添加伤害组件（如果没有）
         target_injury = world.get_component(target, InjuryComponent)
         if target_injury is None:
-            from human.components.injury.injury_component import InjuryComponent
+            from biology.components.injury.injury_component import InjuryComponent
             world.add_component(target, InjuryComponent(damage_per_sec=0.5))
 
         action.status = ActionStatus.SUCCESS
@@ -213,4 +213,4 @@ class CombatSystem(System):
         action.status = ActionStatus.RUNNING
 
 
-from human.components.abilities.velocity_component import VelocityComponent
+from core.components.velocity_component import VelocityComponent

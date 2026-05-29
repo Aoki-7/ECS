@@ -10,9 +10,9 @@ from typing import List, Tuple, Optional, Dict
 import math
 import random
 
-from human.components.basic.body_component import BodyComponent
-from human.components.abilities.velocity_component import VelocityComponent
-from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
+from biology.components.body_component import BodyComponent
+from core.components.velocity_component import VelocityComponent
+from core.components.action_component import ActionComponent, ActionType, ActionStatus
 from space.space_component import SpaceComponent
 
 

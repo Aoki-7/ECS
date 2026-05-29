@@ -11,8 +11,8 @@
 from core.system import System
 from core.world import World
 
-from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 
 
 class ActionSystem(System):

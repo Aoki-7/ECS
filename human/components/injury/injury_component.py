@@ -2,26 +2,14 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:injury_component.py
-@说明:伤害基类组件
-@时间:2026/03/19 11:19:48
-@作者:Sherry
-@版本:1.0
+@说明:伤害基类组件（兼容代理）
+@时间:2026/03/19
+@版本:2.0
+
+已迁移至 biology/components/injury/injury_component.py
+此文件保留用于向后兼容，将在下一版本中删除。
 '''
 
-from core.component import Component
+from biology.components.injury.injury_component import InjuryComponent
 
-from dataclasses import dataclass
-
-@dataclass
-class InjuryComponent(Component):
-    """
-        伤害基类组件（所有伤害的父类）
-
-        Args:
-            damage_per_sec: 每秒伤害
-            duration: 持续时间（-1 表示永久）
-            elapsed: 已经过时间
-    """
-    damage_per_sec: float = 0.0
-    duration: float = -1.0
-    elapsed: float = 0.0
+__all__ = ["InjuryComponent"]

@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 from human.components.social.reproduction_component import ReproductionComponent
-from human.components.basic.age_component import AgeComponent
-from human.components.basic.gender_component import GenderComponent, Gender
+from biology.components.age_component import AgeComponent
+from biology.components.gender_component import GenderComponent, Gender
 from space.space_component import SpaceComponent
 
 

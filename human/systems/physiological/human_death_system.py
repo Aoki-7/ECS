@@ -20,9 +20,9 @@ from core.system import System
 from core.world import World
 from core.systems.event_log_system import EventLog
 
-from human.components.physiological.health_component import HealthComponent
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
-from human.components.basic.age_component import AgeComponent
+from biology.components.health_component import HealthComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.age_component import AgeComponent
 
 logger = logging.getLogger(__name__)
 

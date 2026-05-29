@@ -27,9 +27,9 @@ from human.components.cognitive.memory_component import MemoryComponent
 from human.components.cognitive.personality_component import PersonalityComponent
 from human.components.cognitive.brain_component import BrainComponent
 from human.components.cognitive.goal_component import GoalComponent
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
-from human.components.physiological.health_component import HealthComponent
-from human.components.basic.age_component import AgeComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.health_component import HealthComponent
+from biology.components.age_component import AgeComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 
 

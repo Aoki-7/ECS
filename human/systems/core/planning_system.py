@@ -17,9 +17,9 @@ from core.world import World
 
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
-from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
+from core.components.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
 from resource.food.components.food_component import FoodComponent

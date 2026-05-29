@@ -2,26 +2,14 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:biology_component.py
-@说明:生物属性组件
-@时间:2026/03/19 13:21:44
-@作者:Sherry
-@版本:1.0
+@说明:物种属性组件（兼容代理）
+@时间:2026/03/19
+@版本:2.0
+
+已迁移至 biology/components/species_component.py
+此文件保留用于向后兼容，将在下一版本中删除。
 '''
 
-from dataclasses import dataclass
+from biology.components.species_component import SpeciesComponent
 
-from core.component import Component
-
-
-@dataclass
-class SpeciesComponent(Component):
-    """
-    物种属性组件
-    
-    包含物种相关的属性。年龄应使用 AgeComponent，性别应使用 GenderComponent。
-    
-    Args:
-        species: 物种名称
-    """
-    species: str = "Human"      # 物种名称
-
+__all__ = ["SpeciesComponent"]

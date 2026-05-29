@@ -1,16 +1,15 @@
-# human/components/death_component.py
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+'''
+@文件:death_component.py
+@说明:死亡状态组件（兼容代理）
+@时间:2026/05/29
+@版本:2.0
 
+已迁移至 core/components/death_component.py
+此文件保留用于向后兼容，将在下一版本中删除。
+'''
 
-from dataclasses import dataclass
+from core.components.death_component import DeathComponent
 
-from core.component import Component
-
-@dataclass
-class DeathComponent(Component):
-    """
-    死亡状态组件
-    用于标记实体的死亡状态
-    """
-    is_dead: bool = False
+__all__ = ["DeathComponent"]

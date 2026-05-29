@@ -12,8 +12,8 @@ import random
 from core.system import System
 from core.world import World
 
-from human.components.health.disease_component import DiseaseComponent
-from human.components.physiological.health_component import HealthComponent
+from biology.components.disease_component import DiseaseComponent
+from biology.components.health_component import HealthComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 

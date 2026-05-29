@@ -30,7 +30,7 @@ from human.components.social.tribe_membership_component import TribeMembershipCo
 from human.components.social.social_component import SocialComponent
 from human.components.social.relationship_component import RelationshipComponent
 from human.components.basic.identity_component import IdentityComponent
-from human.components.basic.age_component import AgeComponent
+from biology.components.age_component import AgeComponent
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
 from core.systems.event_log_system import EventLog

@@ -17,11 +17,11 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
-from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
+from core.components.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.abilities.skill_component import SkillComponent
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
-from human.components.physiological.physiology_needs_component import PhysiologyNeedsComponent
+from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from space.space_component import SpaceComponent
 from equipment.equipment_factory import EquipmentFactory
 

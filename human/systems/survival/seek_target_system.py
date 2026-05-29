@@ -17,10 +17,10 @@ from core.system import System
 from core.world import World
 
 from space.space_component import SpaceComponent
-from human.components.action.action_component import ActionComponent, ActionType
+from core.components.action_component import ActionComponent, ActionType
 from human.components.economic.inventory.inventory_component import InventoryComponent
 
-from human.components.abilities.search_component import SearchComponent
+from core.components.search_component import SearchComponent
 
 
 class SeekTargetSystem(System):
