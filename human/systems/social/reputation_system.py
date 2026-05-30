@@ -32,9 +32,9 @@ class ReputationSystem(System):
     # ── ReputationComponent 业务逻辑 ──
 
     @staticmethod
-    def adjust_reputation(entity: Entity, delta: float, aspect: str = "general") -> None:
+    def adjust_reputation(world: World, entity: Entity, delta: float, aspect: str = "general") -> None:
         """调整声誉"""
-        rep = entity.get_component(ReputationComponent)
+        rep = world.get_component(entity, ReputationComponent)
         if rep is None:
             return
 
@@ -49,9 +49,9 @@ class ReputationSystem(System):
                 rep.reputation = min(100, rep.reputation + (level - 70) * 0.3)
 
     @staticmethod
-    def get_status(entity: Entity) -> str:
+    def get_status(world: World, entity: Entity) -> str:
         """根据声誉值映射到社会地位"""
-        rep = entity.get_component(ReputationComponent)
+        rep = world.get_component(entity, ReputationComponent)
         if rep is None:
             return "unknown"
 
@@ -70,9 +70,9 @@ class ReputationSystem(System):
             return "commoner"
 
     @staticmethod
-    def add_knowledge(entity: Entity, area: str, level: int) -> None:
+    def add_knowledge(world: World, entity: Entity, area: str, level: int) -> None:
         """添加专长知识"""
-        rep = entity.get_component(ReputationComponent)
+        rep = world.get_component(entity, ReputationComponent)
         if rep is None:
             return
 
@@ -84,24 +84,24 @@ class ReputationSystem(System):
             rep.known_for.append(area)
 
     @staticmethod
-    def get_reputation_summary(entity: Entity) -> Dict:
+    def get_reputation_summary(world: World, entity: Entity) -> Dict:
         """获取声誉摘要"""
-        rep = entity.get_component(ReputationComponent)
+        rep = world.get_component(entity, ReputationComponent)
         if rep is None:
             return {}
 
         return {
             "overall": round(max(0, min(100, rep.reputation)), 1),
-            "status": ReputationSystem.get_status(entity),
+            "status": ReputationSystem.get_status(world, entity),
             "specialties": dict(rep.specialties),
             "known_for": list(rep.known_for),
             "social_status": rep.social_status,
         }
 
     @staticmethod
-    def spread_rumor(entity: Entity, content: str, source: str = "unknown") -> str:
+    def spread_rumor(world: World, entity: Entity, content: str, source: str = "unknown") -> str:
         """传播谣言"""
-        rep = entity.get_component(ReputationComponent)
+        rep = world.get_component(entity, ReputationComponent)
         if rep is None:
             return "No reputation component"
 
@@ -117,9 +117,9 @@ class ReputationSystem(System):
         return f"Rumor ID {rumor_id} created"
 
     @staticmethod
-    def get_trusted_entities(entity: Entity) -> List[str]:
+    def get_trusted_entities(world: World, entity: Entity) -> List[str]:
         """获取值得信任的实体列表"""
-        rep = entity.get_component(ReputationComponent)
+        rep = world.get_component(entity, ReputationComponent)
         if rep is None:
             return ["none_trusted"]
 
@@ -132,9 +132,9 @@ class ReputationSystem(System):
             return ["none_trusted"]
 
     @staticmethod
-    def is_honorable(entity: Entity) -> bool:
+    def is_honorable(world: World, entity: Entity) -> bool:
         """判断是否是荣耀之身"""
-        rep = entity.get_component(ReputationComponent)
+        rep = world.get_component(entity, ReputationComponent)
         if rep is None:
             return False
 
@@ -142,12 +142,12 @@ class ReputationSystem(System):
                 any(v >= 80 for v in rep.specialties.values()))
 
     @staticmethod
-    def get_title(entity: Entity) -> str:
+    def get_title(world: World, entity: Entity) -> str:
         """根据声誉生成称号"""
-        if ReputationSystem.is_honorable(entity):
+        if ReputationSystem.is_honorable(world, entity):
             return "Honored Citizen"
 
-        rep = entity.get_component(ReputationComponent)
+        rep = world.get_component(entity, ReputationComponent)
         if rep is None:
             return "Local Person"
 
@@ -165,9 +165,9 @@ class ReputationSystem(System):
     # ── FameComponent 业务逻辑 ──
 
     @staticmethod
-    def update_popularity(entity: Entity, region: str, delta: float) -> None:
+    def update_popularity(world: World, entity: Entity, region: str, delta: float) -> None:
         """更新区域知名度"""
-        fame = entity.get_component(FameComponent)
+        fame = world.get_component(entity, FameComponent)
         if fame is None:
             return
 
@@ -176,9 +176,9 @@ class ReputationSystem(System):
         fame.regional_popularity[region] = max(0, min(100, fame.regional_popularity[region] + delta))
 
     @staticmethod
-    def get_popularity_map(entity: Entity) -> Dict[str, float]:
+    def get_popularity_map(world: World, entity: Entity) -> Dict[str, float]:
         """获取区域知名度分布"""
-        fame = entity.get_component(FameComponent)
+        fame = world.get_component(entity, FameComponent)
         if fame is None:
             return {}
         return dict(fame.regional_popularity)
@@ -186,9 +186,9 @@ class ReputationSystem(System):
     # ── SocialStandingComponent 业务逻辑 ──
 
     @staticmethod
-    def calculate_class(entity: Entity) -> str:
+    def calculate_class(world: World, entity: Entity) -> str:
         """根据属性计算职业等级"""
-        standing = entity.get_component(SocialStandingComponent)
+        standing = world.get_component(entity, SocialStandingComponent)
         if standing is None:
             return "unknown"
 
@@ -202,9 +202,9 @@ class ReputationSystem(System):
             return "lower_class"
 
     @staticmethod
-    def get_standing_summary(entity: Entity) -> Dict:
+    def get_standing_summary(world: World, entity: Entity) -> Dict:
         """获取社会地位摘要"""
-        standing = entity.get_component(SocialStandingComponent)
+        standing = world.get_component(entity, SocialStandingComponent)
         if standing is None:
             return {}
 

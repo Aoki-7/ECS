@@ -41,6 +41,9 @@ class SpaceSystem():
         # entity_id -> SpaceComponent
         self.components: Dict[int, SpaceComponent] = {}
 
+        # 脏实体集合，避免 update 时全量扫描
+        self._dirty_entities: Set[int] = set()
+
     # ====
     # Entity lifecycle
     # ====
@@ -52,6 +55,7 @@ class SpaceSystem():
         self.index.add(entity_id, comp.x, comp.y, comp.layer)
 
         comp.dirty = False
+        self._dirty_entities.discard(entity_id)
 
     # -----------------------------------------------------
 
@@ -63,6 +67,7 @@ class SpaceSystem():
         self.index.remove(entity_id)
 
         del self.components[entity_id]
+        self._dirty_entities.discard(entity_id)
 
     # ====
     # Movement
@@ -83,6 +88,7 @@ class SpaceSystem():
         comp.layer = layer
 
         comp.dirty = True
+        self._dirty_entities.add(entity_id)
 
     # -----------------------------------------------------
 
@@ -90,15 +96,15 @@ class SpaceSystem():
         """
         同步所有dirty实体
         """
-
-        for entity_id, comp in self.components.items():
-
-            if not comp.dirty:
+        for entity_id in list(self._dirty_entities):
+            comp = self.components.get(entity_id)
+            if comp is None:
                 continue
 
             self.index.move(entity_id, comp.x, comp.y, comp.layer)
-
             comp.dirty = False
+
+        self._dirty_entities.clear()
 
     # ====
     # Queries

@@ -12,7 +12,7 @@ import random
 from core.system import System
 from core.world import World
 
-from biology.components.disease_component import DiseaseComponent
+from biology.components.disease_component import DiseaseComponent, DiseaseRecord
 from biology.components.health_component import HealthComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
@@ -43,25 +43,24 @@ class DiseaseSpreadSystem(System):
 
             for disease in list(disease_comp.diseases):
                 # 疾病进展
-                disease["elapsed"] += dt
+                disease.elapsed += dt
 
                 # hp 伤害
-                if disease.get("damage_rate", 0) > 0:
-                    health.hp -= disease["damage_rate"] * dt
+                if disease.damage_rate > 0:
+                    health.hp -= disease.damage_rate * dt
                     health.hp = max(0.0, health.hp)
 
                 # 治愈判定：自然消退或免疫足够
-                immunity = disease_comp.immunity.get(disease["name"], 0.0)
-                duration = disease.get("duration", -1)
-                if duration > 0 and disease["elapsed"] >= duration:
-                    disease_comp.remove_disease(disease["name"])
+                immunity = disease_comp.immunity.get(disease.name, 0.0)
+                if disease.duration > 0 and disease.elapsed >= disease.duration:
+                    disease_comp.remove_disease(disease.name)
                     continue
                 if immunity >= self.IMMUNITY_THRESHOLD:
-                    disease_comp.remove_disease(disease["name"])
+                    disease_comp.remove_disease(disease.name)
                     continue
 
                 # 免疫自然增长（带病期间缓慢获得免疫）
-                disease_comp.immunity[disease["name"]] = min(
+                disease_comp.immunity[disease.name] = min(
                     1.0, immunity + 0.001 * dt
                 )
 
@@ -72,8 +71,7 @@ class DiseaseSpreadSystem(System):
 
     def _try_spread(self, world, space_system, source_entity, space, disease, dt):
         """尝试将疾病传播给邻近实体"""
-        contagion = disease.get("contagion", 0.0)
-        if contagion <= 0:
+        if disease.contagion <= 0:
             return
 
         nearby_ids = space_system.neighbors(
@@ -93,23 +91,23 @@ class DiseaseSpreadSystem(System):
                 continue
 
             # 已感染则跳过
-            if target_disease.has_disease(disease["name"]):
+            if target_disease.has_disease(disease.name):
                 continue
 
             # 免疫检查
-            immunity = target_disease.immunity.get(disease["name"], 0.0)
+            immunity = target_disease.immunity.get(disease.name, 0.0)
             if immunity >= self.IMMUNITY_THRESHOLD:
                 continue
 
             # 传播判定
-            spread_chance = self.BASE_SPREAD_CHANCE * contagion * dt
+            spread_chance = self.BASE_SPREAD_CHANCE * disease.contagion * dt
             if random.random() < spread_chance:
-                target_disease.add_disease({
-                    "name": disease["name"],
-                    "type": disease["type"],
-                    "severity": disease["severity"] * 0.5,
-                    "contagion": disease["contagion"],
-                    "duration": disease["duration"],
-                    "elapsed": 0.0,
-                    "damage_rate": disease.get("damage_rate", 0) * 0.5,
-                })
+                target_disease.add_disease(DiseaseRecord(
+                    name=disease.name,
+                    type=disease.type,
+                    severity=disease.severity * 0.5,
+                    contagion=disease.contagion,
+                    duration=disease.duration,
+                    elapsed=0.0,
+                    damage_rate=disease.damage_rate * 0.5,
+                ))

@@ -50,6 +50,10 @@ from human.systems.social.social_system import SocialSystem
 from human.systems.social.pairing_system import PairingSystem
 from human.systems.social.reproduction_system import ReproductionSystem
 from human.systems.social.tribe_system import TribeSystem
+from human.systems.social.territory_system import TerritorySystem
+from human.systems.social.leadership_system import LeadershipSystem
+from human.systems.social.loyalty_system import LoyaltySystem
+from human.systems.social.recruit_system import RecruitSystem
 from human.systems.cognitive.decision_system import DecisionSystem
 from human.systems.cognitive.preception_system import PreceptionSystem
 from human.systems.cognitive.emotion_system import EmotionSystem
@@ -67,7 +71,6 @@ from human.systems.action.search_system import SearchSystem
 from human.systems.action.socialize_system import SocializeSystem
 
 # 环境效果系统（已拆分为5个独立系统）
-from human.systems.environment.weather_effect_system import WeatherEffectSystem
 from human.systems.environment.heat_effect_system import HeatEffectSystem
 from human.systems.environment.cold_effect_system import ColdEffectSystem
 from human.systems.environment.rain_effect_system import RainEffectSystem
@@ -86,12 +89,7 @@ from human.systems.interaction.conflict_detection_system import ConflictDetectio
 from human.systems.interaction.conflict_resolution_system import ConflictResolutionSystem
 
 # 生理系统（拆分后）
-from human.systems.physiological.physiology_needs_system import PhysiologyNeedsHelper  # 保留辅助类
-from human.systems.physiological.hunger_system import HungerSystem
-from human.systems.physiological.thirst_system import ThirstSystem
-from human.systems.physiological.energy_system import EnergySystem
-from human.systems.physiological.comfort_system import ComfortSystem
-from human.systems.physiological.social_need_system import SocialNeedSystem
+from human.systems.physiological.physiology_needs_system import PhysiologyNeedsSystem
 from human.systems.physiological.health_system import HealthSystem
 from human.systems.physiological.human_death_system import HumanDeathSystem
 
@@ -105,7 +103,6 @@ from human.systems.combat.combat_ai_system import CombatAISystem
 
 # 对话与冲突
 from human.systems.interaction.dialogue_system import DialogueSystem
-from human.systems.interaction.conflict_management_system import ConflictManagementSystem
 
 # 生物学系统
 from biology.systems.gene_expression_system import GeneExpressionSystem
@@ -203,13 +200,7 @@ class SimulationLoop:
         self.atmosphere_physics_system.priority = 20
         self.world.add_system(self.atmosphere_physics_system)
 
-        # 2.5 天气效果系统（priority 25，环境之后，人类之前）
-        # 保留原 WeatherEffectSystem 作为兼容，同时注册拆分后的子系统
-        self.weather_effect_system = WeatherEffectSystem()
-        self.weather_effect_system.priority = 25
-        self.world.add_system(self.weather_effect_system)
-
-        # 2.6 天气效果子系统（拆分版，priority 25）
+        # 2.5 天气效果子系统（拆分版，priority 25，替代原 WeatherEffectSystem）
         self.weather_subsystems = [
             HeatEffectSystem(),
             ColdEffectSystem(),
@@ -292,19 +283,32 @@ class SimulationLoop:
         self.economy_system.priority = 35
         self.world.add_system(self.economy_system)
 
-        # 部落系统单独保存引用并注册到 world（priority 39，人类系统末尾）
+        # 3.9 部落子系统（从 TribeSystem 拆分，priority 39-42）
+        self.territory_system = TerritorySystem()
+        self.territory_system.priority = 39
+        self.world.add_system(self.territory_system)
+
+        self.leadership_system = LeadershipSystem()
+        self.leadership_system.priority = 40
+        self.world.add_system(self.leadership_system)
+
+        self.loyalty_system = LoyaltySystem()
+        self.loyalty_system.priority = 41
+        self.world.add_system(self.loyalty_system)
+
+        self.recruit_system = RecruitSystem()
+        self.recruit_system.priority = 42
+        self.world.add_system(self.recruit_system)
+
+        # 部落系统协调器（priority 43，负责初始化和清理）
         self.tribe_system = TribeSystem()
-        self.tribe_system.priority = 39
+        self.tribe_system.priority = 43
         self.world.add_system(self.tribe_system)
         self.human_systems.append(self.tribe_system)
 
         # 4. 生理系统（priority 40，拆分后的独立子系统）
         self.physiology_systems = [
-            HungerSystem(),
-            ThirstSystem(),
-            EnergySystem(),
-            ComfortSystem(),
-            SocialNeedSystem(),
+            PhysiologyNeedsSystem(),
             HealthSystem(),
             HumanDeathSystem(),
         ]

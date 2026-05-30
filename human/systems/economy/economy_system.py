@@ -99,18 +99,18 @@ class EconomySystem(System):
     # ── 钱包操作 ──
 
     @staticmethod
-    def get_wallet(entity) -> WalletComponent:
+    def get_wallet(world: World, entity) -> WalletComponent:
         """获取或创建实体的钱包"""
-        wallet = entity.get_component(WalletComponent)
+        wallet = world.get_component(entity, WalletComponent)
         if wallet is None:
             wallet = WalletComponent()
-            entity.add_component(wallet)
+            world.add_component(entity, wallet)
         return wallet
 
     @staticmethod
-    def add_currency(entity, currency: str = "gold", amount: float = 10.0) -> None:
+    def add_currency(world: World, entity, currency: str = "gold", amount: float = 10.0) -> None:
         """为实体添加货币"""
-        wallet = EconomySystem.get_wallet(entity)
+        wallet = EconomySystem.get_wallet(world, entity)
         if currency == "gold":
             wallet.gold += amount
         elif currency == "silver":
@@ -119,9 +119,9 @@ class EconomySystem(System):
             wallet.copper += amount
 
     @staticmethod
-    def remove_currency(entity, currency: str, amount: float) -> bool:
+    def remove_currency(world: World, entity, currency: str, amount: float) -> bool:
         """从实体扣除货币，余额不足返回 False"""
-        wallet = EconomySystem.get_wallet(entity)
+        wallet = EconomySystem.get_wallet(world, entity)
         if currency == "gold" and wallet.gold >= amount:
             wallet.gold -= amount
             return True
@@ -145,10 +145,10 @@ class EconomySystem(System):
             return None, 0.0
 
         total_cost = price * quantity
-        if not self.remove_currency(buyer, "gold", total_cost):
+        if not self.remove_currency(world, buyer, "gold", total_cost):
             return False, 0.0
 
-        wallet = self.get_wallet(buyer)
+        wallet = self.get_wallet(world, buyer)
         wallet.trade_history.append({
             "type": "buy",
             "item": item,
@@ -169,9 +169,9 @@ class EconomySystem(System):
             return None, 0.0
 
         total_revenue = price * quantity
-        self.add_currency(seller, "gold", total_revenue)
+        self.add_currency(world, seller, "gold", total_revenue)
 
-        wallet = self.get_wallet(seller)
+        wallet = self.get_wallet(world, seller)
         wallet.trade_history.append({
             "type": "sell",
             "item": item,
@@ -181,9 +181,9 @@ class EconomySystem(System):
         return True, total_revenue
 
     @staticmethod
-    def get_balance_dict(entity) -> Dict[str, float]:
+    def get_balance_dict(world: World, entity) -> Dict[str, float]:
         """获取实体余额字典"""
-        wallet = entity.get_component(WalletComponent)
+        wallet = world.get_component(entity, WalletComponent)
         if wallet is None:
             return {"gold": 0.0, "silver": 0.0, "copper": 0.0}
         return wallet.get_balance_dict()

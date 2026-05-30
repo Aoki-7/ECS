@@ -35,6 +35,42 @@ class SocializeSystem(System):
     处理社交行为，增加社会需求满足，影响情绪和记忆。
     """
 
+    # 社交进度速率（5小时完成）
+    SOCIALIZE_PROGRESS_RATE = 0.2
+    # 基础社交需求恢复量
+    SOCIALIZE_NEED_RECOVERY = 30.0
+    # 记忆影响系数
+    MEMORY_IMPACT_MULTIPLIER = 0.3
+    # 情绪调整系数
+    HAPPINESS_ADJUSTMENT = 0.1
+    JOY_ADJUSTMENT = 0.15
+    LONELINESS_ADJUSTMENT = -0.2
+    STRESS_ADJUSTMENT = -0.05
+    TRUST_ADJUSTMENT = 0.05
+    # 同部落质量加成
+    TRIBE_QUALITY_BONUS = 0.15
+    # 同部落忠诚度加成
+    TRIBE_LOYALTY_BONUS = 2.0
+    # 关系强度增长
+    RELATIONSHIP_STRENGTH_GAIN = 10.0
+    # 社交质量计算系数
+    QUALITY_BASE = 0.5
+    QUALITY_HAPPINESS_FACTOR = 0.2
+    QUALITY_JOY_FACTOR = 0.15
+    QUALITY_CALMNESS_FACTOR = 0.1
+    QUALITY_ANGER_FACTOR = -0.3
+    QUALITY_FEAR_FACTOR = -0.2
+    QUALITY_SADNESS_FACTOR = -0.15
+    QUALITY_LONELINESS_FACTOR = -0.1
+    QUALITY_KINDNESS_FACTOR = 0.15
+    QUALITY_CURIOSITY_FACTOR = 0.05
+    QUALITY_GREED_FACTOR = -0.1
+    QUALITY_MIN = 0.1
+    QUALITY_MAX = 1.0
+    # 记忆信任度系数
+    MEMORY_TRUST_BASE = 0.5
+    MEMORY_TRUST_QUALITY_FACTOR = 0.2
+
     def update(self, world: World, dt: float):
         current_time = world.get_time().total_hours
 
@@ -49,7 +85,7 @@ class SocializeSystem(System):
                 continue
 
             # 模拟社交过程
-            action.progress += dt * 0.2  # 5小时社交完成
+            action.progress += dt * self.SOCIALIZE_PROGRESS_RATE
 
             if action.progress >= 1.0:
                 # 社交完成
@@ -58,7 +94,7 @@ class SocializeSystem(System):
     def _complete_socialization(self, world: World, entity, needs, action, task, current_time: float):
         """完成社交互动"""
         # 基础社交需求恢复
-        PhysiologyNeedsHelper.add_social(needs, 30)
+        PhysiologyNeedsHelper.add_social(needs, self.SOCIALIZE_NEED_RECOVERY)
 
         # 获取相关组件
         emotion = world.get_component(entity, EmotionComponent)
@@ -79,19 +115,19 @@ class SocializeSystem(System):
                 if (membership and target_membership and 
                     membership.tribe_id is not None and 
                     membership.tribe_id == target_membership.tribe_id):
-                    quality = min(1.0, quality + 0.15)  # 同部落+15%质量
+                    quality = min(self.QUALITY_MAX, quality + self.TRIBE_QUALITY_BONUS)
                     # 增加忠诚度
-                    membership.add_loyalty(2.0)
+                    membership.add_loyalty(self.TRIBE_LOYALTY_BONUS)
                     if target_membership:
-                        target_membership.add_loyalty(2.0)
+                        target_membership.add_loyalty(self.TRIBE_LOYALTY_BONUS)
 
         # 影响情绪
         if emotion:
-            emotion.adjust_emotion("happiness", 0.1 * quality)
-            emotion.adjust_emotion("joy", 0.15 * quality)
-            emotion.adjust_emotion("loneliness", -0.2 * quality)
-            emotion.adjust_emotion("stress", -0.05 * quality)
-            emotion.adjust_emotion("trust", 0.05 * quality)
+            emotion.adjust_emotion("happiness", self.HAPPINESS_ADJUSTMENT * quality)
+            emotion.adjust_emotion("joy", self.JOY_ADJUSTMENT * quality)
+            emotion.adjust_emotion("loneliness", self.LONELINESS_ADJUSTMENT * quality)
+            emotion.adjust_emotion("stress", self.STRESS_ADJUSTMENT * quality)
+            emotion.adjust_emotion("trust", self.TRUST_ADJUSTMENT * quality)
             emotion.last_mood_change = "社交互动"
 
         # 记录到记忆
@@ -99,7 +135,7 @@ class SocializeSystem(System):
             desc = f"与伙伴进行了愉快的社交" if quality > 0.5 else "进行了社交互动"
             memory.add_event(
                 current_time, "socialized", desc,
-                impact=0.3 * quality,
+                impact=self.MEMORY_IMPACT_MULTIPLIER * quality,
                 location=getattr(action, 'target_pos', None)
             )
             memory.record_success("socialize")
@@ -124,23 +160,23 @@ class SocializeSystem(System):
         - 情绪状态（快乐/平静促进，愤怒/恐惧抑制）
         - 性格（善良/好奇心促进，贪婪抑制）
         """
-        quality = 0.5  # 基础质量
-        
+        quality = self.QUALITY_BASE
+
         if emotion:
-            quality += emotion.happiness * 0.2
-            quality += emotion.joy * 0.15
-            quality += emotion.calmness * 0.1
-            quality -= emotion.anger * 0.3
-            quality -= emotion.fear * 0.2
-            quality -= emotion.sadness * 0.15
-            quality -= emotion.loneliness * 0.1  # 太孤独时社交质量略降
-        
+            quality += emotion.happiness * self.QUALITY_HAPPINESS_FACTOR
+            quality += emotion.joy * self.QUALITY_JOY_FACTOR
+            quality += emotion.calmness * self.QUALITY_CALMNESS_FACTOR
+            quality -= emotion.anger * self.QUALITY_ANGER_FACTOR
+            quality -= emotion.fear * self.QUALITY_FEAR_FACTOR
+            quality -= emotion.sadness * self.QUALITY_SADNESS_FACTOR
+            quality -= emotion.loneliness * self.QUALITY_LONELINESS_FACTOR
+
         if personality:
-            quality += personality.kindness * 0.15
-            quality += personality.curiosity * 0.05
-            quality -= personality.greed * 0.1
-        
-        return max(0.1, min(1.0, quality))
+            quality += personality.kindness * self.QUALITY_KINDNESS_FACTOR
+            quality += personality.curiosity * self.QUALITY_CURIOSITY_FACTOR
+            quality -= personality.greed * self.QUALITY_GREED_FACTOR
+
+        return max(self.QUALITY_MIN, min(self.QUALITY_MAX, quality))
 
     def _update_mutual_relationship(self, world: World, entity1, entity2, 
                                      quality: float, current_time: float):
@@ -148,14 +184,14 @@ class SocializeSystem(System):
         # 更新实体1的关系
         relation1 = world.get_component(entity1, RelationshipComponent)
         if relation1:
-            relation1.relationship_strength = min(100.0, 
-                relation1.relationship_strength + 10.0 * quality)
+            relation1.relationship_strength = min(100.0,
+                relation1.relationship_strength + self.RELATIONSHIP_STRENGTH_GAIN * quality)
         
         # 更新实体2的关系
         relation2 = world.get_component(entity2, RelationshipComponent)
         if relation2:
             relation2.relationship_strength = min(100.0,
-                relation2.relationship_strength + 10.0 * quality)
+                relation2.relationship_strength + self.RELATIONSHIP_STRENGTH_GAIN * quality)
         
         # 记录人物记忆
         memory1 = world.get_component(entity1, MemoryComponent)
@@ -169,7 +205,7 @@ class SocializeSystem(System):
         if memory1:
             memory1.record_person(
                 entity2.id, name2, current_time,
-                relationship="friend", trust=0.5 + 0.2 * quality
+                relationship="friend", trust=self.MEMORY_TRUST_BASE + self.MEMORY_TRUST_QUALITY_FACTOR * quality
             )
         
         if memory2:

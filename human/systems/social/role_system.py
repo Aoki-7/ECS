@@ -31,16 +31,16 @@ class RoleSystem(System):
     # ═══════════════════════════════════════════════
 
     @staticmethod
-    def add_role(entity: Entity, role_type: RoleType,
+    def add_role(world: World, entity: Entity, role_type: RoleType,
                  title: str,
                  description: str = "",
                  responsibilities: List[str] = None,
                  importance: float = 50.0) -> Role:
         """为实体添加角色"""
-        role_comp = entity.get_component(RoleComponent)
+        role_comp = world.get_component(entity, RoleComponent)
         if role_comp is None:
             role_comp = RoleComponent()
-            entity.add_component(role_comp)
+            world.add_component(entity, role_comp)
 
         role = Role(
             title=title,
@@ -52,9 +52,9 @@ class RoleSystem(System):
         return role
 
     @staticmethod
-    def get_primary_role(entity: Entity, role_type: RoleType) -> Optional[Role]:
+    def get_primary_role(world: World, entity: Entity, role_type: RoleType) -> Optional[Role]:
         """获取某类型的主要角色（重要性最高的）"""
-        role_comp = entity.get_component(RoleComponent)
+        role_comp = world.get_component(entity, RoleComponent)
         if role_comp is None:
             return None
         roles = role_comp._roles[role_type]
@@ -63,9 +63,9 @@ class RoleSystem(System):
         return max(roles, key=lambda r: r.importance)
 
     @staticmethod
-    def get_active_role(entity: Entity, context: str) -> Optional[Role]:
+    def get_active_role(world: World, entity: Entity, context: str) -> Optional[Role]:
         """根据情境获取当前活跃角色"""
-        role_comp = entity.get_component(RoleComponent)
+        role_comp = world.get_component(entity, RoleComponent)
         if role_comp is None:
             return None
 
@@ -77,16 +77,16 @@ class RoleSystem(System):
         }
 
         if any(kw in context for kw in keywords.get("家庭", [])):
-            return RoleSystem.get_primary_role(entity, RoleType.FAMILY)
+            return RoleSystem.get_primary_role(world, entity, RoleType.FAMILY)
         elif any(kw in context for kw in keywords.get("工作", [])):
-            return RoleSystem.get_primary_role(entity, RoleType.OCCUPATION)
+            return RoleSystem.get_primary_role(world, entity, RoleType.OCCUPATION)
 
         return None
 
     @staticmethod
-    def get_all_roles(entity: Entity) -> List[Role]:
+    def get_all_roles(world: World, entity: Entity) -> List[Role]:
         """获取所有角色的扁平列表"""
-        role_comp = entity.get_component(RoleComponent)
+        role_comp = world.get_component(entity, RoleComponent)
         if role_comp is None:
             return []
         result = []
@@ -116,9 +116,9 @@ class RoleSystem(System):
     # ═══════════════════════════════════════════════
 
     @staticmethod
-    def switch_identity(entity: Entity, context: str) -> Dict:
+    def switch_identity(world: World, entity: Entity, context: str) -> Dict:
         """根据情境切换身份显示"""
-        shift = entity.get_component(IdentityShiftComponent)
+        shift = world.get_component(entity, IdentityShiftComponent)
         if shift is None:
             return {"display": "default"}
 
@@ -128,9 +128,9 @@ class RoleSystem(System):
             return {"display": shift._private}
 
     @staticmethod
-    def get_identity_mask(entity: Entity) -> str:
+    def get_identity_mask(world: World, entity: Entity) -> str:
         """获取当前情境的身份面具"""
-        shift = entity.get_component(IdentityShiftComponent)
+        shift = world.get_component(entity, IdentityShiftComponent)
         if shift is None:
             return "default"
         return shift._public if shift._public else "default"
@@ -140,18 +140,18 @@ class RoleSystem(System):
     # ═══════════════════════════════════════════════
 
     @staticmethod
-    def record_fulfillment(entity: Entity, responsibility: str) -> None:
+    def record_fulfillment(world: World, entity: Entity, responsibility: str) -> None:
         """记录责任履行"""
-        resp_comp = entity.get_component(ResponsibilityComponent)
+        resp_comp = world.get_component(entity, ResponsibilityComponent)
         if resp_comp is None:
             return
         if responsibility in resp_comp._responsibilities:
             resp_comp._fulfilled[responsibility] = True
 
     @staticmethod
-    def record_violation(entity: Entity, responsibility: str, severity: float = 0.5) -> None:
+    def record_violation(world: World, entity: Entity, responsibility: str, severity: float = 0.5) -> None:
         """记录责任违反"""
-        resp_comp = entity.get_component(ResponsibilityComponent)
+        resp_comp = world.get_component(entity, ResponsibilityComponent)
         if resp_comp is None:
             return
         violation = {
@@ -163,9 +163,9 @@ class RoleSystem(System):
         resp_comp._violation_history.append(violation)
 
     @staticmethod
-    def get_fulfillment_rate(entity: Entity) -> float:
+    def get_fulfillment_rate(world: World, entity: Entity) -> float:
         """计算责任履行率"""
-        resp_comp = entity.get_component(ResponsibilityComponent)
+        resp_comp = world.get_component(entity, ResponsibilityComponent)
         if resp_comp is None or not resp_comp._responsibilities:
             return 1.0
 
@@ -176,9 +176,9 @@ class RoleSystem(System):
         return fulfilled_count / len(resp_comp._responsibilities)
 
     @staticmethod
-    def get_violation_summary(entity: Entity) -> List[Dict]:
+    def get_violation_summary(world: World, entity: Entity) -> List[Dict]:
         """获取违反记录摘要"""
-        resp_comp = entity.get_component(ResponsibilityComponent)
+        resp_comp = world.get_component(entity, ResponsibilityComponent)
         if resp_comp is None:
             return []
         return [
@@ -187,9 +187,9 @@ class RoleSystem(System):
         ]
 
     @staticmethod
-    def is_role_neglected(entity: Entity, threshold: float = 0.3) -> bool:
+    def is_role_neglected(world: World, entity: Entity, threshold: float = 0.3) -> bool:
         """检查角色是否被忽视（未履行责任）"""
-        return RoleSystem.get_fulfillment_rate(entity) < (1 - threshold)
+        return RoleSystem.get_fulfillment_rate(world, entity) < (1 - threshold)
 
     # ═══════════════════════════════════════════════
     # System update（预留：角色冲突检测等）

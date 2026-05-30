@@ -58,8 +58,8 @@ class EventLogSystem(System):
             time_comp = world.get_time()
             if time_comp:
                 current_time = time_comp.total_hours
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"[EventLog] 获取时间失败: {e}")
 
         step = getattr(world, '_step_count', 0)
 

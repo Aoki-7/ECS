@@ -37,7 +37,7 @@ class Community:
     def remove_member(self, entity_id: int):
         self.members.discard(entity_id)
     
-    def get_connectivity(self) -> float:
+    def get_connectivity(self, relationships: Dict = None) -> float:
         """计算社区连接度（成员间平均关系强度）"""
         if len(self.members) < 2:
             return 0.0
@@ -45,18 +45,20 @@ class Community:
         members_list = list(self.members)
         for i in range(len(members_list)):
             for j in range(i+1, len(members_list)):
-                strength = self._get_connection_strength(members_list[i], members_list[j])
+                strength = self._get_connection_strength(members_list[i], members_list[j], relationships)
                 if strength > 0:
                     connections.append(strength)
         return sum(connections) / len(connections) if connections else 0.0
     
-    def _get_connection_strength(self, e1: int, e2: int) -> float:
+    def _get_connection_strength(self, e1: int, e2: int, relationships: Dict = None) -> float:
         """获取两个实体间的连接强度（从社交网络中查询）"""
+        if relationships is None:
+            return 0.0
         # 优先从 relationships 字典中查询双向关系
-        if e1 in self.relationships and e2 in self.relationships[e1]:
-            return self.relationships[e1][e2].strength
-        if e2 in self.relationships and e1 in self.relationships[e2]:
-            return self.relationships[e2][e1].strength
+        if e1 in relationships and e2 in relationships[e1]:
+            return relationships[e1][e2].strength
+        if e2 in relationships and e1 in relationships[e2]:
+            return relationships[e2][e1].strength
         return 0.0
 
 

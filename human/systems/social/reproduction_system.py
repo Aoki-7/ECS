@@ -36,6 +36,9 @@ class ReproductionSystem(System):
     4. 怀孕期满后生育新entity
     """
 
+    # 每 tick 基础怀孕概率（女性、已婚/恋爱中、可生育年龄）
+    BIRTH_CHANCE_PER_TICK = 0.015
+
     def update(self, world: World, dt):
         """
         每个时间步的更新
@@ -64,7 +67,7 @@ class ReproductionSystem(System):
                 # 检查是否可以生育（不在怀孕、冷却期已过）
                 if not repro.is_pregnant and current_time - repro.last_birth_time > repro.birth_cooldown:
                     # 随机生育几率（基于dt，适度提高）
-                    if random.random() < 0.015 * dt:
+                    if random.random() < self.BIRTH_CHANCE_PER_TICK * dt:
                         self.start_pregnancy(world, entity, relation, repro)
 
             # 处理怀孕进度

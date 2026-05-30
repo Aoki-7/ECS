@@ -74,25 +74,25 @@ class HealthcareSystem(System):
 
             for disease in list(disease_comp.diseases):
                 # 治疗：降低严重度
-                if disease.get("severity", 0) > 0:
-                    disease["severity"] = max(0, disease["severity"] - 0.5 * dt)
+                if disease.severity > 0:
+                    disease.severity = max(0, disease.severity - 0.5 * dt)
 
                 # 增加免疫
-                disease_comp.immunity[disease["name"]] = min(
+                disease_comp.immunity[disease.name] = min(
                     1.0,
-                    disease_comp.immunity.get(disease["name"], 0) + 0.01 * dt
+                    disease_comp.immunity.get(disease.name, 0) + 0.01 * dt
                 )
 
                 # 如果严重度降为 0 且免疫足够，治愈
-                if (disease.get("severity", 0) <= 0
-                        and disease_comp.immunity.get(disease["name"], 0) > 0.5):
-                    disease_comp.remove_disease(disease["name"])
+                if (disease.severity <= 0
+                        and disease_comp.immunity.get(disease.name, 0) > 0.5):
+                    disease_comp.remove_disease(disease.name)
 
                 # 记录治疗历史
                 self.health_history.append({
                     "entity_id": entity.id,
-                    "disease": disease["name"],
-                    "severity": disease.get("severity", 0),
+                    "disease": disease.name,
+                    "severity": disease.severity,
                     "action": "treatment",
                     "timestamp": "now",
                 })
