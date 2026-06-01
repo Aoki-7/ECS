@@ -24,10 +24,13 @@ from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
 from resource.food.components.food_component import FoodComponent
 from resource.water.components.water_component import WaterComponent
+from resource.components.resource_component import ResourceComponent
+from biology.components.life_cycle_component import LifeCycleComponent
+from core.components.vision_component import VisionComponent
 
 
 class PlanningSystem(System):
-    tick_interval = 5  # 每5帧执行一次
+    tick_interval = 1  # 每帧执行一次，避免意图到行动的响应滞后导致饿死/渴死
     """
     把意图转换为行为序列
     """
@@ -96,12 +99,23 @@ class PlanningSystem(System):
                 if has_food:
                     action.action_queue = [ActionType.EAT]
                 else:
-                    action.action_queue = [
-                        ActionType.SEARCH,
-                        ActionType.MOVE_TO,
-                        ActionType.PICKUP,
-                        ActionType.EAT
-                    ]
+                    # 检查视野内是否有可收获植物（成熟状态）
+                    nearby_plant = self._find_harvestable_plant(entity, world)
+                    if nearby_plant is not None:
+                        # 规划收获：搜索→移动→收获→进食
+                        action.action_queue = [
+                            ActionType.SEARCH,
+                            ActionType.MOVE_TO,
+                            ActionType.HARVEST,
+                            ActionType.EAT
+                        ]
+                    else:
+                        action.action_queue = [
+                            ActionType.SEARCH,
+                            ActionType.MOVE_TO,
+                            ActionType.PICKUP,
+                            ActionType.EAT
+                        ]
 
             elif intent.intent == IntentType.DRINK:
                 task.task = TaskType.DRINK_WATER
@@ -173,3 +187,39 @@ class PlanningSystem(System):
                 ]
 
             self._planned_this_tick.add(entity.id)
+
+    def _find_harvestable_plant(self, entity, world: World):
+        """在视野内查找可收获的植物实体"""
+        from biology.components.plant_component import PlantComponent
+        
+        space = world.get_component(entity, SpaceComponent)
+        vision = world.get_component(entity, VisionComponent)
+        if space is None or vision is None:
+            return None
+        
+        radius = getattr(vision, 'radius', 15)
+        
+        # 通过空间索引查询附近的实体
+        space_system = getattr(world, 'space_system', None)
+        if space_system is not None:
+            for candidate_id in space_system.neighbors(space.x, space.y, radius, space.layer):
+                candidate = world.get_entity(candidate_id)
+                if candidate is None:
+                    continue
+                plant_comp = world.get_component(candidate, PlantComponent)
+                lifecycle = world.get_component(candidate, LifeCycleComponent)
+                if plant_comp is None or lifecycle is None:
+                    continue
+                # 检查是否成熟
+                if lifecycle.stage >= plant_comp.harvest_stage:
+                    return candidate
+        
+        # 兜底：遍历所有植物
+        for candidate, (plant_comp, lifecycle, c_space) in world.get_components(PlantComponent, LifeCycleComponent, SpaceComponent):
+            dx = abs(c_space.x - space.x)
+            dy = abs(c_space.y - space.y)
+            if dx <= radius and dy <= radius:
+                if lifecycle.stage >= plant_comp.harvest_stage:
+                    return candidate
+        
+        return None

@@ -16,9 +16,8 @@
 
 import logging
 
-from core.system import System
+from biology.systems.death_system import BaseDeathSystem
 from core.world import World
-from core.systems.event_log_system import EventLog
 
 from biology.components.health_status_component import HealthStatusComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
@@ -27,22 +26,18 @@ from biology.components.life_cycle_component import LifeCycleComponent
 logger = logging.getLogger(__name__)
 
 
-class HumanDeathSystem(System):
-    tick_interval = 1  # 每1帧执行一次
+class HumanDeathSystem(BaseDeathSystem):
     """
     人类死亡判定系统
 
     处理人类特有的死亡条件判定与执行。
+    死亡执行逻辑由 BaseDeathSystem 统一处理。
     """
 
-    def __init__(self):
-        super().__init__()
-        self.enable_log = True
+    def _get_log_prefix(self) -> str:
+        return "[HumanDeath]"
 
-    def update(self, world: World, dt: float = 1.0):
-        """
-        检查人类死亡实体并移除
-        """
+    def _collect_dead_entities(self, world: World) -> dict:
         dead_entities: dict = {}
 
         for entity, (health, needs, age) in world.get_components(
@@ -68,27 +63,4 @@ class HumanDeathSystem(System):
                 dead_entities[entity] = "dehydration"
                 continue
 
-        # 执行死亡
-        for entity, reason in dead_entities.items():
-            if not world.has_entity(entity):
-                continue
-
-            entity.metadata["death_reason"] = reason
-
-            if self.enable_log:
-                entity_name = getattr(entity, "name", f"E{entity.id}")
-                logger.info(f"[HumanDeath] {entity_name}: {reason}")
-
-                EventLog.log(
-                    world,
-                    event_type="death",
-                    description=f"{entity_name} 死亡，原因: {reason}",
-                    entity_id=entity.id,
-                    data={"reason": reason, "entity_name": entity_name},
-                    severity="critical"
-                )
-
-            try:
-                world.remove_entity(entity)
-            except Exception as e:
-                logger.warning(f"[HumanDeath] 删除实体 {entity.id} 失败: {e}")
+        return dead_entities

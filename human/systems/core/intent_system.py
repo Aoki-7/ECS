@@ -28,9 +28,9 @@ class IntentSystem(System):
         - 当无紧急需求时，人类会探索周围环境以发现资源
     """
     # 需求触发阈值（降低阈值，给人类更多搜索/移动时间）
-    HUNGER_THRESHOLD = 30
-    THIRST_THRESHOLD = 30
-    ENERGY_THRESHOLD = 55
+    HUNGER_THRESHOLD = 20
+    THIRST_THRESHOLD = 20
+    ENERGY_THRESHOLD = 40
     SOCIAL_THRESHOLD = 30
 
     # 紧急权重乘数（用于平局时打破优先级）

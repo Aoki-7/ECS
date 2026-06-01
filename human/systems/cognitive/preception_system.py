@@ -16,7 +16,7 @@ from core.components.vision_component import VisionComponent
 from space.space_component import SpaceComponent
 
 class PerceptionSystem(System):
-    tick_interval = 5  # 每5帧执行一次
+    tick_interval = 1  # 每帧执行一次，确保视野信息及时更新
     """
         感知系统
         依赖 SpaceComponent + VisionComponent

@@ -26,11 +26,14 @@ from space.space_system import SpaceSystem
 
 from resource.food.components.food_component import FoodComponent
 from resource.water.components.water_component import WaterComponent
+from resource.components.resource_component import ResourceComponent
 from human.components.basic.human_component import HumanComponent
+from biology.components.life_cycle_component import LifeCycleComponent
+from biology.components.plant_component import PlantComponent
 
 
 class SearchSystem(System):
-    tick_interval = 5  # 每5帧执行一次
+    tick_interval = 1  # 每帧执行一次，避免搜索动作"卡住"导致饥渴持续增长
     """
     SEARCH 行为系统。
     依赖 VisionComponent 将视野内实体反馈到行动目标。
@@ -74,21 +77,51 @@ class SearchSystem(System):
                 if candidate is None or not candidate.is_alive():
                     continue
 
+                # 检查是否是目标组件类型
                 target_comp = world.get_component(candidate, target_component)
-                if target_comp is None:
-                    continue
+                if target_comp is not None:
+                    target_space = world.get_component(candidate, SpaceComponent)
+                    if target_space is not None:
+                        dx = target_space.x - space.x
+                        dy = target_space.y - space.y
+                        dist = math.hypot(dx, dy)
+                        if dist < nearest_distance:
+                            nearest_distance = dist
+                            nearest_entity = candidate
+                            nearest_pos = (target_space.x, target_space.y)
+                        continue
 
-                target_space = world.get_component(candidate, SpaceComponent)
-                if target_space is None:
-                    continue
-
-                dx = target_space.x - space.x
-                dy = target_space.y - space.y
-                dist = math.hypot(dx, dy)
-                if dist < nearest_distance:
-                    nearest_distance = dist
-                    nearest_entity = candidate
-                    nearest_pos = (target_space.x, target_space.y)
+                # 对于 FIND_FOOD 任务，也搜索可收获植物
+                if task.task == TaskType.FIND_FOOD:
+                    # 通过 PlantComponent 搜索可收获植物
+                    plant_comp = world.get_component(candidate, PlantComponent)
+                    if plant_comp is not None:
+                        lifecycle = world.get_component(candidate, LifeCycleComponent)
+                        if lifecycle is not None and lifecycle.stage >= plant_comp.harvest_stage:
+                            target_space = world.get_component(candidate, SpaceComponent)
+                            if target_space is not None:
+                                dx = target_space.x - space.x
+                                dy = target_space.y - space.y
+                                dist = math.hypot(dx, dy)
+                                if dist < nearest_distance:
+                                    nearest_distance = dist
+                                    nearest_entity = candidate
+                                    nearest_pos = (target_space.x, target_space.y)
+                                    continue
+                    # 也搜索 ResourceComponent 标记的植物资源
+                    res = world.get_component(candidate, ResourceComponent)
+                    if res is not None and res.resource_type == "plant" and res.amount > 0:
+                        lifecycle = world.get_component(candidate, LifeCycleComponent)
+                        if lifecycle is not None and lifecycle.stage >= LifeCycleComponent.VEGETATIVE:
+                            target_space = world.get_component(candidate, SpaceComponent)
+                            if target_space is not None:
+                                dx = target_space.x - space.x
+                                dy = target_space.y - space.y
+                                dist = math.hypot(dx, dy)
+                                if dist < nearest_distance:
+                                    nearest_distance = dist
+                                    nearest_entity = candidate
+                                    nearest_pos = (target_space.x, target_space.y)
 
             if nearest_entity is not None:
                 # 找到目标了！
@@ -99,6 +132,15 @@ class SearchSystem(System):
                 action.status = ActionStatus.RUNNING
                 task.status = TaskStatus.RUNNING
                 search.result_entity = nearest_entity.id
+                # 从队列中移除已完成的 SEARCH
+                if ActionType.SEARCH in action.action_queue:
+                    action.action_queue.remove(ActionType.SEARCH)
+                # 如果目标是植物而非地面食物，将后续 PICKUP 替换为 HARVEST
+                if world.get_component(nearest_entity, PlantComponent) is not None:
+                    for i, act in enumerate(action.action_queue):
+                        if act == ActionType.PICKUP:
+                            action.action_queue[i] = ActionType.HARVEST
+                            break
             else:
                 # 视野内无目标，优先查询记忆中的地点
                 found_memory = False
@@ -179,15 +221,41 @@ class SearchSystem(System):
                                 candidate = world.query_entity(eid)
                                 if candidate is None:
                                     continue
-                                if world.get_component(candidate, FoodComponent) is None:
+                                # 搜索地面食物
+                                if world.get_component(candidate, FoodComponent) is not None:
+                                    c_space = world.get_component(candidate, SpaceComponent)
+                                    if c_space is None:
+                                        continue
+                                    d = math.hypot(c_space.x - space.x, c_space.y - space.y)
+                                    if d < best_dist:
+                                        best_dist = d
+                                        best_id = candidate
                                     continue
-                                c_space = world.get_component(candidate, SpaceComponent)
-                                if c_space is None:
-                                    continue
-                                d = math.hypot(c_space.x - space.x, c_space.y - space.y)
-                                if d < best_dist:
-                                    best_dist = d
-                                    best_id = candidate
+                                # 也搜索可收获植物（PlantComponent）
+                                plant_comp = world.get_component(candidate, PlantComponent)
+                                if plant_comp is not None:
+                                    lifecycle = world.get_component(candidate, LifeCycleComponent)
+                                    if lifecycle is not None and lifecycle.stage >= plant_comp.harvest_stage:
+                                        c_space = world.get_component(candidate, SpaceComponent)
+                                        if c_space is None:
+                                            continue
+                                        d = math.hypot(c_space.x - space.x, c_space.y - space.y)
+                                        if d < best_dist:
+                                            best_dist = d
+                                            best_id = candidate
+                                            continue
+                                # 也搜索 ResourceComponent 标记的植物资源
+                                res = world.get_component(candidate, ResourceComponent)
+                                if res is not None and res.resource_type == "plant" and res.amount > 0:
+                                    lifecycle = world.get_component(candidate, LifeCycleComponent)
+                                    if lifecycle is not None and lifecycle.stage >= LifeCycleComponent.VEGETATIVE:
+                                        c_space = world.get_component(candidate, SpaceComponent)
+                                        if c_space is None:
+                                            continue
+                                        d = math.hypot(c_space.x - space.x, c_space.y - space.y)
+                                        if d < best_dist:
+                                            best_dist = d
+                                            best_id = candidate
                             # 如果空间索引没找到，直接遍历所有地面食物（兜底，确保不饿死）
                             if best_id is None:
                                 for f_ent, (f_comp, f_space) in world.get_components(FoodComponent, SpaceComponent):
@@ -195,6 +263,28 @@ class SearchSystem(System):
                                     if d < best_dist:
                                         best_dist = d
                                         best_id = f_ent
+                            # 兜底遍历可收获植物（PlantComponent）
+                            if best_id is None:
+                                for p_ent, (p_comp, p_space) in world.get_components(PlantComponent, SpaceComponent):
+                                    lifecycle = world.get_component(p_ent, LifeCycleComponent)
+                                    if lifecycle is None or lifecycle.stage < p_comp.harvest_stage:
+                                        continue
+                                    d = math.hypot(p_space.x - space.x, p_space.y - space.y)
+                                    if d < best_dist:
+                                        best_dist = d
+                                        best_id = p_ent
+                            # 兜底遍历 ResourceComponent 标记的植物资源
+                            if best_id is None:
+                                for p_ent, (p_res, p_space) in world.get_components(ResourceComponent, SpaceComponent):
+                                    if p_res.resource_type != "plant" or p_res.amount <= 0:
+                                        continue
+                                    lifecycle = world.get_component(p_ent, LifeCycleComponent)
+                                    if lifecycle is None or lifecycle.stage < LifeCycleComponent.VEGETATIVE:
+                                        continue
+                                    d = math.hypot(p_space.x - space.x, p_space.y - space.y)
+                                    if d < best_dist:
+                                        best_dist = d
+                                        best_id = p_ent
                             if best_id is not None:
                                 c_space = world.get_component(best_id, SpaceComponent)
                                 action.target_entity = best_id.id
@@ -205,6 +295,15 @@ class SearchSystem(System):
                                 task.status = TaskStatus.RUNNING
                                 search.result_entity = best_id.id
                                 found_global = True
+                                # 从队列中移除已完成的 SEARCH
+                                if ActionType.SEARCH in action.action_queue:
+                                    action.action_queue.remove(ActionType.SEARCH)
+                                # 如果目标是植物而非地面食物，将后续 PICKUP 替换为 HARVEST
+                                if world.get_component(best_id, PlantComponent) is not None:
+                                    for i, act in enumerate(action.action_queue):
+                                        if act == ActionType.PICKUP:
+                                            action.action_queue[i] = ActionType.HARVEST
+                                            break
 
                     if not found_global:
                         # 随机向较远位置漫游以扩大搜索范围

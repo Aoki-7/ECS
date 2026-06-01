@@ -21,6 +21,7 @@ from core.system import System
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.components.morphology_component import MorphologyComponent
 from biology.components.energy_component import EnergyComponent
+from resource.components.resource_component import ResourceComponent
 
 
 class MorphologySystem(System):
@@ -90,6 +91,16 @@ class MorphologySystem(System):
             # ——— 恢复枯萎状态 ———
             if morph.wilting > 0:
                 morph.wilting = max(0.0, morph.wilting - 0.02)
+
+            # ——— 生物量累积 ———
+            # 生长能量的 5% 转化为可收获生物量
+            biomass_gain = growth_energy * 0.05
+            morph.weight += biomass_gain
+
+            # 同步更新资源组件的可收获量
+            resource = world.get_component(entity, ResourceComponent)
+            if resource is not None:
+                resource.amount = morph.weight * 0.5
 
             # ——— 消耗生长池 ———
             energy.growth_pool = 0.0

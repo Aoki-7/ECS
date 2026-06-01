@@ -67,6 +67,7 @@ from human.systems.action.sleep_system import SleepSystem
 from human.systems.action.pickup_system import PickupSystem
 from human.systems.action.search_system import SearchSystem
 from human.systems.action.socialize_system import SocializeSystem
+from human.systems.action.harvest_system import HarvestSystem
 
 # 环境效果系统（已拆分为5个独立系统）
 from human.systems.environment.heat_effect_system import HeatEffectSystem
@@ -125,6 +126,7 @@ from resource.food.components.food_component import FoodComponent
 # 文明系统
 from civilization import CivilizationSystem
 from human.systems.visualization.human_panel import HumanStatePanel
+from human.systems.visualization.human_observation_system import HumanObservationSystem
 from core.systems.event_log_system import EventLogSystem
 from environment.atmosphere.system.atmosphere_physics_system import AtmospherePhysicsSystem
 from human.systems.social.role_system import RoleSystem
@@ -242,6 +244,7 @@ class SimulationLoop:
             DrinkSystem(),
             SleepSystem(),
             PickupSystem(),
+            HarvestSystem(),
             SocializeSystem(),
             # 战斗层
             CombatSystem(),
@@ -369,8 +372,11 @@ class SimulationLoop:
         self.civilization_system.priority = 70
         self.world.add_system(self.civilization_system)
         
-        # 8. 可视化面板
+        # 8. 可视化面板与观察系统
         self.human_panel = HumanStatePanel()
+        self.human_observation_system = HumanObservationSystem()
+        self.human_observation_system.priority = 45
+        self.world.add_system(self.human_observation_system)
 
     def update(self, delta_hours: float = 1.0):
         """
@@ -522,6 +528,49 @@ class SimulationLoop:
             x, y = random.randint(20, 79), random.randint(20, 79)
             self.human_factory.create_human(self.world, name, x, y)
 
+    def create_initial_plants(self, plant_count: int = 30):
+        """
+        创建初始植物，部分直接设为成熟状态以便人类收获
+
+        Args:
+            plant_count: 初始植物数量
+        """
+        from biology.components.plant_component import PlantComponent
+        from biology.components.life_cycle_component import LifeCycleComponent
+        from biology.components.morphology_component import MorphologyComponent
+
+        species_list = list(self.plant_factory.SPECIES_PRESETS.keys())
+        mature_count = 0
+
+        for i in range(plant_count):
+            x, y = random.randint(10, 89), random.randint(10, 89)
+            species = random.choice(species_list)
+            plant = self.plant_factory.create_plant(
+                self.world, species=species, x=x, y=y, variation=0.15
+            )
+
+            # 让 60% 的植物初始即为成熟状态（可收获）
+            if random.random() < 0.6:
+                lifecycle = self.world.get_component(plant, LifeCycleComponent)
+                plant_comp = self.world.get_component(plant, PlantComponent)
+                morph = self.world.get_component(plant, MorphologyComponent)
+
+                if lifecycle is not None:
+                    lifecycle.stage = LifeCycleComponent.MATURE
+                    lifecycle.current_age = lifecycle.stage_durations[0] + lifecycle.stage_durations[1] + lifecycle.stage_durations[2]
+
+                if plant_comp is not None:
+                    plant_comp.harvestable_yield = random.uniform(8.0, 20.0)
+                    plant_comp.max_yield = plant_comp.harvestable_yield * 1.5
+
+                if morph is not None:
+                    morph.weight = plant_comp.harvestable_yield * 2.0 if plant_comp else 20.0
+                    morph.height = random.uniform(3.0, 8.0)
+
+                mature_count += 1
+
+        logger.info(f"[Init] 植物: {plant_count} 株（{mature_count} 株成熟可收获）")
+
     def _init_environment_grid(self, grid_size: int = 10):
         """
         初始化环境网格实体，供 EnvironmentalContinuumSystem 使用。
@@ -545,10 +594,12 @@ class SimulationLoop:
         # 统计数据 —— 使用 get_components() 避免 O(E) 全量遍历
         from resource.water.components.water_component import WaterComponent
         from human.components.basic.human_component import HumanComponent
+        from biology.components.plant_component import PlantComponent
 
         human_count = sum(1 for _ in self.world.query_components(HumanComponent))
         food_count = sum(1 for _ in self.world.get_components(FoodComponent))
         water_count = sum(1 for _ in self.world.get_components(WaterComponent))
+        plant_count = sum(1 for _ in self.world.get_components(PlantComponent))
 
         try:
             civilization_status = self.civilization_system.get_civilization_status()
@@ -563,6 +614,7 @@ class SimulationLoop:
             'human_count': human_count,
             'food_count': food_count,
             'water_count': water_count,
+            'plant_count': plant_count,
             'civilization_stage': civilization_status['stage'],
             'civilization_metrics': civilization_status.get('metrics', {}),
             'discovered_technologies': civilization_status.get('discovered_technologies', [])
@@ -588,7 +640,7 @@ class SimulationLoop:
                 stats = self.get_stats()
                 logger.info(f"  Step {step:>4}/{steps} | 实体:{stats['total_entities']:>3} "
                             f"人口:{stats['human_count']:>2} 食物:{stats['food_count']:>2} "
-                            f"水源:{stats['water_count']:>2} "
+                            f"水源:{stats['water_count']:>2} 植物:{stats['plant_count']:>2} "
                             f"{stats['steps_per_second']:>6.1f}步/s")
             
             if show_panel and step % panel_interval == 0 and step > 0:
@@ -598,7 +650,7 @@ class SimulationLoop:
 
         final_stats = self.get_stats()
         logger.info(f"[Done] 实体:{final_stats['total_entities']} 人口:{final_stats['human_count']} "
-                    f"食物:{final_stats['food_count']} 水源:{final_stats['water_count']} "
+                    f"食物:{final_stats['food_count']} 水源:{final_stats['water_count']} 植物:{final_stats['plant_count']} "
                     f"文明:{final_stats['civilization_stage']} "
                     f"{final_stats['steps_per_second']:.0f}步/s")
 
@@ -614,8 +666,9 @@ def main():
     world = World()
     simulation = SimulationLoop(world)
     simulation.create_initial_resources(food_count=80, water_count=80)
+    simulation.create_initial_plants(plant_count=30)
     simulation.create_initial_population(human_count=10)
-    simulation.run_simulation(steps=300, delta_hours=1.0, verbose=True)
+    simulation.run_simulation(steps=1000, delta_hours=1.0, verbose=True)
 
 
 if __name__ == "__main__":

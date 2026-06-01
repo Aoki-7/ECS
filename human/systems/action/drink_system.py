@@ -54,7 +54,7 @@ class DrinkSystem(System):
             # 使用空间索引 neighbors() O(9) 查询周围水源，替代 O(W) 全量扫描
             if water_entity is None and space_system is not None:
                 best_dist = float("inf")
-                for candidate_id in space_system.neighbors(space.x, space.y, 2, space.layer):
+                for candidate_id in space_system.neighbors(space.x, space.y, 5, space.layer):
                     candidate = world.entities.get(candidate_id)
                     if candidate is None:
                         continue
@@ -68,6 +68,18 @@ class DrinkSystem(System):
                     if dist < best_dist:
                         best_dist = dist
                         water_entity = candidate
+                        water_source = "ground"
+
+            # 兜底：空间索引未命中时，遍历所有地面水源
+            if water_entity is None:
+                best_dist = float("inf")
+                for w_ent, (w_comp, w_space) in world.get_components(WaterComponent, SpaceComponent):
+                    if w_comp.amount <= 0:
+                        continue
+                    d = abs(w_space.x - space.x) + abs(w_space.y - space.y)
+                    if d < best_dist:
+                        best_dist = d
+                        water_entity = w_ent
                         water_source = "ground"
 
             if water_entity is None:

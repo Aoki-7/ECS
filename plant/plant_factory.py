@@ -20,6 +20,7 @@ from biology.components.life_cycle_component import LifeCycleComponent
 from biology.components.immune_component import ImmuneComponent
 from biology.components.health_status_component import HealthStatusComponent
 from biology.components.nutrient_component import NutrientComponent
+from resource.components.resource_component import ResourceComponent
 
 from biology.genetics.gene import Gene
 
@@ -346,3 +347,10 @@ class PlantFactory:
         world.add_component(entity, ImmuneComponent())
         world.add_component(entity, HealthStatusComponent())
         world.add_component(entity, NutrientComponent())
+
+        # 资源组件：使植物可被人类采集/收获
+        world.add_component(entity, ResourceComponent(resource_type="plant", amount=0.0))
+
+        # 植物可收获组件：桥接植物生态与人类食物系统
+        from biology.components.plant_component import PlantComponent
+        world.add_component(entity, PlantComponent())

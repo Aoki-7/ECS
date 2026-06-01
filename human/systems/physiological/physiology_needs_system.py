@@ -34,13 +34,13 @@ class PhysiologyNeedsSystem(System):
     priority = 40
 
     # ── 饥饿参数 ──
-    BASE_HUNGER_RATE = 4.0
+    BASE_HUNGER_RATE = 2.0
 
     # ── 口渴参数 ──
-    BASE_THIRST_RATE = 3.5
+    BASE_THIRST_RATE = 1.5
 
     # ── 精力参数 ──
-    BASE_ENERGY_DECAY = 1.5
+    BASE_ENERGY_DECAY = 1.0
 
     # ── 社交参数 ──
     SOCIAL_DECAY_RATE = 0.3
@@ -115,9 +115,9 @@ class PhysiologyNeedsSystem(System):
                     needs.energy -= 0.08 * (10.0 - env_temp) * dt
 
             if needs.thirst > 80.0:
-                needs.energy -= 3.0 * dt
+                needs.energy -= 2.0 * dt
             if needs.hunger > 80.0:
-                needs.energy -= 1.5 * dt
+                needs.energy -= 1.0 * dt
 
             needs.energy = max(0.0, min(needs.max_energy, needs.energy))
 
