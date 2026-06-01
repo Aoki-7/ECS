@@ -24,7 +24,7 @@ class EnvironmentObservationSystem(System):
 
         time = world.get_time()
 
-        season, weather, atm, obs = world._world_entity.get_components(
+        season, weather, atm, obs = world.get_world_entity().get_components(
             SeasonComponent,
             PhysicalWeatherComponent,
             AtmosphereComponent,

@@ -20,7 +20,7 @@ class LightFieldSystem(System):
     """
     def update(self, world: World, delta_hours: float = 0.0):
 
-        radiation, scatter, surface = world._world_entity.get_components(
+        radiation, scatter, surface = world.get_world_entity().get_components(
             SolarRadiationComponent,
             LightScatterComponent,
             SurfaceLightComponent

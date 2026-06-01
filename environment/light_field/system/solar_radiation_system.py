@@ -23,7 +23,7 @@ class SolarRadiationSystem(System):
     """根据太阳位置进行计算"""
     def update(self, world: World, delta_hour: float):
 
-        solar_pos, radiation = world._world_entity.get_components(
+        solar_pos, radiation = world.get_world_entity().get_components(
             SolarPositionComponent,
             SolarRadiationComponent
         )

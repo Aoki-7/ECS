@@ -52,8 +52,7 @@ class DeathSystem(System):
             if not world.has_entity(entity):
                 continue
 
-            if hasattr(entity, "death_reason"):
-                entity.death_reason = reason
+            entity.metadata["death_reason"] = reason
 
             if self.enable_log:
                 entity_name = getattr(entity, "name", f"E{entity.id}")

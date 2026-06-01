@@ -77,7 +77,7 @@ class AtmosphereSystem(System):
         super().on_add(world)
         if not world.get_world_component(AtmosphereComponent):
             atm = AtmosphereComponent()
-            world._world_entity.add_component(atm)
+            world.get_world_entity().add_component(atm)
 
     def update(self, world: World, delta_hours: float):
         """

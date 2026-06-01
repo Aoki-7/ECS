@@ -113,13 +113,13 @@ class PhysicalWeatherSystem(System):
 
     def update(self, world: World, delta_hours: float):
         """主更新入口"""
-        weather = world._world_entity.get_component(PhysicalWeatherComponent)
+        weather = world.get_world_entity().get_component(PhysicalWeatherComponent)
         if weather is None:
             return
 
         time = world.get_time()
-        season_comp = world._world_entity.get_component(SeasonComponent)
-        climate_comp = world._world_entity.get_component(ClimateComponent)
+        season_comp = world.get_world_entity().get_component(SeasonComponent)
+        climate_comp = world.get_world_entity().get_component(ClimateComponent)
 
         # 天文参数计算（替代硬编码季节偏移）
         hour = time.hour
@@ -333,7 +333,7 @@ class PhysicalWeatherSystem(System):
             from environment.soil.components.soil_moisture_component import (
                 SoilMoistureComponent,
             )
-            soil_moisture = world._world_entity.get_component(SoilMoistureComponent)
+            soil_moisture = world.get_world_entity().get_component(SoilMoistureComponent)
 
             if soil_moisture is not None and soil_moisture.moisture > 0.01:
                 # 土壤蒸发回馈率 = 基础率 * 土壤湿度比 * 风速增强

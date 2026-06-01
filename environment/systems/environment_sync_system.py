@@ -65,12 +65,12 @@ class EnvironmentSyncSystem(System):
     """
 
     def update(self, world: World, delta_hours: float):
-        weather = world._world_entity.get_component(PhysicalWeatherComponent)
+        weather = world.get_world_entity().get_component(PhysicalWeatherComponent)
         if weather is None:
             return
 
-        surface_light = world._world_entity.get_component(SurfaceLightComponent)
-        solar_pos = world._world_entity.get_component(SolarPositionComponent)
+        surface_light = world.get_world_entity().get_component(SurfaceLightComponent)
+        solar_pos = world.get_world_entity().get_component(SolarPositionComponent)
 
         time = world.get_time()
         hour = time.hour

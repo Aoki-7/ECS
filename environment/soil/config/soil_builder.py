@@ -29,7 +29,7 @@ class SoilBuilder:
         """
         根据水土配置表创建水土组件并初始化状态
         """
-        world._world_entity.add_components(SoilFertilityComponent(), SoilMoistureComponent(), SoilQualityComponent(), SoilTemperatureComponent())
+        world.get_world_entity().add_components(SoilFertilityComponent(), SoilMoistureComponent(), SoilQualityComponent(), SoilTemperatureComponent())
 
         systems = [SoilFertilitySystem(), SoilWaterBalanceSystem(), SoilTemperatureSystem()]
 

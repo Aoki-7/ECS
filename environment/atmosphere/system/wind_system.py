@@ -55,8 +55,8 @@ class WindSystem(System):
 
         数据流：PhysicalWeatherComponent → AtmosphereComponent
         """
-        atm = world._world_entity.get_component(AtmosphereComponent)
-        weather = world._world_entity.get_component(PhysicalWeatherComponent)
+        atm = world.get_world_entity().get_component(AtmosphereComponent)
+        weather = world.get_world_entity().get_component(PhysicalWeatherComponent)
 
         if atm is None or weather is None:
             return

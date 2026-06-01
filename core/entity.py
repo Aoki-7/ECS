@@ -9,7 +9,7 @@ class Entity:
     - 支持回收复用
     """
 
-    __slots__ = ("id", "generation")
+    __slots__ = ("id", "generation", "metadata")
 
     _next_id: int = 0
     _free_ids: list[int] = []
@@ -46,6 +46,7 @@ class Entity:
     def __init__(self, entity_id: int, generation: int):
         self.id = entity_id
         self.generation = generation
+        self.metadata: dict = {}
 
     # ==
     # 销毁

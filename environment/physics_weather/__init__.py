@@ -30,7 +30,7 @@
     )
 
     # 挂载组件
-    world._world_entity.add_component(PhysicalWeatherComponent())
+    world.get_world_entity().add_component(PhysicalWeatherComponent())
 
     # 创建并注册系统
     weather_system = PhysicalWeatherSystem(latitude=35.0)
@@ -40,13 +40,10 @@
     weather_system.update(world, delta_hours=1.0)
 
     # 获取物理量
-    wc = world._world_entity.get_component(PhysicalWeatherComponent)
-    print(f"温度: {wc.temperature:.1f}°C")
-    print(f"降水: {wc.precipitation_rate:.2f} mm/h")
+    wc = world.get_world_entity().get_component(PhysicalWeatherComponent)
 
     # 推导天气状态
     state = classify_from_component(wc)
-    print(f"天气: {state.label}")
 """
 
 # ── 组件 ──

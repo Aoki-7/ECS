@@ -24,7 +24,7 @@ class WeatherBuilder:
         from environment.physics_weather.components.physical_weather_component import (
             PhysicalWeatherComponent,
         )
-        world._world_entity.add_component(PhysicalWeatherComponent())
+        world.get_world_entity().add_component(PhysicalWeatherComponent())
         
         # 添加大气模块
         from environment.weather.systems.atmosphere import AtmosphereSystem

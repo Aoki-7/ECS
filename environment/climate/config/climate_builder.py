@@ -22,7 +22,7 @@ class ClimateBuilder:
         """
         根据气候配置表创建气候组件并初始化状态
         """
-        world._world_entity.add_component(ClimateComponent())
+        world.get_world_entity().add_component(ClimateComponent())
 
         climate_system = ClimateSystem()
 

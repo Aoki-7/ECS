@@ -43,7 +43,7 @@ class ClimateSystem(System):
     RAIN_TREND_MAX: float = 1.3
 
     def update(self, world: World, delta_hours: float):
-        climate: ClimateComponent = world._world_entity.get_component(ClimateComponent)
+        climate: ClimateComponent = world.get_world_entity().get_component(ClimateComponent)
         if climate is None:
             return
 

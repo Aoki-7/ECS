@@ -22,7 +22,7 @@ class SeasonSystem(System):
     """
 
     def update(self, world: World, delta_hours: float):
-        season: SeasonComponent = world._world_entity.get_component(SeasonComponent)
+        season: SeasonComponent = world.get_world_entity().get_component(SeasonComponent)
         if season is None:
             return
 

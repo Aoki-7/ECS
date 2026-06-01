@@ -39,7 +39,7 @@ class PhysicsWeatherBuilder:
     @staticmethod
     def build(world: World, profile=None):
         # 挂载物理天气组件
-        world._world_entity.add_component(PhysicalWeatherComponent())
+        world.get_world_entity().add_component(PhysicalWeatherComponent())
 
         # 参数提取
         latitude = getattr(profile, 'latitude', 35.0) if profile else 35.0

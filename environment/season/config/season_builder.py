@@ -28,7 +28,7 @@ class SeasonBuilder:
         """
         根据季节配置表创建季节组件并初始化状态
         """
-        world._world_entity.add_component(SeasonComponent())
+        world.get_world_entity().add_component(SeasonComponent())
 
         systems = [SeasonSystem()]
 

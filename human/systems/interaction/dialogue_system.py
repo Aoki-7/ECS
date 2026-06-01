@@ -63,9 +63,11 @@ class DialogueTurn:
     @classmethod
     def generate(cls, context: DialogueContext, speaker: int) -> "DialogueTurn":
         """生成对话回合"""
-        all_turns = getattr(cls, '_all_turns', [])
+        if not hasattr(cls, '_all_turns'):
+            cls._all_turns = []
+        cls._all_turns.append(None)  # 占位，实际对象在构造后由调用方管理
         return cls(
-            turn序号=len(all_turns) + 1,
+            turn序号=len(cls._all_turns),
             speakers=list(context.participants),
             topics=[context.topic] if context.topic else [],
             sentiment=context.sentiment,
@@ -90,7 +92,6 @@ class DialogueSystem(System):
         super().__init__()
         self.active_dialogue: Optional[DialogueContext] = None
         self.turn_history: List[DialogueTurn] = []
-        self.knowledge_base: Dict[str, str] = {}  # 实体知识库
     
     def start_conversation(self, topic: str, participants: Optional[List[int]] = None) -> DialogueContext:
         """开始新对话"""
@@ -136,8 +137,7 @@ class DialogueSystem(System):
         
         for category, keywords_list in keywords:
             if any(kw in message_lower for kw in keywords_list):
-                self._handle_specific_response(message, from_entity, category)
-                break
+                return self._handle_specific_response(message, from_entity, category)
         
         # 如果没匹配到关键词，生成一般回应
         return self._generate_general_response(message)

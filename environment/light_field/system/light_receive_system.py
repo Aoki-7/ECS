@@ -22,7 +22,7 @@ class LightReceiverSystem(System):
     """
     def update(self, world: World, delta_hours: float = 0.0):
 
-        surface_light = world._world_entity.get_component(SurfaceLightComponent)
+        surface_light = world.get_world_entity().get_component(SurfaceLightComponent)
         surface_light: SurfaceLightComponent
 
         if surface_light is None:

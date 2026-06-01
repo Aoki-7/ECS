@@ -13,16 +13,21 @@
 - 异常存在时间由物理异常持续时长决定
 
 不修改任何天气物理量，只作诊断记录。
+
+变更（2026-06-01）：
+- 修复异常创建过早：首次偏离不立即创建实体，持续满足条件后才创建
+- 移除 pass 占位符，添加结构化日志
 """
 
 from __future__ import annotations
 
 import math
 from collections import deque
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
 from core.system import System
 from core.world import World
+from core.systems.event_log_system import EventLog
 
 from environment.physics_weather.components.physical_weather_component import (
     PhysicalWeatherComponent,
@@ -69,8 +74,11 @@ class WeatherEventSystem(System):
         # 当前活跃异常：variable -> entity_id
         self._active_anomalies: Dict[str, int] = {}
 
+        # 待确认异常：variable -> {start_hour, current_value, mean, std, sigma}
+        self._pending_anomalies: Dict[str, Dict] = {}
+
     def update(self, world: World, delta_hours: float):
-        weather = world._world_entity.get_component(PhysicalWeatherComponent)
+        weather = world.get_world_entity().get_component(PhysicalWeatherComponent)
         if weather is None:
             return
 
@@ -106,41 +114,33 @@ class WeatherEventSystem(System):
             sigma = deviation / std
 
             has_active = variable in self._active_anomalies
+            pending = self._pending_anomalies.get(variable)
 
             if not has_active and sigma > self.ANOMALY_THRESHOLD_SIGMA:
-                # 新异常开始
-                entity = world.create_entity()
-                anomaly_id = self._allocate_anomaly_id()
-
-                severity = min(1.0, (sigma - self.ANOMALY_THRESHOLD_SIGMA) / 2.0)
-
-                world.add_component(
-                    entity,
-                    PhysicalAnomalyComponent(
-                        anomaly_id=anomaly_id,
-                        variable=variable,
-                        current_value=value,
-                        baseline_value=mean,
-                        baseline_std=std,
-                        deviation_sigma=sigma,
-                        start_hour=current_time,
-                        duration_hours=0.0,
-                        severity=severity,
-                    )
-                )
-                world.add_component(
-                    entity,
-                    AnomalyStatisticsComponent(
-                        anomaly_id=anomaly_id,
-                        max_value=value,
-                        min_value=value,
-                        peak_severity=severity,
-                    )
-                )
-
-                self._active_anomalies[variable] = entity.id
-
-                pass  # 异常检测输出已精简
+                if pending is None:
+                    # 首次偏离，进入待确认状态
+                    self._pending_anomalies[variable] = {
+                        "start_hour": current_time,
+                        "current_value": value,
+                        "mean": mean,
+                        "std": std,
+                        "sigma": sigma,
+                    }
+                else:
+                    # 持续偏离，检查是否满足最小持续时间
+                    duration = current_time - pending["start_hour"]
+                    if duration >= self.MIN_DURATION_HOURS:
+                        # 确认异常，创建实体
+                        self._create_anomaly_entity(
+                            world, variable, value, pending["mean"],
+                            pending["std"], sigma, pending["start_hour"],
+                            current_time
+                        )
+                        del self._pending_anomalies[variable]
+            elif not has_active and pending is not None:
+                # 偏离已结束但未达到持续时间，取消待确认
+                if sigma <= self.ANOMALY_THRESHOLD_SIGMA:
+                    del self._pending_anomalies[variable]
 
             elif has_active:
                 entity_id = self._active_anomalies[variable]
@@ -158,8 +158,8 @@ class WeatherEventSystem(System):
                     continue
 
                 if sigma < self.END_THRESHOLD_SIGMA:
-                    # 异常结束
-                    pass  # 异常结束输出已精简
+                    # 异常结束，记录日志后清理
+                    self._finalize_anomaly(world, entity, anomaly, current_time)
                     world.remove_entity(entity)
                     del self._active_anomalies[variable]
                 else:
@@ -175,6 +175,62 @@ class WeatherEventSystem(System):
                         stats.max_value = max(stats.max_value, value)
                         stats.min_value = min(stats.min_value, value)
                         stats.peak_severity = max(stats.peak_severity, anomaly.severity)
+
+    def _create_anomaly_entity(self, world: World, variable: str, value: float,
+                               mean: float, std: float, sigma: float,
+                               start_hour: float, current_time: float):
+        """创建异常实体并记录事件"""
+        entity = world.create_entity()
+        anomaly_id = self._allocate_anomaly_id()
+        severity = min(1.0, (sigma - self.ANOMALY_THRESHOLD_SIGMA) / 2.0)
+
+        world.add_component(
+            entity,
+            PhysicalAnomalyComponent(
+                anomaly_id=anomaly_id,
+                variable=variable,
+                current_value=value,
+                baseline_value=mean,
+                baseline_std=std,
+                deviation_sigma=sigma,
+                start_hour=start_hour,
+                duration_hours=current_time - start_hour,
+                severity=severity,
+            )
+        )
+        world.add_component(
+            entity,
+            AnomalyStatisticsComponent(
+                anomaly_id=anomaly_id,
+                max_value=value,
+                min_value=value,
+                peak_severity=severity,
+            )
+        )
+
+        self._active_anomalies[variable] = entity.id
+
+        EventLog.log(
+            world,
+            event_type="weather_anomaly_start",
+            description=f"{variable} 异常开始，偏离 {sigma:.2f}σ",
+            data={"variable": variable, "sigma": sigma, "value": value},
+            severity="warning"
+        )
+
+    def _finalize_anomaly(self, world: World, entity, anomaly, current_time: float):
+        """异常结束时的收尾记录"""
+        EventLog.log(
+            world,
+            event_type="weather_anomaly_end",
+            description=f"{anomaly.variable} 异常结束，持续 {anomaly.duration_hours:.1f}h",
+            data={
+                "variable": anomaly.variable,
+                "duration_hours": anomaly.duration_hours,
+                "peak_sigma": anomaly.deviation_sigma,
+            },
+            severity="info"
+        )
 
     def _allocate_anomaly_id(self) -> int:
         aid = self._next_anomaly_id

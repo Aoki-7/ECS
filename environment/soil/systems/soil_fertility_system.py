@@ -25,7 +25,7 @@ class SoilFertilitySystem(System):
     """
     def update(self, world: World, delta_hours: float):
 
-        soil = world._world_entity.get_component(SoilFertilityComponent)
+        soil = world.get_world_entity().get_component(SoilFertilityComponent)
         soil: SoilFertilityComponent
 
         # 自然恢复（非常缓慢）

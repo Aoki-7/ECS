@@ -103,8 +103,8 @@ class ThermodynamicsSystem(System):
         从 PhysicalWeatherComponent 读取物理量，
         计算热力学参数并同步到 AtmosphereComponent。
         """
-        atm = world._world_entity.get_component(AtmosphereComponent)
-        weather = world._world_entity.get_component(PhysicalWeatherComponent)
+        atm = world.get_world_entity().get_component(AtmosphereComponent)
+        weather = world.get_world_entity().get_component(PhysicalWeatherComponent)
 
         if atm is None or weather is None:
             return

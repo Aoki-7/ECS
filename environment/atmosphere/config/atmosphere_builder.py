@@ -21,7 +21,7 @@ class AtmosphereBuilder:
     @staticmethod
     def build(world: World, profile = None):
         
-        world._world_entity.add_component(AtmosphereComponent())
+        world.get_world_entity().add_component(AtmosphereComponent())
 
         # 创建大气系统列表（按执行顺序）
         atmos_systems = [

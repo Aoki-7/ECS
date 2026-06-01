@@ -41,7 +41,7 @@ class LightAtmosphereCouplingSystem(System):
     _DRY_AIR_GAS_CONSTANT = 287.05  # J/(kg·K)
 
     def update(self, world: World, delta_hour: float):
-        atmosphere, weather, scatter, solar = world._world_entity.get_components(
+        atmosphere, weather, scatter, solar = world.get_world_entity().get_components(
             AtmosphereComponent,
             PhysicalWeatherComponent,
             LightScatterComponent,

@@ -23,7 +23,7 @@ class SoilTemperatureSystem(System):
 
     def update(self, world: World, delta_hours: float):
 
-        weather, soil = world._world_entity.get_components(
+        weather, soil = world.get_world_entity().get_components(
             PhysicalWeatherComponent, SoilTemperatureComponent
         )
         weather: PhysicalWeatherComponent

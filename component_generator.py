@@ -156,6 +156,8 @@ if __name__ == "__main__":
 
     paths = generator.batch_generate(components)
 
-    print("生成完成:")
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("生成完成:")
     for p in paths:
-        print(p)
+        logger.info(p)
