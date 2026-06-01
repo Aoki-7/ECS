@@ -27,7 +27,7 @@
     === 认知系统 (Cognitive Systems) ===
     DecisionSystem: 决策系统 - 处理实体的决策逻辑
     GoalSystem: 目标系统 - 管理实体的长期目标
-    PreceptionSystem: 感知系统 - 处理实体的环境感知
+    PerceptionSystem: 感知系统 - 处理实体的环境感知
 
     === 社交系统 (Social Systems) ===
     SocialSystem: 社交系统 - 管理实体的社交状态
@@ -101,7 +101,7 @@ from .physiological.health_system import HealthSystem
 # 认知系统
 # from .cognitive.decision_system import DecisionSystem  # 空文件，暂不导入
 # from .cognitive.goal_system import GoalSystem  # 空文件，暂不导入
-from .cognitive.preception_system import PreceptionSystem
+from .cognitive.preception_system import PerceptionSystem
 
 # 社交系统
 from .social.social_system import SocialSystem

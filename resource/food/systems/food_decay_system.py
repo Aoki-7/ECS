@@ -15,6 +15,7 @@ from resource.food.components.food_component import FoodComponent
 
 
 class FoodDecaySystem(System):
+    tick_interval = 20  # 每20帧执行一次
 
     def update(self, world: World, dt: float):
         for entity, [food] in world.get_components(FoodComponent):

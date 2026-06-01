@@ -11,28 +11,52 @@ EventLogSystem - 世界事件日志系统
 
 from typing import List, Dict, Optional, Tuple, Any
 from collections import defaultdict
+from dataclasses import dataclass
 
 from core.system import System
 from core.world import World
 from core.event_log_component import EventLogComponent
 
 
+@dataclass(slots=True)
+class EventRecord:
+    """事件记录 - 替代裸dict，减少小对象开销并提供类型安全"""
+    time: float
+    step: int
+    type: str
+    entity_id: Optional[int]
+    target_id: Optional[int]
+    location: Optional[Tuple[float, float]]
+    description: str
+    data: Dict[str, Any]
+    severity: str
+
+    def get(self, key: str, default=None):
+        """向后兼容的 dict.get() 行为"""
+        return getattr(self, key, default)
+
+
 class EventLogSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """世界事件日志系统，管理全局事件记录与查询。"""
 
     priority = 5  # 与时间系统同级，尽早可用
 
+    # 事件日志上限配置（可通过实例属性覆盖）
+    DEFAULT_MAX_EVENTS = 10000
+    DEFAULT_KEEP_AFTER_PRUNE = 5000
+
     def __init__(self):
         super().__init__()
-        self._max_events = 10000
-        self._keep_after_prune = 5000
+        self._max_events = self.DEFAULT_MAX_EVENTS
+        self._keep_after_prune = self.DEFAULT_KEEP_AFTER_PRUNE
 
     def on_add(self, world: World):
         """自动挂载 EventLogComponent 到 world_entity"""
         if world.get_world_component(EventLogComponent) is None:
             world.get_world_entity().add_component(EventLogComponent())
 
-    def update(self, world: World, dt: float = 1.0):
+    def update(self, world: World, dt: float = 1.0) -> None:
         """每 tick 检查是否需要裁剪旧事件"""
         super().update(world, dt)
         log_comp = world.get_world_component(EventLogComponent)
@@ -63,17 +87,17 @@ class EventLogSystem(System):
 
         step = getattr(world, '_step_count', 0)
 
-        event = {
-            "time": current_time,
-            "step": step,
-            "type": event_type,
-            "entity_id": entity_id,
-            "target_id": target_id,
-            "location": location,
-            "description": description,
-            "data": data or {},
-            "severity": severity,
-        }
+        event = EventRecord(
+            time=current_time,
+            step=step,
+            type=event_type,
+            entity_id=entity_id,
+            target_id=target_id,
+            location=location,
+            description=description,
+            data=data or {},
+            severity=severity,
+        )
 
         idx = len(log_comp.events)
         log_comp.events.append(event)
@@ -161,14 +185,14 @@ class EventLogSystem(System):
         # 重建计数器
         log_comp.counters = defaultdict(int)
         for idx, event in enumerate(log_comp.events):
-            event_type = event["type"]
+            event_type = event.type
             log_comp._index_by_type[event_type].append(idx)
             log_comp.counters[event_type] += 1
-            if event["entity_id"] is not None:
-                log_comp._index_by_entity[event["entity_id"]].append(idx)
-            if event["target_id"] is not None:
-                log_comp._index_by_entity[event["target_id"]].append(idx)
-            severity = event.get("severity")
+            if event.entity_id is not None:
+                log_comp._index_by_entity[event.entity_id].append(idx)
+            if event.target_id is not None:
+                log_comp._index_by_entity[event.target_id].append(idx)
+            severity = event.severity
             if severity in ("critical", "milestone"):
                 log_comp.counters[f"severity_{severity}"] += 1
 

@@ -22,6 +22,7 @@ from core.components.action_component import ActionComponent, ActionType
 
 
 class ThoughtSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     思维系统
     

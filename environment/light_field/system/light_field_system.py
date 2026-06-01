@@ -9,6 +9,7 @@ from environment.light_field.components.surface_light_component import SurfaceLi
 
 
 class LightFieldSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     根据太阳辐射、云层、大气散射等参数，计算地表光照强度。
 

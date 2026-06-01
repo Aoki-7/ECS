@@ -17,6 +17,7 @@ from core.system import System
 
 
 class SoilFertilitySystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
         土壤肥力系统
         负责：

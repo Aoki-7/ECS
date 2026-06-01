@@ -25,6 +25,7 @@ from human.components.social.relationship_component import RelationshipComponent
 
 
 class CombatAISystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     战斗 AI 系统
     根据情绪状态和性格特征自动决策是否攻击或逃跑

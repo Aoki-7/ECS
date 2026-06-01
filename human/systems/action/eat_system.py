@@ -23,6 +23,7 @@ from equipment.components.ownership_component import OwnershipComponent
 
 
 class EatSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
         进食系统
         仅负责处理 ActionType.EAT 行为。

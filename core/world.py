@@ -1,8 +1,11 @@
 
+import logging
 import traceback
 
 
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 from core.entity import Entity
 from core.component import Component
@@ -29,8 +32,11 @@ class World:
 
         # {ComponentType: {entity_id -> Component}}
         self.components = defaultdict(dict)
+        # 反向索引: {ComponentType: set(entity_id)} 用于加速 get_components
+        self._component_entities: dict = defaultdict(set)
 
         self.systems = []
+        self.tick_count = 0  # 世界 tick 计数，供 System 执行间隔判断
 
         # === 创建唯一世界实体 ===
         self._world_entity = WorldEntity()
@@ -68,6 +74,10 @@ class World:
         for comp_dict in self.components.values():
             comp_dict.pop(entity.id, None)
 
+        # 清理反向索引
+        for comp_type in self._component_entities:
+            self._component_entities[comp_type].discard(entity.id)
+
         # 移除实体
         self.entities.pop(entity.id, None)
 
@@ -94,12 +104,14 @@ class World:
         """
 
         if not self.has_entity(entity):
-            print(f"[错误] 实体 {entity.id} 不存在或已失效")
+            logger.debug(f"[错误] 实体 {entity.id} 不存在或已失效")
             return
 
-        print("=" * 50)
-        print(f"实体ID: {entity.id}")
-        print(f"实体代数: {entity.generation}")
+        lines = [
+            "=" * 50,
+            f"实体ID: {entity.id}",
+            f"实体代数: {entity.generation}",
+        ]
 
         component_count = 0
 
@@ -108,29 +120,28 @@ class World:
                 component_count += 1
                 comp = comp_dict[entity.id]
 
-                print(f"\n组件类型: {comp_type.__name__}")
+                lines.append(f"\n组件类型: {comp_type.__name__}")
 
                 if verbose:
-                    print(comp.to_dict())
-                    # for attr, value in vars(comp).items():
-                    #     print(f"  - {attr}: {value}")
+                    lines.append(str(comp.to_dict()))
 
         if component_count == 0:
-            print("该实体没有任何组件")
+            lines.append("该实体没有任何组件")
 
-        print("=" * 50)
+        lines.append("=" * 50)
+        logger.debug("\n".join(lines))
 
 
     def debug_print_all_entities(self):
         """
         打印当前世界中的所有实体
         """
-        print("\n====== 当前世界实体列表 ======")
+        logger.debug("\n====== 当前世界实体列表 ======")
 
         for entity in self.entities.values():
             self.debug_print_entity(entity, verbose=False)
 
-        print("====== 打印结束 ======\n")
+        logger.debug("====== 打印结束 ======\n")
         
     # ===================================
     # Component
@@ -140,7 +151,9 @@ class World:
         if not self.has_entity(entity):
             raise ValueError("Entity 不存在，无法添加组件")
 
-        self.components[type(component)][entity.id] = component
+        comp_type = type(component)
+        self.components[comp_type][entity.id] = component
+        self._component_entities[comp_type].add(entity.id)
 
         # 自动注册SpaceComponent到SpaceSystem
         from space.space_component import SpaceComponent
@@ -158,6 +171,7 @@ class World:
                 space_system.remove_entity(entity.id)
 
         self.components.get(component_type, {}).pop(entity.id, None)
+        self._component_entities.get(component_type, set()).discard(entity.id)
 
     def get_component(self, entity: Entity, component_type) -> Component | None:
         """获取实体的组件"""
@@ -167,17 +181,24 @@ class World:
         if not component_types:
             return
 
+        # 使用反向索引快速找到候选实体（取交集）
         pools = [
-            self.components.get(ct, {})
+            self._component_entities.get(ct, set())
             for ct in component_types
         ]
 
-        smallest_pool = min(pools, key=len) if pools else {}
+        if not pools:
+            return
 
-        visited = set()
+        # 从最小的集合开始求交集，减少迭代量
+        pools.sort(key=len)
+        candidate_ids = set(pools[0])
+        for pool in pools[1:]:
+            candidate_ids &= pool
+            if not candidate_ids:
+                return
 
-        # 普通 entity
-        for entity_id in list(smallest_pool.keys()):
+        for entity_id in candidate_ids:
             entity = self.entities.get(entity_id)
             if entity is None:
                 continue
@@ -189,7 +210,6 @@ class World:
                     break
                 components.append(comp)
             else:
-                visited.add(entity_id)
                 yield entity, components
 
 
@@ -242,27 +262,27 @@ class World:
     def update(self, dt: float):
         """
         更新所有 System（按优先级排序）
-        使用 copy 防止系统内部删除实体导致迭代异常
+        支持 tick_interval 跳过机制，低频系统不必每帧执行。
         """
+        self.tick_count += 1
         # systems 已通过 add_system() 的 bisect 保持有序，无需每帧排序
         for system in self.systems:
+            # 跳过未启用的系统（兼容非System子类，如SpaceSystem）
+            if getattr(system, 'enabled', True) is False:
+                continue
+            # 跳过非本帧执行的系统（按 tick_interval 分频，兼容无tick_interval的老系统）
+            interval = getattr(system, 'tick_interval', 1)
+            if interval > 1 and self.tick_count % interval != 0:
+                continue
 
             try:
-
                 system.update(self, dt)
-
             except Exception as e:
-
                 system_name = system.__class__.__name__
-
-                print("\n==")
-                print("ECS System Error")
-                print("System:", system_name)
-                print("dt:", dt)
-                print("------------------------------")
-                traceback.print_exc()
-                print("==\n")
-
+                logger.error(
+                    f"\n==\nECS System Error\nSystem: {system_name}\ndt: {dt}\n"
+                    f"------------------------------\n{traceback.format_exc()}\n==\n"
+                )
                 raise
 
     def get_system(self, system_type):

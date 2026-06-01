@@ -30,6 +30,7 @@ from human.components.basic.identity_component import IdentityComponent
 
 
 class SocializeSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     社交系统
     处理社交行为，增加社会需求满足，影响情绪和记忆。

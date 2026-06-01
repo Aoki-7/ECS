@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class RecruitSystem(System):
+    tick_interval = 10  # 每10帧执行一次
     """招募系统 — 部落对外扩张成员"""
 
     priority = 42
@@ -41,23 +42,29 @@ class RecruitSystem(System):
 
     def update(self, world: World, dt: float):
         current_time = world.get_time().total_hours
-        for entity, (tribe,) in world.get_components(TribeComponent):
-            self._try_recruit(world, tribe, current_time)
+        # 先缓存所有无部落成员，避免多部落时重复遍历
+        candidates = []
+        for entity, (space, membership) in world.get_components(
+            SpaceComponent, TribeMembershipComponent
+        ):
+            if not membership.is_member():
+                candidates.append((entity, space))
 
-    def _try_recruit(self, world: World, tribe: TribeComponent, current_time: float):
+        if not candidates:
+            return
+
+        for tribe_entity, (tribe,) in world.get_components(TribeComponent):
+            self._try_recruit(world, tribe_entity, tribe, candidates, current_time)
+
+    def _try_recruit(self, world: World, tribe_entity, tribe: TribeComponent,
+                     candidates: list, current_time: float):
         """尝试招募附近的无部落成员"""
         if tribe.get_member_count() >= self.MAX_TRIBE_SIZE:
             return  # 部落太大不再招募
 
         center_x, center_y = tribe.home_territory
 
-        for entity, [space, other_membership] in world.get_components(
-            SpaceComponent, TribeMembershipComponent
-        ):
-            # 只招募无部落者
-            if other_membership.is_member():
-                continue
-
+        for entity, space in candidates:
             # 距离检查
             dist = math.hypot(space.x - center_x, space.y - center_y)
             if dist > self.RECRUIT_DISTANCE:
@@ -69,9 +76,11 @@ class RecruitSystem(System):
             best_relation = -100
             if social:
                 for member_id in tribe.member_ids:
-                    if member_id in social.relations:
+                    relation_score = social.relations.get(member_id)
+                    if relation_score is not None:
                         known_member = True
-                        best_relation = max(best_relation, social.relations[member_id])
+                        if relation_score > best_relation:
+                            best_relation = relation_score
 
             if not known_member:
                 continue
@@ -86,10 +95,12 @@ class RecruitSystem(System):
 
             # 执行招募
             tribe.add_member(entity.id)
-            other_membership.tribe_id = entity.id if world.query_entity(tribe) else None
-            other_membership.role = "member"
-            other_membership.joined_time = current_time
-            other_membership.loyalty = self.NEW_MEMBER_BASE_LOYALTY + best_relation * self.NEW_MEMBER_RELATION_LOYALTY_FACTOR
+            membership = world.get_component(entity, TribeMembershipComponent)
+            if membership is not None:
+                membership.tribe_id = tribe_entity.id
+                membership.role = "member"
+                membership.joined_time = current_time
+                membership.loyalty = self.NEW_MEMBER_BASE_LOYALTY + best_relation * self.NEW_MEMBER_RELATION_LOYALTY_FACTOR
 
             identity = world.get_component(entity, IdentityComponent)
             name = identity.name if identity else f"Human_{entity.id}"

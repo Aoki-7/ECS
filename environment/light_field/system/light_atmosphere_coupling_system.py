@@ -29,6 +29,7 @@ from environment.light_field.components.solar_position_component import (
 
 
 class LightAtmosphereCouplingSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """大气-光耦合系统 —— 将大气物理状态转化为光学散射参数。"""
 
     # ── 地球/大气固有物理常数（非天气假设） ──

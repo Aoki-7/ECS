@@ -23,6 +23,7 @@ from biology.components.energy_component import EnergyComponent
 
 
 class GrowthSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     光合作用与能量收支系统
 
@@ -32,7 +33,7 @@ class GrowthSystem(System):
         - 计算净光合产物并更新能量池
     """
 
-    def update(self, world: World, delta_hours: float = 1.0):
+    def update(self, world: World, delta_hours: float = 1.0) -> None:
         """
         执行生长更新
 

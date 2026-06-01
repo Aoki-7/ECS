@@ -25,8 +25,8 @@ class EventLogComponent(Component):
     所有 CRUD / 索引 / 裁剪逻辑由 EventLogSystem 管理。
     """
 
-    # 事件列表，按时间顺序
-    events: List[Dict[str, Any]] = field(default_factory=list)
+    # 事件列表，按时间顺序（元素类型为 EventRecord）
+    events: List[Any] = field(default_factory=list)
 
     # 索引：按类型快速查询
     _index_by_type: Dict[str, List[int]] = field(

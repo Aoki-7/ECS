@@ -14,14 +14,15 @@ from core.world import World
 from core.entity import Entity
 
 # 导入所有组件
-from biology.components.age_component import AgeComponent
+from biology.components.life_cycle_component import LifeCycleComponent
+from biology.components.morphology_component import MorphologyComponent
 from biology.components.gender_component import GenderComponent
 from human.components.basic.identity_component import IdentityComponent
-from biology.components.body_component import BodyComponent
+
 from human.components.basic.human_component import HumanComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-from biology.components.health_component import HealthComponent
-from biology.components.temperature_component import TemperatureComponent
+from biology.components.health_status_component import HealthStatusComponent
+
 from biology.components.disease_component import DiseaseComponent
 from human.components.combat.combat_stats_component import CombatStatsComponent
 from human.components.social.dialogue_component import DialogueComponent
@@ -58,16 +59,15 @@ class HumanEntity:
         SpaceComponent,           # 空间位置
         HumanComponent,           # 人类标识
         IdentityComponent,        # 身份信息
-        BodyComponent,            # 身体特征
-        AgeComponent,             # 年龄
+        MorphologyComponent,      # 身体特征
+        LifeCycleComponent,             # 年龄
         GenderComponent,          # 性别
     ]
 
     # 生理组件 (Physiological Components)
     PHYSIOLOGICAL_COMPONENTS: List[Type[Component]] = [
-        HealthComponent,          # 健康状态
+        HealthStatusComponent,          # 健康状态
         PhysiologyNeedsComponent, # 生理需求
-        TemperatureComponent,     # 体感温度
         DiseaseComponent,         # 疾病状态
     ]
 
@@ -156,14 +156,19 @@ class HumanEntity:
         world.add_component(entity, HumanComponent())
         world.add_component(entity, SpaceComponent(x=x, y=y))
         world.add_component(entity, IdentityComponent(name=name))
-        world.add_component(entity, BodyComponent(kwargs.get('height', 170), kwargs.get('weight', 70)))
+        world.add_component(entity, MorphologyComponent(
+            height=kwargs.get('height', 170),
+            weight=kwargs.get('weight', 70),
+            strength=kwargs.get('strength', 1.0),
+            agility=kwargs.get('agility', 1.0),
+            endurance=kwargs.get('endurance', 1.0),
+        ))
         world.add_component(entity, GenderComponent(kwargs.get('gender', None)))
-        world.add_component(entity, AgeComponent(kwargs.get('age', 18)))
+        world.add_component(entity, LifeCycleComponent(current_age=kwargs.get('age', 18)))
 
         # 生理组件
-        world.add_component(entity, HealthComponent())
+        world.add_component(entity, HealthStatusComponent())
         world.add_component(entity, PhysiologyNeedsComponent())
-        world.add_component(entity, TemperatureComponent())
         world.add_component(entity, DiseaseComponent())
 
         # 能力组件
@@ -227,5 +232,4 @@ class HumanEntity:
             entities.append(entity)
 
         return entities
-
 

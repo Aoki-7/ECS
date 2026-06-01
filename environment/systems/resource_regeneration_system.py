@@ -2,6 +2,7 @@ from core.system import System
 from resource.components.resource_component import ResourceComponent
 
 class ResourceRegenerationSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     处理资源再生的系统。
     定期再生环境中的资源。

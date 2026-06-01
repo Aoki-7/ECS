@@ -30,6 +30,7 @@ from space.space_component import SpaceComponent
 
 
 class ReproductionSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     植物繁殖系统（无性繁殖）
 
@@ -64,7 +65,7 @@ class ReproductionSystem(System):
         self._tick_counter = 0
         self._rng = random.Random(seed)
 
-    def update(self, world: World, dt: float = 1.0):
+    def update(self, world: World, dt: float = 1.0) -> None:
         """
         执行繁殖更新
 

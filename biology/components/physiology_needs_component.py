@@ -40,6 +40,13 @@ class PhysiologyNeedsComponent(Component):
     social: float = 50.0
     comfort: float = 50.0
 
+    # ===== 温度相关（从 TemperatureComponent 迁入）=====
+    body_temperature: float = 37.0      # 核心体温 °C
+    heat_stress: float = 0.0            # 热应激 0-100
+    cold_stress: float = 0.0            # 冷应激 0-100
+    is_heatstroke: bool = False
+    is_frostbite: bool = False
+
     # ===== 最大值 =====
     max_hunger: float = 100.0
     max_thirst: float = 100.0
@@ -47,6 +54,8 @@ class PhysiologyNeedsComponent(Component):
     max_fatigue: float = 100.0
     max_social: float = 100.0
     max_comfort: float = 100.0
+    max_heat_stress: float = 100.0
+    max_cold_stress: float = 100.0
 
     # ===== 初始化校正 =====
     def __post_init__(self):
@@ -60,6 +69,8 @@ class PhysiologyNeedsComponent(Component):
         self.fatigue = clamp(self.fatigue, 0.0, self.max_fatigue)
         self.social = clamp(self.social, 0.0, self.max_social)
         self.comfort = clamp(self.comfort, 0.0, self.max_comfort)
+        self.heat_stress = clamp(self.heat_stress, 0.0, self.max_heat_stress)
+        self.cold_stress = clamp(self.cold_stress, 0.0, self.max_cold_stress)
 
     # ===== 数据校验 =====
     # 所有修改操作应由对应的 System 通过直接修改属性 + _clamp_all() 完成

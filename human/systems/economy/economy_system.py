@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class EconomySystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     经济系统
 

@@ -27,6 +27,7 @@ from resource.water.components.water_component import WaterComponent
 
 
 class PlanningSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     把意图转换为行为序列
     """

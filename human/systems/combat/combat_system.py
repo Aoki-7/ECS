@@ -18,14 +18,14 @@ from core.world import World
 from core.components.action_component import (
     ActionComponent, ActionType, ActionStatus
 )
-from biology.components.health_component import HealthComponent
+from biology.components.health_status_component import HealthStatusComponent
 from human.components.combat.combat_stats_component import CombatStatsComponent
-from biology.components.injury.injury_component import InjuryComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 
 
 class CombatSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     战斗系统
     处理攻击、防御、逃跑、追击的逻辑
@@ -38,12 +38,12 @@ class CombatSystem(System):
         space_system = world.get_system(SpaceSystem)
 
         for entity, (action, space, combat_stats, health) in list(world.get_components(
-            ActionComponent, SpaceComponent, CombatStatsComponent, HealthComponent
+            ActionComponent, SpaceComponent, CombatStatsComponent, HealthStatusComponent
         )):
             action: ActionComponent
             space: SpaceComponent
             combat_stats: CombatStatsComponent
-            health: HealthComponent
+            health: HealthStatusComponent
 
             if action.current_action == ActionType.ATTACK:
                 self._process_attack(world, space_system, entity, action, space, combat_stats, health, dt)
@@ -91,16 +91,22 @@ class CombatSystem(System):
         damage = base_damage * random_factor
 
         # 应用伤害
-        target_health = world.get_component(target, HealthComponent)
-        if target_health:
-            target_health.hp -= damage
-            target_health.hp = max(0.0, target_health.hp)
+        # 给目标添加/获取健康状态组件
+        target_health = world.get_component(target, HealthStatusComponent)
+        if target_health is None:
+            world.add_component(target, HealthStatusComponent())
+            target_health = world.get_component(target, HealthStatusComponent)
 
-        # 给目标添加伤害组件（如果没有）
-        target_injury = world.get_component(target, InjuryComponent)
-        if target_injury is None:
-            from biology.components.injury.injury_component import InjuryComponent
-            world.add_component(target, InjuryComponent(damage_per_sec=0.5))
+        # 应用伤害
+        target_health.hp -= damage
+        target_health.hp = max(0.0, target_health.hp)
+
+        # 添加伤口记录
+        target_health.add_wound(
+            wound_type="physical",
+            severity=damage * 0.1,
+            damage_per_sec=0.5,
+        )
 
         action.status = ActionStatus.SUCCESS
 

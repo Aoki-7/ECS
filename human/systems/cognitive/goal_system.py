@@ -13,13 +13,14 @@ from core.world import World
 
 from human.components.cognitive.goal_component import GoalComponent
 from human.components.cognitive.personality_component import PersonalityComponent
-from biology.components.age_component import AgeComponent
+from biology.components.life_cycle_component import LifeCycleComponent
 from biology.components.gender_component import GenderComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 from human.components.economic.economy_component import EconomyComponent
 
 
 class GoalSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     目标系统
     
@@ -47,7 +48,7 @@ class GoalSystem(System):
             dt: 时间增量
         """
         for entity, (goal, age, personality, gender, relation, economy) in world.get_components(
-            GoalComponent, AgeComponent, PersonalityComponent, GenderComponent, 
+            GoalComponent, LifeCycleComponent, PersonalityComponent, GenderComponent, 
             RelationshipComponent, EconomyComponent
         ):
             self._update_goals(
@@ -57,7 +58,7 @@ class GoalSystem(System):
             )
 
     def _update_goals(self, world: World, entity,
-                     goal: GoalComponent, age: AgeComponent, 
+                     goal: GoalComponent, age: LifeCycleComponent, 
                      personality: PersonalityComponent, gender: GenderComponent,
                      relation: RelationshipComponent, economy: EconomyComponent,
                      dt: float):

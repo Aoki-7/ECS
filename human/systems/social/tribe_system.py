@@ -28,13 +28,14 @@ logger = logging.getLogger(__name__)
 from human.components.social.tribe_component import TribeComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
 from human.components.basic.identity_component import IdentityComponent
-from biology.components.age_component import AgeComponent
+from biology.components.life_cycle_component import LifeCycleComponent
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
 from core.systems.event_log_system import EventLog
 
 
 class TribeSystem(System):
+    tick_interval = 10  # 每10帧执行一次
     """
     部落系统协调器
     
@@ -92,7 +93,7 @@ class TribeSystem(System):
         oldest = None
         max_age = -1
         for entity in humans:
-            age = world.get_component(entity, AgeComponent)
+            age = world.get_component(entity, LifeCycleComponent)
             if age and age.age > max_age:
                 max_age = age.age
                 oldest = entity

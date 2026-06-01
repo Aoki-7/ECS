@@ -18,6 +18,7 @@ from resource.food.components.food_component import FoodComponent
 
 
 class TransformationSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     通用状态转换系统
 

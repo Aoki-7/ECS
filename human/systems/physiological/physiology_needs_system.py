@@ -19,6 +19,7 @@ from core.components.action_component import ActionComponent, ActionType
 
 
 class PhysiologyNeedsSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     生理需求合并系统
     

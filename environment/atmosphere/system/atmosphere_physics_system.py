@@ -30,6 +30,7 @@ _ISA_EXPONENT = _ISA_GRAVITY / (_ISA_GAS_CONSTANT * _ISA_LAPSE_RATE)
 
 
 class AtmospherePhysicsSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """大气物理计算系统，负责 ISA 模型与派生参数计算。"""
 
     priority = 20  # 环境管线内

@@ -16,6 +16,7 @@ from environment.light_field.components.surface_light_component import SurfaceLi
 
 
 class LightReceiverSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
         分配给所有带有LightReceiverComponent的实体
     """

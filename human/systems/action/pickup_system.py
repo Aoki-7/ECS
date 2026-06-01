@@ -20,6 +20,7 @@ from equipment.components.ownership_component import OwnershipComponent
 
 
 class PickupSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
         拾取系统
         属于Action系统的一部分，负责处理拾取行为。

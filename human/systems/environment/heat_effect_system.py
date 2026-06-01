@@ -12,11 +12,12 @@ from core.world import World
 
 from environment.environment_component import EnvironmentComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-from biology.components.health_component import HealthComponent
+from biology.components.health_status_component import HealthStatusComponent
 from space.space_component import SpaceComponent
 
 
 class HeatEffectSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """高温对实体的影响"""
 
     priority = 25
@@ -39,7 +40,7 @@ class HeatEffectSystem(System):
             return
 
         for entity, (needs, health, space) in world.get_components(
-            PhysiologyNeedsComponent, HealthComponent, SpaceComponent
+            PhysiologyNeedsComponent, HealthStatusComponent, SpaceComponent
         ):
             # 轻度高温
             if temp > self.TEMP_THRESHOLD_MILD:

@@ -1,18 +1,24 @@
 from core.system import System
-from biology.components.injury.injury_component import InjuryComponent
-from biology.components.health_component import HealthComponent
+from biology.components.health_status_component import HealthStatusComponent
+
 
 class InjurySystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     处理受伤状态的系统。
-    根据受伤的严重程度减少健康值。
+    根据伤口严重程度减少生命值，并计算持续伤害。
     """
 
     def update(self, world, dt):
-        for entity, (injury, health) in world.query_components(InjuryComponent, HealthComponent):
-            total_severity = injury.get_total_severity()
-            health.health -= total_severity * dt  # 根据严重程度减少健康值
+        for entity, (health,) in world.query_components(HealthStatusComponent):
+            health: HealthStatusComponent
 
-            # 如果健康值降到0，标记实体为死亡
-            if health.health <= 0:
-                world.mark_entity_as_dead(entity)
+            # 更新伤口年龄并获取持续伤害
+            dot = health.update_wounds(dt)
+
+            # 根据伤口严重程度减少生命值
+            health.hp -= (health.get_total_severity() * 0.01 + dot) * dt
+            health.hp = max(0.0, health.hp)
+
+            # 清理已愈合伤口
+            health.remove_healed_wounds()

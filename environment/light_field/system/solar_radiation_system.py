@@ -19,6 +19,7 @@ from environment.light_field.components.solar_radiation_component import SolarRa
 from environment.light_field.components.solar_position_component import SolarPositionComponent
 
 class SolarRadiationSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """根据太阳位置进行计算"""
     def update(self, world: World, delta_hour: float):
 

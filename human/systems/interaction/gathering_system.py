@@ -18,6 +18,7 @@ import math
 
 
 class GatheringSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     采集系统
     

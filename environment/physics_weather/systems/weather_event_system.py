@@ -34,6 +34,7 @@ from environment.physics_weather.components.weather_event_components import (
 
 
 class WeatherEventSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     物理异常检测系统
 

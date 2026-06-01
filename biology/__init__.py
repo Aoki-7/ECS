@@ -21,9 +21,9 @@ from biology.components.morphology_component import MorphologyComponent
 from biology.components.life_cycle_component import LifeCycleComponent
 
 from biology.components.immune_component import ImmuneComponent
-from biology.components.damage_component import DamageComponent
+from biology.components.health_status_component import HealthStatusComponent
 from biology.components.nutrient_component import NutrientComponent
-from biology.components.competition_component import CompetitionComponent
+
 
 from biology.genetics.gene import Gene
 
@@ -38,7 +38,7 @@ __all__ = [
     "LifeCycleComponent",
 
     "ImmuneComponent",
-    "DamageComponent",
+    "HealthStatusComponent",
     "NutrientComponent",
     "CompetitionComponent",
     # 遗传

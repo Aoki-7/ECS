@@ -26,6 +26,7 @@ from environment.physics_weather.components.physical_weather_component import (
 
 
 class CloudSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     云层系统
 

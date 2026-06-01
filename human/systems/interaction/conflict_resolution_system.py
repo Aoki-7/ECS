@@ -57,6 +57,7 @@ class ConflictInstance:
 
 
 class ConflictResolutionSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     冲突解决系统
 

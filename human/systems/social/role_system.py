@@ -22,6 +22,7 @@ from human.components.society.role_component import (
 
 
 class RoleSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """角色管理系统，处理实体在社会结构中的角色、身份与责任。"""
 
     priority = 30  # 与人类核心系统同级

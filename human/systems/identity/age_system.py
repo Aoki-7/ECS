@@ -10,14 +10,15 @@
 from core.system import System
 from core.world import World
 
-from biology.components.age_component import AgeComponent
+from biology.components.life_cycle_component import LifeCycleComponent
 
 
 class AgeSystem(System):
+    tick_interval = 10  # 每10帧执行一次
     """
     年龄增长系统
     
-    每步推进 AgeComponent.age。
+    每步推进 LifeCycleComponent.age。
     时间压缩比例：每模拟步（1小时）≈ 0.05年（约18天），
     使新生儿在约360步后达到生育年龄（18岁）。
     """
@@ -26,6 +27,6 @@ class AgeSystem(System):
     YEAR_PER_STEP: float = 0.05
 
     def update(self, world: World, dt: float):
-        for entity, [age] in world.get_components(AgeComponent):
-            age: AgeComponent
+        for entity, [age] in world.get_components(LifeCycleComponent):
+            age: LifeCycleComponent
             age.age += self.YEAR_PER_STEP * dt

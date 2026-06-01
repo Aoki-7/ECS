@@ -26,12 +26,13 @@ from environment.weather.components.weather_component import WeatherComponent
 # LightField / Soil / Pollution
 
 class AtmosphereSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     大气系统
     负责根据天气更新大气物理状态
     """
 
-    def update(self, world: World, delta_hours: float):
+    def update(self, world: World, delta_hours: float) -> None:
 
         for entity, (atm, weather) in world.get_components(
             AtmosphereComponent,

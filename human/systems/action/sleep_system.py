@@ -20,6 +20,7 @@ from space.space_component import SpaceComponent
 
 
 class SleepSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
         睡眠系统
         仅负责处理 ActionType.SLEEP 行为。

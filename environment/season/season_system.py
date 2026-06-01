@@ -13,6 +13,7 @@ from environment.season.season_component import SeasonComponent
 
 
 class SeasonSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     季节系统
 

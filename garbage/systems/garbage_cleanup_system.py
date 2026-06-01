@@ -14,6 +14,7 @@ from garbage.components.garbage_component import GarbageComponent
 
 
 class GarbageCleanupSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     垃圾清理系统
     

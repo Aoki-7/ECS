@@ -17,12 +17,13 @@ from biology.components.physiology_needs_component import PhysiologyNeedsCompone
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 from human.components.social.social_component import SocialComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
-from biology.components.age_component import AgeComponent
+from biology.components.life_cycle_component import LifeCycleComponent
 from biology.components.gender_component import GenderComponent, Gender
 from core.components.action_component import ActionComponent, ActionType
 
 
 class PairingSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     配对系统
     基于社会需求、年龄和性别寻找伴侣。
@@ -36,7 +37,7 @@ class PairingSystem(System):
         tribe_cache = {}
         
         for entity, (intent, needs, relation, age, gender) in world.get_components(
-            IntentComponent, PhysiologyNeedsComponent, RelationshipComponent, AgeComponent, GenderComponent
+            IntentComponent, PhysiologyNeedsComponent, RelationshipComponent, LifeCycleComponent, GenderComponent
         ):
             if not intent or not needs or not relation or not age or not gender:
                 continue

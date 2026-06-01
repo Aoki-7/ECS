@@ -11,7 +11,7 @@ from core.world import World
 
 from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
 from environment.atmosphere.system.atmosphere_system import AtmosphereSystem
-from environment.atmosphere.system.pressusre_system import PressureSystem
+from environment.atmosphere.system.pressure_system import PressureSystem
 from environment.atmosphere.system.wind_system import WindSystem
 from environment.atmosphere.system.cloud_system import CloudSystem
 from environment.atmosphere.system.thermodynamics_system import ThermodynamicsSystem
@@ -50,5 +50,46 @@ class AtmosphereBuilder:
         Returns:
             调整后的系统列表
         """
-        # TODO: 实现配置应用逻辑
-        return systems
+        if profile is None:
+            return systems
+
+        # 支持 AtmosphereConfig 或 dict 类型的 profile
+        subsystems_config = getattr(profile, 'subsystems', None)
+        if subsystems_config is None and isinstance(profile, dict):
+            subsystems_config = profile.get('subsystems', [])
+
+        if not subsystems_config:
+            return systems
+
+        # 构建配置映射：name -> config
+        config_map = {}
+        for sub in subsystems_config:
+            name = getattr(sub, 'name', sub.get('name') if isinstance(sub, dict) else None)
+            if name:
+                config_map[name] = sub
+
+        filtered_systems = []
+        for system in systems:
+            sys_name = system.__class__.__name__.lower().replace('system', '')
+            config = config_map.get(sys_name)
+            if config is None:
+                filtered_systems.append(system)
+                continue
+
+            enabled = getattr(config, 'enabled', config.get('enabled') if isinstance(config, dict) else True)
+            if not enabled:
+                continue  # 跳过禁用的子系统
+
+            priority = getattr(config, 'priority', config.get('priority') if isinstance(config, dict) else None)
+            if priority is not None:
+                system.priority = priority
+
+            params = getattr(config, 'params', config.get('params') if isinstance(config, dict) else {})
+            if params:
+                for key, value in params.items():
+                    if hasattr(system, key):
+                        setattr(system, key, value)
+
+            filtered_systems.append(system)
+
+        return filtered_systems

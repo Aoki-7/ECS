@@ -18,9 +18,9 @@ from biology.components.energy_component import EnergyComponent
 from biology.components.morphology_component import MorphologyComponent
 from biology.components.life_cycle_component import LifeCycleComponent
 from biology.components.immune_component import ImmuneComponent
-from biology.components.damage_component import DamageComponent
+from biology.components.health_status_component import HealthStatusComponent
 from biology.components.nutrient_component import NutrientComponent
-from biology.components.competition_component import CompetitionComponent
+
 from biology.genetics.gene import Gene
 
 from space.space_component import SpaceComponent
@@ -344,6 +344,5 @@ class PlantFactory:
 
         # 扩展生物学组件：免疫、损伤、营养、竞争
         world.add_component(entity, ImmuneComponent())
-        world.add_component(entity, DamageComponent())
+        world.add_component(entity, HealthStatusComponent())
         world.add_component(entity, NutrientComponent())
-        world.add_component(entity, CompetitionComponent())

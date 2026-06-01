@@ -19,6 +19,7 @@ from human.components.cognitive.memory_component import MemoryComponent
 
 
 class IntentSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
         意图系统
         从Need -> Intent

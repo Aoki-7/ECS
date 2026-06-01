@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 from human.components.social.reproduction_component import ReproductionComponent
-from biology.components.age_component import AgeComponent
+from biology.components.life_cycle_component import LifeCycleComponent
 from biology.components.gender_component import GenderComponent, Gender
 from space.space_component import SpaceComponent
 
@@ -50,14 +50,14 @@ class ReproductionSystem(System):
         current_time = world.get_time().total_hours
 
         for entity, (relation, repro, age, gender) in world.get_components(
-            RelationshipComponent, ReproductionComponent, AgeComponent, GenderComponent
+            RelationshipComponent, ReproductionComponent, LifeCycleComponent, GenderComponent
         ):
             if not relation or not repro or not age or not gender:
                 continue
             
             relation: RelationshipComponent
             repro: ReproductionComponent
-            age: AgeComponent
+            age: LifeCycleComponent
             gender: GenderComponent
 
             # 检查是否具备怀孕条件（仅限女性）
@@ -140,7 +140,7 @@ class ReproductionSystem(System):
         child = HumanFactory.create_human(world, child_name, child_x, child_y)
         
         # 修正新生儿年龄为0
-        age_comp = world.get_component(child, AgeComponent)
+        age_comp = world.get_component(child, LifeCycleComponent)
         if age_comp:
             age_comp.age = 0
         

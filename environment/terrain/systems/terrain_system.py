@@ -22,6 +22,7 @@ from environment.terrain.config.terrain_classifier import TerrainClassifier
 
 
 class TerrainSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     地形系统
 

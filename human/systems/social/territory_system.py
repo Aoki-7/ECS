@@ -17,6 +17,7 @@ from space.space_component import SpaceComponent
 
 
 class TerritorySystem(System):
+    tick_interval = 10  # 每10帧执行一次
     """领地系统 — 维护部落的地理中心"""
 
     priority = 39

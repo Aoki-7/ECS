@@ -15,7 +15,8 @@ from space.space_system import SpaceSystem
 from core.components.vision_component import VisionComponent
 from space.space_component import SpaceComponent
 
-class PreceptionSystem(System):
+class PerceptionSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
         感知系统
         依赖 SpaceComponent + VisionComponent
@@ -39,3 +40,7 @@ class PreceptionSystem(System):
 
             vision.entity_ids = [eid for eid in id_list if eid != entity.id]
             vision.entities = [world.query_entity(eid) for eid in vision.entity_ids]
+
+
+# 向后兼容的旧拼写别名
+PreceptionSystem = PerceptionSystem

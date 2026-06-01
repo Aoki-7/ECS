@@ -15,6 +15,7 @@ from physiology.components.metabolism_component import MetabolismComponent
 
 
 class MetabolismSystem(System):
+    tick_interval = 20  # 每20帧执行一次
 
     def update(self, world: World, dt: float):
         for entity, [phys, meta] in world.get_components(

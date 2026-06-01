@@ -19,6 +19,7 @@ from environment.soil.components.soil_component import SoilComponent
 
 
 class SoilSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     土壤系统
 

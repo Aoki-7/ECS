@@ -47,6 +47,7 @@ class Technology:
 
 
 class TechnologySystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     技术进步系统
 
@@ -107,7 +108,7 @@ class TechnologySystem(System):
         self.discovered_technologies: Set[str] = set()
         self.global_tech_progress: Dict[str, float] = {}
 
-    def update(self, world: World, dt: float):
+    def update(self, world: World, dt: float) -> None:
         """更新技术进步"""
         # 检查是否有新技术的解锁条件满足
         self._check_technology_unlocks(world)

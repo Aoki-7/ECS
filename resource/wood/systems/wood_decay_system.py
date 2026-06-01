@@ -15,6 +15,7 @@ from resource.wood.components.wood_component import WoodComponent
 
 
 class WoodDecaySystem(System):
+    tick_interval = 20  # 每20帧执行一次
 
     def update(self, world: World, dt: float):
         for entity, [wood] in world.get_components(WoodComponent):

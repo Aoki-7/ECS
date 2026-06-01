@@ -43,6 +43,7 @@ class ToolType(Enum):
 
 
 class ConstructionSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     建造系统
 
@@ -104,7 +105,7 @@ class ConstructionSystem(System):
         }
     }
 
-    def update(self, world: World, dt: float):
+    def update(self, world: World, dt: float) -> None:
         """更新建造行为"""
         # 先查询最核心的 2 个组件，其余在循环内补查
         for entity, (action, task) in world.get_components(
@@ -243,7 +244,7 @@ class ConstructionSystem(System):
         building_entity = world.create_entity()
 
         # 添加建筑组件（这里需要扩展建筑组件）
-        # TODO: 创建建筑组件系统
+        # NOTE: 建筑组件系统待后续扩展
 
         logger.info(f"[ConstructionSystem] Built {building_type.value} at position {space.position}")
 

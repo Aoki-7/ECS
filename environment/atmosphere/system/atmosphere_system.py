@@ -24,8 +24,11 @@ LightAtmosphereCouplingSystem (光学散射)
 """
 
 from typing import List
+import logging
 from core.system import System
 from core.world import World
+
+logger = logging.getLogger(__name__)
 
 from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
 
@@ -34,6 +37,7 @@ ATMOSPHERE_SYSTEM_PRIORITY = 140
 
 
 class AtmosphereSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     大气系统（核心协调器）
 
@@ -66,7 +70,7 @@ class AtmosphereSystem(System):
                 subsystem.priority = ATMOSPHERE_SYSTEM_PRIORITY
                 self._subsystems.append(subsystem)
             except Exception as e:
-                print(f"[AtmosphereSystem] 警告：子系统 {name} 加载失败: {e}")
+                logger.warning(f"[AtmosphereSystem] 子系统 {name} 加载失败: {e}")
 
     def on_add(self, world: World):
         """系统被添加到 world 时调用"""

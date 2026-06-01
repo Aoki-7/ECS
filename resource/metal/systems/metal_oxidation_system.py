@@ -15,6 +15,7 @@ from resource.metal.components.metal_component import MetalComponent
 
 
 class MetalOxidationSystem(System):
+    tick_interval = 20  # 每20帧执行一次
 
     def update(self, world: World, dt: float):
         for entity, [metal] in world.get_components(MetalComponent):

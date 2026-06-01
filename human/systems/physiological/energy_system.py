@@ -16,6 +16,7 @@ from core.components.action_component import ActionComponent, ActionType
 
 
 class EnergySystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     精力系统
     负责精力自然衰减及生理反馈（饥饿/口渴/疲劳）

@@ -26,6 +26,7 @@ from biology.traits.trait import Trait
 
 
 class SenescenceSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     衰老系统
 
@@ -38,7 +39,7 @@ class SenescenceSystem(System):
     def __init__(self):
         super().__init__()
 
-    def update(self, world: World, dt: float = 1.0):
+    def update(self, world: World, dt: float = 1.0) -> None:
         """
         更新衰老状态
 

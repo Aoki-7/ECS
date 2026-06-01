@@ -26,6 +26,7 @@ from environment.environment_component import EnvironmentComponent
 
 
 class NutrientSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     营养代谢系统
 
@@ -46,7 +47,7 @@ class NutrientSystem(System):
         super().__init__()
         self._env_cache: dict = {}
 
-    def update(self, world: World, dt: float = 1.0):
+    def update(self, world: World, dt: float = 1.0) -> None:
         """
         执行营养代谢更新
 

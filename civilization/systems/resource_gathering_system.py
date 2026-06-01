@@ -24,6 +24,7 @@ from environment.environment_component import EnvironmentComponent
 
 
 class ResourceGatheringSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     资源采集系统
 
@@ -34,7 +35,7 @@ class ResourceGatheringSystem(System):
     - 资源采集后进入人类库存
     """
 
-    def update(self, world: World, dt: float):
+    def update(self, world: World, dt: float) -> None:
         """更新资源采集行为"""
         # 先查询最核心的 2 个组件，其余在循环内补查
         for entity, (action, task) in world.get_components(

@@ -34,6 +34,7 @@ from environment.physics_weather.components.physical_weather_component import (
 
 
 class ThermodynamicsSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     热力学系统
 

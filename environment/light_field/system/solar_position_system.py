@@ -20,6 +20,7 @@ from environment.light_field.components.solar_position_component import (
 
 
 class SolarPositionSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     太阳位置系统
 

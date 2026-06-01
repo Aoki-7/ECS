@@ -30,6 +30,7 @@ from .technology_system import TechnologySystem
 
 
 class CivilizationSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     文明系统主控制器
 
@@ -58,7 +59,7 @@ class CivilizationSystem(System):
         # 文明阶段
         self.civilization_stage = "hunter_gatherer"  # 狩猎采集
 
-    def update(self, world: World, dt: float):
+    def update(self, world: World, dt: float) -> None:
         """更新文明系统"""
         # 更新子系统
         self.resource_gathering.update(world, dt)

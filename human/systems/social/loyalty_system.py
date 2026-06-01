@@ -20,6 +20,7 @@ from space.space_component import SpaceComponent
 
 
 class LoyaltySystem(System):
+    tick_interval = 10  # 每10帧执行一次
     """忠诚度系统 — 部落成员归属感动态变化"""
 
     priority = 41

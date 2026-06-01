@@ -17,6 +17,7 @@ from physiology.components.temperature_component import BodyTempComponent
 
 
 class TemperatureSystem(System):
+    tick_interval = 20  # 每20帧执行一次
 
     def update(self, world: World, dt: float):
         for entity, [temp, phys] in world.get_components(

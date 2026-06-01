@@ -15,6 +15,7 @@ from core.components.action_component import ActionComponent, ActionType
 
 
 class HungerSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     饥饿系统
     只负责饥饿值的自然增长，代谢受睡眠状态影响

@@ -19,6 +19,7 @@ from core.system import System
 
 
 class SoilTemperatureSystem(System):
+    tick_interval = 2  # 每2帧执行一次
 
     def update(self, world: World, delta_hours: float):
 

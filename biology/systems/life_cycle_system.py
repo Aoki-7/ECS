@@ -21,6 +21,7 @@ from biology.components.genome_component import GenomeComponent
 
 
 class LifeCycleSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     生命周期推进系统
 
@@ -38,7 +39,7 @@ class LifeCycleSystem(System):
         super().__init__()
         self.enable_log = True
 
-    def update(self, world: World, dt: float = 1.0):
+    def update(self, world: World, dt: float = 1.0) -> None:
         """
         每帧更新生命周期
 

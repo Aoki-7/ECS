@@ -24,6 +24,7 @@ from core.components.search_component import SearchComponent
 
 
 class SeekTargetSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     通用目标搜索系统
 

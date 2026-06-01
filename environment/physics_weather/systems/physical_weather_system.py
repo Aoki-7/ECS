@@ -86,6 +86,7 @@ from environment.climate.climate_component import ClimateComponent
 
 
 class PhysicalWeatherSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     物理天气演化系统
 

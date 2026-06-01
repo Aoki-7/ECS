@@ -15,6 +15,7 @@ from physiology.components.physiology_component import PhysiologyComponent
 from physiology.components.disease_component import InfectionLevelComponent
 
 class DiseaseSystem(System):
+    tick_interval = 20  # 每20帧执行一次
 
     def update(self, world: World, dt: float):
         for entity, [disease, phys] in world.get_components(

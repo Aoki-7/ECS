@@ -23,6 +23,7 @@ from resource.food.components.food_component import FoodComponent
 
 
 class SeekFoodSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     寻找食物系统
     必须组件：空间、行为、物品栏、视野

@@ -21,6 +21,7 @@ from biology.components.genome_component import GenomeComponent
 
 
 class MutationSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     变异系统
 
@@ -37,7 +38,7 @@ class MutationSystem(System):
         super().__init__()
         self._rng = random.Random(seed)
 
-    def update(self, world: World, dt: float = 1.0):
+    def update(self, world: World, dt: float = 1.0) -> None:
         """
         执行变异
 

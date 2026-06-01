@@ -13,7 +13,10 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 import json
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -97,7 +100,7 @@ class AtmosphereConfig:
             filepath = os.path.join(base_dir, "environment", "atmosphere", "config", "atmosphere.json")
         
         if not os.path.exists(filepath):
-            print(f"配置文件不存在：{filepath}，使用默认配置")
+            logger.info(f"配置文件不存在：{filepath}，使用默认配置")
             return cls()
         
         with open(filepath, 'r', encoding='utf-8') as f:

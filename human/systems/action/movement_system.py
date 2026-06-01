@@ -23,6 +23,7 @@ from human.components.cognitive.memory_component import MemoryComponent
 
 
 class MovementSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     移动系统负责更新同时拥有 SpaceComponent、ActionComponent 和 VelocityComponent 的实体位置。
 

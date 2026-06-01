@@ -19,6 +19,7 @@ from environment.physics_weather.components.physical_weather_component import (
 
 
 class ConvectionSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     对流系统
 

@@ -11,19 +11,14 @@ from environment.physics_weather.utils.weather_classifier import (
     classify_from_component,
 )
 from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
-# from environment.soil.components.soil_component import SoilComponent
 
 from environment.observation.environment_observation_component import (
     EnvironmentObservationComponent,
 )
-from environment.weather.components.weather_component import WeatherComponent
-from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
-# from environment.soil.components.soil_component import SoilComponent
-
-from environment.observation.environment_observation_component import EnvironmentObservationComponent
 
 
 class EnvironmentObservationSystem(System):
+    tick_interval = 20  # 每20帧执行一次
 
     def update(self, world: World, delta_hours: float):
 
@@ -40,17 +35,6 @@ class EnvironmentObservationSystem(System):
         atm: AtmosphereComponent
         obs: EnvironmentObservationComponent
 
-            WeatherComponent,
-            AtmosphereComponent,
-            EnvironmentObservationComponent,
-
-        )
-        season: SeasonComponent
-        weather: WeatherComponent
-        atm: AtmosphereComponent
-        obs: EnvironmentObservationComponent
-
-
         record = {}
         record.update(time.to_dict())
         record.update(season.to_dict())
@@ -62,13 +46,3 @@ class EnvironmentObservationSystem(System):
         record.update(atm.to_dict())
 
         obs.history.append(record)
-
-        # print("时间:", time.to_dict())
-        print("天气:", weather)
-        print("天气标签:", state.full_label)
-        record.update(atm.to_dict())
-        
-        obs.history.append(record)
-
-        # print("时间:", time.to_dict())
-        print("天气:", weather.to_dict())

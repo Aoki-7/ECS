@@ -38,6 +38,7 @@ class Weather:
 
 
 class EnvironmentAdaptationSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     环境适应系统 - 处理季节和气候对人类的影响
     
@@ -107,7 +108,7 @@ class EnvironmentAdaptationSystem(System):
 
     def _get_location(self, entity_id: int) -> Optional[Dict]:
         """获取实体当前位置"""
-        # TODO: 实现位置查询逻辑
+        # NOTE: 位置查询待接入空间系统（SpaceSystem）
         return None
 
     def calculate_overwintering_readiness(self, entity_id: int) -> float:
@@ -166,9 +167,8 @@ class EnvironmentAdaptationSystem(System):
 
     def update(self, world: World, dt) -> None:
         """系统更新"""
-        # TODO: 处理季节变化、天气更新等
-        
-        pass  # 暂未需要主动更新
+        # NOTE: 主动更新逻辑暂不需要，该系统目前仅响应查询
+        pass
 
 
 # 环境事件触发器

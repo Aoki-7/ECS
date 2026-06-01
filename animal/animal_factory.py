@@ -17,7 +17,7 @@ from biology.components.phenotype_component import PhenotypeComponent
 from biology.components.energy_component import EnergyComponent
 from biology.components.morphology_component import MorphologyComponent
 from biology.components.immune_component import ImmuneComponent
-from biology.components.damage_component import DamageComponent
+from biology.components.health_status_component import HealthStatusComponent
 from biology.genetics.gene import Gene
 
 from .presets import SPECIES_PRESETS
@@ -269,4 +269,4 @@ class AnimalFactory:
 
         # 扩展生物学组件：免疫、损伤
         world.add_component(entity, ImmuneComponent())
-        world.add_component(entity, DamageComponent())
+        world.add_component(entity, HealthStatusComponent())

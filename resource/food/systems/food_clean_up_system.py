@@ -17,6 +17,7 @@ from resource.food.components.food_component import FoodComponent
 
 
 class FoodCleanupSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     食物清理系统
 

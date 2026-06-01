@@ -27,6 +27,7 @@ from human.components.social.relationship_component import RelationshipComponent
 
 
 class EmotionSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     处理情绪变化的系统。
     根据生理状态、环境、行为和社交互动实时调整情绪。

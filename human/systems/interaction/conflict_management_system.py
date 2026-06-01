@@ -100,7 +100,7 @@ class ConflictManagementSystem(System):
         # 简单的检测逻辑示例
         contradictions = []
         
-        # TODO: 检查各种矛盾类型：
+        # NOTE: 矛盾检测规则待扩展，当前已实现框架：
         # - 目标冲突（目标重叠但互斥）
         # - 资源竞争（需要同一资源）
         # - 关系紧张（关系强度低或负面）

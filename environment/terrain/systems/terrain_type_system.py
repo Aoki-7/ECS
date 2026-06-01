@@ -24,6 +24,7 @@ from environment.terrain.config.terrain_classifier import TerrainClassifier
 from environment.soil.components.soil_component import SoilComponent
 
 class TerrainTypeSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     地形系统
 

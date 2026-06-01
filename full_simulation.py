@@ -17,9 +17,10 @@
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-import time
-import math
 import random
+import logging
+
+logger = logging.getLogger(__name__)
 
 # =========================================================
 # 复用 main.py 的核心模拟循环
@@ -53,10 +54,7 @@ from resource.stone.stone_factory import StoneFactory
 from resource.metal.metal_factory import MetalFactory
 
 # 额外组件（用于统计）
-from biology.components.energy_component import EnergyComponent
 from biology.components.genome_component import GenomeComponent
-from biology.components.phenotype_component import PhenotypeComponent
-from biology.components.morphology_component import MorphologyComponent
 from resource.wood.components.wood_component import WoodComponent
 from resource.stone.components.stone_component import StoneComponent
 from resource.metal.components.metal_component import MetalComponent
@@ -134,7 +132,7 @@ class FullSimulationLoop(SimulationLoop):
         # 先调用父类创建食物和水源
         super().create_initial_resources(food_count=food_count, water_count=water_count)
 
-        print(f"[Init] 植物: {plant_count} 株")
+        logger.info(f"[Init] 植物: {plant_count} 株")
         for i in range(plant_count):
             x = random.randint(5, 94)
             y = random.randint(5, 94)
@@ -143,19 +141,19 @@ class FullSimulationLoop(SimulationLoop):
             from space.space_component import SpaceComponent
             self.world.add_component(plant, SpaceComponent(x=x, y=y))
 
-        print(f"[Init] 木材: {wood_count} 堆")
+        logger.info(f"[Init] 木材: {wood_count} 堆")
         for i in range(wood_count):
             x = random.randint(0, 99)
             y = random.randint(0, 99)
             self.wood_factory.create_wood(self.world, x=x, y=y)
 
-        print(f"[Init] 石头: {stone_count} 块")
+        logger.info(f"[Init] 石头: {stone_count} 块")
         for i in range(stone_count):
             x = random.randint(0, 99)
             y = random.randint(0, 99)
             self.stone_factory.create_stone(self.world, x=x, y=y)
 
-        print(f"[Init] 金属: {metal_count} 块")
+        logger.info(f"[Init] 金属: {metal_count} 块")
         for i in range(metal_count):
             x = random.randint(0, 99)
             y = random.randint(0, 99)
@@ -217,12 +215,12 @@ class FullSimulationLoop(SimulationLoop):
         """
         运行全面模拟（扩展版输出格式）。
         """
-        print(f"[Run] 全面模拟: {steps} 步 × {delta_hours}h")
+        logger.info(f"[Run] 全面模拟: {steps} 步 × {delta_hours}h")
 
         for step in range(steps):
             if verbose and step % 50 == 0:
                 stats = self.get_stats()
-                print(
+                logger.info(
                     f"  Step {step:>4}/{steps} | "
                     f"实体:{stats['total_entities']:>3} "
                     f"人口:{stats['human_count']:>2} "
@@ -241,7 +239,7 @@ class FullSimulationLoop(SimulationLoop):
             self.update(delta_hours)
 
         final_stats = self.get_stats()
-        print(
+        logger.info(
             f"[Done] 实体:{final_stats['total_entities']} "
             f"人口:{final_stats['human_count']} "
             f"食物:{final_stats['food_count']} "
@@ -257,7 +255,7 @@ class FullSimulationLoop(SimulationLoop):
 
 def main():
     """全面模拟主函数"""
-    print("=== ECS 全面世界模拟 ===")
+    logger.info("=== ECS 全面世界模拟 ===")
 
     world = World()
     simulation = FullSimulationLoop(world)

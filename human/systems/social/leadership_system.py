@@ -17,7 +17,7 @@ from core.world import World
 from human.components.social.tribe_component import TribeComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
 from human.components.basic.identity_component import IdentityComponent
-from biology.components.age_component import AgeComponent
+from biology.components.life_cycle_component import LifeCycleComponent
 from human.components.social.social_component import SocialComponent
 from core.systems.event_log_system import EventLog
 
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class LeadershipSystem(System):
+    tick_interval = 10  # 每10帧执行一次
     """领袖传承系统 — 部落领袖更替与选举"""
 
     priority = 40
@@ -63,7 +64,7 @@ class LeadershipSystem(System):
 
             score = 0
             # 年长加分
-            age = world.get_component(entity, AgeComponent)
+            age = world.get_component(entity, LifeCycleComponent)
             if age:
                 score += age.age * self.AGE_WEIGHT
 

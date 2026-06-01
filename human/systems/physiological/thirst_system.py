@@ -16,6 +16,7 @@ from core.components.action_component import ActionComponent, ActionType
 
 
 class ThirstSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     口渴系统
     负责口渴值的自然增长及环境耦合（温度、湿度、干热）

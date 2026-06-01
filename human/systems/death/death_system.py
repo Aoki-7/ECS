@@ -12,7 +12,7 @@
 from core.system import System
 from core.world import World
 
-from biology.components.health_component import HealthComponent
+from biology.components.health_status_component import HealthStatusComponent
 from core.components.death_component import DeathComponent
 
 
@@ -21,8 +21,8 @@ class DeathSystem(System):
         处理死亡状态的系统。
     """
     def update(self, world: World, dt: float):
-        for _, (health, death) in world.get_components(HealthComponent, DeathComponent):
-            health: HealthComponent
+        for _, (health, death) in world.get_components(HealthStatusComponent, DeathComponent):
+            health: HealthStatusComponent
             death: DeathComponent
 
             if health.hp <= 0:

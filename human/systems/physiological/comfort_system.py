@@ -15,6 +15,7 @@ from biology.components.physiology_needs_component import PhysiologyNeedsCompone
 
 
 class ComfortSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     舒适度系统
     负责舒适度和疲劳的环境耦合（高温、高湿、降雨）

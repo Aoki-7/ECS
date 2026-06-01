@@ -26,6 +26,7 @@ from core.components.action_component import (
 
 
 class PathfindingSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     路径规划系统
 

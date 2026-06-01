@@ -16,6 +16,7 @@ from space.space_component import SpaceComponent
 
 
 class HumidityEffectSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """湿度对实体的影响"""
 
     priority = 25

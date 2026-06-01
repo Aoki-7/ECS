@@ -29,6 +29,7 @@ from space.space_component import SpaceComponent
 
 
 class ImmuneSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     免疫系统
 
@@ -56,7 +57,7 @@ class ImmuneSystem(System):
         self._rng = random.Random(seed)
         self.enable_log = True
 
-    def update(self, world: World, dt: float = 1.0):
+    def update(self, world: World, dt: float = 1.0) -> None:
         """
         执行免疫更新
 

@@ -17,6 +17,7 @@ from physiology.components.fatigue_component import FatigueComponent
 
 
 class FatigueSystem(System):
+    tick_interval = 20  # 每20帧执行一次
 
     def update(self, world: World, dt: float):
         for entity, [fatigue, phys] in world.get_components(

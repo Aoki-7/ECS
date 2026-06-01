@@ -15,6 +15,7 @@ from space.space_component import SpaceComponent
 
 
 class RainEffectSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """降雨对实体的影响"""
 
     priority = 25

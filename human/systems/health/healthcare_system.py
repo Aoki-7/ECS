@@ -54,6 +54,7 @@ class Disease:
 
 
 class HealthcareSystem(System):
+    tick_interval = 10  # 每10帧执行一次
     def __init__(self):
         super().__init__()
         self.current_disease = None
@@ -64,13 +65,13 @@ class HealthcareSystem(System):
     def update(self, world: World, dt: float = 0.0):
         """系统更新：扫描疾病并尝试治疗"""
         from biology.components.disease_component import DiseaseComponent
-        from biology.components.health_component import HealthComponent
+        from biology.components.health_status_component import HealthStatusComponent
 
         for entity, (disease_comp, health) in world.get_components(
-            DiseaseComponent, HealthComponent
+            DiseaseComponent, HealthStatusComponent
         ):
             disease_comp: DiseaseComponent
-            health: HealthComponent
+            health: HealthStatusComponent
 
             for disease in list(disease_comp.diseases):
                 # 治疗：降低严重度

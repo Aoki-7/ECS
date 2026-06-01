@@ -27,6 +27,7 @@ from environment.physics_weather.components.physical_weather_component import (
 
 
 class WindSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     风场系统
 

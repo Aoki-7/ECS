@@ -63,8 +63,9 @@ class DialogueTurn:
     @classmethod
     def generate(cls, context: DialogueContext, speaker: int) -> "DialogueTurn":
         """生成对话回合"""
+        all_turns = getattr(cls, '_all_turns', [])
         return cls(
-            turn序号=len(cls._all_turns) + 1 if hasattr(cls, '_all_turns') else 1,
+            turn序号=len(all_turns) + 1,
             speakers=list(context.participants),
             topics=[context.topic] if context.topic else [],
             sentiment=context.sentiment,
@@ -74,6 +75,7 @@ class DialogueTurn:
 
 
 class DialogueSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     对话系统 - 管理实体间对话交互（ECS 版）
     

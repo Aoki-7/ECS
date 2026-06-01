@@ -15,6 +15,7 @@ from resource.stone.components.stone_component import StoneComponent
 
 
 class StoneWeatherSystem(System):
+    tick_interval = 20  # 每20帧执行一次
 
     def update(self, world: World, dt: float):
         for entity, [stone] in world.get_components(StoneComponent):

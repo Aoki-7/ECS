@@ -24,6 +24,7 @@ from biology.components.energy_component import EnergyComponent
 
 
 class MorphologySystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     形态更新系统
 
@@ -34,7 +35,7 @@ class MorphologySystem(System):
         - 处理能量耗尽时的枯萎逻辑
     """
 
-    def update(self, world: World, delta_hours: float = 1.0):
+    def update(self, world: World, delta_hours: float = 1.0) -> None:
         """
         执行形态更新
 

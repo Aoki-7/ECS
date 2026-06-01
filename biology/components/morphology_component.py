@@ -43,3 +43,16 @@ class MorphologyComponent(Component):
 
     # ===== 状态 =====
     wilting: float = 0.0           # 0~1
+
+    # ===== 身体属性（从 BodyComponent 迁入，人类/动物专属）=====
+    weight: float = 0.0            # 体重 / 生物量
+    strength: float = 0.0          # 力量
+    agility: float = 0.0           # 敏捷
+    endurance: float = 0.0         # 耐力
+
+    # ===== 竞争参数（从 CompetitionComponent 迁入）=====
+    canopy_radius: float = 1.0
+    root_radius: float = 1.0
+    competitive_ability: float = 1.0
+    light_competition_score: float = 0.0
+    water_competition_score: float = 0.0

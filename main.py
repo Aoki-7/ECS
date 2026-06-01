@@ -17,7 +17,6 @@
 from __future__ import annotations
 
 import time
-import math
 import random
 import sys
 import logging
@@ -34,7 +33,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 from core.world import World
-from core.system import System
 
 # 空间系统
 from space.space_system import SpaceSystem
@@ -55,7 +53,7 @@ from human.systems.social.leadership_system import LeadershipSystem
 from human.systems.social.loyalty_system import LoyaltySystem
 from human.systems.social.recruit_system import RecruitSystem
 from human.systems.cognitive.decision_system import DecisionSystem
-from human.systems.cognitive.preception_system import PreceptionSystem
+from human.systems.cognitive.preception_system import PerceptionSystem
 from human.systems.cognitive.emotion_system import EmotionSystem
 from human.systems.cognitive.thought_system import ThoughtSystem
 from human.systems.cognitive.goal_system import GoalSystem
@@ -127,8 +125,7 @@ from resource.food.components.food_component import FoodComponent
 # 文明系统
 from civilization import CivilizationSystem
 from human.systems.visualization.human_panel import HumanStatePanel
-from core.event_log_component import EventLogComponent
-from core.systems.event_log_system import EventLogSystem, EventLog
+from core.systems.event_log_system import EventLogSystem
 from environment.atmosphere.system.atmosphere_physics_system import AtmospherePhysicsSystem
 from human.systems.social.role_system import RoleSystem
 from human.systems.economy.economy_system import EconomySystem
@@ -223,7 +220,7 @@ class SimulationLoop:
             # 角色系统（社会身份管理）
             RoleSystem(),
             # 感知层
-            PreceptionSystem(),
+            PerceptionSystem(),
             # 情绪层：根据生理/环境/行为/社交更新情绪
             EmotionSystem(),
             # 思维层：生成内心独白，更新心理状态

@@ -9,9 +9,12 @@
 '''
 
 import math
+import logging
 
 from core.system import System
 from core.world import World
+
+logger = logging.getLogger(__name__)
 
 from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
 from environment.atmosphere.system.atmosphere_physics_system import AtmospherePhysicsSystem
@@ -21,6 +24,7 @@ from environment.physics_weather.components.physical_weather_component import (
 
 
 class PressureSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     气压系统
 
@@ -75,4 +79,4 @@ class PressureSystem(System):
         """
         应用局部气压扰动（用于模拟低压系统、高压脊等）
         """
-        print(f"[PressureSystem] 应用气压扰动：中心({center_lon}, {center_lat})，气压变化 {pressure}hPa")
+        logger.info(f"[PressureSystem] 应用气压扰动：中心({center_lon}, {center_lat})，气压变化 {pressure}hPa")

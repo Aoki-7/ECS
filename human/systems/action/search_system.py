@@ -30,6 +30,7 @@ from human.components.basic.human_component import HumanComponent
 
 
 class SearchSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     SEARCH 行为系统。
     依赖 VisionComponent 将视野内实体反馈到行动目标。

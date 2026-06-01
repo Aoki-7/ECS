@@ -57,6 +57,7 @@ _NIGHT_PAR_FLOOR: float = 0.1
 
 
 class EnvironmentSyncSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     环境同步系统
 

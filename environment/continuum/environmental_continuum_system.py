@@ -63,6 +63,7 @@ from .continuum_config import *
 
 
 class EnvironmentalContinuumSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     环境连续统系统
 

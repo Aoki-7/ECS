@@ -13,12 +13,13 @@ from core.system import System
 from core.world import World
 
 from biology.components.disease_component import DiseaseComponent, DiseaseRecord
-from biology.components.health_component import HealthComponent
+from biology.components.health_status_component import HealthStatusComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 
 
 class DiseaseSpreadSystem(System):
+    tick_interval = 10  # 每10帧执行一次
     """
     疾病传播系统
     处理疾病在邻近实体间的传播和疾病进展
@@ -35,10 +36,10 @@ class DiseaseSpreadSystem(System):
 
         # 第一遍：疾病进展 + 传播
         for entity, (disease_comp, health, space) in list(world.get_components(
-            DiseaseComponent, HealthComponent, SpaceComponent
+            DiseaseComponent, HealthStatusComponent, SpaceComponent
         )):
             disease_comp: DiseaseComponent
-            health: HealthComponent
+            health: HealthStatusComponent
             space: SpaceComponent
 
             for disease in list(disease_comp.diseases):

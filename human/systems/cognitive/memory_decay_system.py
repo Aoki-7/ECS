@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class MemoryDecaySystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     记忆衰减系统
 

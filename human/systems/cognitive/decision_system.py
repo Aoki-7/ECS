@@ -28,12 +28,13 @@ from human.components.cognitive.personality_component import PersonalityComponen
 from human.components.cognitive.brain_component import BrainComponent
 from human.components.cognitive.goal_component import GoalComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-from biology.components.health_component import HealthComponent
-from biology.components.age_component import AgeComponent
+from biology.components.health_status_component import HealthStatusComponent
+from biology.components.life_cycle_component import LifeCycleComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 
 
 class DecisionSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     决策系统 v2.0
     
@@ -55,7 +56,7 @@ class DecisionSystem(System):
 
         for entity, (intent, emotion, memory, personality, brain, health, needs) in world.get_components(
             IntentComponent, EmotionComponent, MemoryComponent, 
-            PersonalityComponent, BrainComponent, HealthComponent,
+            PersonalityComponent, BrainComponent, HealthStatusComponent,
             PhysiologyNeedsComponent
         ):
             self._make_decision(
@@ -67,7 +68,7 @@ class DecisionSystem(System):
     def _make_decision(self, world: World, entity, 
                       intent: IntentComponent, emotion: EmotionComponent, 
                       memory: MemoryComponent, personality: PersonalityComponent,
-                      brain: BrainComponent, health: HealthComponent,
+                      brain: BrainComponent, health: HealthStatusComponent,
                       needs: PhysiologyNeedsComponent,
                       current_time: float, dt: float):
         """为单个实体做出决策"""
@@ -83,7 +84,7 @@ class DecisionSystem(System):
         # 获取目标组件
         goal = world.get_component(entity, GoalComponent)
         relation = world.get_component(entity, RelationshipComponent)
-        age = world.get_component(entity, AgeComponent)
+        age = world.get_component(entity, LifeCycleComponent)
         
         # 计算各意图的加权得分
         scores = self._evaluate_all_factors(

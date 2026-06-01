@@ -12,9 +12,7 @@
 from core.system import System
 from core.world import World
 
-from biology.components.health_component import (
-    HealthComponent,
-)
+from biology.components.health_status_component import HealthStatusComponent
 
 from biology.components.physiology_needs_component import (
     PhysiologyNeedsComponent,
@@ -22,6 +20,7 @@ from biology.components.physiology_needs_component import (
 
 
 class HealthSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     健康状态管理系统
 
@@ -73,8 +72,8 @@ class HealthSystem(System):
             时间步长
         """
 
-        # 单次遍历：查询所有 HealthComponent，按需补查 Needs
-        for entity, components in world.get_components(HealthComponent):
+        # 单次遍历：查询所有 HealthStatusComponent，按需补查 Needs
+        for entity, components in world.get_components(HealthStatusComponent):
             health = components[0]
             needs = world.get_component(entity, PhysiologyNeedsComponent)
             self._apply_health_logic(health=health, needs=needs, dt=dt)
@@ -85,7 +84,7 @@ class HealthSystem(System):
 
     def _apply_health_logic(
         self,
-        health: HealthComponent,
+        health: HealthStatusComponent,
         needs: PhysiologyNeedsComponent | None,
         dt: float,
     ):
@@ -104,16 +103,12 @@ class HealthSystem(System):
             min(float(health.hp), health.max_hp)
         )
 
-        health.fatigue = max(
-            0.0,
-            float(health.fatigue)
-        )
-
         # =====================================================
         # 2. 疲劳伤害
         # =====================================================
 
-        if health.fatigue >= self.fatigue_damage_threshold:
+        fatigue = needs.fatigue if needs else 0.0
+        if fatigue >= self.fatigue_damage_threshold:
             fatigue_damage = (
                 self.fatigue_damage_rate * dt
             )
@@ -121,25 +116,12 @@ class HealthSystem(System):
             health.hp -= fatigue_damage
 
         # =====================================================
-        # 3. injury 持续伤害
+        # 3. 伤口持续伤害
         # =====================================================
 
-        if health.injury:
-
-            total_damage = 0.0
-
-            for _, effect in health.injury.items():
-
-                if not isinstance(effect, dict):
-                    continue
-
-                damage = float(
-                    effect.get("damage", 0.0)
-                )
-
-                total_damage += damage
-
-            health.hp -= total_damage * dt
+        if health.wounds:
+            total_dot = health.update_wounds(dt)
+            health.hp -= total_dot
 
         # =====================================================
         # 4. 生理需求极限伤害
@@ -181,7 +163,7 @@ class HealthSystem(System):
 
         can_recover = (
             health.hp > 0
-            and health.fatigue <= self.recover_threshold
+            and fatigue <= self.recover_threshold
         )
 
         if can_recover:

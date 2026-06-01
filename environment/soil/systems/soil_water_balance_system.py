@@ -19,6 +19,7 @@ from core.system import System
 
 
 class SoilWaterBalanceSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     土壤水分平衡系统
     负责：

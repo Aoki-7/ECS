@@ -15,6 +15,7 @@ from biology.components.species_component import SpeciesComponent
 
 
 class BiologySystem(System):
+    tick_interval = 10  # 每10帧执行一次
 
     def __init__(self):
         self.year_per_time = 0.01

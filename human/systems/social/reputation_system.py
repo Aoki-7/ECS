@@ -21,6 +21,7 @@ from human.components.society.reputation_component import (
 
 
 class ReputationSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     声誉管理系统
 

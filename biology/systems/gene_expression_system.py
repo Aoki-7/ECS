@@ -26,6 +26,7 @@ from biology.traits.trait import Trait
 
 
 class GeneExpressionSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     基因表达系统
 
@@ -40,7 +41,7 @@ class GeneExpressionSystem(System):
     def __init__(self):
         super().__init__()
 
-    def update(self, world: World, dt: float = 1.0):
+    def update(self, world: World, dt: float = 1.0) -> None:
         """
         执行基因表达
 

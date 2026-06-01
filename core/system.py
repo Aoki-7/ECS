@@ -5,6 +5,7 @@ class System:
     """ECS 基础系统类"""
 
     priority = 0  # 默认优先级，数字越小越先执行
+    tick_interval = 1  # 执行间隔（帧数），1表示每帧执行，2表示隔1帧执行
 
     def __init__(self):
         self._enabled = True
@@ -35,7 +36,7 @@ class System:
         pass
 
     # 主执行入口
-    def update(self, world: World, dt: float = 1.0):
+    def update(self, world: World, dt: float = 1.0) -> None:
         """
         系统主更新入口。
         

@@ -16,6 +16,7 @@ from human.components.basic.identity_component import IdentityComponent
 
 
 class IdentitySystem(System):
+    tick_interval = 10  # 每10帧执行一次
 
     def update(self, world: World, dt: float):
         for entity, [identity] in world.get_components(IdentityComponent):

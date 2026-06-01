@@ -64,6 +64,10 @@ class LifeCycleComponent(Component):
         # 最大寿命（小时），超过自动进入衰老
         self.max_age = max_age
 
+        # 生育年龄范围（从 AgeComponent 迁入）
+        self.min_reproductive_age = 18.0
+        self.max_reproductive_age = 50.0
+
         # 各阶段持续时间阈值（小时）
         # [seed, sprout, vegetative, mature, senescence]
         self.stage_durations = (
@@ -126,6 +130,21 @@ class LifeCycleComponent(Component):
     @property
     def stage_name(self) -> str:
         return self.STAGE_NAMES.get(self.stage, "未知")
+
+    # === 年龄别名与辅助（从 AgeComponent 迁入） ===
+
+    @property
+    def age(self) -> float:
+        """年龄别名，兼容原 AgeComponent.age 接口"""
+        return self.current_age
+
+    @age.setter
+    def age(self, value: float):
+        self.current_age = value
+
+    def is_reproductive_age(self) -> bool:
+        """检查是否处于可生育年龄"""
+        return self.min_reproductive_age <= self.current_age <= self.max_reproductive_age
 
     # === 阶段推进 ===
 

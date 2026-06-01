@@ -13,15 +13,15 @@
     Human包含的组件说明，按类别组织
 
     === 基础属性 (Basic Attributes) ===
-    AgeComponent: 年龄组件 - 跟踪实体的年龄，影响生育能力和行为
+    LifeCycleComponent: 年龄+生命阶段 - 跟踪实体的年龄，影响生育能力和行为
     GenderComponent: 性别组件 - 定义实体的性别，用于配对和繁衍逻辑
     IdentityComponent: 身份组件 - 实体的基本身份信息，如姓名
-    BodyComponent: 身体组件 - 实体的身体特征，如身高、体重
+    MorphologyComponent: 身体组件 - 实体的身体特征，如身高、体重
     HumanComponent: 人类标识组件 - 标记实体是否为人类的标识
 
     === 生理需求 (Physiological Needs) ===
     PhysiologyNeedsComponent: 生理需求组件 - 跟踪饥饿、口渴、疲劳等基本需求
-    HealthComponent: 健康组件 - 实体的健康状态和生命值
+    HealthStatusComponent: 健康组件 - 实体的健康状态和生命值
 
     === 认知与行为 (Cognition and Behavior) ===
     BrainComponent: 思维组件 - 实体的思维能力和决策逻辑
@@ -50,18 +50,15 @@
     === 行动与控制 (Actions and Control) ===
     ActionComponent: 行动组件 - 实体的当前行动和行为队列
 
-    === 伤害 (Injury) ===
-    BleedingComponent: 出血组件 - 处理出血伤害
-    FractureComponent: 骨折组件 - 处理骨折伤害
-    InjuryComponent: 伤害组件 - 通用伤害状态
-    PoisonComponent: 中毒组件 - 处理中毒状态
+    === 损伤 (Damage) ===
+    HealthStatusComponent: 损伤组件 - 统一伤口记录与持续伤害
 """
 
 """
 human/components/
 ├── __init__.py              # 更新：包含所有组件的导入和中文说明
 ├── basic/                   # 基础属性
-│   ├── age_component.py     # 年龄组件
+│   ├── 生命周期组件（合并）     # 年龄+生命阶段
 │   ├── gender_component.py  # 性别组件
 │   ├── identity_component.py # 身份组件
 │   ├── body_component.py    # 身体组件
@@ -91,24 +88,20 @@ human/components/
 │   └── inventory/           # 物品组件文件夹
 ├── action/                  # 行动与控制
 │   └── action_component.py  # 行动组件
-└── injury/                  # 伤害
-    ├── bleeding_component.py # 出血组件
-    ├── fracture_component.py # 骨折组件
-    ├── injury_component.py  # 伤害组件
-    └── poison_component.py  # 中毒组件
+
 """
 
 
 # 基础属性
-from .basic.age_component import AgeComponent
+from biology.components.life_cycle_component import LifeCycleComponent
 from .basic.gender_component import GenderComponent
 from .basic.identity_component import IdentityComponent
-from .basic.body_component import BodyComponent
+from biology.components.morphology_component import MorphologyComponent
 from .basic.human_component import HumanComponent
 
 # 生理需求
 from .physiological.physiology_needs_component import PhysiologyNeedsComponent
-from .physiological.health_component import HealthComponent
+from biology.components.health_status_component import HealthStatusComponent
 
 # 认知与行为
 from .cognitive.brain_component import BrainComponent
@@ -151,8 +144,5 @@ from .economic.inventory.inventory_component import InventoryComponent
 # 行动与控制
 from .action.action_component import ActionComponent
 
-# 伤害
-from .injury.bleeding_component import BleedingComponent
-from .injury.fracture_component import FractureComponent
-from .injury.injury_component import InjuryComponent
-from .injury.poison_component import PoisonComponent
+# 损伤
+from biology.components.health_status_component import HealthStatusComponent

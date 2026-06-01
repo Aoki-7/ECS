@@ -34,6 +34,7 @@ class TradeType(Enum):
 
 
 class TradeSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     交易系统
 
@@ -44,7 +45,7 @@ class TradeSystem(System):
     - 记录交易历史和关系变化
     """
 
-    def update(self, world: World, dt: float):
+    def update(self, world: World, dt: float) -> None:
         """更新交易行为"""
         # 先查询最核心的 2 个组件，其余在循环内补查
         for entity, (action, task) in world.get_components(

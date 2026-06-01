@@ -94,7 +94,7 @@ class HumanStatePanel:
         # 导入所有需要的组件
         from human.components.basic.human_component import HumanComponent
         from human.components.basic.identity_component import IdentityComponent
-        from biology.components.age_component import AgeComponent
+        from biology.components.life_cycle_component import LifeCycleComponent
         from biology.components.gender_component import GenderComponent, Gender
         from biology.components.physiology_needs_component import PhysiologyNeedsComponent
         from human.components.cognitive.emotion_component import EmotionComponent
@@ -138,7 +138,7 @@ class HumanStatePanel:
         humans_data = []
         for entity, _ in world.get_components(HumanComponent):
             identity = world.get_component(entity, IdentityComponent)
-            age = world.get_component(entity, AgeComponent)
+            age = world.get_component(entity, LifeCycleComponent)
             gender = world.get_component(entity, GenderComponent)
             needs = world.get_component(entity, PhysiologyNeedsComponent)
             emotion = world.get_component(entity, EmotionComponent)
@@ -219,8 +219,8 @@ class HumanStatePanel:
                 "milestone": "bold green",
                 "warning": "yellow",
                 "info": "dim",
-            }.get(evt.get("severity", "info"), "dim")
-            event_lines.append(Text(f"  [{evt['type']}] {evt['description']}", style=severity_style))
+            }.get(evt.severity, "dim")
+            event_lines.append(Text(f"  [{evt.type}] {evt.description}", style=severity_style))
         
         if event_lines:
             from rich.console import Group

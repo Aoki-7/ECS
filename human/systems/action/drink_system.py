@@ -24,6 +24,7 @@ from resource.components.resource_component import ResourceComponent
 
 
 class DrinkSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
         饮水系统
         仅负责处理 ActionType.DRINK 行为。

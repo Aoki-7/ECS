@@ -14,6 +14,7 @@ from biology.components.physiology_needs_component import PhysiologyNeedsCompone
 
 
 class SocialNeedSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     社交需求系统
     只负责社交需求的自然衰减

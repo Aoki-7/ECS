@@ -16,6 +16,7 @@ from biology.components.physiology_needs_component import PhysiologyNeedsCompone
 
 
 class ActionSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
         动作总控系统（调度器）
         
@@ -27,6 +28,10 @@ class ActionSystem(System):
         
         不执行具体动作逻辑，由专用子系统（如 EatSystem, DrinkSystem 等）处理。
     """
+
+    # 能量过低强制睡眠阈值
+    ENERGY_CRITICAL_THRESHOLD = 15
+
     def update(self, world: World, dt):
         for _, (action, needs) in world.get_components(ActionComponent, PhysiologyNeedsComponent):
             
@@ -37,7 +42,7 @@ class ActionSystem(System):
             needs: PhysiologyNeedsComponent
 
             # 能量过低保底：强制睡眠恢复体力
-            if needs.energy < 15:
+            if needs.energy < self.ENERGY_CRITICAL_THRESHOLD:
                 if action.current_action not in (ActionType.SLEEP, ActionType.IDLE):
                     action.current_action = ActionType.IDLE
                     action.status = ActionStatus.IDLE

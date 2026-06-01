@@ -19,6 +19,7 @@ from environment.physics_weather.components.weather_event_components import (
 
 
 class WeatherLifetimeSystem(System):
+    tick_interval = 20  # 每20帧执行一次
     """
     异常生命周期系统
 

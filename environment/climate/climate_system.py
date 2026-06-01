@@ -19,6 +19,7 @@ from environment.climate.climate_component import ClimateComponent
 
 
 class ClimateSystem(System):
+    tick_interval = 2  # 每2帧执行一次
     """
     气候趋势系统
 

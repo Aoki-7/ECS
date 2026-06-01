@@ -20,14 +20,15 @@ from core.system import System
 from core.world import World
 from core.systems.event_log_system import EventLog
 
-from biology.components.health_component import HealthComponent
+from biology.components.health_status_component import HealthStatusComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-from biology.components.age_component import AgeComponent
+from biology.components.life_cycle_component import LifeCycleComponent
 
 logger = logging.getLogger(__name__)
 
 
 class HumanDeathSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     人类死亡判定系统
 
@@ -45,7 +46,7 @@ class HumanDeathSystem(System):
         dead_entities: dict = {}
 
         for entity, (health, needs, age) in world.get_components(
-            HealthComponent, PhysiologyNeedsComponent, AgeComponent
+            HealthStatusComponent, PhysiologyNeedsComponent, LifeCycleComponent
         ):
             if age.age >= age.max_age:
                 dead_entities[entity] = "old_age"

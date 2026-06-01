@@ -5,6 +5,7 @@ from time_module.time_component import TimeComponent
 
 
 class TimeSystem(System):
+    tick_interval = 1  # 每1帧执行一次
     """
     纯时间推进系统
     - 支持时间倍率

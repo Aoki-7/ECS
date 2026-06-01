@@ -39,6 +39,7 @@ class ResolutionStrategy:
 
 
 class ConflictDetectionSystem(System):
+    tick_interval = 5  # 每5帧执行一次
     """
     冲突检测系统
 
