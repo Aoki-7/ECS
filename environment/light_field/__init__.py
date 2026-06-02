@@ -1,33 +1,28 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+光场模块 — 地表太阳辐射计算
 
+职责：
+    - 根据太阳位置、大气散射、云量遮挡、地形阴影计算地表光照
+    - 为植物光合作用（biology/）提供能量输入
+    - 为地表加热、蒸发、人类视觉提供光照数据
 
-# | 来源         | 影响    |
-# | ---------- | ----- |
-# | Season     | 太阳高度角 |
-# | Weather    | 云量遮挡  |
-# | Atmosphere | 散射    |
-# | Terrain    | 阴影    |
-# | TimeSystem | 昼夜变化  |
+输入来源：
+    - SeasonSystem     → 太阳高度角
+    - PhysicsWeatherSystem → 云量遮挡
+    - AtmosphereSystem → 散射参数
+    - TerrainSystem    → 地形阴影
+    - TimeSystem       → 昼夜变化
 
+输出用途：
+    - Vegetation（biology/） → 光合作用
+    - SoilTemperatureSystem   → 地表加热
+    - EvaporationSystem       → 蒸发驱动
+    - Human/Animal Perception → 视觉范围修正
 
-# | 系统          | 用途   |
-# | ----------- | ---- |
-# | Vegetation  | 光合作用 |
-# | Temperature | 地表加热 |
-# | Evaporation | 蒸发   |
-# | Agent       | 视觉   |
-
-
-# environment/
-#  └── light_field/
-#       ├── components/
-#       │     light_scatter_component.py        # 大气光散射组件
-#       │     solar_position_component.py       # 太阳位置组件
-#       │     solar_radiation_component.py      # 大气光散射
-#       │
-#       ├── system/
-#       │     light_field_system.py              # 
-#       │     could_system.py
-#       │     pressure_system.py
-#       │     convection_system.py
-#       │     thermodynamics_system.py
-#       │     wind_system.py
+子模块：
+    - components/ : LightFieldComponent, SolarPositionComponent, SolarRadiationComponent
+    - system/     : LightFieldSystem（辐射传输计算）
+    - systems/    : 光场主系统
+"""

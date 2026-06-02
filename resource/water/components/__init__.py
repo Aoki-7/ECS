@@ -1,9 +1,8 @@
-#!/usr/bin/env python
-# -*- encoding: utf-8 -*-
-'''
-@文件:__init__.py
-@说明:water components模块初始化
-@时间:2026/04/13
-@作者:GitHub Copilot
-@版本:1.0
-'''
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+水资源组件包
+
+包含：
+    - WaterComponent : 描述水源的当前储量、水质、可再生速率
+"""

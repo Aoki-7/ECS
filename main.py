@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-统一模拟入口脚本
+ECS 世界模拟引擎 — 统一模拟入口脚本
 
-该脚本仅作为 CLI 入口，负责解析参数并启动 SimulationLoop。
-核心模拟逻辑已迁移至 application/simulation_loop.py。
+职责：
+    - 作为 CLI 入口，解析参数并启动 SimulationLoop
+    - 初始化基础世界状态（人类、植物、食物、水源）
+    - 运行标准模拟管线（时间→环境→人类→生物→规则→文明）
+
+核心模拟逻辑已迁移至 application/simulation_loop.py，本模块仅做最轻量的编排。
 
 运行方式：
     python main.py

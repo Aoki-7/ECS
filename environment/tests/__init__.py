@@ -9,4 +9,10 @@
 
 或单独运行某一模块:
     python -m environment.tests.test_components
+
+测试范围：
+    - 组件序列化/反序列化
+    - 系统物理计算正确性
+    - 环境管线数据流一致性
+    - 连续统扩散数值稳定性
 """
