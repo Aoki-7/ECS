@@ -9,6 +9,7 @@ EventLogSystem - 世界事件日志系统
 - 通过 EventLog facade 提供向后兼容的静态接口
 """
 
+import logging
 from typing import List, Dict, Optional, Tuple, Any
 from collections import defaultdict
 from dataclasses import dataclass
@@ -16,6 +17,8 @@ from dataclasses import dataclass
 from core.system import System
 from core.world import World
 from core.event_log_component import EventLogComponent
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -83,7 +86,7 @@ class EventLogSystem(System):
             if time_comp:
                 current_time = time_comp.total_hours
         except Exception as e:
-            logger.debug(f"[EventLog] 获取时间失败: {e}")
+            logger.warning(f"[EventLog] 获取时间失败: {e}")
 
         step = getattr(world, '_step_count', 0)
 

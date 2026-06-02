@@ -53,6 +53,13 @@ class PathfindingSystem(System):
             if action.current_action != ActionType.MOVE_TO:
                 continue
 
+            # 如果目标实体已被删除，清理路径缓存
+            if getattr(action, 'target_entity', None) is not None:
+                if world.query_entity(action.target_entity) is None:
+                    action._path = []
+                    action._path_index = 0
+                    continue
+
             target = action.target_pos
             if target is None:
                 continue

@@ -2,16 +2,14 @@
 # -*- encoding: utf-8 -*-
 """
 @文件:human_death_system.py
-@说明:人类死亡判定系统
+@说明:人类死亡判定系统 [已弃用]
 
-负责检测并移除满足死亡条件的人类实体。
+⚠️  本文件已弃用。死亡系统已重构为生命周期子领域，新实现位于：
+    biology/lifecycle/death/systems/human_death_trigger_system.py
+    biology/lifecycle/death/systems/death_system.py
+    biology/lifecycle/corpse/systems/corpse_system.py
 
-死亡条件：
-    - hp <= 0           → 生命值耗尽
-    - energy <= 0       → 能量耗尽
-    - hunger >= 100     → 饥饿致死
-    - thirst >= 100     → 脱水致死
-    - age >= max_age    → 老死
+保留本文件仅用于向后兼容，未来版本将删除。
 """
 
 import logging

@@ -2,12 +2,16 @@
 # -*- encoding: utf-8 -*-
 """
 @文件:biology/systems/death_system.py
-@说明:通用生物死亡判定系统
+@说明:通用生物死亡判定系统 [已弃用]
 
-负责检测并移除满足死亡条件的通用生物实体。
+⚠️  本文件已弃用。死亡系统已重构为生命周期子领域，新实现位于：
+    biology/lifecycle/death/systems/death_system.py          (统一执行器)
+    biology/lifecycle/death/systems/human_death_trigger_system.py   (人类死亡触发)
+    biology/lifecycle/death/systems/creature_death_trigger_system.py (生物死亡触发)
+    biology/lifecycle/death/systems/death_event_system.py    (事件传播)
+    biology/lifecycle/corpse/systems/corpse_system.py        (尸体处理)
 
-死亡条件：
-    - energy.value <= 0  → 能量耗尽
+保留本文件仅用于向后兼容，未来版本将删除。
 """
 
 import logging

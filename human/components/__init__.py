@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -13,15 +12,12 @@
     Human包含的组件说明，按类别组织
 
     === 基础属性 (Basic Attributes) ===
-    LifeCycleComponent: 年龄+生命阶段 - 跟踪实体的年龄，影响生育能力和行为
     GenderComponent: 性别组件 - 定义实体的性别，用于配对和繁衍逻辑
     IdentityComponent: 身份组件 - 实体的基本身份信息，如姓名
-    MorphologyComponent: 身体组件 - 实体的身体特征，如身高、体重
     HumanComponent: 人类标识组件 - 标记实体是否为人类的标识
 
     === 生理需求 (Physiological Needs) ===
     PhysiologyNeedsComponent: 生理需求组件 - 跟踪饥饿、口渴、疲劳等基本需求
-    HealthStatusComponent: 健康组件 - 实体的健康状态和生命值
 
     === 认知与行为 (Cognition and Behavior) ===
     BrainComponent: 思维组件 - 实体的思维能力和决策逻辑
@@ -50,58 +46,18 @@
     === 行动与控制 (Actions and Control) ===
     ActionComponent: 行动组件 - 实体的当前行动和行为队列
 
-    === 损伤 (Damage) ===
-    HealthStatusComponent: 损伤组件 - 统一伤口记录与持续伤害
+    注意：
+        - LifeCycleComponent、MorphologyComponent、HealthStatusComponent 属于 biology 包
+        - 请直接从 biology.components 导入，而非从 human.components
 """
-
-"""
-human/components/
-├── __init__.py              # 更新：包含所有组件的导入和中文说明
-├── basic/                   # 基础属性
-│   ├── 生命周期组件（合并）     # 年龄+生命阶段
-│   ├── gender_component.py  # 性别组件
-│   ├── identity_component.py # 身份组件
-│   ├── body_component.py    # 身体组件
-│   └── human_component.py   # 人类标识组件
-├── physiological/           # 生理需求
-│   ├── physiology_needs_component.py # 生理需求组件
-│   └── health_component.py  # 健康组件
-├── cognitive/               # 认知与行为
-│   ├── brain_component.py   # 思维组件
-│   ├── intent_component.py  # 意图组件
-│   ├── task_component.py    # 任务组件
-│   ├── goal_component.py    # 目标组件
-│   ├── memory_component.py  # 记忆组件
-│   ├── personality_component.py # 个性组件
-│   └── knowledge_component.py # 知识组件
-├── social/                  # 社交与关系
-│   ├── social_component.py  # 社交组件
-│   ├── relationship_component.py # 关系组件
-│   └── reproduction_component.py # 繁衍组件
-├── abilities/               # 能力与技能
-│   ├── skill_component.py   # 技能组件
-│   ├── search_component.py  # 搜索组件
-│   ├── vision_component.py  # 视野组件
-│   └── velocity_component.py # 速度组件
-├── economic/                # 经济与物品
-│   ├── economy_component.py # 经济组件
-│   └── inventory/           # 物品组件文件夹
-├── action/                  # 行动与控制
-│   └── action_component.py  # 行动组件
-
-"""
-
 
 # 基础属性
-from biology.components.life_cycle_component import LifeCycleComponent
 from .basic.gender_component import GenderComponent
 from .basic.identity_component import IdentityComponent
-from biology.components.morphology_component import MorphologyComponent
 from .basic.human_component import HumanComponent
 
 # 生理需求
 from .physiological.physiology_needs_component import PhysiologyNeedsComponent
-from biology.components.health_status_component import HealthStatusComponent
 
 # 认知与行为
 from .cognitive.brain_component import BrainComponent
@@ -143,6 +99,3 @@ from .economic.inventory.inventory_component import InventoryComponent
 
 # 行动与控制
 from .action.action_component import ActionComponent
-
-# 损伤
-from biology.components.health_status_component import HealthStatusComponent

@@ -63,11 +63,11 @@ class DialogueTurn:
     @classmethod
     def generate(cls, context: DialogueContext, speaker: int) -> "DialogueTurn":
         """生成对话回合"""
-        if not hasattr(cls, '_all_turns'):
-            cls._all_turns = []
-        cls._all_turns.append(None)  # 占位，实际对象在构造后由调用方管理
+        if not hasattr(cls, '_turn_counter'):
+            cls._turn_counter = 0
+        cls._turn_counter += 1
         return cls(
-            turn序号=len(cls._all_turns),
+            turn序号=cls._turn_counter,
             speakers=list(context.participants),
             topics=[context.topic] if context.topic else [],
             sentiment=context.sentiment,
@@ -90,7 +90,7 @@ class DialogueSystem(System):
     
     def __init__(self):
         super().__init__()
-        self.active_dialogue: Optional[DialogueContext] = None
+        self.active_dialogues: Dict[int, DialogueContext] = {}
         self.turn_history: List[DialogueTurn] = []
     
     def start_conversation(self, topic: str, participants: Optional[List[int]] = None) -> DialogueContext:
@@ -103,13 +103,18 @@ class DialogueSystem(System):
         if participants:
             for p in participants:
                 context.add_participant(p)
-        self.active_dialogue = context
+                self.active_dialogues[p] = context
         return context
     
     def add_speaker(self, entity_id: int):
         """添加对话参与者"""
-        if self.active_dialogue:
-            self.active_dialogue.add_participant(entity_id)
+        dialogue = self.active_dialogues.get(entity_id)
+        if dialogue is None:
+            if not self.active_dialogues:
+                return
+            dialogue = next(iter(self.active_dialogues.values()))
+        dialogue.add_participant(entity_id)
+        self.active_dialogues[entity_id] = dialogue
     
     def respond_to_message(self, message: str, from_entity: int) -> str:
         """
@@ -121,7 +126,8 @@ class DialogueSystem(System):
         Returns:
             合适的回应文本
         """
-        if not self.active_dialogue:
+        dialogue = self.active_dialogues.get(from_entity)
+        if not dialogue:
             return "请先开始对话"
         
         # 简单关键词匹配来生成回应
@@ -163,8 +169,10 @@ class DialogueSystem(System):
         }
         
         response_list = responses.get(category, [""])
+        dialogue = self.active_dialogues.get(speaker)
         if response_list:
-            self.active_dialogue.sentiment += random.uniform(-0.2, 0.3)
+            if dialogue:
+                dialogue.sentiment += random.uniform(-0.2, 0.3)
             return random.choice(response_list)
         return ""
     
@@ -187,16 +195,17 @@ class DialogueSystem(System):
             ]
             return random.choice(generic_responses)
     
-    def update_context(self, message: str, sentiment: float = None):
+    def update_context(self, message: str, sentiment: float = None, entity_id: int = None):
         """更新对话上下文"""
-        if self.active_dialogue and sentiment:
-            self.active_dialogue.sentiment = max(-1, min(1, 
-                self.active_dialogue.sentiment + sentiment * 0.1))
+        dialogue = self.active_dialogues.get(entity_id) if entity_id is not None else None
+        if dialogue and sentiment:
+            dialogue.sentiment = max(-1, min(1, 
+                dialogue.sentiment + sentiment * 0.1))
     
     def save_turn(self, context: DialogueContext, speakers: List[int], topics: List[str]):
         """保存对话轮次记录"""
         if not self.turn_history:
-           DialogueTurn._all_turns = []
+            DialogueTurn._turn_counter = 0
         
         turn = DialogueTurn(
             turn序号=len(self.turn_history) + 1,

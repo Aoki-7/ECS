@@ -10,11 +10,8 @@ logger = logging.getLogger(__name__)
 from core.entity import Entity
 from core.component import Component
 
-from world.world_entity import WorldEntity
-from time_module.time_component import TimeComponent
-from environment.environment_component import EnvironmentComponent
-
-from space.space_system import SpaceSystem
+# 注意：core/world.py 不再在顶层导入任何应用层模块（如 time_module, environment, world.entity）
+# 以避免框架层依赖应用层。相关组件由 application 层在初始化时注入。
 
 
 
@@ -38,14 +35,8 @@ class World:
         self.systems = []
         self.tick_count = 0  # 世界 tick 计数，供 System 执行间隔判断
 
-        # === 创建唯一世界实体 ===
-        self._world_entity = WorldEntity()
-        # === 强制初始化核心组件 ===
-        self._world_entity.add_component(TimeComponent())
-
-        # === 通过标准接口添加空间系统 ===
-        space_system = SpaceSystem()
-        self.add_system(space_system)
+        # === 世界实体（由 application 层注入，不由 core 自动创建）===
+        self._world_entity: Entity | None = None
 
     # ====
     # Entity
@@ -65,10 +56,14 @@ class World:
         if not self.has_entity(entity):
             return  # 非法或过期 entity
 
-        # 从SpaceSystem反注册
-        space_system = self.get_system(SpaceSystem)
-        if space_system:
-            space_system.remove_entity(entity.id)
+        # 从 SpaceSystem 反注册（延迟导入避免框架层依赖 space 包）
+        try:
+            from space.space_system import SpaceSystem
+            space_system = self.get_system(SpaceSystem)
+            if space_system:
+                space_system.remove_entity(entity.id)
+        except ImportError:
+            pass
 
         # 移除组件
         for comp_dict in self.components.values():
@@ -158,6 +153,7 @@ class World:
         # 自动注册SpaceComponent到SpaceSystem
         from space.space_component import SpaceComponent
         if isinstance(component, SpaceComponent):
+            from space.space_system import SpaceSystem
             space_system = self.get_system(SpaceSystem)
             if space_system:
                 space_system.add_entity(entity.id, component)
@@ -166,6 +162,7 @@ class World:
         # 从SpaceSystem反注册
         from space.space_component import SpaceComponent
         if component_type is SpaceComponent or issubclass(component_type, SpaceComponent):
+            from space.space_system import SpaceSystem
             space_system = self.get_system(SpaceSystem)
             if space_system:
                 space_system.remove_entity(entity.id)
@@ -229,16 +226,32 @@ class World:
     # 世界级访问接口
     # =====
 
-    def get_time(self) -> TimeComponent:
+    def get_time(self):
+        """获取世界时间组件。返回 None 表示尚未注册 TimeComponent。"""
+        if self._world_entity is None:
+            return None
+        from time_module.time_component import TimeComponent
         return self._world_entity.get_component(TimeComponent)
 
-    def get_environment(self) -> EnvironmentComponent:
+    def get_environment(self):
+        """获取环境组件。返回 None 表示尚未注册 EnvironmentComponent。"""
+        if self._world_entity is None:
+            return None
+        from environment.environment_component import EnvironmentComponent
         return self._world_entity.get_component(EnvironmentComponent)
 
-    def get_world_entity(self) -> WorldEntity:
+    def get_world_entity(self) -> Entity | None:
+        """获取世界实体。返回 None 表示尚未设置。"""
         return self._world_entity
 
-    def get_world_component(self, component_type) -> Component:
+    def set_world_entity(self, entity: Entity) -> None:
+        """设置世界实体。由 application 层在初始化时调用。"""
+        self._world_entity = entity
+
+    def get_world_component(self, component_type) -> Component | None:
+        """从世界实体上获取指定类型的组件。"""
+        if self._world_entity is None:
+            return None
         return self._world_entity.get_component(component_type)
 
         
@@ -283,7 +296,7 @@ class World:
                     f"\n==\nECS System Error\nSystem: {system_name}\ndt: {dt}\n"
                     f"------------------------------\n{traceback.format_exc()}\n==\n"
                 )
-                raise
+                # One System failing should not prevent other Systems from running.
 
     def get_system(self, system_type):
         # 使用缓存避免每帧线性扫描

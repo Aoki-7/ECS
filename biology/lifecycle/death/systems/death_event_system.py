@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+"""
+DeathEventSystem — 死亡事件传播与社会影响系统
+
+职责：
+    1. 扫描新死亡的实体（DeadTagComponent.processed == True 但尚未广播）
+    2. 将死亡事件传播给死者的亲属、朋友、部落成员
+    3. 更新社会情绪（哀悼、恐慌）
+    4. 触发人口统计更新
+    5. （预留）遗产继承、职位空缺等社会连锁反应
+
+这是一个纯骨架实现，为后续扩展预留接口。
+"""
+
+import logging
+from typing import Optional
+
+from core.system import System
+from core.world import World
+
+from biology.lifecycle.death.components.dead_tag_component import DeadTagComponent
+from biology.lifecycle.death.components.death_reason_component import DeathReasonComponent
+from biology.lifecycle.death.components.death_time_component import DeathTimeComponent
+
+logger = logging.getLogger(__name__)
+
+
+class DeathEventSystem(System):
+    tick_interval = 5  # 每 5 帧执行一次，降低开销
+    """
+    死亡事件传播系统。
+
+    扫描新死亡实体并触发社会影响。
+    """
+
+    def update(self, world: World, dt: float = 1.0) -> None:
+        for entity, (dead_tag,) in list(world.get_components(DeadTagComponent)):
+            if not world.has_entity(entity):
+                continue
+
+            if dead_tag.processed:
+                # 已处理过，但这里可以检查是否有新的传播需求
+                continue
+
+            # 标记为已广播
+            dead_tag.processed = True
+
+            reason_comp = world.get_component(entity, DeathReasonComponent)
+            time_comp = world.get_component(entity, DeathTimeComponent)
+
+            reason = reason_comp.primary_reason if reason_comp else "unknown"
+            death_time = time_comp.world_time_display if time_comp else "unknown"
+
+            # 记录社会影响日志（骨架实现）
+            logger.info(f"[DeathEvent] E{entity.id} death broadcast: {reason} at {death_time}")
+
+            # TODO: 扩展点 —— 实现以下功能
+            # 1. 查询死者的亲属/朋友/部落成员
+            # 2. 在相关实体的 MemoryComponent 中记录死亡事件
+            # 3. 更新部落情绪（恐惧、悲伤）
+            # 4. 触发职位空缺（如果死者是首领/长老）
+            # 5. 触发遗产分配

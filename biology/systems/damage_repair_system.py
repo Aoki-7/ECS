@@ -72,7 +72,7 @@ class DamageRepairSystem(System):
                 damage.total_damage = max(0.0, damage.total_damage - heal_amount)
 
                 # 更新伤口
-                for wound in damage.wounds:
+                for wound in list(damage.wounds):
                     wound.age += dt
                     # 按严重程度比例分配修复量
                     ratio = wound.severity / max(

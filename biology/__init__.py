@@ -14,11 +14,11 @@
     from biology import GenomeComponent, GeneExpressionSystem
 """
 
-from biology.components.energy_component import EnergyComponent
+from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.components.genome_component import GenomeComponent
 from biology.components.phenotype_component import PhenotypeComponent
-from biology.components.morphology_component import MorphologyComponent
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.morphology_component import MorphologyComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 
 from biology.components.immune_component import ImmuneComponent
 from biology.components.health_status_component import HealthStatusComponent

@@ -23,19 +23,13 @@ from human.components.social.relationship_component import RelationshipComponent
 from human.components.cognitive.personality_component import PersonalityComponent
 from human.components.cognitive.emotion_component import EmotionComponent
 from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.systems.interaction.conflict_resolution_system import ResolutionStrategy
 
 logger = logging.getLogger(__name__)
 
 
 class ConflictType:
     RELATIONAL = "RELATIONAL"
-
-
-class ResolutionStrategy:
-    COLLABORATION = "COLLABORATION"
-    COMPETITION = "COMPETITION"
-    AVOIDANCE = "AVOIDANCE"
-    COMPROMISE = "COMPROMISE"
 
 
 class ConflictDetectionSystem(System):
@@ -93,7 +87,7 @@ class ConflictDetectionSystem(System):
                     "type": ConflictType.RELATIONAL,
                     "opponent_id": other_id,
                     "intensity": intensity,
-                    "strategy": strategy if strategy else "AVOIDANCE",
+                    "strategy": strategy.name if strategy else "AVOIDANCE",
                 }
                 conflict_comp.add_conflict(conflict)
 
@@ -109,7 +103,7 @@ class ConflictDetectionSystem(System):
                 )
 
     @staticmethod
-    def _choose_strategy(personality: PersonalityComponent, emotion: EmotionComponent) -> Optional[str]:
+    def _choose_strategy(personality: PersonalityComponent, emotion: EmotionComponent) -> Optional[ResolutionStrategy]:
         """根据性格和情绪选择解决策略"""
         if personality.kindness > 0.7:
             return ResolutionStrategy.COLLABORATION

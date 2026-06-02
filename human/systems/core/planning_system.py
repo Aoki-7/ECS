@@ -39,10 +39,9 @@ class PlanningSystem(System):
 
     def __init__(self):
         super().__init__()
-        self._planned_this_tick = set()
 
     def update(self, world: World, dt):
-        self._planned_this_tick.clear()
+        planned_this_tick = set()
 
         for entity, (intent, task, action, space) in world.get_components(
             IntentComponent, TaskComponent, ActionComponent, SpaceComponent
@@ -54,7 +53,7 @@ class PlanningSystem(System):
             space: SpaceComponent
 
             # 防止同 tick 重复规划
-            if entity.id in self._planned_this_tick:
+            if entity.id in planned_this_tick:
                 continue
 
             # 已有明确的后续任务队列时不重复规划
@@ -186,7 +185,7 @@ class PlanningSystem(System):
                     ActionType.SOCIALIZE
                 ]
 
-            self._planned_this_tick.add(entity.id)
+            planned_this_tick.add(entity.id)
 
     def _find_harvestable_plant(self, entity, world: World):
         """在视野内查找可收获的植物实体"""

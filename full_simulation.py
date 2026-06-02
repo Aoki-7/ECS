@@ -23,9 +23,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 # =========================================================
-# 复用 main.py 的核心模拟循环
+# 复用 application 层的核心模拟循环
 # =========================================================
-from main import SimulationLoop
+from application.simulation_loop import SimulationLoop
 
 # =========================================================
 # 额外系统导入

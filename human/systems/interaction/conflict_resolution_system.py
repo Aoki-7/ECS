@@ -58,6 +58,8 @@ class ConflictInstance:
 
 class ConflictResolutionSystem(System):
     tick_interval = 5  # 每5帧执行一次
+    _MAX_HISTORY_SIZE = 100
+    _MAX_RESOLVED_SIZE = 100
     """
     冲突解决系统
 
@@ -72,6 +74,11 @@ class ConflictResolutionSystem(System):
         self.resolved_conflicts: List[ConflictInstance] = []
         self.resolution_history: List[Dict] = []
         self.relationship_quality: Dict[int, RelationshipQuality] = {}
+
+    def _add_resolution_history(self, entry: dict) -> None:
+        self.resolution_history.append(entry)
+        if len(self.resolution_history) > self._MAX_HISTORY_SIZE:
+            self.resolution_history.pop(0)
 
     def add_conflict(self, conflict_type, description: str, entities: List[int]) -> ConflictInstance:
         """添加/记录一个冲突事件"""
@@ -130,7 +137,9 @@ class ConflictResolutionSystem(System):
         conflict.current_phase = "resolved"
         conflict.outcome = result["outcome"]
         self.resolved_conflicts.append(conflict)
-        self.resolution_history.append(result)
+        if len(self.resolved_conflicts) > self._MAX_RESOLVED_SIZE:
+            self.resolved_conflicts.pop(0)
+        self._add_resolution_history(result)
 
         return result
 
