@@ -28,7 +28,8 @@ class NavigationSystem(System):
 
     def update(self, world: World, dt):
         """每帧更新导航状态"""
-        for entity, (action,) in world.get_components(ActionComponent):
+        for entity, (action,) in list(world.get_components(ActionComponent)):
+            # get_components 保证返回非 None，此检查为防御性编程
             if action is None:
                 continue
             
@@ -158,59 +159,6 @@ class NavigationSystem(System):
         
         return path
 
-    def find_nearest_resource(self, entity_pos: Tuple[float, float], 
-                               resource_types: List[str]) -> Optional[Tuple[float, float, str]]:
-        """寻找最近的资源
-        
-        Args:
-            entity_pos: 实体当前位置 (x, y)
-            resource_types: 要查找的资源类型列表
-            
-        Returns:
-            最近资源的坐标和类型，或 None
-        """
-        nearest = None
-        nearest_dist = float('inf')
-        
-        for _, (resource,) in world.get_components(ResourceComponent):
-            if not resource or resource.resource_type not in resource_types:
-                continue
-            
-            dist = math.sqrt(
-                (resource.x - entity_pos[0])**2 + 
-                (resource.y - entity_pos[1])**2
-            )
-            
-            if dist < nearest_dist:
-                nearest_dist = dist
-                nearest = (resource.x, resource.y, resource.resource_type)
-        
-        return nearest
-
-    def is_safe(self, pos: Tuple[float, float]) -> bool:
-        """检查位置是否安全（远离危险区域）
-        
-        Args:
-            pos: 要检查的位置
-            
-        Returns:
-            是否安全
-        """
-        for _, (danger,) in world.get_components(DangerComponent):
-            if not danger:
-                continue
-            
-            dist = math.sqrt(
-                (danger.x - pos[0])**2 + 
-                (danger.y - pos[1])**2
-            )
-            
-            if dist < 50.0:  # 危险区域半径
-                return False
-        
-        return True
-
-
 # 行为决策优先级映射
 ACTION_PRIORITY = {
     'eat': 0.9,
@@ -269,28 +217,3 @@ def behavior_decision(
     return decision
 
 
-# 简单的资源数据结构（如需要，可在系统中补充）
-@dataclass
-class ResourceComponent:
-    """资源组件"""
-    resource_type: str = "food"
-    quantity: float = 10.0
-    x: float = 0.0
-    y: float = 0.0
-    
-    def to_dict(self) -> dict:
-        return {
-            "resource_type": self.resource_type,
-            "quantity": self.quantity,
-            "x": self.x,
-            "y": self.y
-        }
-
-
-# 危险区域组件（用于安全检查）
-@dataclass
-class DangerComponent:
-    """危险区域组件"""
-    x: float = 0.0
-    y: float = 0.0
-    danger_level: float = 1.0

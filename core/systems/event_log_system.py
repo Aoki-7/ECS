@@ -85,7 +85,7 @@ class EventLogSystem(System):
             time_comp = world.get_time()
             if time_comp:
                 current_time = time_comp.total_hours
-        except Exception as e:
+        except (AttributeError, TypeError) as e:
             logger.warning(f"[EventLog] 获取时间失败: {e}")
 
         step = getattr(world, '_step_count', 0)

@@ -64,7 +64,7 @@ class CorpseSystem(System):
             from environment.atmosphere.components.atmosphere_component import AtmosphereComponent
             for _, (atm,) in world.get_components(AtmosphereComponent):
                 return getattr(atm, 'air_temperature', 20.0)
-        except Exception as e:
+        except (AttributeError, TypeError) as e:
             logger.warning(f"Failed to get ambient temperature: {e}")
         return 20.0  # 默认 20°C
 

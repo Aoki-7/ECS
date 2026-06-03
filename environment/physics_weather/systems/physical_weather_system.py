@@ -162,7 +162,7 @@ class PhysicalWeatherSystem(System):
         # 3️⃣ 水汽演化 & 相对湿度计算
         # =
         self._update_humidity(
-            weather, delta_hours, total_rainfall_factor,
+            world, weather, delta_hours, total_rainfall_factor,
             climate_humidity_bias,
         )
 
@@ -296,6 +296,7 @@ class PhysicalWeatherSystem(System):
 
     def _update_humidity(
         self,
+        world: World,
         weather: PhysicalWeatherComponent,
         delta_hours: float,
         rainfall_factor: float = 1.0,
@@ -345,7 +346,7 @@ class PhysicalWeatherSystem(System):
                     * delta_hours
                 )
                 evaporation += soil_evap
-        except Exception:
+        except (ImportError, AttributeError):
             # 土壤组件不存在时，静默跳过（非关键路径）
             pass
 

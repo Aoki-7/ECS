@@ -28,7 +28,7 @@ class GarbageCleanupSystem(System):
 
     def update(self, world: World, dt: float):
         garbage_entities = []
-        for entity, [garbage] in world.get_components(GarbageComponent):
+        for entity, [garbage] in list(world.get_components(GarbageComponent)):
             garbage_entities.append(entity)
 
         excess = len(garbage_entities) - self.max_garbage

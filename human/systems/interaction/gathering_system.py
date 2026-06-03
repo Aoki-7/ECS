@@ -104,10 +104,10 @@ class GatheringSystem(System):
         """
         nearby = []
         
-        # 遍历所有资源实体
-        for entity, (resource, res_space) in world.get_components(
+        # 遍历所有资源实体（使用 list() 保护防止迭代时修改）
+        for entity, (resource, res_space) in list(world.get_components(
             ResourceComponent, SpaceComponent
-        ):
+        )):
             # 检查资源类型是否匹配
             if resource.resource_type != resource_type:
                 continue

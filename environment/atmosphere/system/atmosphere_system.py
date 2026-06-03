@@ -69,7 +69,7 @@ class AtmosphereSystem(System):
                 subsystem = cls()
                 subsystem.priority = ATMOSPHERE_SYSTEM_PRIORITY
                 self._subsystems.append(subsystem)
-            except Exception as e:
+            except (ImportError, AttributeError) as e:
                 logger.warning(f"[AtmosphereSystem] 子系统 {name} 加载失败: {e}")
 
     def on_add(self, world: World):

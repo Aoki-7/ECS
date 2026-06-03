@@ -73,7 +73,7 @@ class DrinkSystem(System):
             # 兜底：空间索引未命中时，遍历所有地面水源
             if water_entity is None:
                 best_dist = float("inf")
-                for w_ent, (w_comp, w_space) in world.get_components(WaterComponent, SpaceComponent):
+                for w_ent, (w_comp, w_space) in list(world.get_components(WaterComponent, SpaceComponent)):
                     if w_comp.amount <= 0:
                         continue
                     d = abs(w_space.x - space.x) + abs(w_space.y - space.y)

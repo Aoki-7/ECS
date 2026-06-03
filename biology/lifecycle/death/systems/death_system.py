@@ -76,8 +76,8 @@ class DeathSystem(System):
             all_pendings.sort(key=lambda p: p.priority, reverse=True)
             primary = all_pendings[0]
 
-            # 1. 挂载死亡标记组件
-            world.add_component(entity, DeadTagComponent(processed=True))
+            # 1. 挂载死亡标记组件（processed=False，由 DeathEventSystem 广播后设为 True）
+            world.add_component(entity, DeadTagComponent(processed=False))
             world.add_component(entity, DeathReasonComponent(
                 primary_reason=primary.reason,
                 all_reasons=[p.reason for p in all_pendings],
@@ -138,7 +138,7 @@ class DeathSystem(System):
             day = getattr(time_component, 'day_of_year', 0)
             hour = getattr(time_component, 'hour', 0)
             return f"Year {year}, Day {day}, {hour:02d}:00"
-        except Exception:
+        except (AttributeError, TypeError):
             return "unknown"
 
     def _build_corpse_component(self, entity, world: World) -> CorpseComponent:
@@ -189,7 +189,7 @@ class DeathSystem(System):
                 comp_class = self._import_component(type_path)
                 if comp_class is not None and world.get_component(entity, comp_class) is not None:
                     world.remove_component(entity, comp_class)
-            except Exception:
+            except (ImportError, AttributeError):
                 pass  # 组件可能不存在，静默跳过
 
     def _import_component(self, dotted_path: str):
@@ -212,5 +212,5 @@ class DeathSystem(System):
                 entities=[entity.id],
                 data={"death_reason": reason, "world_time": world_time}
             )
-        except Exception:
+        except (ImportError, AttributeError):
             pass  # EventLog 可能不可用，静默跳过

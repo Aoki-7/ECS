@@ -49,17 +49,17 @@ class SenescenceSystem(System):
         """
         # ========== 衰老植物：退化生长 & 光合 ==========
         for entity, (lifecycle, pheno, energy, morph) in \
-                world.get_components(
+                list(world.get_components(
                     LifeCycleComponent,
                     PhenotypeComponent,
                     EnergyComponent,
                     MorphologyComponent
-                ):
+                )):
             self._process_senescence(entity, lifecycle, pheno, energy, morph, dt)
 
         # ========== 能量耗尽触发衰老标志 ==========
         for entity, (lifecycle, energy) in \
-                world.get_components(LifeCycleComponent, EnergyComponent):
+                list(world.get_components(LifeCycleComponent, EnergyComponent)):
 
             # 跳过已在衰老/死亡的实体
             if lifecycle.is_senescence or lifecycle.is_dead:

@@ -49,9 +49,9 @@ class ReproductionSystem(System):
         """
         current_time = world.get_time().total_hours
 
-        for entity, (relation, repro, age, gender) in world.get_components(
+        for entity, (relation, repro, age, gender) in list(world.get_components(
             RelationshipComponent, ReproductionComponent, LifeCycleComponent, GenderComponent
-        ):
+        )):
             if not relation or not repro or not age or not gender:
                 continue
             
@@ -115,7 +115,7 @@ class ReproductionSystem(System):
         try:
             from human.components.basic.identity_component import IdentityComponent
             parent_identity = world.get_component(entity, IdentityComponent)
-        except Exception:
+        except (ImportError, AttributeError):
             parent_identity = None
         
         # 生成新人类的名字（简化，避免无限叠加 _Child）

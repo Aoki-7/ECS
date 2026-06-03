@@ -289,12 +289,16 @@ class World:
                 continue
 
             try:
-                system.update(self, dt)
-            except Exception as e:
+                # 低频系统 dt 缩放：当 tick_interval > 1 时，累计 dt 应反映实际间隔
+                interval = getattr(system, 'tick_interval', 1)
+                scaled_dt = dt * interval if interval > 1 else dt
+                system.update(self, scaled_dt)
+            except Exception:
                 system_name = system.__class__.__name__
+                tb = traceback.format_exc(limit=8)
                 logger.error(
                     f"\n==\nECS System Error\nSystem: {system_name}\ndt: {dt}\n"
-                    f"------------------------------\n{traceback.format_exc()}\n==\n"
+                    f"------------------------------\n{tb}\n==\n"
                 )
                 # One System failing should not prevent other Systems from running.
 

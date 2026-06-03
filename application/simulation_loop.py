@@ -622,7 +622,7 @@ class SimulationLoop:
 
         try:
             civilization_status = self.civilization_system.get_civilization_status()
-        except Exception:
+        except AttributeError:
             civilization_status = {'stage': 'unknown', 'metrics': {}, 'discovered_technologies': []}
 
         return {

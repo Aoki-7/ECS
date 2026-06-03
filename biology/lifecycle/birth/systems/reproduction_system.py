@@ -77,13 +77,13 @@ class ReproductionSystem(System):
         new_seeds = []
 
         for entity, (genome, pheno, energy, lifecycle, space) in \
-                world.get_components(
+                list(world.get_components(
                     GenomeComponent,
                     PhenotypeComponent,
                     EnergyComponent,
                     LifeCycleComponent,
                     SpaceComponent,
-                ):
+                )):
             # 只在成熟期繁殖
             if not lifecycle.is_mature:
                 continue

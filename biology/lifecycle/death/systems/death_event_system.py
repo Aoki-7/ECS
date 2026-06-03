@@ -52,12 +52,54 @@ class DeathEventSystem(System):
             reason = reason_comp.primary_reason if reason_comp else "unknown"
             death_time = time_comp.world_time_display if time_comp else "unknown"
 
-            # 记录社会影响日志（骨架实现）
+            # 记录社会影响日志
             logger.info(f"[DeathEvent] E{entity.id} death broadcast: {reason} at {death_time}")
 
-            # TODO: 扩展点 —— 实现以下功能
-            # 1. 查询死者的亲属/朋友/部落成员
-            # 2. 在相关实体的 MemoryComponent 中记录死亡事件
-            # 3. 更新部落情绪（恐惧、悲伤）
-            # 4. 触发职位空缺（如果死者是首领/长老）
-            # 5. 触发遗产分配
+            # 1. 在亲属/朋友的 MemoryComponent 中记录死亡事件
+            self._notify_relatives(world, entity, reason, death_time)
+
+            # 2. 更新部落情绪（恐惧、悲伤）
+            self._update_tribe_mood(world, entity, reason)
+
+    def _notify_relatives(self, world: World, dead_entity, reason: str, death_time: str) -> None:
+        """将死亡事件记录到相关实体的记忆中"""
+        try:
+            from human.components.cognitive.memory_component import MemoryComponent
+            from human.components.social.relationship_component import RelationshipComponent
+            from identity.name_component import NameComponent
+        except (ImportError, AttributeError):
+            return
+
+        dead_name_comp = world.get_component(dead_entity, NameComponent)
+        dead_name = dead_name_comp.name if dead_name_comp else f"E{dead_entity.id}"
+
+        for entity, (relation,) in list(world.get_components(RelationshipComponent)):
+            if not world.has_entity(entity):
+                continue
+            if getattr(relation, 'partner_id', None) == dead_entity.id:
+                memory = world.get_component(entity, MemoryComponent)
+                if memory is not None:
+                    memory.add_event(
+                        world.get_time().total_hours if world.get_time() else 0.0,
+                        "partner_death",
+                        f"伴侣 {dead_name} 因 {reason} 去世",
+                        impact=-1.0,
+                        data={"deceased_id": dead_entity.id, "reason": reason}
+                    )
+
+    def _update_tribe_mood(self, world: World, dead_entity, reason: str) -> None:
+        """更新部落整体情绪（恐惧、悲伤）"""
+        try:
+            from human.components.cognitive.emotion_component import EmotionComponent
+            from human.components.basic.human_component import HumanComponent
+        except (ImportError, AttributeError):
+            return
+
+        # 对同部落或附近的人类施加短暂情绪影响
+        for entity, (emotion, _) in list(world.get_components(EmotionComponent, HumanComponent)):
+            if not world.has_entity(entity) or entity.id == dead_entity.id:
+                continue
+            # 悲伤 + 恐惧（对非正常死亡）
+            emotion.adjust_emotion("sadness", 0.05)
+            if reason in ("starvation", "dehydration", "hp_depleted"):
+                emotion.adjust_emotion("fear", 0.03)

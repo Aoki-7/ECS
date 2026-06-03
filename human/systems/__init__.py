@@ -125,7 +125,5 @@ from .action.pickup_system import PickupSystem
 from .action.search_system import SearchSystem
 from .action.socialize_system import SocializeSystem
 
-# 死亡系统（已迁移至 biology/systems/death_system.py 统一版）
-# from .death.death_system import DeathSystem
-# 死亡系统
-from .death.death_system import DeathSystem
+# 死亡系统已迁移至 biology/lifecycle/death/ 生命周期子领域
+# from .death.death_system import DeathSystem  # 旧版已删除
