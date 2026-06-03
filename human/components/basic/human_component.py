@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class HumanComponent(Component):
     """
     人类标识组件

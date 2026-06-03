@@ -25,7 +25,7 @@ class RelationshipStatus(Enum):
     DIVORCED = "divorced"
 
 
-@dataclass
+@dataclass(slots=True)
 class RelationshipComponent(Component):
     """
     关系组件

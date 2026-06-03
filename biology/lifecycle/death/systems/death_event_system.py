@@ -55,17 +55,20 @@ class DeathEventSystem(System):
             # 记录社会影响日志
             logger.info(f"[DeathEvent] E{entity.id} death broadcast: {reason} at {death_time}")
 
-            # 1. 在亲属/朋友的 MemoryComponent 中记录死亡事件
+            # 1. 在亲属/朋友的 MemoryComponent 中记录死亡事件，并清理伴侣关系
             self._notify_relatives(world, entity, reason, death_time)
 
             # 2. 更新部落情绪（恐惧、悲伤）
             self._update_tribe_mood(world, entity, reason)
 
+            # 3. 清理所有记忆中对该死亡实体的记录
+            self._purge_memory_references(world, entity)
+
     def _notify_relatives(self, world: World, dead_entity, reason: str, death_time: str) -> None:
-        """将死亡事件记录到相关实体的记忆中"""
+        """将死亡事件记录到相关实体的记忆中，并清理伴侣关系"""
         try:
             from human.components.cognitive.memory_component import MemoryComponent
-            from human.components.social.relationship_component import RelationshipComponent
+            from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
             from identity.name_component import NameComponent
         except (ImportError, AttributeError):
             return
@@ -77,6 +80,10 @@ class DeathEventSystem(System):
             if not world.has_entity(entity):
                 continue
             if getattr(relation, 'partner_id', None) == dead_entity.id:
+                # 清理伴侣关系：设为单身，避免"与死者生育"
+                relation.partner_id = None
+                relation.status = RelationshipStatus.SINGLE
+                relation.relationship_strength = max(0.0, relation.relationship_strength - 50.0)
                 memory = world.get_component(entity, MemoryComponent)
                 if memory is not None:
                     memory.add_event(
@@ -86,6 +93,19 @@ class DeathEventSystem(System):
                         impact=-1.0,
                         data={"deceased_id": dead_entity.id, "reason": reason}
                     )
+
+    def _purge_memory_references(self, world: World, dead_entity) -> None:
+        """清理所有 MemoryComponent 中对死亡实体的引用"""
+        try:
+            from human.components.cognitive.memory_component import MemoryComponent
+        except (ImportError, AttributeError):
+            return
+
+        for entity, (memory,) in list(world.get_components(MemoryComponent)):
+            if not world.has_entity(entity):
+                continue
+            if dead_entity.id in memory.people:
+                del memory.people[dead_entity.id]
 
     def _update_tribe_mood(self, world: World, dead_entity, reason: str) -> None:
         """更新部落整体情绪（恐惧、悲伤）"""

@@ -6,4 +6,6 @@
 包含：
     - CreatureDeathTriggerSystem : 扫描健康状态，判定是否满足死亡条件
     - DeathSystem                : 执行死亡：销毁实体、创建尸体、记录事件
+    - DeathEventSystem           : 记录死亡事件
+    - HumanDeathTriggerSystem    : 扫描健康状态，判定是否满足死亡条件
 """

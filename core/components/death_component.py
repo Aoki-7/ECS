@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from core.component import Component
 
-@dataclass
+@dataclass(slots=True)
 class DeathComponent(Component):
     """
     死亡状态组件

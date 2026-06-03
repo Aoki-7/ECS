@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 
 from core.component import Component
 
-@dataclass
+@dataclass(slots=True)
 class BrainComponent(Component):
     """
         思维组件

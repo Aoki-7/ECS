@@ -14,7 +14,7 @@ from typing import Dict, List
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class SocialComponent(Component):
     """
     社会关系组件

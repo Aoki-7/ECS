@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class VisionComponent(Component):
     """感知范围组件"""
     radius: int = 12

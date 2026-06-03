@@ -13,7 +13,7 @@ from typing import Optional
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class TribeMembershipComponent(Component):
     """
     部落成员身份组件

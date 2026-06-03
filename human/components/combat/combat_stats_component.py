@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class CombatStatsComponent(Component):
     """
     战斗属性组件

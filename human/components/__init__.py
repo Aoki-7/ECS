@@ -79,7 +79,7 @@ from .society.role_component import RoleComponent, IdentityShiftComponent, Respo
 
 from dataclasses import dataclass
 
-@dataclass
+@dataclass(slots=True)
 class SocietyComponents:
     """
     社会扩展组件的便捷初始化

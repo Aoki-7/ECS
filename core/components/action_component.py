@@ -83,7 +83,7 @@ class ActionStatus(Enum):
 
 
 
-@dataclass
+@dataclass(slots=True)
 class ActionComponent(Component):
     """
     原子行为组件（由 Task 拆解执行）
@@ -105,6 +105,10 @@ class ActionComponent(Component):
     # 执行进度（0~1）
     progress: float = 0.0
 
+    # 运行时缓存：PathfindingSystem 计算的完整路径
+    _path: list = field(default_factory=list, repr=False)
+    _path_index: int = field(default=0, repr=False)
+
     def reset(self):
         """
         重置当前动作（用于切换或中断）
@@ -114,5 +118,7 @@ class ActionComponent(Component):
         self.progress = 0.0
         self.target_entity = None
         self.target_pos = None
+        self._path = []
+        self._path_index = 0
 
 

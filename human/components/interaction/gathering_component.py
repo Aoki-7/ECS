@@ -13,7 +13,7 @@ from core.component import Component
 
 from dataclasses import dataclass
 
-@dataclass
+@dataclass(slots=True)
 class GatheringComponent(Component):
     """
     描述采集行为的组件。

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Set, Optional
 from collections import defaultdict
 
-@dataclass
+@dataclass(slots=True)
 class SocialConnection:
     """社交连接记录"""
     other_entity_id: int
@@ -23,7 +23,7 @@ class SocialConnection:
         }
 
 
-@dataclass
+@dataclass(slots=True)
 class Community:
     """社区信息"""
     name: str
@@ -62,7 +62,7 @@ class Community:
         return 0.0
 
 
-@dataclass
+@dataclass(slots=True)
 class InterestGroup:
     """兴趣群体"""
     topic: str  # e.g., "gaming", "cooking", "technology"

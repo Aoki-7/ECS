@@ -74,12 +74,15 @@ class ImmuneSystem(System):
     # -------------------------------------------------
 
     def _spread_infection(self, world: World, dt: float):
-        """contagious 实体向周围传播"""
+        """contagious 实体向周围传播（使用空间索引避免 O(N²)）"""
+        from space.space_system import SpaceSystem
+        space_system = world.get_system(SpaceSystem)
+
         # 收集所有 contagious 实体
         contagious: List[Tuple] = []
-        for entity, (immune, space) in world.get_components(
+        for entity, (immune, space) in list(world.get_components(
             ImmuneComponent, SpaceComponent
-        ):
+        )):
             if immune.is_contagious:
                 contagious.append((entity, immune, space))
 
@@ -88,20 +91,27 @@ class ImmuneSystem(System):
 
         # 向周围传播
         for src_entity, src_immune, src_space in contagious:
-            for dst_entity, (dst_immune, dst_space) in world.get_components(
-                ImmuneComponent, SpaceComponent
-            ):
-                if src_entity.id == dst_entity.id:
+            # 使用空间索引查询半径内实体，避免全量遍历
+            nearby_ids = set()
+            if space_system is not None:
+                nearby_ids = space_system.query_radius(
+                    src_space.x, src_space.y, self.SPREAD_RADIUS, getattr(src_space, 'layer', 0)
+                )
+
+            for dst_id in nearby_ids:
+                if dst_id == src_entity.id:
                     continue
-                if not dst_immune.is_healthy:
+                dst_entity = world.query_entity(dst_id)
+                if dst_entity is None:
+                    continue
+                dst_immune = world.get_component(dst_entity, ImmuneComponent)
+                if dst_immune is None or not dst_immune.is_healthy:
+                    continue
+                dst_space = world.get_component(dst_entity, SpaceComponent)
+                if dst_space is None:
                     continue
 
-                dx = abs(src_space.x - dst_space.x)
-                dy = abs(src_space.y - dst_space.y)
-                if dx > self.SPREAD_RADIUS or dy > self.SPREAD_RADIUS:
-                    continue
-
-                distance = max(dx, dy)
+                distance = max(abs(src_space.x - dst_space.x), abs(src_space.y - dst_space.y))
                 spread_chance = self.BASE_SPREAD_CHANCE * (
                     1.0 - distance / (self.SPREAD_RADIUS + 1)
                 )

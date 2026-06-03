@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class GoalComponent(Component):
     """
         人物长期行为
@@ -25,5 +25,8 @@ class GoalComponent(Component):
     current_goal: str = None
     long_term_goals: str = None
     priority: int = 0
+
+    # 运行时状态（由 GoalSystem 管理）
+    _last_update_time: float = 0.0
 
 

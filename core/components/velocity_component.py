@@ -14,7 +14,7 @@ from dataclasses import dataclass
 # 向后兼容导入: from human.components.abilities.velocity_component import VelocityComponent
 from core.component import Component
 
-@dataclass
+@dataclass(slots=True)
 class VelocityComponent(Component):
     """
         空间移动速度

@@ -13,7 +13,7 @@ from typing import List, Dict
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class ConflictComponent(Component):
     """
     冲突状态组件

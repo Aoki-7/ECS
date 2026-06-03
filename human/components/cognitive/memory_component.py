@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 
 from core.component import Component
 
-@dataclass
+@dataclass(slots=True)
 class MemoryComponent(Component):
     """
     记忆组件
@@ -133,13 +133,18 @@ class MemoryComponent(Component):
     
     def record_person(self, entity_id: int, name: str, time: float, 
                       relationship: str = "acquaintance", trust: float = 0.5):
-        """记录人物记忆"""
+        """记录人物记忆（带 LRU 上限，防止无界增长）"""
+        MAX_PEOPLE = 50
         if entity_id in self.people:
             self.people[entity_id]["last_interaction"] = time
             # 信任度缓慢更新
             old_trust = self.people[entity_id]["trust"]
             self.people[entity_id]["trust"] = old_trust * 0.8 + trust * 0.2
         else:
+            # 超出上限时淘汰最久未互动的记录
+            if len(self.people) >= MAX_PEOPLE:
+                oldest_id = min(self.people, key=lambda k: self.people[k]["last_interaction"])
+                del self.people[oldest_id]
             self.people[entity_id] = {
                 "name": name,
                 "relationship": relationship,

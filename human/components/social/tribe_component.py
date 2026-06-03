@@ -13,7 +13,7 @@ from typing import List, Dict, Optional, Tuple
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class TribeComponent(Component):
     """
     部落组件
@@ -41,7 +41,10 @@ class TribeComponent(Component):
     formed_time: float = 0.0
     home_territory: Tuple[float, float] = field(default_factory=lambda: (50.0, 50.0))
     territory_radius: float = 20.0
-    
+
+    # 运行时状态（由 TribeSystem 管理）
+    _milestone_5: bool = field(default=False, repr=False)
+
     def add_member(self, entity_id: int) -> None:
         """添加成员"""
         if entity_id not in self.member_ids:

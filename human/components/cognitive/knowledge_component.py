@@ -13,7 +13,7 @@ from typing import Set, Dict, Any
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class KnowledgeComponent(Component):
     """
     知识组件

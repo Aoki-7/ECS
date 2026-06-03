@@ -15,7 +15,7 @@ from core.component import Component
 from typing import Optional, Type
 
 
-@dataclass
+@dataclass(slots=True)
 class SearchComponent(Component):
     """
     通用搜索组件（Search Component）

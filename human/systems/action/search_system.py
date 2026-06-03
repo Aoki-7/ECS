@@ -192,13 +192,24 @@ class SearchSystem(System):
                                 if d < best_dist:
                                     best_dist = d
                                     best_id = candidate
-                            # 兜底：遍历所有地面水源
+                            # 扩大搜索半径兜底（避免全量遍历）
                             if best_id is None:
-                                for w_ent, (w_comp, w_space) in world.get_components(WaterComponent, SpaceComponent):
-                                    d = math.hypot(w_space.x - space.x, w_space.y - space.y)
+                                ids = space_system.query_radius(space.x, space.y, 100)
+                                for eid in ids:
+                                    if eid == entity.id:
+                                        continue
+                                    candidate = world.query_entity(eid)
+                                    if candidate is None:
+                                        continue
+                                    if world.get_component(candidate, WaterComponent) is None:
+                                        continue
+                                    c_space = world.get_component(candidate, SpaceComponent)
+                                    if c_space is None:
+                                        continue
+                                    d = math.hypot(c_space.x - space.x, c_space.y - space.y)
                                     if d < best_dist:
                                         best_dist = d
-                                        best_id = w_ent
+                                        best_id = candidate
                             if best_id is not None:
                                 c_space = world.get_component(best_id, SpaceComponent)
                                 action.target_entity = best_id.id
@@ -256,35 +267,44 @@ class SearchSystem(System):
                                         if d < best_dist:
                                             best_dist = d
                                             best_id = candidate
-                            # 如果空间索引没找到，直接遍历所有地面食物（兜底，确保不饿死）
+                            # 扩大搜索半径兜底（避免全量遍历）
                             if best_id is None:
-                                for f_ent, (f_comp, f_space) in world.get_components(FoodComponent, SpaceComponent):
-                                    d = math.hypot(f_space.x - space.x, f_space.y - space.y)
-                                    if d < best_dist:
-                                        best_dist = d
-                                        best_id = f_ent
-                            # 兜底遍历可收获植物（PlantComponent）
-                            if best_id is None:
-                                for p_ent, (p_comp, p_space) in world.get_components(PlantComponent, SpaceComponent):
-                                    lifecycle = world.get_component(p_ent, LifeCycleComponent)
-                                    if lifecycle is None or lifecycle.stage < p_comp.harvest_stage:
+                                ids = space_system.query_radius(space.x, space.y, 100)
+                                for eid in ids:
+                                    if eid == entity.id:
                                         continue
-                                    d = math.hypot(p_space.x - space.x, p_space.y - space.y)
-                                    if d < best_dist:
-                                        best_dist = d
-                                        best_id = p_ent
-                            # 兜底遍历 ResourceComponent 标记的植物资源
-                            if best_id is None:
-                                for p_ent, (p_res, p_space) in world.get_components(ResourceComponent, SpaceComponent):
-                                    if p_res.resource_type != "plant" or p_res.amount <= 0:
+                                    candidate = world.query_entity(eid)
+                                    if candidate is None:
                                         continue
-                                    lifecycle = world.get_component(p_ent, LifeCycleComponent)
-                                    if lifecycle is None or lifecycle.stage < LifeCycleComponent.VEGETATIVE:
+                                    c_space = world.get_component(candidate, SpaceComponent)
+                                    if c_space is None:
                                         continue
-                                    d = math.hypot(p_space.x - space.x, p_space.y - space.y)
-                                    if d < best_dist:
-                                        best_dist = d
-                                        best_id = p_ent
+                                    # 搜索地面食物
+                                    if world.get_component(candidate, FoodComponent) is not None:
+                                        d = math.hypot(c_space.x - space.x, c_space.y - space.y)
+                                        if d < best_dist:
+                                            best_dist = d
+                                            best_id = candidate
+                                        continue
+                                    # 搜索可收获植物
+                                    plant_comp = world.get_component(candidate, PlantComponent)
+                                    if plant_comp is not None:
+                                        lifecycle = world.get_component(candidate, LifeCycleComponent)
+                                        if lifecycle is not None and lifecycle.stage >= plant_comp.harvest_stage:
+                                            d = math.hypot(c_space.x - space.x, c_space.y - space.y)
+                                            if d < best_dist:
+                                                best_dist = d
+                                                best_id = candidate
+                                            continue
+                                    # 搜索 ResourceComponent 标记的植物资源
+                                    res = world.get_component(candidate, ResourceComponent)
+                                    if res is not None and res.resource_type == "plant" and res.amount > 0:
+                                        lifecycle = world.get_component(candidate, LifeCycleComponent)
+                                        if lifecycle is not None and lifecycle.stage >= LifeCycleComponent.VEGETATIVE:
+                                            d = math.hypot(c_space.x - space.x, c_space.y - space.y)
+                                            if d < best_dist:
+                                                best_dist = d
+                                                best_id = candidate
                             if best_id is not None:
                                 c_space = world.get_component(best_id, SpaceComponent)
                                 action.target_entity = best_id.id

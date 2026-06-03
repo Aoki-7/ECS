@@ -35,6 +35,9 @@ class World:
         self.systems = []
         self.tick_count = 0  # 世界 tick 计数，供 System 执行间隔判断
 
+        # === 查询缓存：相同组件组合的查询结果在同一 tick 内复用 ===
+        self._query_cache: dict = {}
+
         # === 世界实体（由 application 层注入，不由 core 自动创建）===
         self._world_entity: Entity | None = None
 
@@ -75,6 +78,9 @@ class World:
 
         # 移除实体
         self.entities.pop(entity.id, None)
+
+        # 实体删除使查询缓存失效
+        self._query_cache.clear()
 
         # 回收 id
         Entity.destroy(entity)
@@ -158,6 +164,9 @@ class World:
             if space_system:
                 space_system.add_entity(entity.id, component)
 
+        # 组件变更使查询缓存失效
+        self._query_cache.clear()
+
     def remove_component(self, entity: Entity, component_type):
         # 从SpaceSystem反注册
         from space.space_component import SpaceComponent
@@ -170,12 +179,22 @@ class World:
         self.components.get(component_type, {}).pop(entity.id, None)
         self._component_entities.get(component_type, set()).discard(entity.id)
 
+        # 组件变更使查询缓存失效
+        self._query_cache.clear()
+
     def get_component(self, entity: Entity, component_type) -> Component | None:
         """获取实体的组件"""
         return self.components.get(component_type, {}).get(entity.id)
 
     def get_components(self, *component_types):
         if not component_types:
+            return
+
+        # 查询缓存命中：直接复用已计算的结果
+        cache_key = component_types
+        cached = self._query_cache.get(cache_key)
+        if cached is not None:
+            yield from cached
             return
 
         # 使用反向索引快速找到候选实体（取交集）
@@ -195,6 +214,7 @@ class World:
             if not candidate_ids:
                 return
 
+        result = []
         for entity_id in candidate_ids:
             entity = self.entities.get(entity_id)
             if entity is None:
@@ -207,7 +227,12 @@ class World:
                     break
                 components.append(comp)
             else:
-                yield entity, components
+                item = (entity, components)
+                result.append(item)
+
+        # 缓存完整结果（即使调用方提前 break，缓存也是完整的）
+        self._query_cache[cache_key] = result
+        yield from result
 
 
     def query_components(self, *component_types):

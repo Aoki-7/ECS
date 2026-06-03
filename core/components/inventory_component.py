@@ -16,13 +16,13 @@ from core.entity import Entity
 from core.world import World
 
 
-@dataclass
+@dataclass(slots=True)
 class InventoryComponent(Component):
     """
-    非堆叠库存（存 Entity 引用）
+    非堆叠库存（存 entity_id，避免对已删除实体的对象引用泄漏）
 
     Args:
-        items: 持有的实体（例如 food_entity）
+        items: 持有的实体 ID 列表（例如 food_entity.id）
         capacity: 最大容量
     """
     capacity: int = 20
@@ -34,23 +34,26 @@ class InventoryComponent(Component):
     def add(self, entity) -> bool:
         if len(self.items) >= self.capacity:
             return False
-        self.items.append(entity)
+        entity_id = entity.id if hasattr(entity, 'id') else entity
+        self.items.append(entity_id)
         return True
 
     # -------------------------
     # 移除物品
     # -------------------------
     def remove(self, entity) -> bool:
-        if entity in self.items:
-            self.items.remove(entity)
+        entity_id = entity.id if hasattr(entity, 'id') else entity
+        if entity_id in self.items:
+            self.items.remove(entity_id)
             return True
         return False
 
     # -------------------------
     # 查找某类物品
     # -------------------------
-    def find(self, component_type: type, world: World) -> Entity | None:
-        for e in self.items:
-            if world.get_component(e, component_type) is not None:
-                return e
+    def find(self, component_type: type, world: World):
+        for entity_id in self.items:
+            entity = world.query_entity(entity_id)
+            if entity is not None and world.get_component(entity, component_type) is not None:
+                return entity
         return None

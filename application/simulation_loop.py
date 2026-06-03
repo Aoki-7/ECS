@@ -47,6 +47,7 @@ from environment.config.environment_builder import EnvironmentBuilder
 from human.systems.social.social_system import SocialSystem
 from human.systems.social.pairing_system import PairingSystem
 from human.systems.social.reproduction_system import ReproductionSystem
+from human.systems.social.birth_system import BirthSystem
 from human.systems.social.tribe_system import TribeSystem
 from human.systems.social.territory_system import TerritorySystem
 from human.systems.social.leadership_system import LeadershipSystem
@@ -268,6 +269,7 @@ class SimulationLoop:
             SocialSystem(),
             PairingSystem(),
             ReproductionSystem(),
+            BirthSystem(),
             # 对话系统
             DialogueSystem(),
         ]

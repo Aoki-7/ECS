@@ -40,7 +40,7 @@ class TaskStatus(Enum):
     FAILED = auto()
 
 
-@dataclass
+@dataclass(slots=True)
 class TaskComponent(Component):
     """
     中层任务（由规划系统生成）

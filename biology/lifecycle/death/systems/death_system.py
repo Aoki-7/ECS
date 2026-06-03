@@ -134,11 +134,11 @@ class DeathSystem(System):
         if time_component is None:
             return "unknown"
         try:
-            year = getattr(time_component, 'year', 0)
-            day = getattr(time_component, 'day_of_year', 0)
-            hour = getattr(time_component, 'hour', 0)
+            year = int(getattr(time_component, 'year', 0))
+            day = int(getattr(time_component, 'day_of_year', 0))
+            hour = int(getattr(time_component, 'hour', 0))
             return f"Year {year}, Day {day}, {hour:02d}:00"
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError, ValueError):
             return "unknown"
 
     def _build_corpse_component(self, entity, world: World) -> CorpseComponent:
