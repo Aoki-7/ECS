@@ -29,7 +29,7 @@ from resource.water.components.water_component import WaterComponent
 from resource.components.resource_component import ResourceComponent
 from human.components.basic.human_component import HumanComponent
 from biology.components.life_cycle_component import LifeCycleComponent
-from biology.components.plant_component import PlantComponent
+from plant.components.plant_component import PlantComponent
 
 
 class SearchSystem(System):

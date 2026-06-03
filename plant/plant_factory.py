@@ -25,6 +25,10 @@ from resource.components.resource_component import ResourceComponent
 from biology.genetics.gene import Gene
 
 from space.space_component import SpaceComponent
+from environment.light_field.components.light_receiver_component import LightReceiverComponent
+from plant.components.plant_component import PlantComponent
+from plant.components.root_component import RootComponent
+from plant.components.canopy_component import CanopyComponent
 
 from .presets import SPECIES_PRESETS, SPECIES_LIFECYCLE
 
@@ -44,13 +48,14 @@ class PlantFactory:
     核心流程：
         create_plant() -> _build_genome() -> _init_lifecycle() -> _attach_base_components()
 
-    基因维度（按功能分类）：
-        ─ 光合系统：max_photosynthesis_rate, light_use_efficiency, shade_tolerance
-        ─ 温度响应：optimal_temp, cold_tolerance, heat_tolerance
-        ─ 水分利用：water_use_efficiency
-        ─ 代谢分配：metabolism_rate, growth_partition
-        ─ 形态分配：leaf_bias, root_bias, stem_bias, max_height, stem_thickness_factor
-        ─ 繁殖策略：seed_production, dispersal_radius
+    基因维度（6 大类 23 个纯基因，无任何外观硬编码）：
+        ─ photosynthesis : max_photosynthesis_rate, light_use_efficiency, shade_tolerance,
+                           light_compensation_point, light_saturation_point
+        ─ resource       : water_use_efficiency, nutrient_use_efficiency, carbon_storage_efficiency
+        ─ stress         : cold_tolerance, heat_tolerance, drought_tolerance, flood_tolerance
+        ─ growth         : metabolism_rate, growth_partition, maintenance_cost, storage_partition
+        ─ reproduction   : seed_production, seed_size, dispersal_radius, germination_rate
+        ─ evolution      : mutation_rate, adaptability, genetic_stability
     """
 
     # 直接引用外部预设表，支持运行时被替换或热更新
@@ -114,8 +119,8 @@ class PlantFactory:
         # ---- Step 2: 根据模板构建带变异的基因组 ----
         genome = cls._build_genome(preset, species, variation, rng)
 
-        # ---- Step 3: 初始化生命周期组件 ----
-        lifecycle = cls._init_lifecycle(species)
+        # ---- Step 3: 初始化生命周期组件（由基因推导阶段时长） ----
+        lifecycle = cls._init_lifecycle(species, preset)
 
         # ---- Step 4: 挂载植物基础组件 ----
         cls._attach_base_components(world, entity, genome, lifecycle, x, y)
@@ -209,8 +214,11 @@ class PlantFactory:
         child_genome = parent_genome.copy()
         child_genome.mutate(mutation_rate=variation)
 
-        # 子代以种子阶段开始生命周期
-        lifecycle = LifeCycleComponent(stage=LifeCycleComponent.SEED)
+        # 从子代基因组提取基因值，用于推导生命周期
+        child_preset = cls._genes_to_preset(child_genome)
+
+        # 子代以种子阶段开始生命周期（由基因推导阶段时长）
+        lifecycle = cls._init_lifecycle("basic", child_preset)
 
         # 挂载基础组件（子代能量较低，模拟种子状态）
         cls._attach_base_components(
@@ -222,6 +230,14 @@ class PlantFactory:
     # -------------------------------------------------
     # 内部辅助方法
     # -------------------------------------------------
+
+    @classmethod
+    def _genes_to_preset(cls, genome: GenomeComponent) -> Dict[str, float]:
+        """从 GenomeComponent 提取 {expression_target: strength} 字典"""
+        return {
+            gene.expression_target: gene.strength
+            for gene in genome.genes
+        }
 
     @classmethod
     def _build_genome(
@@ -271,16 +287,66 @@ class PlantFactory:
         return genome
 
     @classmethod
-    def _init_lifecycle(cls, species: str) -> LifeCycleComponent:
+    def _init_lifecycle(
+        cls, species: str, preset: Dict[str, float]
+    ) -> LifeCycleComponent:
         """
-        根据物种生命周期预设初始化 LifeCycleComponent
+        根据物种基因推导生命周期参数
+
+        推导逻辑：
+            - 代谢速率 × 生长分配 = 综合生长速率
+            - 生长速率越高，各阶段时长越短
+            - 储存分配越高，成熟期越长
+            - 没有硬编码 stage_durations
 
         Args:
             species: 物种标识名。
+            preset: 物种基因预设字典。
 
         Returns:
             配置好的 LifeCycleComponent（阶段为 SEED）。
         """
+        metabolism_rate = preset.get("metabolism_rate", 0.01)
+        growth_partition = preset.get("growth_partition", 0.6)
+        storage_partition = preset.get("storage_partition", 0.2)
+
+        # 综合生长速率（0.003 ~ 0.025 范围）
+        growth_rate = metabolism_rate * growth_partition
+
+        # 阶段时长与生长速率成反比
+        # 基础时长 / (growth_rate * 100 + 0.5) 做归一化缩放
+        scale = growth_rate * 100.0 + 0.5
+
+        base_seed = 48.0 / scale
+        base_sprout = 168.0 / scale
+        base_vegetative = 720.0 / scale
+        base_senescence = 720.0 / scale
+
+        # 成熟期受储存分配 bonus（乔木储存高，成熟期长）
+        mature_bonus = 1.0 + storage_partition * 2.0
+        base_mature = (4320.0 / scale) * mature_bonus
+
+        stage_durations = [
+            base_seed,
+            base_sprout,
+            base_vegetative,
+            base_mature,
+            base_senescence,
+        ]
+
+        # GDD 需求由最佳温度推导
+        optimal_temp = preset.get("optimal_temp", 25.0)
+        gdd_seed = 10.0 * (25.0 / max(optimal_temp, 5.0))
+        gdd_sprout = gdd_seed * 3.0
+        gdd_vegetative = gdd_seed * 8.0
+
+        gdd_requirements = {
+            0: gdd_seed,
+            1: gdd_sprout,
+            2: gdd_vegetative,
+            3: 0,  # 成熟期无 GDD 门槛，由年龄触发
+        }
+
         lc_config = cls.SPECIES_LIFECYCLE.get(
             species, cls.SPECIES_LIFECYCLE["basic"]
         )
@@ -288,8 +354,8 @@ class PlantFactory:
         return LifeCycleComponent(
             stage=LifeCycleComponent.SEED,
             max_age=lc_config["max_age"],
-            stage_durations=lc_config["stage_durations"],
-            gdd_requirements=lc_config["gdd_requirements"],
+            stage_durations=stage_durations,
+            gdd_requirements=gdd_requirements,
         )
 
     @classmethod
@@ -352,5 +418,13 @@ class PlantFactory:
         world.add_component(entity, ResourceComponent(resource_type="plant", amount=0.0))
 
         # 植物可收获组件：桥接植物生态与人类食物系统
-        from biology.components.plant_component import PlantComponent
         world.add_component(entity, PlantComponent())
+
+        # 光照接收组件：让植物参与光场计算
+        world.add_component(entity, LightReceiverComponent(albedo=0.18))
+
+        # 冠层组件：描述光合作用结构
+        world.add_component(entity, CanopyComponent())
+
+        # 根系组件：描述根系形态与吸水能力
+        world.add_component(entity, RootComponent())

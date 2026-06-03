@@ -66,7 +66,8 @@ class GrowthSystem(System):
             # ==========================================================
             # 2) 光响应（带耐阴修正）
             # ==========================================================
-            par = env.par
+            # 优先使用 PlantPhotosynthesisSystem 计算的有效 PAR
+            par = pheno.get("effective_par", env.par)
 
             # 基础 Michaelis-Menten
             if max_photo <= 0:
@@ -102,7 +103,8 @@ class GrowthSystem(System):
             # ==========================================================
             # 5) 水分胁迫（WUE 修正）
             # ==========================================================
-            water_stress = env.water_stress_index
+            # 优先使用 PlantWaterUptakeSystem 计算的植物水分胁迫
+            water_stress = pheno.get("plant_water_stress", env.water_stress_index)
             # 高 WUE 的植物受水分胁迫影响更小
             wue_bonus = wue * 2.0  # WUE=0.15 → 减免 30%
             effective_stress = max(0.0, water_stress - wue_bonus)

@@ -69,6 +69,7 @@ from human.systems.action.pickup_system import PickupSystem
 from human.systems.action.search_system import SearchSystem
 from human.systems.action.socialize_system import SocializeSystem
 from human.systems.action.harvest_system import HarvestSystem
+from human.systems.action.planting_system import PlantingSystem
 
 # 环境效果系统（已拆分为5个独立系统）
 from human.systems.environment.heat_effect_system import HeatEffectSystem
@@ -120,6 +121,13 @@ from biology.systems.immune_system import ImmuneSystem
 from biology.systems.damage_repair_system import DamageRepairSystem
 from biology.systems.nutrient_system import NutrientSystem
 from biology.systems.competition_system import CompetitionSystem
+from animal.systems.grazing_system import GrazingSystem
+
+# 植物专用系统
+from plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
+from plant.systems.water_uptake_system import PlantWaterUptakeSystem
+from plant.systems.seed_dispersal_system import SeedDispersalSystem
+from plant.systems.terrain_adaptation_system import TerrainAdaptationSystem
 
 # 规则系统
 from rules.transformation_system import TransformationSystem
@@ -272,6 +280,8 @@ class SimulationLoop:
             BirthSystem(),
             # 对话系统
             DialogueSystem(),
+            # 种植系统
+            PlantingSystem(),
         ]
         for system in self.human_systems:
             system.priority = 30
@@ -339,7 +349,12 @@ class SimulationLoop:
         self.disease_spread_system.priority = 41
         self.world.add_system(self.disease_spread_system)
 
-        # 4.6 医疗保健系统（priority 42）
+        # 4.6 动物系统（priority 42）
+        self.grazing_system = GrazingSystem()
+        self.grazing_system.priority = 42
+        self.world.add_system(self.grazing_system)
+
+        # 4.7 医疗保健系统（priority 43）
         self.healthcare_system = HealthcareSystem()
         self.healthcare_system.priority = 42
         self.world.add_system(self.healthcare_system)
@@ -348,6 +363,16 @@ class SimulationLoop:
         self.memory_decay_system = MemoryDecaySystem()
         self.memory_decay_system.priority = 43
         self.world.add_system(self.memory_decay_system)
+
+        # 4.5 植物专用系统（priority 48，在 GrowthSystem 之前准备光照/水分数据）
+        self.plant_systems = [
+            PlantPhotosynthesisSystem(),  # LightReceiver → effective_par
+            PlantWaterUptakeSystem(),     # Root + Soil → plant_water_stress
+            TerrainAdaptationSystem(),    # Terrain → 生长修正
+        ]
+        for system in self.plant_systems:
+            system.priority = 48
+            self.world.add_system(system)
 
         # 5. 生物学系统（priority 50）
         # 执行顺序：
@@ -362,7 +387,8 @@ class SimulationLoop:
             SenescenceSystem(),          # 衰老退化
             DamageRepairSystem(),        # 损伤修复（消耗能量）
             MutationSystem(),            # 持续环境诱变
-            BiologyReproductionSystem(), # 成熟期繁殖
+            BiologyReproductionSystem(), # 成熟期繁殖（基础短距离散布）
+            SeedDispersalSystem(),       # 策略性长距离/环境感知传播
             ImmuneSystem(),              # 感染传播与免疫反应
             CreatureDeathTriggerSystem(),  # 通用生物死亡判定 → 产出 PendingDeath
             DeathSystem(),                   # 统一死亡执行器（PendingDeath → DeadTag）
@@ -556,7 +582,7 @@ class SimulationLoop:
         Args:
             plant_count: 初始植物数量
         """
-        from biology.components.plant_component import PlantComponent
+        from plant.components.plant_component import PlantComponent
         from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
         from biology.lifecycle.components.morphology_component import MorphologyComponent
 
@@ -583,10 +609,18 @@ class SimulationLoop:
                 if plant_comp is not None:
                     plant_comp.harvestable_yield = random.uniform(8.0, 20.0)
                     plant_comp.max_yield = plant_comp.harvestable_yield * 1.5
+                    # 乔木类植物产出木材
+                    if species == "tree":
+                        plant_comp.produces_wood = True
+                        plant_comp.wood_amount = random.uniform(2.0, 8.0)
 
+                # 外观由 MorphologySystem 从生物量动态推导，不硬编码
                 if morph is not None:
-                    morph.weight = plant_comp.harvestable_yield * 2.0 if plant_comp else 20.0
-                    morph.height = random.uniform(3.0, 8.0)
+                    if species == "tree":
+                        # 乔木需要大生物量才能支撑高大外观
+                        morph.weight = random.uniform(150.0, 400.0)
+                    else:
+                        morph.weight = plant_comp.harvestable_yield * 2.0 if plant_comp else 20.0
 
                 mature_count += 1
 
@@ -615,7 +649,7 @@ class SimulationLoop:
         # 统计数据 —— 使用 get_components() 避免 O(E) 全量遍历
         from resource.water.components.water_component import WaterComponent
         from human.components.basic.human_component import HumanComponent
-        from biology.components.plant_component import PlantComponent
+        from plant.components.plant_component import PlantComponent
 
         human_count = sum(1 for _ in self.world.query_components(HumanComponent))
         food_count = sum(1 for _ in self.world.get_components(FoodComponent))

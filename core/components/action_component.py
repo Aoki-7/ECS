@@ -43,6 +43,7 @@ class ActionType(Enum):
     STORE = auto()
     HARVEST = auto()
     GATHER = auto()
+    PLANT = auto()            # 种植
 
     # === 战斗 ===
     ATTACK = auto()

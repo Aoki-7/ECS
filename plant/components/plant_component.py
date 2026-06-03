@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class PlantComponent(Component):
     """
     植物可收获属性组件
@@ -39,3 +39,9 @@ class PlantComponent(Component):
 
     # 再生速率
     regrowth_rate: float = 0.1
+
+    # 是否产出木材（乔木类）
+    produces_wood: bool = False
+
+    # 木材产量
+    wood_amount: float = 0.0

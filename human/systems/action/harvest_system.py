@@ -22,10 +22,11 @@ from resource.food.components.food_component import FoodComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 from equipment.components.ownership_component import OwnershipComponent
-from biology.components.plant_component import PlantComponent
+from plant.components.plant_component import PlantComponent
 from biology.components.life_cycle_component import LifeCycleComponent
 from biology.components.morphology_component import MorphologyComponent
 from resource.food.food_factory import FoodFactory
+from resource.wood.wood_factory import WoodFactory
 
 import logging
 
@@ -107,6 +108,15 @@ class HarvestSystem(System):
             space_system = world.get_system(SpaceSystem)
             if space_system is not None:
                 space_system.remove_entity(food_entity)
+
+            # 如果植物产出木材，同时创建木材实体
+            if plant_comp.produces_wood and plant_comp.wood_amount > 0:
+                wood_entity = WoodFactory.create_wood(world, space.x, space.y)
+                world.add_component(wood_entity, OwnershipComponent(owner_id=entity.id))
+                inventory.add(wood_entity)
+                if space_system is not None:
+                    space_system.remove_entity(wood_entity)
+                logger.debug(f"[Harvest] E{entity.id} 从植物 E{target_entity.id} 收获了木材 x{plant_comp.wood_amount:.1f}")
 
             # 更新植物状态
             if plant_comp.is_perennial:

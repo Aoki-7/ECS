@@ -189,7 +189,7 @@ class PlanningSystem(System):
 
     def _find_harvestable_plant(self, entity, world: World):
         """在视野内查找可收获的植物实体"""
-        from biology.components.plant_component import PlantComponent
+        from plant.components.plant_component import PlantComponent
         
         space = world.get_component(entity, SpaceComponent)
         vision = world.get_component(entity, VisionComponent)
