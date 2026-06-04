@@ -27,6 +27,7 @@ from biology.lifecycle.components.morphology_component import MorphologyComponen
 from biology.traits.trait import Trait
 
 from space.space_component import SpaceComponent
+from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
 
 
 class BiologyReproductionSystem(System):
@@ -115,15 +116,21 @@ class BiologyReproductionSystem(System):
             # ---- 种子数量（由基因决定，带随机波动） ----
             seed_count = max(1, int(seed_prod * self._rng.uniform(0.8, 1.2)))
 
+            # 读取父母的物种信息
+            tracker = world.get_component(entity, SpeciationTrackerComponent)
+            parent_species = tracker.species_id if tracker else "basic"
+            parent_generation = tracker.generation if tracker else 0
+
             for _ in range(seed_count):
                 dx = self._rng.randint(-int(dispersal), int(dispersal))
                 dy = self._rng.randint(-int(dispersal), int(dispersal))
-                new_seeds.append((space.x + dx, space.y + dy, genome))
+                new_seeds.append((space.x + dx, space.y + dy, genome, parent_species, parent_generation))
 
         # 创建子代
-        for x, y, parent_genome in new_seeds:
+        for x, y, parent_genome, parent_species, parent_generation in new_seeds:
             child = self._create_offspring(
-                world, parent_genome, x, y, self.REPRODUCTION_MUTATION_RATE
+                world, parent_genome, x, y, self.REPRODUCTION_MUTATION_RATE,
+                parent_species, parent_generation,
             )
             if self.enable_log:
                 EventLog.log(
@@ -145,6 +152,8 @@ class BiologyReproductionSystem(System):
         x: int,
         y: int,
         variation: float,
+        parent_species: str = "basic",
+        parent_generation: int = 0,
     ):
         """
         基于亲本基因组创建子代实体
@@ -190,5 +199,13 @@ class BiologyReproductionSystem(System):
 
         # 空间坐标
         world.add_component(entity, SpaceComponent(x=x, y=y, layer=0))
+
+        # 物种形成追踪组件（继承父母）
+        world.add_component(entity, SpeciationTrackerComponent(
+            species_id=parent_species,
+            original_species=parent_species,
+            generation=parent_generation + 1,
+            lineage_id=f"{parent_species}_{entity.id}",
+        ))
 
         return entity

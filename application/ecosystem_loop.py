@@ -69,11 +69,13 @@ from biology.ecology.decomposer_system import DecomposerSystem
 from biology.ecology.trophic_level_system import TrophicLevelSystem
 from biology.ecology.population_dynamics_system import PopulationDynamicsSystem
 from biology.ecology.ecology_balance_system import EcologyBalanceSystem
+from biology.ecology.speciation_system import SpeciationSystem
 
 from environment.soil.components.soil_component import SoilComponent
 from space.space_component import SpaceComponent
 from plant.components.plant_component import PlantComponent
 from animal.components.animal_component import AnimalComponent
+from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
 
 
 class EcosystemLoop:
@@ -195,6 +197,11 @@ class EcosystemLoop:
         self.ecology_balance_system.priority = 60
         self.world.add_system(self.ecology_balance_system)
 
+        # 11. 物种形成系统（priority 65）
+        self.speciation_system = SpeciationSystem()
+        self.speciation_system.priority = 65
+        self.world.add_system(self.speciation_system)
+
     def create_initial_population(
         self,
         plant_count: int = 80,
@@ -313,7 +320,8 @@ class EcosystemLoop:
             f"食草动物={stats['herbivores']:2d} "
             f"食肉动物={stats['carnivores']:2d} "
             f"尸体={stats['corpses']:2d} "
-            f"总实体={stats['total_entities']:3d} | "
+            f"总实体={stats['total_entities']:3d} "
+            f"物种数={stats['species_count']:2d} | "
             f"土壤氮={stats['soil_nitrogen']:6.1f} "
             f"磷={stats['soil_phosphorus']:5.1f} "
             f"钾={stats['soil_potassium']:5.1f}"
@@ -332,6 +340,9 @@ class EcosystemLoop:
         total_soil_k = 0.0
         soil_count = 0
 
+        # 物种多样性统计
+        species_ids = set()
+
         for entity_id in self.world.entities:
             entity = self.world.query_entity(entity_id)
             if entity is None:
@@ -340,6 +351,9 @@ class EcosystemLoop:
             # 植物
             if self.world.get_component(entity, PlantComponent) is not None:
                 plants += 1
+                tracker = self.world.get_component(entity, SpeciationTrackerComponent)
+                if tracker:
+                    species_ids.add(tracker.species_id)
                 continue
 
             # 动物
@@ -349,6 +363,9 @@ class EcosystemLoop:
                     carnivores += 1
                 else:
                     herbivores += 1
+                tracker = self.world.get_component(entity, SpeciationTrackerComponent)
+                if tracker:
+                    species_ids.add(tracker.species_id)
                 continue
 
             # 尸体（通过 CorpseComponent 判断）
@@ -371,6 +388,7 @@ class EcosystemLoop:
             "carnivores": carnivores,
             "corpses": corpses,
             "total_entities": total_entities,
+            "species_count": len(species_ids),
             "soil_nitrogen": total_soil_n / max(soil_count, 1),
             "soil_phosphorus": total_soil_p / max(soil_count, 1),
             "soil_potassium": total_soil_k / max(soil_count, 1),
@@ -394,4 +412,5 @@ class EcosystemLoop:
         logger.info(f"食肉动物: {first['carnivores']:3d} → {last['carnivores']:3d} "
                     f"({'+' if last['carnivores'] >= first['carnivores'] else ''}{last['carnivores'] - first['carnivores']})")
         logger.info(f"总实体:   {first['total_entities']:3d} → {last['total_entities']:3d}")
+        logger.info(f"物种数:   {first['species_count']:2d} → {last['species_count']:2d}")
         logger.info("=" * 60)

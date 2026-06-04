@@ -105,9 +105,16 @@ class AnimalReproductionSystem(System):
             child_x = max(0, child_x)
             child_y = max(0, child_y)
 
-            # 产生后代
+            # 产生后代（继承父母的物种标识和代数）
+            from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
+            parent_tracker = world.get_component(entity, SpeciationTrackerComponent)
+            parent_species = animal.species
+            parent_generation = parent_tracker.generation if parent_tracker else 0
+
             child = AnimalFactory.create_animal_from_genome(
-                world, genome, x=child_x, y=child_y
+                world, genome, x=child_x, y=child_y,
+                parent_species=parent_species,
+                parent_generation=parent_generation,
             )
 
             logger.debug(

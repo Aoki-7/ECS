@@ -24,6 +24,7 @@ from space.space_component import SpaceComponent
 
 from biology.ecology.components.food_chain_component import FoodChainComponent
 from biology.ecology.components.population_component import PopulationComponent
+from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
 
 from .presets import SPECIES_PRESETS
 
@@ -110,6 +111,14 @@ class AnimalFactory:
         # ---- Step 4: 挂载动物生存必需的基础组件 ----
         cls._attach_base_components(world, entity, genome, lifecycle, preset, species, x, y)
 
+        # ---- Step 5: 挂载物种形成追踪组件 ----
+        world.add_component(entity, SpeciationTrackerComponent(
+            species_id=species,
+            original_species=species,
+            generation=0,
+            lineage_id=f"{species}_{entity.id}",
+        ))
+
         return entity
 
     # -------------------------------------------------
@@ -164,6 +173,8 @@ class AnimalFactory:
         variation: float = 0.15,
         x: int = 0,
         y: int = 0,
+        parent_species: str = "basic",
+        parent_generation: int = 0,
     ) -> Entity:
         """
         基于亲本 Genome 创建子代（遗传 + 变异）
@@ -199,8 +210,16 @@ class AnimalFactory:
 
         # 挂载基础组件（子代使用 basic 物种预设）
         cls._attach_base_components(
-            world, entity, child_genome, lifecycle, cls.SPECIES_PRESETS["basic"], "basic", x, y
+            world, entity, child_genome, lifecycle, cls.SPECIES_PRESETS["basic"], parent_species, x, y
         )
+
+        # 挂载物种形成追踪组件（继承父母）
+        world.add_component(entity, SpeciationTrackerComponent(
+            species_id=parent_species,
+            original_species=parent_species,
+            generation=parent_generation + 1,
+            lineage_id=f"{parent_species}_{entity.id}",
+        ))
 
         return entity
 

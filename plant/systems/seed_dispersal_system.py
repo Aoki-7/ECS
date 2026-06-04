@@ -29,6 +29,7 @@ from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from space.space_component import SpaceComponent
 from environment.soil.components.soil_component import SoilComponent
+from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
 
 
 class SeedDispersalSystem(System):
@@ -127,15 +128,21 @@ class SeedDispersalSystem(System):
                 if soil is not None and soil.moisture < soil.wilting_point:
                     continue  # 太干旱，种子无法存活
 
-                new_seeds.append((new_x, new_y, genome))
+                # 读取父母的物种信息
+                tracker = world.get_component(entity, SpeciationTrackerComponent)
+                parent_species = tracker.species_id if tracker else "basic"
+                parent_generation = tracker.generation if tracker else 0
+                new_seeds.append((new_x, new_y, genome, parent_species, parent_generation))
 
         # 创建子代
-        for x, y, parent_genome in new_seeds:
+        for x, y, parent_genome, parent_species, parent_generation in new_seeds:
             # 延迟导入避免循环依赖
             from plant.plant_factory import PlantFactory
 
             child = PlantFactory.create_plant_from_genome(
-                world, parent_genome, x, y, variation=self.MUTATION_RATE
+                world, parent_genome, x, y, variation=self.MUTATION_RATE,
+                parent_species=parent_species,
+                parent_generation=parent_generation,
             )
 
             if self.enable_log:
