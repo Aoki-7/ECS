@@ -206,4 +206,7 @@ class SocialNetworkComponent:
             yield (count, friend)
 
 if __name__ == "__main__":
-    print("Social Network Component loaded")
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.info("Social Network Component loaded")

@@ -13,7 +13,7 @@
     - SenescenceSystem       : 衰老退化
     - DamageRepairSystem     : 损伤修复
     - MutationSystem         : 持续环境诱变
-    - ReproductionSystem     : 成熟期繁殖（遗传 + 变异 + 空间散布）
+    - BiologyReproductionSystem : 成熟期繁殖（遗传 + 变异 + 空间散布）
     - ImmuneSystem           : 感染传播与免疫反应
     - CreatureDeathTriggerSystem : 生物死亡条件检测
 

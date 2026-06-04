@@ -10,7 +10,7 @@
     - FoodCleanupSystem: 清理已完全腐败或耗尽的食物实体
 
 与 biology/ 的关系：
-    - 植物通过 ReproductionSystem 产生果实（转化为食物实体）
+    - 植物通过 BiologyReproductionSystem 产生果实（转化为食物实体）
     - 动物/人类死亡后可通过 rules/ 转化为肉类资源
 
 与 human/ 的关系：

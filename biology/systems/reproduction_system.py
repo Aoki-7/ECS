@@ -5,7 +5,7 @@
 
 保留本文件仅用于向后兼容。
 请从新路径导入：
-    from biology.lifecycle.birth.systems.reproduction_system import ReproductionSystem
+    from biology.lifecycle.birth.systems.reproduction_system import BiologyReproductionSystem
 """
 
 import warnings
@@ -17,4 +17,4 @@ warnings.warn(
     stacklevel=2,
 )
 
-from biology.lifecycle.birth.systems.reproduction_system import ReproductionSystem
+from biology.lifecycle.birth.systems.reproduction_system import BiologyReproductionSystem

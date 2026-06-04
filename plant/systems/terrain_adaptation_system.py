@@ -118,8 +118,9 @@ class TerrainAdaptationSystem(System):
         for _, (terrain, space) in world.get_components(
             TerrainComponent, SpaceComponent
         ):
-            gx = int(space.x)
-            gy = int(space.y)
+            # 使用 10x10 网格索引与环境系统对齐
+            gx = int(space.x) // 10
+            gy = int(space.y) // 10
             self._terrain_cache[(gx, gy)] = terrain
 
     def _get_terrain_at(self, space: SpaceComponent):

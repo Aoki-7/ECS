@@ -67,7 +67,7 @@ human/systems/
 │   ├── physiology_needs_system.py # 生理需求系统
 │   └── health_system.py     # 健康系统
 ├── cognitive/               # 认知系统
-│   └── preception_system.py # 感知系统
+│   └── perception_system.py # 感知系统
 ├── social/                  # 社交系统
 │   ├── social_system.py     # 社交系统
 │   ├── pairing_system.py    # 配对系统
@@ -101,7 +101,7 @@ from .physiological.health_system import HealthSystem
 # 认知系统
 # from .cognitive.decision_system import DecisionSystem  # 空文件，暂不导入
 # from .cognitive.goal_system import GoalSystem  # 空文件，暂不导入
-from .cognitive.preception_system import PerceptionSystem
+from .cognitive.perception_system import PerceptionSystem
 
 # 社交系统
 from .social.social_system import SocialSystem

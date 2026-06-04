@@ -73,7 +73,8 @@ class GrazingSystem(System):
                 if candidate_id == entity.id:
                     continue
 
-                plant_comp = world.get_component_by_id(candidate_id, PlantComponent)
+                candidate = world.query_entity(candidate_id)
+                plant_comp = world.get_component(candidate, PlantComponent) if candidate else None
                 if plant_comp is None:
                     continue
 
@@ -93,8 +94,9 @@ class GrazingSystem(System):
             graze_amount = min(self.MAX_GRAZE_AMOUNT, best_yield)
 
             # 消耗植物
-            plant_comp = world.get_component_by_id(best_plant, PlantComponent)
-            resource = world.get_component_by_id(best_plant, ResourceComponent)
+            best_plant_entity = world.query_entity(best_plant)
+            plant_comp = world.get_component(best_plant_entity, PlantComponent) if best_plant_entity else None
+            resource = world.get_component(best_plant_entity, ResourceComponent) if best_plant_entity else None
 
             if plant_comp is not None:
                 plant_comp.harvestable_yield -= graze_amount

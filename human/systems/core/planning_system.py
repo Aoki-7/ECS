@@ -41,6 +41,8 @@ class PlanningSystem(System):
         super().__init__()
 
     def update(self, world: World, dt):
+        from core.components.world_config_component import WorldConfigComponent
+        world_config = world.get_world_component(WorldConfigComponent)
         planned_this_tick = set()
 
         for entity, (intent, task, action, space) in world.get_components(
@@ -167,8 +169,7 @@ class PlanningSystem(System):
                     target_x = space.x + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
                     target_y = space.y + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
                     # 限制在地图范围内
-                    target_x = max(0, min(99, target_x))
-                    target_y = max(0, min(99, target_y))
+                    target_x, target_y = world_config.clamp_position(target_x, target_y)
                     action.target_pos = (target_x, target_y)
 
                 action.action_queue = [

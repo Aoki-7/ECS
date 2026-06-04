@@ -54,7 +54,7 @@ from human.systems.social.leadership_system import LeadershipSystem
 from human.systems.social.loyalty_system import LoyaltySystem
 from human.systems.social.recruit_system import RecruitSystem
 from human.systems.cognitive.decision_system import DecisionSystem
-from human.systems.cognitive.preception_system import PerceptionSystem
+from human.systems.cognitive.perception_system import PerceptionSystem
 from human.systems.cognitive.emotion_system import EmotionSystem
 from human.systems.cognitive.thought_system import ThoughtSystem
 from human.systems.cognitive.goal_system import GoalSystem
@@ -116,7 +116,7 @@ from biology.lifecycle.corpse.systems.corpse_system import CorpseSystem
 from biology.lifecycle.systems.life_cycle_system import LifeCycleSystem
 from biology.lifecycle.aging.systems.senescence_system import SenescenceSystem
 from biology.systems.mutation_system import MutationSystem
-from biology.lifecycle.birth.systems.reproduction_system import ReproductionSystem as BiologyReproductionSystem
+from biology.lifecycle.birth.systems.reproduction_system import BiologyReproductionSystem
 from biology.systems.immune_system import ImmuneSystem
 from biology.systems.damage_repair_system import DamageRepairSystem
 from biology.systems.nutrient_system import NutrientSystem
@@ -173,9 +173,11 @@ class SimulationLoop:
         from world.world_entity import WorldEntity
         from time_module.time_component import TimeComponent
         from space.space_system import SpaceSystem
+        from core.components.world_config_component import WorldConfigComponent
 
         world_entity = WorldEntity()
         world_entity.add_component(TimeComponent())
+        world_entity.add_component(WorldConfigComponent(map_width=100, map_height=100))
         self.world.set_world_entity(world_entity)
 
         # 注册空间系统
@@ -451,11 +453,13 @@ class SimulationLoop:
             food_count: 食物实体数量
             water_count: 水源实体数量
         """
+        from core.components.world_config_component import WorldConfigComponent
+        world_config = self.world.get_world_component(WorldConfigComponent)
         logger.info(f"[Init] 资源: {food_count} 食物, {water_count} 水源")
 
         for i in range(food_count):
-            x = random.randint(0, 99)
-            y = random.randint(0, 99)
+            x = random.randint(0, world_config.map_width - 1)
+            y = random.randint(0, world_config.map_height - 1)
             food = self.food_factory.create_food(
                 self.world, x=x, y=y,
                 food_type="berry",
@@ -465,15 +469,17 @@ class SimulationLoop:
         # 水源聚落化分布：创建5-8个聚落中心，每个中心附近生成多个水源
         import math
         num_clusters = random.randint(5, 8)
-        cluster_centers = [(random.randint(10, 89), random.randint(10, 89)) for _ in range(num_clusters)]
+        margin = 10
+        max_cx = world_config.map_width - 1 - margin
+        max_cy = world_config.map_height - 1 - margin
+        cluster_centers = [(random.randint(margin, max_cx), random.randint(margin, max_cy)) for _ in range(num_clusters)]
         for i in range(water_count):
             # 随机选择一个聚落中心
             cx, cy = random.choice(cluster_centers)
             # 在中心附近生成水源（正态分布，sigma=8）
             x = int(random.gauss(cx, 8))
             y = int(random.gauss(cy, 8))
-            x = max(0, min(99, x))
-            y = max(0, min(99, y))
+            x, y = world_config.clamp_position(x, y)
             water = self.water_factory.create_water(
                 self.world, x=x, y=y,
                 amount=random.uniform(100, 300)
@@ -516,6 +522,8 @@ class SimulationLoop:
             existing_food_positions = []
             for e, [f, s] in self.world.get_components(FoodComponent, SpaceComponent):
                 existing_food_positions.append((s.x, s.y))
+            from core.components.world_config_component import WorldConfigComponent
+            world_config = self.world.get_world_component(WorldConfigComponent)
             for _ in range(need):
                 if existing_food_positions and random.random() < 0.7:
                     # 70% 概率在已有食物附近生成（聚落化）
@@ -524,10 +532,9 @@ class SimulationLoop:
                     y = int(random.gauss(fy, 5))
                 else:
                     # 30% 概率完全随机（探索新区域）
-                    x = random.randint(0, 99)
-                    y = random.randint(0, 99)
-                x = max(0, min(99, x))
-                y = max(0, min(99, y))
+                    x = random.randint(0, world_config.map_width - 1)
+                    y = random.randint(0, world_config.map_height - 1)
+                x, y = world_config.clamp_position(x, y)
                 self.food_factory.create_food(
                     self.world, x=x, y=y,
                     food_type="berry",
@@ -550,10 +557,9 @@ class SimulationLoop:
                     x = int(random.gauss(wx, 8))
                     y = int(random.gauss(wy, 8))
                 else:
-                    x = random.randint(0, 99)
-                    y = random.randint(0, 99)
-                x = max(0, min(99, x))
-                y = max(0, min(99, y))
+                    x = random.randint(0, world_config.map_width - 1)
+                    y = random.randint(0, world_config.map_height - 1)
+                x, y = world_config.clamp_position(x, y)
                 self.water_factory.create_water(
                     self.world, x=x, y=y,
                     amount=random.uniform(80, 150)

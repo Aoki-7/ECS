@@ -3,16 +3,16 @@
 """
 植物种子传播系统
 
-提供配置化、环境感知的种子传播策略，取代 ReproductionSystem 中的硬编码方形散布。
+提供配置化、环境感知的种子传播策略，取代 BiologyReproductionSystem 中的硬编码方形散布。
 
 传播策略：
     - 圆形散布（自然距离衰减）
     - 土壤适宜性检查（避免落在干旱/岩石区域）
     - 边界检查
 
-与 ReproductionSystem 的关系：
+与 BiologyReproductionSystem 的关系：
     本系统作为补充层，tick_interval 更大（50），
-    负责长距离/策略性传播；ReproductionSystem 继续做基础短距离繁殖。
+    负责长距离/策略性传播；BiologyReproductionSystem 继续做基础短距离繁殖。
     若需要完全替代，可在 simulation_loop 中移除 BiologyReproductionSystem。
 """
 
@@ -66,6 +66,8 @@ class SeedDispersalSystem(System):
             world: World 实例
             dt: 时间步长（预留）
         """
+        from core.components.world_config_component import WorldConfigComponent
+        world_config = world.get_world_component(WorldConfigComponent)
         self._tick_counter += 1
         soil_cache = self._build_soil_cache(world)
         new_seeds = []
@@ -116,8 +118,8 @@ class SeedDispersalSystem(System):
                 new_x = int(space.x) + dx
                 new_y = int(space.y) + dy
 
-                # 边界检查（假设地图为 0~99）
-                if not (0 <= new_x <= 99 and 0 <= new_y <= 99):
+                # 边界检查
+                if not (0 <= new_x < world_config.map_width and 0 <= new_y < world_config.map_height):
                     continue
 
                 # 土壤适宜性检查
@@ -154,7 +156,8 @@ class SeedDispersalSystem(System):
         for _, (soil, space) in world.get_components(
             SoilComponent, SpaceComponent
         ):
-            gx = int(space.x)
-            gy = int(space.y)
+            # 使用 10x10 网格索引与环境系统对齐
+            gx = int(space.x) // 10
+            gy = int(space.y) // 10
             cache[(gx, gy)] = soil
         return cache

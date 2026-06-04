@@ -42,6 +42,8 @@ class SearchSystem(System):
     """
 
     def update(self, world: World, dt: float):
+        from core.components.world_config_component import WorldConfigComponent
+        world_config = world.get_world_component(WorldConfigComponent)
         for entity, (action, vision, search, task, space) in world.get_components(
             ActionComponent,
             VisionComponent,
@@ -330,8 +332,7 @@ class SearchSystem(System):
                         roam_range = 15
                         roam_x = space.x + random.randint(-roam_range, roam_range)
                         roam_y = space.y + random.randint(-roam_range, roam_range)
-                        roam_x = max(0, min(99, roam_x))
-                        roam_y = max(0, min(99, roam_y))
+                        roam_x, roam_y = world_config.clamp_position(roam_x, roam_y)
 
                         action.target_pos = (roam_x, roam_y)
                         action.current_action = ActionType.MOVE_TO

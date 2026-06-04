@@ -4,11 +4,11 @@
 CreatureDeathTriggerSystem — 通用生物死亡触发系统
 
 职责：
-    检测非人类生物（植物、动物等）的能量耗尽，挂载 PendingDeathComponent。
+    检测非人类生物（植物、动物等）的能量耗尽或衰老，挂载 PendingDeathComponent。
     不直接删除实体 —— 死亡执行由 DeathSystem 统一处理。
 
 排除范围：
-    - 有 LifeCycleComponent 的实体（人类），由 HumanDeathTriggerSystem 处理
+    - 有人类组件的实体，由 HumanDeathTriggerSystem 处理
 """
 
 import logging
@@ -34,14 +34,19 @@ class CreatureDeathTriggerSystem(System):
             if not world.has_entity(entity):
                 continue
 
-            # 跳过有 LifeCycleComponent 的实体（人类），由专门的触发系统处理
-            if world.get_component(entity, LifeCycleComponent) is not None:
-                continue
+            # 跳过人类实体，由 HumanDeathTriggerSystem 处理
+            try:
+                from human.components.basic.human_component import HumanComponent
+                if world.get_component(entity, HumanComponent) is not None:
+                    continue
+            except ImportError:
+                pass
 
             # 如果已经标记死亡，跳过
             if world.get_component(entity, PendingDeathComponent) is not None:
                 continue
 
+            # 条件 1：能量耗尽
             if energy.value <= 0:
                 world.add_component(entity, PendingDeathComponent(
                     reason="energy_depleted",
@@ -50,3 +55,17 @@ class CreatureDeathTriggerSystem(System):
                     timestamp=world_time,
                     details=f"energy={energy.value:.1f}"
                 ))
+                continue
+
+            # 条件 2：衰老（年龄超过最大寿命）
+            lifecycle = world.get_component(entity, LifeCycleComponent)
+            if lifecycle is not None:
+                if lifecycle.current_age >= lifecycle.max_age:
+                    world.add_component(entity, PendingDeathComponent(
+                        reason="old_age",
+                        source_system="CreatureDeathTriggerSystem",
+                        priority=3,
+                        timestamp=world_time,
+                        details=f"age={lifecycle.current_age:.1f}, max_age={lifecycle.max_age:.1f}"
+                    ))
+                    continue

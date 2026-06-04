@@ -160,21 +160,24 @@ if __name__ == "__main__":
         regen_rate=5.0
     )
     
-    print(f"初始状态: 数量={tree.amount}, 状态={tree.state.name}")
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.info(f"初始状态: 数量={tree.amount}, 状态={tree.state.name}")
     
     # 消耗资源
     consumed = tree.consume(30.0)
-    print(f"消耗了 {consumed} 单位资源")
-    print(f"当前状态: 数量={tree.amount}, 状态={tree.state.name}")
+    logger.info(f"消耗了 {consumed} 单位资源")
+    logger.info(f"当前状态: 数量={tree.amount}, 状态={tree.state.name}")
     
     # 资源再生
     tree.regenerate(2.0)  # 再生2个时间单位
-    print(f"再生后状态: 数量={tree.amount}, 状态={tree.state.name}")
+    logger.info(f"再生后状态: 数量={tree.amount}, 状态={tree.state.name}")
     
     # 设置和获取元数据
     tree.set_metadata("species", "橡树")
     tree.set_metadata("age", 50)
-    print(f"树木种类: {tree.get_metadata('species')}, 年龄: {tree.get_metadata('age')}")
+    logger.info(f"树木种类: {tree.get_metadata('species')}, 年龄: {tree.get_metadata('age')}")
 
 
 # from core.component import Component

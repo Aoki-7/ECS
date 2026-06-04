@@ -135,8 +135,9 @@ class ReproductionSystem(System):
         # 计算新生儿的位置（在父母附近，随机偏移1格）
         child_x = (parent_space.x + random.randint(-1, 1)) if parent_space else 0
         child_y = (parent_space.y + random.randint(-1, 1)) if parent_space else 0
-        child_x = max(0, min(99, child_x))
-        child_y = max(0, min(99, child_y))
+        from core.components.world_config_component import WorldConfigComponent
+        world_config = world.get_world_component(WorldConfigComponent)
+        child_x, child_y = world_config.clamp_position(child_x, child_y)
         
         # 挂载 BirthRequestComponent，由 BirthSystem 执行实际生育
         world.add_component(entity, BirthRequestComponent(

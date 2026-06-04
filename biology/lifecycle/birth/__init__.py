@@ -12,6 +12,6 @@
     - systems/ : BirthSystem（出生系统）
 
 触发条件：
-    - 动物/人类：ReproductionSystem 判定配对成功后生成 PregnancyComponent
-    - 植物：ReproductionSystem 判定成熟后生成 SeedComponent 或直接萌芽
+    - 动物/人类：BiologyReproductionSystem 判定配对成功后生成 PregnancyComponent
+    - 植物：BiologyReproductionSystem 判定成熟后生成 SeedComponent 或直接萌芽
 """

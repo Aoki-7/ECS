@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@文件:preception_system.py
+@文件:perception_system.py
 @说明:感知系统
 @时间:2026/03/28 17:30:09
 @作者:Sherry

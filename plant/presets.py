@@ -291,6 +291,93 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "adaptability": 0.6,
         "genetic_stability": 0.6,
     },
+
+    # ────────────────────────────────────────────
+    # 🌲 松树型 — 常绿针叶、极长寿、耐寒
+    # ────────────────────────────────────────────
+    "pine": {
+        "max_photosynthesis_rate": 8.0,
+        "light_use_efficiency": 0.03,
+        "shade_tolerance": 0.3,
+        "light_compensation_point": 20.0,
+        "light_saturation_point": 700.0,
+        "water_use_efficiency": 0.04,
+        "nutrient_use_efficiency": 0.4,
+        "carbon_storage_efficiency": 0.7,
+        "cold_tolerance": 0.85,
+        "heat_tolerance": 0.3,
+        "drought_tolerance": 0.6,
+        "flood_tolerance": 0.2,
+        "metabolism_rate": 0.004,
+        "growth_partition": 0.35,
+        "maintenance_cost": 0.008,
+        "storage_partition": 0.5,
+        "seed_production": 0.4,
+        "seed_size": 3.0,
+        "dispersal_radius": 15.0,
+        "germination_rate": 0.3,
+        "mutation_rate": 0.03,
+        "adaptability": 0.4,
+        "genetic_stability": 0.95,
+    },
+
+    # ────────────────────────────────────────────
+    # 🌸 花卉型 — 高繁殖、短命、吸引传粉
+    # ────────────────────────────────────────────
+    "flower": {
+        "max_photosynthesis_rate": 28.0,
+        "light_use_efficiency": 0.08,
+        "shade_tolerance": 0.3,
+        "light_compensation_point": 25.0,
+        "light_saturation_point": 600.0,
+        "water_use_efficiency": 0.04,
+        "nutrient_use_efficiency": 0.5,
+        "carbon_storage_efficiency": 0.15,
+        "cold_tolerance": 0.2,
+        "heat_tolerance": 0.5,
+        "drought_tolerance": 0.2,
+        "flood_tolerance": 0.3,
+        "metabolism_rate": 0.02,
+        "growth_partition": 0.65,
+        "maintenance_cost": 0.03,
+        "storage_partition": 0.1,
+        "seed_production": 2.5,
+        "seed_size": 0.3,
+        "dispersal_radius": 4.0,
+        "germination_rate": 0.85,
+        "mutation_rate": 0.18,
+        "adaptability": 0.8,
+        "genetic_stability": 0.4,
+    },
+
+    # ────────────────────────────────────────────
+    # 🌿 蕨类型 — 孢子繁殖、耐阴、原始植物
+    # ────────────────────────────────────────────
+    "fern": {
+        "max_photosynthesis_rate": 12.0,
+        "light_use_efficiency": 0.1,
+        "shade_tolerance": 0.8,
+        "light_compensation_point": 8.0,
+        "light_saturation_point": 250.0,
+        "water_use_efficiency": 0.08,
+        "nutrient_use_efficiency": 0.4,
+        "carbon_storage_efficiency": 0.25,
+        "cold_tolerance": 0.4,
+        "heat_tolerance": 0.3,
+        "drought_tolerance": 0.3,
+        "flood_tolerance": 0.6,
+        "metabolism_rate": 0.012,
+        "growth_partition": 0.55,
+        "maintenance_cost": 0.018,
+        "storage_partition": 0.2,
+        "seed_production": 3.0,
+        "seed_size": 0.1,
+        "dispersal_radius": 2.0,
+        "germination_rate": 0.6,
+        "mutation_rate": 0.15,
+        "adaptability": 0.5,
+        "genetic_stability": 0.5,
+    },
 }
 
 
@@ -307,4 +394,7 @@ SPECIES_LIFECYCLE: Dict[str, Dict] = {
     "aquatic":        {"max_age": 8760},
     "succulent":      {"max_age": 26280},
     "vine":           {"max_age": 13140},
+    "pine":           {"max_age": 262800},
+    "flower":         {"max_age": 2160},
+    "fern":           {"max_age": 17520},
 }

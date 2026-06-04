@@ -348,10 +348,7 @@ class World:
         """
             获取由特定组件类型组成的实体列表
         """
-        return [
-            entity
-            for entity, _ in self.get_components(*component_types)
-        ]
+        yield from (entity for entity, _ in self.get_components(*component_types))
 
     # ====
     # Debug

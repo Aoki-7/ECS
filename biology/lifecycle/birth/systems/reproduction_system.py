@@ -29,7 +29,7 @@ from biology.traits.trait import Trait
 from space.space_component import SpaceComponent
 
 
-class ReproductionSystem(System):
+class BiologyReproductionSystem(System):
     tick_interval = 20  # 每20帧执行一次
     """
     植物繁殖系统（无性繁殖）

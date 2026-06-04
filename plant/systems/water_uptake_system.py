@@ -93,9 +93,9 @@ class PlantWaterUptakeSystem(System):
         for _, (soil, space) in world.get_components(
             SoilComponent, SpaceComponent
         ):
-            # 环境网格实体的坐标本身就是网格索引
-            gx = int(space.x)
-            gy = int(space.y)
+            # 使用 10x10 网格索引与环境系统对齐
+            gx = int(space.x) // 10
+            gy = int(space.y) // 10
             self._soil_cache[(gx, gy)] = soil
 
     def _get_soil_at(self, space: SpaceComponent):
