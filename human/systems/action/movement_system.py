@@ -34,7 +34,7 @@ class MovementSystem(System):
     - 目标无效时标记 FAILED
     """
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         """
         更新所有可移动实体的位置。
 

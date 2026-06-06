@@ -129,6 +129,9 @@ from plant.systems.water_uptake_system import PlantWaterUptakeSystem
 from plant.systems.seed_dispersal_system import SeedDispersalSystem
 from plant.systems.terrain_adaptation_system import TerrainAdaptationSystem
 
+# 地府系统
+from death_archive.systems.death_archive_system import DeathArchiveSystem
+
 # 规则系统
 from rules.transformation_system import TransformationSystem
 from rules.transformation_rule import TransformationRule
@@ -400,6 +403,11 @@ class SimulationLoop:
         for system in self.biology_systems:
             system.priority = 50
             self.world.add_system(system)
+
+        # 5.5 死亡档案系统（priority 55，在死亡/尸体之后，规则之前）
+        self.death_archive_system = DeathArchiveSystem()
+        self.death_archive_system.priority = 55
+        self.world.add_system(self.death_archive_system)
 
         # 6. 规则系统（priority 60）
         self.transformation_rules = [

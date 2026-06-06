@@ -40,7 +40,7 @@ class CreatureDeathTriggerSystem(System):
                 if world.get_component(entity, HumanComponent) is not None:
                     continue
             except ImportError:
-                pass
+                logger.warning("HumanComponent not available, skipping human check")
 
             # 如果已经标记死亡，跳过
             if world.get_component(entity, PendingDeathComponent) is not None:

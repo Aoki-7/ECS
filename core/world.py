@@ -66,7 +66,7 @@ class World:
             if space_system:
                 space_system.remove_entity(entity.id)
         except ImportError:
-            pass
+            logger.warning("SpaceSystem not available, skipping spatial cleanup")
 
         # 移除组件
         for comp_dict in self.components.values():

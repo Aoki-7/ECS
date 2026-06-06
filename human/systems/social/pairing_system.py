@@ -29,7 +29,7 @@ class PairingSystem(System):
     基于社会需求、年龄和性别寻找伴侣。
     """
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         # 收集所有单身人类，同时按性别分组并缓存部落信息
         males = []
         females = []

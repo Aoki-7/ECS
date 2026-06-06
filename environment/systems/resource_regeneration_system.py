@@ -1,4 +1,5 @@
 from core.system import System
+from core.world import World
 from resource.components.resource_component import ResourceComponent
 
 class ResourceRegenerationSystem(System):
@@ -8,7 +9,7 @@ class ResourceRegenerationSystem(System):
     定期再生环境中的资源。
     """
 
-    def update(self, world, dt):
+    def update(self, world: World, dt: float):
         for entity, resource in world.query_components(ResourceComponent):
             if resource.resource_type in ["tree", "fruit"]:
                 resource.amount += 0.1 * dt  # 树木和果实随时间再生

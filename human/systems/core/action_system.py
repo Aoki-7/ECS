@@ -32,7 +32,7 @@ class ActionSystem(System):
     # 能量过低强制睡眠阈值
     ENERGY_CRITICAL_THRESHOLD = 15
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         for _, (action, needs) in world.get_components(ActionComponent, PhysiologyNeedsComponent):
             
             if action is None or needs is None:

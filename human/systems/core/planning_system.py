@@ -40,7 +40,7 @@ class PlanningSystem(System):
     def __init__(self):
         super().__init__()
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         from core.components.world_config_component import WorldConfigComponent
         world_config = world.get_world_component(WorldConfigComponent)
         planned_this_tick = set()

@@ -30,7 +30,7 @@ class EatSystem(System):
         不执行额外寻食或状态切换逻辑。
     """
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         space_system = world.get_system(SpaceSystem)
         for entity, (needs, action, inventory, task, space) in list(world.get_components(
             PhysiologyNeedsComponent, ActionComponent, InventoryComponent, TaskComponent, SpaceComponent

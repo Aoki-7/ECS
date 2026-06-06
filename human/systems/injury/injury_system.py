@@ -1,4 +1,5 @@
 from core.system import System
+from core.world import World
 from biology.components.health_status_component import HealthStatusComponent
 
 
@@ -9,7 +10,7 @@ class InjurySystem(System):
     根据伤口严重程度减少生命值，并计算持续伤害。
     """
 
-    def update(self, world, dt):
+    def update(self, world: World, dt: float):
         for entity, (health,) in world.query_components(HealthStatusComponent):
             health: HealthStatusComponent
 

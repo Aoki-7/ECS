@@ -47,6 +47,33 @@ class DeathSystem(System):
         → 记录日志 → 从空间索引移除 → 保留尸体实体
     """
 
+    # 需要清理的生命期组件路径（首次调用时解析并缓存）
+    _LIVING_COMPONENT_PATHS = [
+        # 生理与需求
+        "biology.components.physiology_needs_component.PhysiologyNeedsComponent",
+        "biology.components.energy_component.EnergyComponent",
+        "biology.components.health_status_component.HealthStatusComponent",
+        "biology.components.immune_component.ImmuneComponent",
+        "biology.components.nutrient_component.NutrientComponent",
+        # 认知与行为
+        "human.components.cognitive.intent_component.IntentComponent",
+        "human.components.cognitive.task_component.TaskComponent",
+        "human.components.cognitive.memory_component.MemoryComponent",
+        "core.components.action_component.ActionComponent",
+        "core.components.search_component.SearchComponent",
+        "core.components.vision_component.VisionComponent",
+        "core.components.velocity_component.VelocityComponent",
+        # 社交
+        "human.components.social.relationship_component.RelationshipComponent",
+        # 经济与装备
+        "human.components.economic.inventory.inventory_component.InventoryComponent",
+        "equipment.components.ownership_component.OwnershipComponent",
+    ]
+
+    def __init__(self):
+        super().__init__()
+        self._living_component_classes = None
+
     def update(self, world: World, dt: float = 1.0) -> None:
         pending_deaths = list(world.get_components(PendingDeathComponent))
         if not pending_deaths:
@@ -99,7 +126,7 @@ class DeathSystem(System):
 
             # 4. 从空间索引移除（尸体不再参与空间查询）
             if space_system is not None:
-                space_system.remove_entity(entity)
+                space_system.remove_entity(entity.id)
 
             # 5. 挂载尸体组件（保留实体供 CorpseSystem 处理）
             corpse = self._build_corpse_component(entity, world)
@@ -161,36 +188,17 @@ class DeathSystem(System):
 
     def _strip_living_components(self, entity, world: World) -> None:
         """移除生命期组件，将实体转换为尸体"""
-        # 这些组件列表可以根据需要扩展
-        living_component_types = [
-            # 生理与需求
-            "biology.components.physiology_needs_component.PhysiologyNeedsComponent",
-            "biology.components.energy_component.EnergyComponent",
-            "biology.components.health_status_component.HealthStatusComponent",
-            "biology.components.immune_component.ImmuneComponent",
-            "biology.components.nutrient_component.NutrientComponent",
-            # 认知与行为
-            "human.components.cognitive.intent_component.IntentComponent",
-            "human.components.cognitive.task_component.TaskComponent",
-            "human.components.cognitive.memory_component.MemoryComponent",
-            "core.components.action_component.ActionComponent",
-            "core.components.search_component.SearchComponent",
-            "core.components.vision_component.VisionComponent",
-            "core.components.velocity_component.VelocityComponent",
-            # 社交
-            "human.components.social.relationship_component.RelationshipComponent",
-            # 经济与装备
-            "human.components.economic.inventory.inventory_component.InventoryComponent",
-            "equipment.components.ownership_component.OwnershipComponent",
-        ]
-
-        for type_path in living_component_types:
-            try:
+        # 首次调用时解析并缓存组件类，避免每次死亡都重复动态导入
+        if self._living_component_classes is None:
+            self._living_component_classes = []
+            for type_path in self._LIVING_COMPONENT_PATHS:
                 comp_class = self._import_component(type_path)
-                if comp_class is not None and world.get_component(entity, comp_class) is not None:
-                    world.remove_component(entity, comp_class)
-            except (ImportError, AttributeError):
-                pass  # 组件可能不存在，静默跳过
+                if comp_class is not None:
+                    self._living_component_classes.append(comp_class)
+
+        for comp_class in self._living_component_classes:
+            if world.get_component(entity, comp_class) is not None:
+                world.remove_component(entity, comp_class)
 
     def _import_component(self, dotted_path: str):
         """动态导入组件类"""
@@ -204,13 +212,13 @@ class DeathSystem(System):
     def _emit_death_event(self, entity, reason: str, world_time: float, world: World) -> None:
         """发射死亡事件，供其他系统订阅"""
         try:
-            from core.components.event_log_component import EventLog
+            from core.systems.event_log_system import EventLog
             EventLog.log(
                 world,
                 event_type="death",
-                message=f"E{entity.id} died of {reason}",
-                entities=[entity.id],
+                description=f"E{entity.id} died of {reason}",
+                entity_id=entity.id,
                 data={"death_reason": reason, "world_time": world_time}
             )
         except (ImportError, AttributeError):
-            pass  # EventLog 可能不可用，静默跳过
+            logger.warning("EventLog not available, skipping death event emission")

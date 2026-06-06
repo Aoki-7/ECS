@@ -34,7 +34,7 @@ class SeekTargetSystem(System):
     3. 不关心具体是什么（食物/水/人）
     """
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
 
         seekers = list(world.get_components(
             SpaceComponent,

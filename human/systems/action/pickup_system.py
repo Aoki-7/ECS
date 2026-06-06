@@ -44,7 +44,7 @@ class PickupSystem(System):
     # 拾取所需时间（秒）
     PICKUP_DURATION = 0.5
     
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         for picker_entity, (action, space, inventory) in list(world.get_components(ActionComponent, SpaceComponent, InventoryComponent)):
             action: ActionComponent
             space: SpaceComponent

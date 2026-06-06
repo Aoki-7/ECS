@@ -73,7 +73,7 @@ class EventLogSystem(System):
                   target_id: Optional[int] = None,
                   location: Optional[Tuple[float, float]] = None,
                   data: Optional[Dict[str, Any]] = None,
-                  severity: str = "info") -> Dict[str, Any]:
+                  severity: str = "info") -> EventRecord:
         """添加一条事件记录"""
         log_comp = world.get_world_component(EventLogComponent)
         if log_comp is None:
@@ -124,7 +124,7 @@ class EventLogSystem(System):
                    event_type: Optional[str] = None,
                    entity_id: Optional[int] = None,
                    limit: int = 100,
-                   offset: int = 0) -> List[Dict[str, Any]]:
+                   offset: int = 0) -> List[EventRecord]:
         """查询事件（按时间倒序）"""
         log_comp = world.get_world_component(EventLogComponent)
         if log_comp is None:
@@ -144,7 +144,7 @@ class EventLogSystem(System):
         indices = indices[offset:offset + limit]
         return [log_comp.events[i] for i in indices]
 
-    def get_recent_events(self, world: World, n: int = 20) -> List[Dict[str, Any]]:
+    def get_recent_events(self, world: World, n: int = 20) -> List[EventRecord]:
         """获取最近 N 条事件"""
         log_comp = world.get_world_component(EventLogComponent)
         if log_comp is None:
@@ -160,17 +160,17 @@ class EventLogSystem(System):
 
     def get_events_by_time_range(self, world: World,
                                   start_time: float,
-                                  end_time: float) -> List[Dict[str, Any]]:
+                                  end_time: float) -> List[EventRecord]:
         """获取时间范围内的事件"""
         log_comp = world.get_world_component(EventLogComponent)
         if log_comp is None:
             return []
         return [
             e for e in log_comp.events
-            if start_time <= e["time"] <= end_time
+            if start_time <= e.time <= end_time
         ]
 
-    def export_to_list(self, world: World) -> List[Dict[str, Any]]:
+    def export_to_list(self, world: World) -> List[EventRecord]:
         """导出所有事件为列表"""
         log_comp = world.get_world_component(EventLogComponent)
         if log_comp is None:
@@ -229,12 +229,12 @@ class EventLog:
         )
 
     @staticmethod
-    def get_recent(world: World, n: int = 20) -> List[Dict[str, Any]]:
+    def get_recent(world: World, n: int = 20) -> List[EventRecord]:
         """获取最近事件"""
         return EventLog._get_system(world).get_recent_events(world, n)
 
     @staticmethod
-    def get_by_type(world: World, event_type: str, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_by_type(world: World, event_type: str, limit: int = 100) -> List[EventRecord]:
         """按类型获取事件"""
         return EventLog._get_system(world).get_events(world, event_type=event_type, limit=limit)
 

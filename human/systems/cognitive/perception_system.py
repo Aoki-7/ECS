@@ -23,7 +23,7 @@ class PerceptionSystem(System):
         
         观察自身视野范围内的所有实体，并反馈给视野组件
     """
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         space_system = world.get_system(SpaceSystem)
         if space_system is None:
             return

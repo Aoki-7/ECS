@@ -41,7 +41,7 @@ class ReproductionSystem(System):
     # 每 tick 基础怀孕概率（女性、已婚/恋爱中、可生育年龄）
     BIRTH_CHANCE_PER_TICK = 0.015
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         """
         每个时间步的更新
         

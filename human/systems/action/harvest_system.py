@@ -107,7 +107,7 @@ class HarvestSystem(System):
             # 从空间索引移除（背包中的物品不应在地面）
             space_system = world.get_system(SpaceSystem)
             if space_system is not None:
-                space_system.remove_entity(food_entity)
+                space_system.remove_entity(food_entity.id)
 
             # 如果植物产出木材，同时创建木材实体
             if plant_comp.produces_wood and plant_comp.wood_amount > 0:
@@ -115,7 +115,7 @@ class HarvestSystem(System):
                 world.add_component(wood_entity, OwnershipComponent(owner_id=entity.id))
                 inventory.add(wood_entity)
                 if space_system is not None:
-                    space_system.remove_entity(wood_entity)
+                    space_system.remove_entity(wood_entity.id)
                 logger.debug(f"[Harvest] E{entity.id} 从植物 E{target_entity.id} 收获了木材 x{plant_comp.wood_amount:.1f}")
 
             # 更新植物状态

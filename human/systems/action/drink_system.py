@@ -31,7 +31,7 @@ class DrinkSystem(System):
         支持从背包或地面上同位置的水源饮水。
     """
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         space_system = world.get_system(SpaceSystem)
         for entity, (needs, action, inventory, task, space) in list(world.get_components(
             PhysiologyNeedsComponent, ActionComponent, InventoryComponent, TaskComponent, SpaceComponent
