@@ -14,7 +14,7 @@ from typing import Dict, Optional
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class ImmuneComponent(Component):
     """
     免疫组件

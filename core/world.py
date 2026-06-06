@@ -59,14 +59,8 @@ class World:
         if not self.has_entity(entity):
             return  # 非法或过期 entity
 
-        # 从 SpaceSystem 反注册（延迟导入避免框架层依赖 space 包）
-        try:
-            from space.space_system import SpaceSystem
-            space_system = self.get_system(SpaceSystem)
-            if space_system:
-                space_system.remove_entity(entity.id)
-        except ImportError:
-            logger.warning("SpaceSystem not available, skipping spatial cleanup")
+        # 从 SpaceSystem 反注册
+        self._unregister_entity_from_space(entity.id)
 
         # 移除组件
         for comp_dict in self.components.values():
@@ -84,6 +78,16 @@ class World:
 
         # 回收 id
         Entity.destroy(entity)
+
+    def _unregister_entity_from_space(self, entity_id: int):
+        """从 SpaceSystem 反注册实体（提取为独立方法，减少重复内联导入）"""
+        try:
+            from space.space_system import SpaceSystem
+            space_system = self.get_system(SpaceSystem)
+            if space_system:
+                space_system.remove_entity(entity_id)
+        except ImportError:
+            logger.warning("SpaceSystem not available, skipping spatial cleanup")
 
     def has_entity(self, entity: Entity) -> bool:
         """检查实体是否存在且未过期"""
@@ -156,31 +160,39 @@ class World:
         self.components[comp_type][entity.id] = component
         self._component_entities[comp_type].add(entity.id)
 
-        # 自动注册SpaceComponent到SpaceSystem
+        # 自动注册 SpaceComponent 到 SpaceSystem
+        self._register_component_to_space(entity.id, component)
+
+        # 组件变更使查询缓存失效
+        self._query_cache.clear()
+
+    def _register_component_to_space(self, entity_id: int, component):
+        """将 SpaceComponent 注册到 SpaceSystem（提取为独立方法）"""
         from space.space_component import SpaceComponent
         if isinstance(component, SpaceComponent):
             from space.space_system import SpaceSystem
             space_system = self.get_system(SpaceSystem)
             if space_system:
-                space_system.add_entity(entity.id, component)
-
-        # 组件变更使查询缓存失效
-        self._query_cache.clear()
+                space_system.add_entity(entity_id, component)
 
     def remove_component(self, entity: Entity, component_type):
-        # 从SpaceSystem反注册
-        from space.space_component import SpaceComponent
-        if component_type is SpaceComponent or issubclass(component_type, SpaceComponent):
-            from space.space_system import SpaceSystem
-            space_system = self.get_system(SpaceSystem)
-            if space_system:
-                space_system.remove_entity(entity.id)
+        # 从 SpaceSystem 反注册
+        self._unregister_component_from_space(entity.id, component_type)
 
         self.components.get(component_type, {}).pop(entity.id, None)
         self._component_entities.get(component_type, set()).discard(entity.id)
 
         # 组件变更使查询缓存失效
         self._query_cache.clear()
+
+    def _unregister_component_from_space(self, entity_id: int, component_type):
+        """从 SpaceSystem 反注册 SpaceComponent（提取为独立方法）"""
+        from space.space_component import SpaceComponent
+        if component_type is SpaceComponent or issubclass(component_type, SpaceComponent):
+            from space.space_system import SpaceSystem
+            space_system = self.get_system(SpaceSystem)
+            if space_system:
+                space_system.remove_entity(entity_id)
 
     def get_component(self, entity: Entity, component_type) -> Component | None:
         """获取实体的组件"""

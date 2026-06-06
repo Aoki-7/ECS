@@ -29,7 +29,7 @@ from human.components.cognitive.brain_component import BrainComponent
 from human.components.cognitive.goal_component import GoalComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from biology.components.health_status_component import HealthStatusComponent
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 
 

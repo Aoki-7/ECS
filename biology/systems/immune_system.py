@@ -24,7 +24,7 @@ from core.world import World
 from core.systems.event_log_system import EventLog
 
 from biology.components.immune_component import ImmuneComponent
-from biology.components.energy_component import EnergyComponent
+from biology.lifecycle.components.energy_component import EnergyComponent
 from space.space_component import SpaceComponent
 
 

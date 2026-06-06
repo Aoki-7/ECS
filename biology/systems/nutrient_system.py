@@ -18,8 +18,8 @@ from core.world import World
 
 from biology.components.nutrient_component import NutrientComponent
 from biology.components.phenotype_component import PhenotypeComponent
-from biology.components.energy_component import EnergyComponent
-from biology.components.morphology_component import MorphologyComponent
+from biology.lifecycle.components.energy_component import EnergyComponent
+from biology.lifecycle.components.morphology_component import MorphologyComponent
 from biology.traits.trait import Trait
 from space.space_component import SpaceComponent
 from environment.environment_component import EnvironmentComponent

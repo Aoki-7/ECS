@@ -14,8 +14,8 @@ from core.world import World
 from core.entity import Entity
 
 # 导入所有组件
-from biology.components.life_cycle_component import LifeCycleComponent
-from biology.components.morphology_component import MorphologyComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.morphology_component import MorphologyComponent
 from biology.components.gender_component import GenderComponent
 from human.components.basic.identity_component import IdentityComponent
 

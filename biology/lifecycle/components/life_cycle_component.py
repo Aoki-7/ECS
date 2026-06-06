@@ -47,6 +47,13 @@ class LifeCycleComponent(Component):
         5: "死亡",
     }
 
+    __slots__ = (
+        "stage", "current_age", "max_age",
+        "min_reproductive_age", "max_reproductive_age",
+        "stage_durations", "gdd_accumulated",
+        "gdd_requirements", "senescence_triggered", "death_reason",
+    )
+
     def __init__(
         self,
         stage: int = 0,

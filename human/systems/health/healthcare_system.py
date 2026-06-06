@@ -16,14 +16,8 @@ from enum import Enum, auto
 from core.system import System
 from core.world import World
 
-
-# 疾病类型定义
-class DiseaseType(Enum):
-    INFECTIOUS = auto()       # 传染性疾病
-    CHRONIC = auto()          # 慢性疾病
-    ACUTE = auto()            # 急性病
-    DEFICIENCY = auto()        # 营养缺乏症
-    ENVIRONMENTAL = auto()    # 环境相关疾病
+# 统一从 biology 层导入疾病类型定义
+from biology.components.disease_component import DiseaseType
 
 
 # 症状枚举

@@ -137,7 +137,7 @@ class HumanStatePanel:
         # 导入所有需要的组件
         from human.components.basic.human_component import HumanComponent
         from human.components.basic.identity_component import IdentityComponent
-        from biology.components.life_cycle_component import LifeCycleComponent
+        from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
         from biology.components.gender_component import GenderComponent, Gender
         from biology.components.physiology_needs_component import PhysiologyNeedsComponent
         from human.components.cognitive.emotion_component import EmotionComponent

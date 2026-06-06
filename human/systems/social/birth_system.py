@@ -23,7 +23,7 @@ from core.systems.event_log_system import EventLog
 
 from human.components.social.birth_request_component import BirthRequestComponent
 from human.components.social.reproduction_component import ReproductionComponent
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 
 logger = logging.getLogger(__name__)
 

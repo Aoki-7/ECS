@@ -17,7 +17,7 @@ from typing import List
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class WoundRecord:
     """伤口记录"""
     type: str                    # 伤口类型：physical, bleeding, poison, fracture
@@ -27,7 +27,7 @@ class WoundRecord:
     duration: float = -1.0       # 持续时间，-1 表示永久
 
 
-@dataclass
+@dataclass(slots=True)
 class HealthStatusComponent(Component):
     """
     健康状态组件（Health + Damage 合并版）

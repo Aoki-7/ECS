@@ -22,6 +22,8 @@ class EnergyComponent(Component):
         max_energy (float): 能量上限。value 不应超过此值（由外部系统钳制）。
     """
 
+    __slots__ = ("value", "growth_pool", "max_energy")
+
     def __init__(self, max_energy: float = 100.0):
         self.value: float = 0.0
         self.growth_pool: float = 0.0

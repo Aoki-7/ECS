@@ -23,10 +23,11 @@ from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 from equipment.components.ownership_component import OwnershipComponent
 from plant.components.plant_component import PlantComponent
-from biology.components.life_cycle_component import LifeCycleComponent
-from biology.components.morphology_component import MorphologyComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.morphology_component import MorphologyComponent
 from resource.food.food_factory import FoodFactory
 from resource.wood.wood_factory import WoodFactory
+from human.systems.economy.economy_system import EconomySystem
 
 import logging
 
@@ -117,6 +118,9 @@ class HarvestSystem(System):
                 if space_system is not None:
                     space_system.remove_entity(wood_entity.id)
                 logger.debug(f"[Harvest] E{entity.id} 从植物 E{target_entity.id} 收获了木材 x{plant_comp.wood_amount:.1f}")
+
+            # 经济奖励：收获获得少量金币
+            EconomySystem.add_currency(world, entity, "gold", yield_amount * 0.1)
 
             # 更新植物状态
             if plant_comp.is_perennial:

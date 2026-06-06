@@ -17,7 +17,7 @@ from core.world import World
 from human.components.social.tribe_component import TribeComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
 from human.components.basic.identity_component import IdentityComponent
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from human.components.social.social_component import SocialComponent
 from core.systems.event_log_system import EventLog
 

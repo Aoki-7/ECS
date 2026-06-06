@@ -69,7 +69,13 @@ T = TestResult()
 
 def build_test_world() -> World:
     """创建一个干净的测试用 World"""
-    return World()
+    world = World()
+    from world.world_entity import WorldEntity
+    from time_module.time_component import TimeComponent
+    we = WorldEntity()
+    we.add_component(TimeComponent())
+    world.set_world_entity(we)
+    return world
 
 
 def setup_weather_world(world: World) -> World:

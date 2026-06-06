@@ -83,7 +83,7 @@ class TradeSystem(System):
 
             # 执行交易
             self._perform_trade(entity, trade_partner, action, inventory, economy, social, skill,
-                              partner_data, world, dt)
+                              (partner_inv, partner_eco, partner_soc, partner_space), world, dt)
 
             action.status = ActionStatus.COMPLETED
             task.status = TaskStatus.COMPLETED

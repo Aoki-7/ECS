@@ -25,7 +25,7 @@ from space.space_component import SpaceComponent
 from resource.food.components.food_component import FoodComponent
 from resource.water.components.water_component import WaterComponent
 from resource.components.resource_component import ResourceComponent
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from core.components.vision_component import VisionComponent
 
 

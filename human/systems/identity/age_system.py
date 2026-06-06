@@ -10,7 +10,7 @@
 from core.system import System
 from core.world import World
 
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 
 
 class AgeSystem(System):

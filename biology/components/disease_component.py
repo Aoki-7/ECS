@@ -24,7 +24,7 @@ class DiseaseType(Enum):
     ENVIRONMENTAL = auto()    # 环境相关疾病
 
 
-@dataclass
+@dataclass(slots=True)
 class DiseaseRecord:
     """单条疾病记录（类型化替代 Dict）"""
     name: str
@@ -59,7 +59,7 @@ class DiseaseRecord:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class DiseaseComponent(Component):
     """
     疾病组件

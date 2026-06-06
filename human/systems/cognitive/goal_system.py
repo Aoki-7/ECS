@@ -13,7 +13,7 @@ from core.world import World
 
 from human.components.cognitive.goal_component import GoalComponent
 from human.components.cognitive.personality_component import PersonalityComponent
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from biology.components.gender_component import GenderComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 from human.components.economic.economy_component import EconomyComponent

@@ -18,7 +18,7 @@ from typing import List, Dict
 from core.system import System
 from core.world import World
 
-from biology.components.morphology_component import MorphologyComponent
+from biology.lifecycle.components.morphology_component import MorphologyComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.traits.trait import Trait
 from space.space_component import SpaceComponent

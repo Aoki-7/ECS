@@ -343,44 +343,31 @@ class EcosystemLoop:
         # 物种多样性统计
         species_ids = set()
 
-        for entity_id in self.world.entities:
-            entity = self.world.query_entity(entity_id)
-            if entity is None:
-                continue
+        # 批量查询替代逐个 get_component，避免 N+1 性能问题
+        for entity, (plant,) in self.world.get_components(PlantComponent):
+            plants += 1
+            tracker = self.world.get_component(entity, SpeciationTrackerComponent)
+            if tracker:
+                species_ids.add(tracker.species_id)
 
-            # 植物
-            if self.world.get_component(entity, PlantComponent) is not None:
-                plants += 1
-                tracker = self.world.get_component(entity, SpeciationTrackerComponent)
-                if tracker:
-                    species_ids.add(tracker.species_id)
-                continue
+        for entity, (animal,) in self.world.get_components(AnimalComponent):
+            if animal.diet == "carnivore":
+                carnivores += 1
+            else:
+                herbivores += 1
+            tracker = self.world.get_component(entity, SpeciationTrackerComponent)
+            if tracker:
+                species_ids.add(tracker.species_id)
 
-            # 动物
-            animal = self.world.get_component(entity, AnimalComponent)
-            if animal is not None:
-                if animal.diet == "carnivore":
-                    carnivores += 1
-                else:
-                    herbivores += 1
-                tracker = self.world.get_component(entity, SpeciationTrackerComponent)
-                if tracker:
-                    species_ids.add(tracker.species_id)
-                continue
+        from biology.lifecycle.corpse.components.corpse_component import CorpseComponent
+        for entity, _ in self.world.get_components(CorpseComponent):
+            corpses += 1
 
-            # 尸体（通过 CorpseComponent 判断）
-            from biology.lifecycle.corpse.components.corpse_component import CorpseComponent
-            if self.world.get_component(entity, CorpseComponent) is not None:
-                corpses += 1
-                continue
-
-            # 土壤
-            soil = self.world.get_component(entity, SoilComponent)
-            if soil is not None:
-                total_soil_n += soil.nitrogen
-                total_soil_p += soil.phosphorus
-                total_soil_k += soil.potassium
-                soil_count += 1
+        for entity, (soil,) in self.world.get_components(SoilComponent):
+            total_soil_n += soil.nitrogen
+            total_soil_p += soil.phosphorus
+            total_soil_k += soil.potassium
+            soil_count += 1
 
         return {
             "plants": plants,

@@ -206,3 +206,36 @@ class DeathArchiveSystem(System):
             "pending_decay": archive.total_deaths - archive.decayed_count,
             "counters": dict(archive.counters),
         }
+
+    def get_recent_deaths_from_event_log(self, world: World, n: int = 20) -> List[Dict[str, Any]]:
+        """
+        从 EventLogSystem 查询最近死亡事件（与本地档案交叉验证）。
+        这是 EventLog 查询 API 的首个生产调用者，用于验证事件日志集成。
+        """
+        from core.systems.event_log_system import EventLogSystem
+        event_system = world.get_system(EventLogSystem)
+        if event_system is None:
+            return []
+        # 查询最近 N 条 death_archived 类型的事件
+        return event_system.get_events(world, event_type="death_archived", limit=n)
+
+    def cross_check_with_event_log(self, world: World) -> Dict[str, Any]:
+        """
+        交叉验证：比较本地档案与 EventLog 中的死亡事件数量。
+        用于调试和确认两个系统的数据一致性。
+        """
+        archive = world.get_world_component(DeathArchiveComponent)
+        if archive is None:
+            return {"archive_count": 0, "event_log_count": 0, "matched": False}
+
+        from core.systems.event_log_system import EventLogSystem
+        event_system = world.get_system(EventLogSystem)
+        if event_system is None:
+            return {"archive_count": archive.total_deaths, "event_log_count": 0, "matched": False}
+
+        events = event_system.get_events(world, event_type="death_archived", limit=10000)
+        return {
+            "archive_count": archive.total_deaths,
+            "event_log_count": len(events),
+            "matched": archive.total_deaths == len(events),
+        }

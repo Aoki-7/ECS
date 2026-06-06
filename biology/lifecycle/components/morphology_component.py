@@ -12,7 +12,7 @@ from core.component import Component
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(slots=True)
 class MorphologyComponent(Component):
     """
     仅负责最终可视外观与物理形态参数

@@ -17,7 +17,7 @@ from core.system import System
 from core.world import World
 
 from biology.components.health_status_component import HealthStatusComponent
-from biology.components.energy_component import EnergyComponent
+from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.traits.trait import Trait
 
