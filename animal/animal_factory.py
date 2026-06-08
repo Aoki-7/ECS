@@ -25,6 +25,9 @@ from space.space_component import SpaceComponent
 from biology.ecology.components.food_chain_component import FoodChainComponent
 from biology.ecology.components.population_component import PopulationComponent
 from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
+from core.category_component import CategoryComponent
+from core.category import EntityCategory
+from core.subcategory import AnimalSubCategory
 
 from .presets import SPECIES_PRESETS
 
@@ -389,15 +392,19 @@ class AnimalFactory:
         # 空间：固定在指定二维坐标，layer=0 表示地面层
         world.add_component(entity, SpaceComponent(x=x, y=y, layer=0))
 
-        # 动物标识组件
-        diet = "herbivore"
-        if species == "predator":
+        # 动物标识组件：食性由基因 preset 中的 diet_type 推导
+        diet_type = preset.get("diet_type", 0.5)
+        if diet_type > 0.7:
             diet = "carnivore"
+        elif diet_type < 0.3:
+            diet = "herbivore"
+        else:
+            diet = "omnivore"
         world.add_component(entity, AnimalComponent(species=species, diet=diet))
 
-        # 食物链组件：标记营养级和生态角色
-        trophic_level = 3 if species == "predator" else 2
-        niche = "carnivore" if species == "predator" else "herbivore"
+        # 食物链组件：标记营养级和生态角色（由 diet 推导）
+        trophic_level = 3 if diet == "carnivore" else (2 if diet == "herbivore" else 2.5)
+        niche = diet
         world.add_component(entity, FoodChainComponent(
             trophic_level=trophic_level,
             niche=niche,
@@ -407,6 +414,13 @@ class AnimalFactory:
         world.add_component(entity, PopulationComponent(
             growth_rate=preset.get("metabolism_rate", 0.02) * 2.0,
             carrying_capacity=50.0,
+        ))
+
+        # 分类组件：标记为动物
+        subcategory = AnimalSubCategory.CARNIVORE if species == "predator" else AnimalSubCategory.HERBIVORE
+        world.add_component(entity, CategoryComponent(
+            category=EntityCategory.ANIMAL,
+            subcategory=subcategory,
         ))
 
         # 扩展生物学组件：免疫、健康

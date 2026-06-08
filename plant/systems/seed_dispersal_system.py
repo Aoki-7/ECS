@@ -60,13 +60,7 @@ class SeedDispersalSystem(System):
         self.enable_log = True
 
     def update(self, world: World, dt: float = 1.0) -> None:
-        """
-        执行种子传播
-
-        Args:
-            world: World 实例
-            dt: 时间步长（预留）
-        """
+        """执行种子传播"""
         from core.components.world_config_component import WorldConfigComponent
         world_config = world.get_world_component(WorldConfigComponent)
         self._tick_counter += 1
@@ -82,63 +76,64 @@ class SeedDispersalSystem(System):
                 SpaceComponent,
             )
         ):
-            # 只在成熟期传播
-            if not lifecycle.is_mature:
-                continue
-
-            # 能量阈值
-            if energy.value < self.BASE_ENERGY_THRESHOLD:
-                continue
-
-            # 冷却检查
-            last_tick = self._last_reproduction.get(
-                entity.id, -self.REPRODUCTION_COOLDOWN_TICKS
+            seeds = self._generate_seeds_for_entity(
+                world, entity, genome, pheno, energy, lifecycle, space, world_config, soil_cache
             )
-            if self._tick_counter - last_tick < self.REPRODUCTION_COOLDOWN_TICKS:
+            new_seeds.extend(seeds)
+
+        self._spawn_offspring(world, new_seeds)
+
+    def _generate_seeds_for_entity(self, world, entity, genome, pheno, energy, lifecycle, space, world_config, soil_cache):
+        """为单个实体生成种子位置列表，返回 [(x, y, genome, species, generation), ...]"""
+        if not lifecycle.is_mature:
+            return []
+        if energy.value < self.BASE_ENERGY_THRESHOLD:
+            return []
+
+        last_tick = self._last_reproduction.get(entity.id, -self.REPRODUCTION_COOLDOWN_TICKS)
+        if self._tick_counter - last_tick < self.REPRODUCTION_COOLDOWN_TICKS:
+            return []
+
+        seed_prod = pheno.get("seed_production", 1.0)
+        dispersal = pheno.get("dispersal_radius", 3.0)
+
+        energy.value *= (1.0 - self.REPRODUCTION_ENERGY_COST)
+        self._last_reproduction[entity.id] = self._tick_counter
+
+        seed_count = max(1, int(seed_prod * self._rng.uniform(0.5, 1.0)))
+        seeds = []
+        tracker = world.get_component(entity, SpeciationTrackerComponent)
+        parent_species = tracker.species_id if tracker else "basic"
+        parent_generation = tracker.generation if tracker else 0
+
+        for _ in range(seed_count):
+            new_x, new_y = self._compute_dispersal_pos(space, dispersal)
+            if not self._is_valid_seed_pos(new_x, new_y, world_config, soil_cache):
                 continue
+            seeds.append((new_x, new_y, genome, parent_species, parent_generation))
 
-            # 读取基因
-            seed_prod = pheno.get("seed_production", 1.0)
-            dispersal = pheno.get("dispersal_radius", 3.0)
+        return seeds
 
-            # 能量消耗
-            energy.value *= (1.0 - self.REPRODUCTION_ENERGY_COST)
-            self._last_reproduction[entity.id] = self._tick_counter
+    def _compute_dispersal_pos(self, space, dispersal: float) -> tuple:
+        """计算单个种子的散布位置"""
+        angle = self._rng.uniform(0, 2.0 * math.pi)
+        distance = dispersal * math.sqrt(self._rng.random())
+        return int(space.x) + int(distance * math.cos(angle)), int(space.y) + int(distance * math.sin(angle))
 
-            # 种子数量
-            seed_count = max(1, int(seed_prod * self._rng.uniform(0.5, 1.0)))
+    def _is_valid_seed_pos(self, x: int, y: int, world_config, soil_cache: dict) -> bool:
+        """检查种子位置是否在边界内且土壤适宜"""
+        if not (0 <= x < world_config.map_width and 0 <= y < world_config.map_height):
+            return False
+        soil = soil_cache.get((x // 10, y // 10))
+        if soil is not None and soil.moisture < soil.wilting_point:
+            return False
+        return True
 
-            for _ in range(seed_count):
-                # 圆形散布（自然距离衰减）
-                angle = self._rng.uniform(0, 2.0 * math.pi)
-                # 距离偏向近距离，模拟自然种子密度衰减
-                distance = dispersal * math.sqrt(self._rng.random())
-                dx = int(distance * math.cos(angle))
-                dy = int(distance * math.sin(angle))
+    def _spawn_offspring(self, world: World, new_seeds: list):
+        """批量创建子代实体"""
+        from plant.plant_factory import PlantFactory
 
-                new_x = int(space.x) + dx
-                new_y = int(space.y) + dy
-
-                # 边界检查
-                if not (0 <= new_x < world_config.map_width and 0 <= new_y < world_config.map_height):
-                    continue
-
-                # 土壤适宜性检查
-                soil = soil_cache.get((new_x // 10, new_y // 10))
-                if soil is not None and soil.moisture < soil.wilting_point:
-                    continue  # 太干旱，种子无法存活
-
-                # 读取父母的物种信息
-                tracker = world.get_component(entity, SpeciationTrackerComponent)
-                parent_species = tracker.species_id if tracker else "basic"
-                parent_generation = tracker.generation if tracker else 0
-                new_seeds.append((new_x, new_y, genome, parent_species, parent_generation))
-
-        # 创建子代
         for x, y, parent_genome, parent_species, parent_generation in new_seeds:
-            # 延迟导入避免循环依赖
-            from plant.plant_factory import PlantFactory
-
             child = PlantFactory.create_plant_from_genome(
                 world, parent_genome, x, y, variation=self.MUTATION_RATE,
                 parent_species=parent_species,

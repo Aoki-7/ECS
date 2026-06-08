@@ -44,20 +44,12 @@ class BiologyReproductionSystem(System):
         6. 散布到亲本周围的随机位置
     """
 
-    # 繁殖能量阈值基数
-    BASE_ENERGY_THRESHOLD = 25.0
-
-    # 繁殖能量消耗比例
-    REPRODUCTION_ENERGY_COST = 0.35
-
-    # 繁殖冷却（tick）
-    REPRODUCTION_COOLDOWN_TICKS = 7
-
-    # 子代变异率
-    REPRODUCTION_MUTATION_RATE = 0.15
-
-    # 子代初始能量（模拟种子状态）
-    OFFSPRING_ENERGY = 5.0
+    # 繁殖参数已去硬编码，改为从基因表型动态推导：
+    #   - 能量阈值   ← growth_partition（高生长分配=高阈值）
+    #   - 能量消耗   ← growth_partition（高生长分配=低消耗）
+    #   - 冷却期     ← metabolism_rate（低代谢=长周期）
+    #   - 变异率     ← 固定 0.15（遗传学基础）
+    #   - 子代能量   ← growth_partition（高生长=高能量储备）
 
     def __init__(self, seed: int | None = None):
         super().__init__()
@@ -67,66 +59,56 @@ class BiologyReproductionSystem(System):
         self._rng = random.Random(seed)
 
     def update(self, world: World, dt: float = 1.0) -> None:
-        """
-        执行繁殖更新
-
-        Args:
-            world: World 实例
-            dt: 时间步长（当前模型以 tick 为单位，预留参数）
-        """
+        """执行繁殖更新"""
         self._tick_counter += 1
         new_seeds = []
 
-        for entity, (genome, pheno, energy, lifecycle, space) in \
-                list(world.get_components(
-                    GenomeComponent,
-                    PhenotypeComponent,
-                    EnergyComponent,
-                    LifeCycleComponent,
-                    SpaceComponent,
-                )):
-            # 只在成熟期繁殖
-            if not lifecycle.is_mature:
-                continue
+        for entity, (genome, pheno, energy, lifecycle, space) in list(world.get_components(
+            GenomeComponent, PhenotypeComponent, EnergyComponent, LifeCycleComponent, SpaceComponent
+        )):
+            seeds = self._generate_seeds_for_entity(world, entity, genome, pheno, energy, lifecycle, space)
+            new_seeds.extend(seeds)
 
-            # ---- 基因读取 ----
-            seed_prod = pheno.get("seed_production", 1.0)
-            dispersal = pheno.get("dispersal_radius", 3.0)
+        self._spawn_offspring(world, new_seeds)
 
-            # 能量阈值受 WUE/代谢影响
-            energy_threshold = (
-                self.BASE_ENERGY_THRESHOLD
-                + (1.0 - pheno.get("water_use_efficiency", 0.05)) * 10.0
-            )
+    def _generate_seeds_for_entity(self, world, entity, genome, pheno, energy, lifecycle, space):
+        """为单个实体生成种子，返回种子列表 [(x, y, genome, species, generation), ...]"""
+        if not lifecycle.is_mature:
+            return []
 
-            if energy.value < energy_threshold:
-                continue
+        growth = pheno.get("growth_partition", 0.4)
+        metabolism = pheno.get("metabolism_rate", 0.02)
+        energy_threshold = 15.0 + growth * 40.0 + (1.0 - pheno.get("water_use_efficiency", 0.05)) * 10.0
 
-            # 冷却检查
-            last_tick = self._last_reproduction.get(
-                entity.id, -self.REPRODUCTION_COOLDOWN_TICKS
-            )
-            if self._tick_counter - last_tick < self.REPRODUCTION_COOLDOWN_TICKS:
-                continue
+        if energy.value < energy_threshold:
+            return []
 
-            # 消耗能量
-            energy.value *= (1.0 - self.REPRODUCTION_ENERGY_COST)
-            self._last_reproduction[entity.id] = self._tick_counter
+        cooldown_ticks = max(2, int(15.0 / (metabolism * 100 + 0.5)))
+        last_tick = self._last_reproduction.get(entity.id, -cooldown_ticks)
+        if self._tick_counter - last_tick < cooldown_ticks:
+            return []
 
-            # ---- 种子数量（由基因决定，带随机波动） ----
-            seed_count = max(1, int(seed_prod * self._rng.uniform(0.8, 1.2)))
+        energy_cost = max(0.1, min(0.5, 0.5 - growth * 0.3))
+        energy.value *= (1.0 - energy_cost)
+        self._last_reproduction[entity.id] = self._tick_counter
 
-            # 读取父母的物种信息
-            tracker = world.get_component(entity, SpeciationTrackerComponent)
-            parent_species = tracker.species_id if tracker else "basic"
-            parent_generation = tracker.generation if tracker else 0
+        seed_prod = pheno.get("seed_production", 1.0)
+        dispersal = pheno.get("dispersal_radius", 3.0)
+        seed_count = max(1, int(seed_prod * self._rng.uniform(0.8, 1.2)))
 
-            for _ in range(seed_count):
-                dx = self._rng.randint(-int(dispersal), int(dispersal))
-                dy = self._rng.randint(-int(dispersal), int(dispersal))
-                new_seeds.append((space.x + dx, space.y + dy, genome, parent_species, parent_generation))
+        tracker = world.get_component(entity, SpeciationTrackerComponent)
+        parent_species = tracker.species_id if tracker else "basic"
+        parent_generation = tracker.generation if tracker else 0
 
-        # 创建子代
+        seeds = []
+        for _ in range(seed_count):
+            dx = self._rng.randint(-int(dispersal), int(dispersal))
+            dy = self._rng.randint(-int(dispersal), int(dispersal))
+            seeds.append((space.x + dx, space.y + dy, genome, parent_species, parent_generation))
+        return seeds
+
+    def _spawn_offspring(self, world: World, new_seeds: list):
+        """批量创建子代实体"""
         for x, y, parent_genome, parent_species, parent_generation in new_seeds:
             child = self._create_offspring(
                 world, parent_genome, x, y, self.REPRODUCTION_MUTATION_RATE,
@@ -161,7 +143,7 @@ class BiologyReproductionSystem(System):
         工作流程：
             1. 注册新实体
             2. 深拷贝基因组并施加突变
-            3. 挂载基础组件（基因型、表型、能量、形态、生命周期、空间）
+            3. 挂载完整植物组件（通过 PlantFactory 确保完整性）
 
         Args:
             world: World 实例
@@ -173,39 +155,15 @@ class BiologyReproductionSystem(System):
         Returns:
             创建的子代 Entity
         """
-        entity = world.create_entity()
+        from plant.plant_factory import PlantFactory
 
-        # 遗传 + 变异
-        child_genome = parent_genome.copy()
-        child_genome.mutate(mutation_rate=variation)
-
-        # 基因型
-        world.add_component(entity, child_genome)
-
-        # 表型容器
-        world.add_component(entity, PhenotypeComponent())
-
-        # 能量（种子状态，初始值较低）
-        init_energy = EnergyComponent()
-        init_energy.value = self.OFFSPRING_ENERGY
-        world.add_component(entity, init_energy)
-
-        # 形态
-        world.add_component(entity, MorphologyComponent())
-
-        # 生命周期（从种子开始）
-        lifecycle = LifeCycleComponent(stage=LifeCycleComponent.SEED)
-        world.add_component(entity, lifecycle)
-
-        # 空间坐标
-        world.add_component(entity, SpaceComponent(x=x, y=y, layer=0))
-
-        # 物种形成追踪组件（继承父母）
-        world.add_component(entity, SpeciationTrackerComponent(
-            species_id=parent_species,
-            original_species=parent_species,
-            generation=parent_generation + 1,
-            lineage_id=f"{parent_species}_{entity.id}",
-        ))
-
-        return entity
+        # 使用 PlantFactory 创建完整植物子代，确保所有生态组件齐全
+        return PlantFactory.create_plant_from_genome(
+            world=world,
+            parent_genome=parent_genome,
+            x=x,
+            y=y,
+            variation=variation,
+            parent_species=parent_species,
+            parent_generation=parent_generation,
+        )

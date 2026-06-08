@@ -21,7 +21,7 @@ class Gender(Enum):
     FEMALE = "female"
 
 
-@dataclass
+@dataclass(slots=True)
 class GenderComponent(Component):
     """
     性别组件

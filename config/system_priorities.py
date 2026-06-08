@@ -49,6 +49,7 @@ class SystemPriority:
     HEALTHCARE = 42
     MEMORY_DECAY = 43
     PLANT_GROWTH = 48
+    PREDATION = 49
 
     # 生物学生命周期层（50）
     BIOLOGY = 50

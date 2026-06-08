@@ -195,6 +195,23 @@ class HumanEntity:
         world.add_component(entity, PersonalityComponent())
         world.add_component(entity, EmotionComponent())
 
+        # 生态组件：人类作为杂食动物参与食物链
+        from biology.ecology.components.food_chain_component import FoodChainComponent
+        world.add_component(entity, FoodChainComponent(
+            trophic_level=2,
+            niche="omnivore",
+            energy_transfer_efficiency=0.1,
+        ))
+
+        # 分类组件：标记为人类
+        from core.category_component import CategoryComponent
+        from core.category import EntityCategory
+        from core.subcategory import HumanSubCategory
+        world.add_component(entity, CategoryComponent(
+            category=EntityCategory.HUMAN,
+            subcategory=HumanSubCategory.CIVILIAN,
+        ))
+
         # 社交组件
         world.add_component(entity, SocialComponent())
         world.add_component(entity, RelationshipComponent())

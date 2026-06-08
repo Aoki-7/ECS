@@ -28,6 +28,9 @@ from space.space_component import SpaceComponent
 from biology.ecology.components.food_chain_component import FoodChainComponent
 from biology.ecology.components.population_component import PopulationComponent
 from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
+from core.category_component import CategoryComponent
+from core.category import EntityCategory
+from core.subcategory import PlantSubCategory
 from environment.light_field.components.light_receiver_component import LightReceiverComponent
 from plant.components.plant_component import PlantComponent
 from plant.components.root_component import RootComponent
@@ -126,7 +129,7 @@ class PlantFactory:
         lifecycle = cls._init_lifecycle(species, preset)
 
         # ---- Step 4: 挂载植物基础组件 ----
-        cls._attach_base_components(world, entity, genome, lifecycle, preset, x, y)
+        cls._attach_base_components(world, entity, genome, lifecycle, preset, species, x, y)
 
         # ---- Step 5: 挂载物种形成追踪组件 ----
         world.add_component(entity, SpeciationTrackerComponent(
@@ -235,7 +238,7 @@ class PlantFactory:
 
         # 挂载基础组件（子代能量较低，模拟种子状态）
         cls._attach_base_components(
-            world, entity, child_genome, lifecycle, child_preset, x, y, energy_value=5.0
+            world, entity, child_genome, lifecycle, child_preset, parent_species, x, y, energy_value=5.0
         )
 
         # 挂载物种形成追踪组件（继承父母）
@@ -387,6 +390,7 @@ class PlantFactory:
         genome: GenomeComponent,
         lifecycle: LifeCycleComponent,
         preset: Dict[str, float],
+        species: str,
         x: int,
         y: int,
         energy_value: float = 10.0,
@@ -455,6 +459,21 @@ class PlantFactory:
         world.add_component(entity, FoodChainComponent(
             trophic_level=1,
             niche="producer",
+        ))
+
+        # 分类组件：标记为植物
+        species_to_subcategory = {
+            "tree": PlantSubCategory.TREE,
+            "vine": PlantSubCategory.VINE,
+            "flower": PlantSubCategory.FLOWER,
+            "fern": PlantSubCategory.FERN,
+            "succulent": PlantSubCategory.SUCCULENT,
+            "aquatic": PlantSubCategory.AQUATIC,
+        }
+        plant_subcategory = species_to_subcategory.get(species, PlantSubCategory.GRASS)
+        world.add_component(entity, CategoryComponent(
+            category=EntityCategory.PLANT,
+            subcategory=plant_subcategory,
         ))
 
         # 种群动态组件

@@ -35,8 +35,16 @@
 
     === 能力与技能 (Abilities and Skills) ===
     SkillComponent: 技能组件 - 实体的技能水平和能力
-    SearchComponent: 搜索组件 - 实体的搜索和发现能力
-    VisionComponent: 视野组件 - 实体的视觉感知范围
+    SearchComponent: 搜索组件 v2.0 - 智能目标发现与策略管理
+        · 递进式策略：visual → memory → explore → random
+        · 搜索历史：避免在同一区域重复搜索
+        · 概率评估：根据历史成功率动态调整信心
+        · 发现即记忆：找到目标后立即写入 discoveries，供记忆系统读取
+    VisionComponent: 视野组件 v2.0 - 锥形 FOV + 注意力机制
+        · 锥形视野：fov_angle（默认 120°）+ fov_direction，非 360° 雷达
+        · 昼夜差异：acuity_day / acuity_night，模拟人类暗视觉下降
+        · 注意力机制：attention_capacity（默认 3），只关注最重要的 N 个目标
+        · 感知统计：entities_seen_this_tick / last_perception_tick
     VelocityComponent: 速度组件 - 实体的移动速度
 
     === 经济与物品 (Economy and Items) ===

@@ -122,6 +122,14 @@ from biology.systems.damage_repair_system import DamageRepairSystem
 from biology.systems.nutrient_system import NutrientSystem
 from biology.systems.competition_system import CompetitionSystem
 from animal.systems.grazing_system import GrazingSystem
+from animal.systems.predation_system import PredationSystem
+from animal.systems.animal_reproduction_system import AnimalReproductionSystem
+
+from decomposer.systems.decomposer_system import DecomposerSystem
+from biology.ecology.trophic_level_system import TrophicLevelSystem
+from biology.ecology.population_dynamics_system import PopulationDynamicsSystem
+from biology.ecology.ecology_balance_system import EcologyBalanceSystem
+from biology.ecology.speciation_system import SpeciationSystem
 
 # 植物专用系统
 from plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
@@ -212,33 +220,39 @@ class SimulationLoop:
 
     def _init_systems(self):
         """初始化所有系统，按执行顺序分组并注册到 world"""
+        self._init_infrastructure_systems()
+        self._init_environment_systems()
+        self._init_human_systems()
+        self._init_physiology_and_animal_systems()
+        self._init_plant_systems()
+        self._init_biology_systems()
+        self._init_ecology_systems()
+        self._init_rule_and_civilization_systems()
 
-        # 0. 存档系统（priority 1，最早执行以支持加载后恢复）
+    def _init_infrastructure_systems(self):
+        """基础设施层：存档、时间、事件日志"""
         self.save_load_system = SaveLoadSystem()
         self.save_load_system.priority = 1
         self.world.add_system(self.save_load_system)
 
-        # 1. 时间系统（priority 5，仅次于空间系统）
         self.time_system = TimeSystem()
         self.time_system.priority = SystemPriority.TIME
         self.world.add_system(self.time_system)
 
-        # 1.5 事件日志系统（priority 5，自动挂载 EventLogComponent）
         self.event_log_system = EventLogSystem()
         self.event_log_system.priority = SystemPriority.EVENT_LOG
         self.world.add_system(self.event_log_system)
 
-        # 2. 环境管线（统一编排 14 个子系统，priority 20）
+    def _init_environment_systems(self):
+        """环境层：环境管线、大气物理、天气效果、路径规划"""
         self.env_pipeline = EnvironmentBuilder.build(self.world)
         self.env_pipeline.priority = SystemPriority.ENVIRONMENT
         self.world.add_system(self.env_pipeline)
 
-        # 2.5 大气物理系统（priority 20，ISA 模型与派生参数计算）
         self.atmosphere_physics_system = AtmospherePhysicsSystem()
         self.atmosphere_physics_system.priority = SystemPriority.ATMOSPHERE
         self.world.add_system(self.atmosphere_physics_system)
 
-        # 2.5 天气效果子系统（拆分版，priority 25，替代原 WeatherEffectSystem）
         self.weather_subsystems = [
             HeatEffectSystem(),
             ColdEffectSystem(),
@@ -250,33 +264,22 @@ class SimulationLoop:
             system.priority = SystemPriority.WEATHER_EFFECT
             self.world.add_system(system)
 
-        # 2.7 路径规划系统（priority 28，在战斗AI之前）
         self.pathfinding_system = PathfindingSystem()
         self.pathfinding_system.priority = SystemPriority.PATHFINDING
         self.world.add_system(self.pathfinding_system)
 
-        # 3. 人类系统（按处理流水线排序，priority 30）
-        #    感知→情绪→思维→目标→意图→决策→规划→动作调度→搜索/移动/交互→社交
+    def _init_human_systems(self):
+        """人类核心层：感知→情绪→思维→目标→意图→决策→规划→动作→社交"""
         self.human_systems = [
-            # 角色系统（社会身份管理）
             RoleSystem(),
-            # 感知层
             PerceptionSystem(),
-            # 情绪层：根据生理/环境/行为/社交更新情绪
             EmotionSystem(),
-            # 思维层：生成内心独白，更新心理状态
             ThoughtSystem(),
-            # 目标层：根据人生阶段和状态更新长期目标
             GoalSystem(),
-            # 需求→意图层
             IntentSystem(),
-            # 决策层：情绪/性格/记忆/目标→调整意图
             DecisionSystem(),
-            # 规划层：意图→任务动作队列
             PlanningSystem(),
-            # 动作调度层
             ActionSystem(),
-            # 动作执行层
             SearchSystem(),
             MovementSystem(),
             EatSystem(),
@@ -285,28 +288,22 @@ class SimulationLoop:
             PickupSystem(),
             HarvestSystem(),
             SocializeSystem(),
-            # 战斗层
             CombatSystem(),
-            # 社交/繁衍层
             SocialSystem(),
             PairingSystem(),
             ReproductionSystem(),
             BirthSystem(),
-            # 对话系统
             DialogueSystem(),
-            # 种植系统
             PlantingSystem(),
         ]
         for system in self.human_systems:
             system.priority = SystemPriority.HUMAN_COGNITIVE
             self.world.add_system(system)
 
-        # 3.5 战斗 AI 系统（priority 29，在动作执行前生成战斗意图）
         self.combat_ai_system = CombatAISystem()
         self.combat_ai_system.priority = SystemPriority.COMBAT_AI
         self.world.add_system(self.combat_ai_system)
 
-        # 3.6 冲突管理系统（已拆分为检测+解决，priority 31/32）
         self.conflict_detection_system = ConflictDetectionSystem()
         self.conflict_detection_system.priority = SystemPriority.CONFLICT_DETECTION
         self.world.add_system(self.conflict_detection_system)
@@ -315,17 +312,14 @@ class SimulationLoop:
         self.conflict_resolution_system.priority = SystemPriority.CONFLICT_RESOLUTION
         self.world.add_system(self.conflict_resolution_system)
 
-        # 3.7 声誉系统（priority 35）
         self.reputation_system = ReputationSystem()
         self.reputation_system.priority = SystemPriority.REPUTATION
         self.world.add_system(self.reputation_system)
 
-        # 3.8 经济系统（priority 35，在人类核心系统之后）
         self.economy_system = EconomySystem()
         self.economy_system.priority = SystemPriority.ECONOMY
         self.world.add_system(self.economy_system)
 
-        # 3.9 部落子系统（从 TribeSystem 拆分，priority 39-42）
         self.territory_system = TerritorySystem()
         self.territory_system.priority = SystemPriority.TERRITORY
         self.world.add_system(self.territory_system)
@@ -342,83 +336,113 @@ class SimulationLoop:
         self.recruit_system.priority = SystemPriority.RECRUIT
         self.world.add_system(self.recruit_system)
 
-        # 部落系统协调器（priority 43，负责初始化和清理）
         self.tribe_system = TribeSystem()
         self.tribe_system.priority = SystemPriority.TRIBE
         self.world.add_system(self.tribe_system)
         self.human_systems.append(self.tribe_system)
 
-        # 4. 生理系统（priority 40，拆分后的独立子系统）
+    def _init_physiology_and_animal_systems(self):
+        """生理系统、疾病传播、动物行为、医疗保健"""
         self.physiology_systems = [
             PhysiologyNeedsSystem(),
             HealthSystem(),
-            HumanDeathTriggerSystem(),  # 人类死亡判定 → 产出 PendingDeath
+            HumanDeathTriggerSystem(),
         ]
         for system in self.physiology_systems:
             system.priority = SystemPriority.PHYSIOLOGY
             self.world.add_system(system)
 
-        # 4.5 疾病传播系统（priority 41）
         self.disease_spread_system = DiseaseSpreadSystem()
         self.disease_spread_system.priority = SystemPriority.DISEASE_SPREAD
         self.world.add_system(self.disease_spread_system)
 
-        # 4.6 动物系统（priority 42）
         self.grazing_system = GrazingSystem()
         self.grazing_system.priority = SystemPriority.GRAZING
         self.world.add_system(self.grazing_system)
 
-        # 4.7 医疗保健系统（priority 43）
+        self.animal_reproduction_system = AnimalReproductionSystem()
+        self.animal_reproduction_system.priority = SystemPriority.REPRODUCTION
+        self.world.add_system(self.animal_reproduction_system)
+
+        self.predation_system = PredationSystem()
+        self.predation_system.priority = SystemPriority.PREDATION
+        self.world.add_system(self.predation_system)
+
         self.healthcare_system = HealthcareSystem()
         self.healthcare_system.priority = SystemPriority.HEALTHCARE
         self.world.add_system(self.healthcare_system)
 
-        # 4.7 记忆衰减系统（priority 43）
         self.memory_decay_system = MemoryDecaySystem()
         self.memory_decay_system.priority = SystemPriority.MEMORY_DECAY
         self.world.add_system(self.memory_decay_system)
 
-        # 4.5 植物专用系统（priority 48，在 GrowthSystem 之前准备光照/水分数据）
+    def _init_plant_systems(self):
+        """植物专用系统（在 GrowthSystem 之前准备光照/水分数据）"""
         self.plant_systems = [
-            PlantPhotosynthesisSystem(),  # LightReceiver → effective_par
-            PlantWaterUptakeSystem(),     # Root + Soil → plant_water_stress
-            TerrainAdaptationSystem(),    # Terrain → 生长修正
+            PlantPhotosynthesisSystem(),
+            PlantWaterUptakeSystem(),
+            TerrainAdaptationSystem(),
         ]
         for system in self.plant_systems:
             system.priority = SystemPriority.PLANT_GROWTH
             self.world.add_system(system)
 
-        # 5. 生物学系统（priority 50）
-        # 执行顺序：
-        #   基因表达 → 竞争 → 生长 → 形态 → 营养 → 生命周期 → 衰老 → 损伤修复 → 变异 → 繁殖 → 免疫 → 死亡
+    def _init_biology_systems(self):
+        """生物学核心系统"""
         self.biology_systems = [
-            GeneExpressionSystem(),      # 基因型 → 表型
-            CompetitionSystem(),         # 生态竞争（影响 phenotype）
-            GrowthSystem(),              # 光合作用 + 呼吸 + 能量分配
-            MorphologySystem(),          # 生长池 → 形态更新
-            NutrientSystem(),            # N/P/K 吸收与消耗
-            LifeCycleSystem(),           # 积温累积 + 阶段推进
-            SenescenceSystem(),          # 衰老退化
-            DamageRepairSystem(),        # 损伤修复（消耗能量）
-            MutationSystem(),            # 持续环境诱变
-            BiologyReproductionSystem(), # 成熟期繁殖（基础短距离散布）
-            SeedDispersalSystem(),       # 策略性长距离/环境感知传播
-            ImmuneSystem(),              # 感染传播与免疫反应
-            CreatureDeathTriggerSystem(),  # 通用生物死亡判定 → 产出 PendingDeath
-            DeathSystem(),                   # 统一死亡执行器（PendingDeath → DeadTag）
-            DeathEventSystem(),              # 死亡事件传播与社会影响
-            CorpseSystem(),                  # 尸体腐败与分解
+            GeneExpressionSystem(),
+            CompetitionSystem(),
+            GrowthSystem(),
+            MorphologySystem(),
+            NutrientSystem(),
+            LifeCycleSystem(),
+            SenescenceSystem(),
+            DamageRepairSystem(),
+            MutationSystem(),
+            BiologyReproductionSystem(),
+            SeedDispersalSystem(),
+            ImmuneSystem(),
+            CreatureDeathTriggerSystem(),
+            DeathSystem(),
+            DeathEventSystem(),
+            CorpseSystem(),
         ]
         for system in self.biology_systems:
             system.priority = SystemPriority.BIOLOGY
             self.world.add_system(system)
 
-        # 5.5 死亡档案系统（priority 55，在死亡/尸体之后，规则之前）
+    def _init_ecology_systems(self):
+        """生态监控层：死亡档案、分解者、土壤同步、生态平衡"""
         self.death_archive_system = DeathArchiveSystem()
         self.death_archive_system.priority = SystemPriority.DEATH_ARCHIVE
         self.world.add_system(self.death_archive_system)
 
-        # 6. 规则系统（priority 60）
+        self.decomposer_system = DecomposerSystem()
+        self.decomposer_system.priority = SystemPriority.DEATH_ARCHIVE
+        self.world.add_system(self.decomposer_system)
+
+        self.soil_sync_system = SoilToEnvironmentSyncSystem()
+        self.soil_sync_system.priority = SystemPriority.DEATH_ARCHIVE
+        self.world.add_system(self.soil_sync_system)
+
+        self.trophic_level_system = TrophicLevelSystem()
+        self.trophic_level_system.priority = SystemPriority.BIOLOGY
+        self.world.add_system(self.trophic_level_system)
+
+        self.population_dynamics_system = PopulationDynamicsSystem()
+        self.population_dynamics_system.priority = SystemPriority.BIOLOGY
+        self.world.add_system(self.population_dynamics_system)
+
+        self.ecology_balance_system = EcologyBalanceSystem()
+        self.ecology_balance_system.priority = SystemPriority.RULES
+        self.world.add_system(self.ecology_balance_system)
+
+        self.speciation_system = SpeciationSystem()
+        self.speciation_system.priority = SystemPriority.CIVILIZATION
+        self.world.add_system(self.speciation_system)
+
+    def _init_rule_and_civilization_systems(self):
+        """规则系统与文明系统（最高层级）"""
         self.transformation_rules = [
             TransformationRule(
                 source_component=FoodComponent,
@@ -433,12 +457,10 @@ class SimulationLoop:
             system.priority = SystemPriority.RULES
             self.world.add_system(system)
 
-        # 7. 文明系统（最高层级，priority 70）
         self.civilization_system = CivilizationSystem()
         self.civilization_system.priority = SystemPriority.CIVILIZATION
         self.world.add_system(self.civilization_system)
-        
-        # 8. 可视化面板与观察系统
+
         self.human_panel = HumanStatePanel()
         self.human_observation_system = HumanObservationSystem()
         self.human_observation_system.priority = SystemPriority.HUMAN_OBSERVATION

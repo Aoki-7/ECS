@@ -14,8 +14,6 @@ import random
 import sys
 import logging
 
-# 修复 Windows 终端中文乱码
-sys.stdout.reconfigure(encoding='utf-8')
 
 logging.basicConfig(
     level=logging.INFO,
@@ -65,7 +63,7 @@ from biology.lifecycle.death.systems.death_system import DeathSystem
 from biology.lifecycle.death.systems.death_event_system import DeathEventSystem
 from biology.lifecycle.corpse.systems.corpse_system import CorpseSystem
 
-from biology.ecology.decomposer_system import DecomposerSystem
+from decomposer.systems.decomposer_system import DecomposerSystem
 from biology.ecology.trophic_level_system import TrophicLevelSystem
 from biology.ecology.population_dynamics_system import PopulationDynamicsSystem
 from biology.ecology.ecology_balance_system import EcologyBalanceSystem

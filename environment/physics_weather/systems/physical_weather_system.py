@@ -346,9 +346,9 @@ class PhysicalWeatherSystem(System):
                     * delta_hours
                 )
                 evaporation += soil_evap
-        except (ImportError, AttributeError):
-            # 土壤组件不存在时，静默跳过（非关键路径）
-            pass
+        except (ImportError, AttributeError) as e:
+            # 土壤组件不存在时，记录警告（非关键路径）
+            logger.warning(f"[PhysicalWeatherSystem] 土壤蒸发计算跳过: {e}")
 
         # ── 降水消耗项 ──
         precip_loss = (

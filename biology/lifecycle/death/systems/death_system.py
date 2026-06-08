@@ -175,7 +175,17 @@ class DeathSystem(System):
 
         # 推断原始类型
         from human.components.basic.human_component import HumanComponent
-        original_type = "human" if world.get_component(entity, HumanComponent) else "creature"
+        from animal.components.animal_component import AnimalComponent
+        from plant.components.plant_component import PlantComponent
+
+        if world.get_component(entity, HumanComponent):
+            original_type = "human"
+        elif world.get_component(entity, AnimalComponent):
+            original_type = "animal"
+        elif world.get_component(entity, PlantComponent):
+            original_type = "plant"
+        else:
+            original_type = "unknown"
 
         return CorpseComponent(
             original_entity_id=entity.id,

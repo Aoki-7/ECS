@@ -5,14 +5,17 @@ from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 
 from core.world import World
+from core.category_component import CategoryComponent
+from core.category import EntityCategory
+from core.subcategory import ResourceSubCategory
 
 class StoneFactory:
     """石头工厂类"""
-    
+
     @staticmethod
     def create_stone(world: World, x, y):
         entity = world.create_entity()
-        
+
         space = SpaceComponent(x=x, y=y)
         world.add_component(entity, space)
         space_system = world.get_system(SpaceSystem)
@@ -22,5 +25,10 @@ class StoneFactory:
         world.add_component(entity, NameComponent(name="石头", category="stone"))
         world.add_component(entity, StoneComponent())
         world.add_component(entity, ResourceComponent(resource_type="stone", amount=1.0))
+
+        world.add_component(entity, CategoryComponent(
+            category=EntityCategory.RESOURCE,
+            subcategory=ResourceSubCategory.STONE,
+        ))
 
         return entity

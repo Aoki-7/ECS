@@ -26,6 +26,7 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "growth_partition": 0.4,  # 生长分配比例：能量用于生长的占比
         "speed_factor": 1.0,      # 移动速度系数：1.0 为基准倍率
         "sensing_range": 5.0,     # 感知范围：可探测环境/食物/威胁的半径
+        "diet_type": 0.5,         # 食性基因：0=纯草食, 1=纯肉食, 0.5=杂食
     },
 
     # ---- ⚡ 高速型 ----
@@ -37,6 +38,7 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "growth_partition": 0.3,  # 生长分配降低：更多能量用于活动
         "speed_factor": 2.5,      # 速度倍率显著提升
         "sensing_range": 10.0,    # 广域感知：提前发现威胁或猎物
+        "diet_type": 0.5,         # 高速型可草食可肉食，偏杂食
     },
 
     # ---- 🛡️ 坦克型 ----
@@ -48,6 +50,7 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "growth_partition": 0.6,  # 高生长分配：更快积累体型/防御
         "speed_factor": 0.5,      # 速度减半：机动性差
         "sensing_range": 3.0,     # 感知范围缩小：更依赖近距离反应
+        "diet_type": 0.3,         # 坦克型偏草食（靠防御吃草）
     },
 
     # ---- 🐺 捕食者型 ----
@@ -59,6 +62,7 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "growth_partition": 0.25, # 低生长分配：更多能量用于捕猎
         "speed_factor": 2.0,      # 高速度：追击猎物
         "sensing_range": 15.0,    # 广域感知：发现远处猎物
+        "diet_type": 0.85,        # 捕食者纯肉食
     },
 
     # ---- 🦌 食草动物型 ----
@@ -70,6 +74,7 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "growth_partition": 0.5,  # 均衡生长分配
         "speed_factor": 1.5,      # 中等偏快速度：逃避捕食者
         "sensing_range": 8.0,     # 中等感知：发现捕食者
+        "diet_type": 0.15,        # 食草动物纯草食
     },
 
     # ---- 🐇 小型食草动物型 ----
@@ -81,5 +86,6 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "growth_partition": 0.55, # 较高生长分配：快速成熟
         "speed_factor": 1.8,      # 较快：逃避天敌
         "sensing_range": 6.0,     # 警觉范围
+        "diet_type": 0.1,         # 小型食草动物偏草食
     },
 }

@@ -21,7 +21,7 @@
 
 与 ecology/ 的关系：
     - 动物死亡后由 DeathSystem 转化为 CorpseComponent
-    - DecomposerSystem 分解尸体为土壤养分
+    - decomposer.DecomposerSystem 分解尸体为土壤养分
 """
 
 from .animal_factory import AnimalFactory

@@ -49,100 +49,86 @@ class PhysiologyNeedsSystem(System):
         env = world.get_environment()
         env_is_valid = isinstance(env, EnvironmentComponent)
 
-        # 缓存环境属性到局部变量
-        env_temp = env.air_temperature if env_is_valid else 20.0
-        env_humidity = env.air_humidity if env_is_valid else 0.5
-        env_wind = env.wind_speed if env_is_valid else 0.0
-        env_rainfall = env.rainfall if env_is_valid else 0.0
-        env_water_stress = env.water_stress_index if env_is_valid else 0.0
+        env_cache = self._cache_env(env, env_is_valid)
 
         for entity, (needs,) in world.get_components(PhysiologyNeedsComponent):
             needs: PhysiologyNeedsComponent
-
-            # 检测睡眠状态（一次查询，复用给多个子逻辑）
             action = world.get_component(entity, ActionComponent)
-            is_sleeping = (
-                action is not None
-                and action.current_action == ActionType.SLEEP
-            )
+            is_sleeping = action is not None and action.current_action == ActionType.SLEEP
             metabolic_mult = 0.2 if is_sleeping else 1.0
 
-            # ═══════════════════════════════════════════════
-            # 1. 饥饿更新
-            # ═══════════════════════════════════════════════
-            hunger_rate = self.BASE_HUNGER_RATE * metabolic_mult * dt
-            needs.hunger = min(needs.max_hunger, needs.hunger + hunger_rate)
+            self._update_hunger(needs, metabolic_mult, dt)
+            self._update_thirst(needs, env_cache, env_is_valid, metabolic_mult, dt)
+            self._update_energy(needs, env_cache, env_is_valid, metabolic_mult, dt)
+            self._update_comfort_fatigue(needs, env_cache, env_is_valid, dt)
+            self._update_social(needs, dt)
 
-            # ═══════════════════════════════════════════════
-            # 2. 口渴更新
-            # ═══════════════════════════════════════════════
-            h = needs.hunger / needs.max_hunger
-            hunger_to_thirst = 0.5 * h
-            thirst_rate = (
-                self.BASE_THIRST_RATE + hunger_to_thirst
-            ) * metabolic_mult * dt
-            needs.thirst += thirst_rate
+    def _cache_env(self, env, env_is_valid: bool) -> dict:
+        """缓存环境属性到字典，避免循环内重复属性访问"""
+        return {
+            "temp": env.air_temperature if env_is_valid else 20.0,
+            "humidity": env.air_humidity if env_is_valid else 0.5,
+            "wind": env.wind_speed if env_is_valid else 0.0,
+            "rainfall": env.rainfall if env_is_valid else 0.0,
+            "water_stress": env.water_stress_index if env_is_valid else 0.0,
+        }
 
-            if env_is_valid:
-                needs.thirst += 1.0 * env_water_stress * dt
-                if env_humidity < 0.3:
-                    needs.thirst += 0.5 * dt
+    def _update_hunger(self, needs: PhysiologyNeedsComponent, metabolic_mult: float, dt: float):
+        """饥饿值自然增长"""
+        hunger_rate = self.BASE_HUNGER_RATE * metabolic_mult * dt
+        needs.hunger = min(needs.max_hunger, needs.hunger + hunger_rate)
 
-            needs.thirst = max(0.0, min(needs.max_thirst, needs.thirst))
+    def _update_thirst(self, needs: PhysiologyNeedsComponent, env_cache: dict, env_is_valid: bool, metabolic_mult: float, dt: float):
+        """口渴值自然增长 + 环境耦合"""
+        h = needs.hunger / needs.max_hunger
+        thirst_rate = (self.BASE_THIRST_RATE + 0.5 * h) * metabolic_mult * dt
+        needs.thirst += thirst_rate
 
-            # ═══════════════════════════════════════════════
-            # 3. 精力更新
-            # ═══════════════════════════════════════════════
-            h_norm = needs.hunger / needs.max_hunger
-            t_norm = needs.thirst / needs.max_thirst
-            e_norm = needs.energy / needs.max_energy
+        if env_is_valid:
+            needs.thirst += 1.0 * env_cache["water_stress"] * dt
+            if env_cache["humidity"] < 0.3:
+                needs.thirst += 0.5 * dt
 
-            hunger_to_energy = 1.0 * h_norm
-            thirst_to_energy = 2.0 * t_norm
-            energy_feedback = 1.0 - e_norm
+        needs.thirst = max(0.0, min(needs.max_thirst, needs.thirst))
 
-            energy_decay = (
-                self.BASE_ENERGY_DECAY
-                + hunger_to_energy
-                + thirst_to_energy
-            ) * metabolic_mult * dt
-            needs.energy -= energy_decay
+    def _update_energy(self, needs: PhysiologyNeedsComponent, env_cache: dict, env_is_valid: bool, metabolic_mult: float, dt: float):
+        """精力自然衰减 + 生理反馈 + 环境耦合"""
+        h_norm = needs.hunger / needs.max_hunger
+        t_norm = needs.thirst / needs.max_thirst
+        e_norm = needs.energy / needs.max_energy
 
-            if env_is_valid:
-                if env_temp > 30.0:
-                    needs.energy -= 0.15 * (env_temp - 30.0) * dt
-                elif env_temp < 10.0:
-                    needs.energy -= 0.08 * (10.0 - env_temp) * dt
+        energy_decay = (self.BASE_ENERGY_DECAY + 1.0 * h_norm + 2.0 * t_norm) * metabolic_mult * dt
+        needs.energy -= energy_decay
 
-            if needs.thirst > 80.0:
-                needs.energy -= 2.0 * dt
-            if needs.hunger > 80.0:
-                needs.energy -= 1.0 * dt
+        if env_is_valid:
+            env_temp = env_cache["temp"]
+            if env_temp > 30.0:
+                needs.energy -= 0.15 * (env_temp - 30.0) * dt
+            elif env_temp < 10.0:
+                needs.energy -= 0.08 * (10.0 - env_temp) * dt
 
-            needs.energy = max(0.0, min(needs.max_energy, needs.energy))
+        if needs.thirst > 80.0:
+            needs.energy -= 2.0 * dt
+        if needs.hunger > 80.0:
+            needs.energy -= 1.0 * dt
 
-            # ═══════════════════════════════════════════════
-            # 4. 舒适度/疲劳更新
-            # ═══════════════════════════════════════════════
-            if env_is_valid:
-                if env_temp > 25.0:
-                    needs.fatigue += 0.5 * (env_temp - 25.0) * dt
-                if env_humidity > 0.9:
-                    needs.comfort -= 0.3 * dt
+        needs.energy = max(0.0, min(needs.max_energy, needs.energy))
 
-            needs.fatigue = max(0.0, min(needs.max_fatigue, needs.fatigue))
-            needs.comfort = max(0.0, min(needs.max_comfort, needs.comfort))
+    def _update_comfort_fatigue(self, needs: PhysiologyNeedsComponent, env_cache: dict, env_is_valid: bool, dt: float):
+        """舒适度/疲劳的环境耦合"""
+        if env_is_valid:
+            if env_cache["temp"] > 25.0:
+                needs.fatigue += 0.5 * (env_cache["temp"] - 25.0) * dt
+            if env_cache["humidity"] > 0.9:
+                needs.comfort -= 0.3 * dt
 
-            # ═══════════════════════════════════════════════
-            # 5. 社交需求衰减
-            # ═══════════════════════════════════════════════
-            needs.social -= self.SOCIAL_DECAY_RATE * dt
-            needs.social = max(0.0, min(needs.max_social, needs.social))
+        needs.fatigue = max(0.0, min(needs.max_fatigue, needs.fatigue))
+        needs.comfort = max(0.0, min(needs.max_comfort, needs.comfort))
 
-            # ═══════════════════════════════════════════════
-            # 6. 全局数值安全
-            # ═══════════════════════════════════════════════
-            needs.hunger = max(0.0, min(needs.max_hunger, needs.hunger))
+    def _update_social(self, needs: PhysiologyNeedsComponent, dt: float):
+        """社交需求自然衰减"""
+        needs.social -= self.SOCIAL_DECAY_RATE * dt
+        needs.social = max(0.0, min(needs.max_social, needs.social))
 
 
 class PhysiologyNeedsHelper:

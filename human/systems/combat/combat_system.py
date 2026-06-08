@@ -54,7 +54,7 @@ class CombatSystem(System):
             elif action.current_action == ActionType.CHASE:
                 self._process_chase(world, space_system, entity, action, space, combat_stats, dt)
 
-    def _process_attack(self, world, space_system, entity, action, space, combat_stats, health, dt):
+    def _process_attack(self, world, space_system, entity, action, space, combat_stats, health, dt: float):
         """处理攻击逻辑"""
         target_id = action.target_entity
         if target_id is None:
@@ -115,7 +115,7 @@ class CombatSystem(System):
             action.current_action = ActionType.IDLE
             action.status = ActionStatus.SUCCESS
 
-    def _process_defend(self, action, dt):
+    def _process_defend(self, action, dt: float):
         """处理防御逻辑：防御状态持续中"""
         action.progress += dt * 0.5
         if action.progress >= 1.0:
@@ -125,7 +125,7 @@ class CombatSystem(System):
             action.current_action = ActionType.IDLE
             action.status = ActionStatus.IDLE
 
-    def _process_flee(self, world, space_system, entity, action, space, dt):
+    def _process_flee(self, world, space_system, entity, action, space, dt: float):
         """处理逃跑逻辑：向远离敌人的反方向移动"""
         target_id = action.target_entity
         if target_id is None:
@@ -173,7 +173,7 @@ class CombatSystem(System):
 
         action.status = ActionStatus.RUNNING
 
-    def _process_chase(self, world, space_system, entity, action, space, combat_stats, dt):
+    def _process_chase(self, world, space_system, entity, action, space, combat_stats, dt: float):
         """处理追击逻辑：直线追击目标"""
         target_id = action.target_entity
         if target_id is None:

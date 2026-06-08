@@ -15,7 +15,7 @@ from core.component import Component
 from biology.genetics.gene import Gene
 
 
-@dataclass
+@dataclass(slots=True)
 class GenomeComponent(Component):
     genes: list = field(default_factory=list)
 

@@ -178,9 +178,11 @@ class EventLogSystem(System):
         return log_comp.events.copy()
 
     def _prune_old_events(self, log_comp: EventLogComponent):
-        """修剪旧事件，保留最近 5000 条，重建索引与计数器"""
-        keep_count = self._keep_after_prune
-        log_comp.events = log_comp.events[-keep_count:]
+        """修剪旧事件，保留最近 _keep_after_prune 条，重建索引与计数器"""
+        to_remove = len(log_comp.events) - self._keep_after_prune
+        if to_remove <= 0:
+            return
+        del log_comp.events[:to_remove]
 
         # 重建索引
         log_comp._index_by_type = defaultdict(list)

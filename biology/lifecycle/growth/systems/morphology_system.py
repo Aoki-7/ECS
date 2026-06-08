@@ -42,90 +42,70 @@ class MorphologySystem(System):
     """
 
     def update(self, world: World, delta_hours: float = 1.0) -> None:
-        """
-        执行形态更新
-
-        Args:
-            world: World 实例
-            delta_hours: 时间步长（预留）
-        """
+        """执行形态更新"""
         for entity, (pheno, energy, morph) in world.get_components(
             PhenotypeComponent, EnergyComponent, MorphologyComponent
         ):
-            growth_energy = energy.growth_pool
+            self._update_morphology_for_entity(world, entity, pheno, energy, morph)
 
-            # ——— 能量耗尽 → 枯萎 ———
-            if growth_energy <= 0:
-                morph.wilting = min(1.0, morph.wilting + 0.01)
-                continue
+    def _update_morphology_for_entity(self, world, entity, pheno, energy, morph):
+        """单个实体的形态更新逻辑"""
+        growth_energy = energy.growth_pool
 
-            # ——— 读取纯生理基因 ———
-            metabolism_rate = pheno.get("metabolism_rate", 0.01)
-            growth_partition = pheno.get("growth_partition", 0.6)
-            maintenance_cost = pheno.get("maintenance_cost", 0.02)
-            storage_partition = pheno.get("storage_partition", 0.2)
+        if growth_energy <= 0:
+            morph.wilting = min(1.0, morph.wilting + 0.01)
+            return
 
-            # ——— 可用于形态生长的能量 ———
-            effective_growth = growth_energy * growth_partition
+        metabolism_rate = pheno.get("metabolism_rate", 0.01)
+        growth_partition = pheno.get("growth_partition", 0.6)
+        maintenance_cost = pheno.get("maintenance_cost", 0.02)
+        storage_partition = pheno.get("storage_partition", 0.2)
 
-            # ——— 生物量累积 ———
-            # 生长能量的 10% 转化为生物量（受代谢速率调节）
-            biomass_increment = effective_growth * metabolism_rate * 10.0
-            morph.weight += biomass_increment
+        effective_growth = growth_energy * growth_partition
+        self._update_biomass_and_structure(morph, effective_growth, metabolism_rate, storage_partition)
+        self._update_canopy(world, entity, morph)
+        self._apply_maintenance_and_storage(world, entity, energy, morph, effective_growth, maintenance_cost, storage_partition)
 
-            # ——— 高度（异速生长: 高度 ∝ 生物量^(2/3)） ———
-            # 没有 max_height 硬上限！
-            # 系数 5.0 使草本(weight≈20)高度约 30cm，乔木(weight≈300)高度约 150cm
-            height_target = 5.0 * (morph.weight ** (2.0 / 3.0))
-            # 渐进逼近，避免突变
-            morph.height += (height_target - morph.height) * 0.15
+        if morph.wilting > 0:
+            morph.wilting = max(0.0, morph.wilting - 0.02)
 
-            # ——— 根系深度（与高度成比例，0.3~0.6 倍） ———
-            root_target = morph.height * (0.3 + 0.3 * storage_partition)
-            morph.root_depth += (root_target - morph.root_depth) * 0.1
+        energy.growth_pool = 0.0
 
-            # ——— 茎粗（经典异速生长: 茎粗 ∝ 生物量^(3/8)） ———
-            # 不用硬编码 stem_thickness_factor
-            thickness_target = 0.1 + 0.05 * (morph.weight ** (3.0 / 8.0))
-            morph.stem_thickness += (thickness_target - morph.stem_thickness) * 0.1
+    def _update_biomass_and_structure(self, morph, effective_growth, metabolism_rate, storage_partition):
+        """更新生物量和结构形态"""
+        biomass_increment = effective_growth * metabolism_rate * 10.0
+        morph.weight += biomass_increment
 
-            # ——— 叶片大小（与生物量成正比） ———
-            leaf_size_target = 0.1 + 0.02 * morph.weight
-            morph.leaf_size += (leaf_size_target - morph.leaf_size) * 0.1
+        height_target = 5.0 * (morph.weight ** (2.0 / 3.0))
+        morph.height += (height_target - morph.height) * 0.15
 
-            # ——— 叶片数量（由叶面积指数决定） ———
-            canopy = world.get_component(entity, CanopyComponent)
-            if canopy is not None:
-                # 更新冠层 LAI
-                canopy.leaf_area_index = min(
-                    8.0, morph.leaf_size * 0.5 + morph.weight * 0.02
-                )
-                morph.leaf_count = max(1, int(canopy.leaf_area_index * 6))
-            else:
-                morph.leaf_count = max(1, int(morph.leaf_size * 3))
+        root_target = morph.height * (0.3 + 0.3 * storage_partition)
+        morph.root_depth += (root_target - morph.root_depth) * 0.1
 
-            # ——— 恢复枯萎状态 ———
-            if morph.wilting > 0:
-                morph.wilting = max(0.0, morph.wilting - 0.02)
+        thickness_target = 0.1 + 0.05 * (morph.weight ** (3.0 / 8.0))
+        morph.stem_thickness += (thickness_target - morph.stem_thickness) * 0.1
 
-            # ——— 维护消耗（随体型超线性增长，自然限制最大尺寸） ———
-            # effective_maintenance = weight * maintenance_cost * (1 + weight * 0.001)
-            # 大树维护成本极高，能量不足时自然停止生长
-            base_maintenance = morph.weight * maintenance_cost
-            size_penalty = 1.0 + morph.weight * 0.001  # 超线性惩罚
-            total_maintenance = base_maintenance * size_penalty
-            energy.value -= total_maintenance
+        leaf_size_target = 0.1 + 0.02 * morph.weight
+        morph.leaf_size += (leaf_size_target - morph.leaf_size) * 0.1
 
-            # ——— 储存积累 ———
-            # 部分能量进入储存池（影响后续抗逆、休眠等）
-            storage_gain = effective_growth * storage_partition * 0.05
-            # 暂存到 energy.value（简化模型）
-            energy.value += storage_gain
+    def _update_canopy(self, world, entity, morph):
+        """更新冠层和叶片数量"""
+        canopy = world.get_component(entity, CanopyComponent)
+        if canopy is not None:
+            canopy.leaf_area_index = min(8.0, morph.leaf_size * 0.5 + morph.weight * 0.02)
+            morph.leaf_count = max(1, int(canopy.leaf_area_index * 6))
+        else:
+            morph.leaf_count = max(1, int(morph.leaf_size * 3))
 
-            # ——— 同步资源组件的可收获量 ———
-            resource = world.get_component(entity, ResourceComponent)
-            if resource is not None:
-                resource.amount = morph.weight * 0.5
+    def _apply_maintenance_and_storage(self, world, entity, energy, morph, effective_growth, maintenance_cost, storage_partition):
+        """应用维护消耗、储存积累和资源同步"""
+        base_maintenance = morph.weight * maintenance_cost
+        size_penalty = 1.0 + morph.weight * 0.001
+        energy.value -= base_maintenance * size_penalty
 
-            # ——— 消耗生长池 ———
-            energy.growth_pool = 0.0
+        storage_gain = effective_growth * storage_partition * 0.05
+        energy.value += storage_gain
+
+        resource = world.get_component(entity, ResourceComponent)
+        if resource is not None:
+            resource.amount = morph.weight * 0.5

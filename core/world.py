@@ -260,6 +260,39 @@ class World:
                 yield entity, components
 
     # =====
+    # 分类查询接口（基于 CategoryComponent）
+    # =====
+
+    def get_entities_by_category(self, category, subcategory=None):
+        """
+        按主分类（和可选的子分类）查询实体。
+
+        Args:
+            category: EntityCategory 枚举值
+            subcategory: 可选的子分类枚举值
+
+        Returns:
+            生成器，产出 (Entity, CategoryComponent) 元组
+        """
+        from core.category_component import CategoryComponent
+        for entity, comp in self.query_components(CategoryComponent):
+            if comp.matches(category, subcategory):
+                yield entity, comp
+
+    def count_by_category(self, category, subcategory=None) -> int:
+        """
+        统计指定分类的实体数量。
+
+        Args:
+            category: EntityCategory 枚举值
+            subcategory: 可选的子分类枚举值
+
+        Returns:
+            实体数量
+        """
+        return sum(1 for _ in self.get_entities_by_category(category, subcategory))
+
+    # =====
     # 世界级访问接口
     # =====
 

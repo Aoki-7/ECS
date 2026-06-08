@@ -26,6 +26,7 @@ from biology.components.genome_component import GenomeComponent
 from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from space.space_component import SpaceComponent
+from biology.components.phenotype_component import PhenotypeComponent
 
 import logging
 
@@ -44,14 +45,10 @@ class AnimalReproductionSystem(System):
         4. 通过基因组产生后代
     """
 
-    # 繁殖所需最低能量
-    BASE_ENERGY_THRESHOLD = 40.0
-
-    # 繁殖能量消耗比例
-    REPRODUCTION_ENERGY_COST = 0.35
-
-    # 繁殖冷却期（tick 数）
-    REPRODUCTION_COOLDOWN_TICKS = 15
+    # 繁殖参数已去硬编码，改为从基因表型动态推导：
+    #   - 能量阈值   ← growth_partition（高生长分配=高阈值，K-策略）
+    #   - 能量消耗   ← growth_partition（高生长分配=低消耗，K-策略）
+    #   - 冷却期     ← metabolism_rate（低代谢=长周期，类似大型哺乳动物）
 
     def __init__(self, seed: int | None = None):
         super().__init__()
@@ -82,19 +79,31 @@ class AnimalReproductionSystem(System):
             if not lifecycle.is_mature:
                 continue
 
+            # ── 动态推导繁殖参数 ──
+            pheno = world.get_component(entity, PhenotypeComponent)
+            growth = pheno.get("growth_partition", 0.4) if pheno else 0.4
+            metabolism = pheno.get("metabolism_rate", 0.02) if pheno else 0.02
+
+            # 能量阈值：高生长分配 = 高阈值（优先投资自身，类似 K-策略）
+            energy_threshold = 20.0 + growth * 60.0
+
+            # 冷却期：低代谢 = 长周期（类似大型哺乳动物，r-策略 vs K-策略）
+            cooldown_ticks = max(3, int(30.0 / (metabolism * 100 + 0.5)))
+
+            # 能量消耗：高生长分配 = 低消耗（K-策略：少量高质量后代）
+            energy_cost = max(0.1, min(0.5, 0.5 - growth * 0.3))
+
             # 能量阈值检查
-            if energy.value < self.BASE_ENERGY_THRESHOLD:
+            if energy.value < energy_threshold:
                 continue
 
             # 冷却期检查
-            last_tick = self._last_reproduction.get(
-                entity.id, -self.REPRODUCTION_COOLDOWN_TICKS
-            )
-            if self._tick_counter - last_tick < self.REPRODUCTION_COOLDOWN_TICKS:
+            last_tick = self._last_reproduction.get(entity.id, -cooldown_ticks)
+            if self._tick_counter - last_tick < cooldown_ticks:
                 continue
 
             # 能量消耗
-            energy.value *= (1.0 - self.REPRODUCTION_ENERGY_COST)
+            energy.value *= (1.0 - energy_cost)
             self._last_reproduction[entity.id] = self._tick_counter
 
             # 计算后代位置（父母附近随机偏移 1~2 格）

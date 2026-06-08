@@ -84,8 +84,14 @@ class WeatherEventSystem(System):
 
         current_time = world.get_time().total_hours
 
-        # 当前物理量快照
-        snapshot = {
+        snapshot = self._take_snapshot(weather)
+
+        for variable, value in snapshot.items():
+            self._process_variable(world, variable, value, current_time, delta_hours)
+
+    def _take_snapshot(self, weather: PhysicalWeatherComponent) -> dict:
+        """提取当前物理量快照"""
+        return {
             "temperature": weather.temperature,
             "pressure": weather.pressure,
             "wind_speed": weather.wind_speed,
@@ -94,87 +100,88 @@ class WeatherEventSystem(System):
             "cloud_cover": weather.cloud_cover,
         }
 
-        # 更新历史窗口并检测异常
-        for variable, value in snapshot.items():
-            history = self._history[variable]
-            history.append(value)
+    def _process_variable(self, world: World, variable: str, value: float, current_time: float, delta_hours: float):
+        """处理单个物理量的历史更新和异常检测"""
+        history = self._history[variable]
+        history.append(value)
 
-            # 窗口足够大时才做统计检测
-            if len(history) < 48:  # 至少2天数据
-                continue
+        if len(history) < 48:
+            return
 
-            mean = sum(history) / len(history)
-            variance = sum((x - mean) ** 2 for x in history) / len(history)
-            std = math.sqrt(variance) if variance > 0 else 1.0
+        mean, std = self._compute_stats(history)
+        deviation = abs(value - mean)
+        sigma = deviation / std
 
-            # 防止 std 过小导致噪声触发
-            std = max(std, abs(mean) * 0.05 + 0.01)
+        has_active = variable in self._active_anomalies
+        pending = self._pending_anomalies.get(variable)
 
-            deviation = abs(value - mean)
-            sigma = deviation / std
+        if not has_active and sigma > self.ANOMALY_THRESHOLD_SIGMA:
+            self._handle_new_anomaly(world, variable, value, mean, std, sigma, current_time)
+        elif not has_active and pending is not None:
+            if sigma <= self.ANOMALY_THRESHOLD_SIGMA:
+                del self._pending_anomalies[variable]
+        elif has_active:
+            self._update_active_anomaly(world, variable, value, sigma, current_time, delta_hours)
 
-            has_active = variable in self._active_anomalies
-            pending = self._pending_anomalies.get(variable)
+    def _compute_stats(self, history) -> tuple:
+        """计算滑动窗口的均值和标准差"""
+        mean = sum(history) / len(history)
+        variance = sum((x - mean) ** 2 for x in history) / len(history)
+        std = math.sqrt(variance) if variance > 0 else 1.0
+        std = max(std, abs(mean) * 0.05 + 0.01)
+        return mean, std
 
-            if not has_active and sigma > self.ANOMALY_THRESHOLD_SIGMA:
-                if pending is None:
-                    # 首次偏离，进入待确认状态
-                    self._pending_anomalies[variable] = {
-                        "start_hour": current_time,
-                        "current_value": value,
-                        "mean": mean,
-                        "std": std,
-                        "sigma": sigma,
-                    }
-                else:
-                    # 持续偏离，检查是否满足最小持续时间
-                    duration = current_time - pending["start_hour"]
-                    if duration >= self.MIN_DURATION_HOURS:
-                        # 确认异常，创建实体
-                        self._create_anomaly_entity(
-                            world, variable, value, pending["mean"],
-                            pending["std"], sigma, pending["start_hour"],
-                            current_time
-                        )
-                        del self._pending_anomalies[variable]
-            elif not has_active and pending is not None:
-                # 偏离已结束但未达到持续时间，取消待确认
-                if sigma <= self.ANOMALY_THRESHOLD_SIGMA:
-                    del self._pending_anomalies[variable]
+    def _handle_new_anomaly(self, world: World, variable: str, value: float, mean: float, std: float, sigma: float, current_time: float):
+        """处理新检测到的异常"""
+        pending = self._pending_anomalies.get(variable)
+        if pending is None:
+            self._pending_anomalies[variable] = {
+                "start_hour": current_time,
+                "current_value": value,
+                "mean": mean,
+                "std": std,
+                "sigma": sigma,
+            }
+        else:
+            duration = current_time - pending["start_hour"]
+            if duration >= self.MIN_DURATION_HOURS:
+                self._create_anomaly_entity(
+                    world, variable, value, pending["mean"],
+                    pending["std"], sigma, pending["start_hour"],
+                    current_time
+                )
+                del self._pending_anomalies[variable]
 
-            elif has_active:
-                entity_id = self._active_anomalies[variable]
-                entity = world.query_entity(entity_id)
+    def _update_active_anomaly(self, world: World, variable: str, value: float, sigma: float, current_time: float, delta_hours: float):
+        """更新已激活的异常实体状态"""
+        entity_id = self._active_anomalies[variable]
+        entity = world.query_entity(entity_id)
 
-                if entity is None:
-                    del self._active_anomalies[variable]
-                    continue
+        if entity is None:
+            del self._active_anomalies[variable]
+            return
 
-                anomaly = world.get_component(entity, PhysicalAnomalyComponent)
-                stats = world.get_component(entity, AnomalyStatisticsComponent)
+        anomaly = world.get_component(entity, PhysicalAnomalyComponent)
+        stats = world.get_component(entity, AnomalyStatisticsComponent)
 
-                if anomaly is None:
-                    del self._active_anomalies[variable]
-                    continue
+        if anomaly is None:
+            del self._active_anomalies[variable]
+            return
 
-                if sigma < self.END_THRESHOLD_SIGMA:
-                    # 异常结束，记录日志后清理
-                    self._finalize_anomaly(world, entity, anomaly, current_time)
-                    world.remove_entity(entity)
-                    del self._active_anomalies[variable]
-                else:
-                    # 异常持续，更新状态
-                    anomaly.current_value = value
-                    anomaly.duration_hours += delta_hours
-                    anomaly.deviation_sigma = sigma
-                    anomaly.severity = min(
-                        1.0, (sigma - self.ANOMALY_THRESHOLD_SIGMA) / 2.0
-                    )
+        if sigma < self.END_THRESHOLD_SIGMA:
+            self._finalize_anomaly(world, entity, anomaly, current_time)
+            world.remove_entity(entity)
+            del self._active_anomalies[variable]
+        else:
+            anomaly.current_value = value
+            anomaly.duration_hours += delta_hours
+            anomaly.deviation_sigma = sigma
+            anomaly.severity = min(1.0, (sigma - self.ANOMALY_THRESHOLD_SIGMA) / 2.0)
 
-                    if stats is not None:
-                        stats.max_value = max(stats.max_value, value)
-                        stats.min_value = min(stats.min_value, value)
-                        stats.peak_severity = max(stats.peak_severity, anomaly.severity)
+            if stats is not None:
+                stats.max_value = max(stats.max_value, value)
+                stats.min_value = min(stats.min_value, value)
+                stats.peak_severity = max(stats.peak_severity, anomaly.severity)
 
     def _create_anomaly_entity(self, world: World, variable: str, value: float,
                                mean: float, std: float, sigma: float,

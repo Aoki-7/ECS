@@ -25,6 +25,8 @@ logging.basicConfig(
 from core.world import World
 from application.ecosystem_loop import EcosystemLoop
 
+logger = logging.getLogger(__name__)
+
 
 def main():
     """主函数"""
@@ -34,15 +36,14 @@ def main():
     herbivore_count = int(sys.argv[3]) if len(sys.argv) > 3 else 15
     carnivore_count = int(sys.argv[4]) if len(sys.argv) > 4 else 5
 
-    print("=" * 60)
-    print("  纯生态系统模拟")
-    print("=" * 60)
-    print(f"  模拟步数: {steps}")
-    print(f"  初始植物: {plant_count}")
-    print(f"  初始食草动物: {herbivore_count}")
-    print(f"  初始食肉动物: {carnivore_count}")
-    print("=" * 60)
-    print()
+    logger.info("=" * 60)
+    logger.info("  纯生态系统模拟")
+    logger.info("=" * 60)
+    logger.info(f"  模拟步数: {steps}")
+    logger.info(f"  初始植物: {plant_count}")
+    logger.info(f"  初始食草动物: {herbivore_count}")
+    logger.info(f"  初始食肉动物: {carnivore_count}")
+    logger.info("=" * 60)
 
     # 创建世界和模拟循环
     world = World()
@@ -58,8 +59,7 @@ def main():
     # 运行模拟
     loop.run_simulation(steps=steps, delta_hours=1.0, report_interval=10)
 
-    print()
-    print("模拟完成")
+    logger.info("模拟完成")
 
 
 if __name__ == "__main__":
