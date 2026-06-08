@@ -124,8 +124,16 @@ from biology.systems.competition_system import CompetitionSystem
 from animal.systems.grazing_system import GrazingSystem
 from animal.systems.predation_system import PredationSystem
 from animal.systems.animal_reproduction_system import AnimalReproductionSystem
+from animal.systems.animal_needs_system import AnimalNeedsSystem
+from animal.systems.animal_social_system import AnimalSocialSystem
+from animal.systems.animal_memory_system import AnimalMemorySystem
+from animal.systems.animal_territory_system import AnimalTerritorySystem
+from animal.systems.animal_migration_system import AnimalMigrationSystem
+from animal.systems.animal_perception_system import AnimalPerceptionSystem
+from animal.systems.animal_learning_system import AnimalLearningSystem
 
 from decomposer.systems.decomposer_system import DecomposerSystem
+from environment.soil.systems.soil_to_environment_sync_system import SoilToEnvironmentSyncSystem
 from biology.ecology.trophic_level_system import TrophicLevelSystem
 from biology.ecology.population_dynamics_system import PopulationDynamicsSystem
 from biology.ecology.ecology_balance_system import EcologyBalanceSystem
@@ -367,6 +375,35 @@ class SimulationLoop:
         self.predation_system = PredationSystem()
         self.predation_system.priority = SystemPriority.PREDATION
         self.world.add_system(self.predation_system)
+
+        # 新增动物生态系统
+        self.animal_needs_system = AnimalNeedsSystem()
+        self.animal_needs_system.priority = SystemPriority.ANIMAL_NEEDS
+        self.world.add_system(self.animal_needs_system)
+
+        self.animal_social_system = AnimalSocialSystem()
+        self.animal_social_system.priority = SystemPriority.ANIMAL_SOCIAL
+        self.world.add_system(self.animal_social_system)
+
+        self.animal_memory_system = AnimalMemorySystem()
+        self.animal_memory_system.priority = SystemPriority.ANIMAL_MEMORY
+        self.world.add_system(self.animal_memory_system)
+
+        self.animal_territory_system = AnimalTerritorySystem()
+        self.animal_territory_system.priority = SystemPriority.ANIMAL_TERRITORY
+        self.world.add_system(self.animal_territory_system)
+
+        self.animal_migration_system = AnimalMigrationSystem()
+        self.animal_migration_system.priority = SystemPriority.ANIMAL_MIGRATION
+        self.world.add_system(self.animal_migration_system)
+
+        self.animal_perception_system = AnimalPerceptionSystem()
+        self.animal_perception_system.priority = SystemPriority.ANIMAL_PERCEPTION
+        self.world.add_system(self.animal_perception_system)
+
+        self.animal_learning_system = AnimalLearningSystem()
+        self.animal_learning_system.priority = SystemPriority.ANIMAL_LEARNING
+        self.world.add_system(self.animal_learning_system)
 
         self.healthcare_system = HealthcareSystem()
         self.healthcare_system.priority = SystemPriority.HEALTHCARE

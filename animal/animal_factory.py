@@ -426,3 +426,22 @@ class AnimalFactory:
         # 扩展生物学组件：免疫、健康
         world.add_component(entity, ImmuneComponent())
         world.add_component(entity, HealthStatusComponent())
+
+        # 新增动物生态组件
+        from animal.components.animal_needs_component import AnimalNeedsComponent
+        from animal.components.animal_social_component import AnimalSocialComponent
+        from animal.components.animal_memory_component import AnimalMemoryComponent
+        from animal.components.animal_territory_component import AnimalTerritoryComponent
+        from animal.components.animal_reproduction_component import AnimalReproductionComponent
+        from animal.components.animal_perception_component import AnimalPerceptionComponent
+        from animal.components.animal_learning_component import AnimalLearningComponent
+
+        world.add_component(entity, AnimalNeedsComponent())
+        world.add_component(entity, AnimalSocialComponent())
+        world.add_component(entity, AnimalMemoryComponent())
+        world.add_component(entity, AnimalTerritoryComponent(
+            center_x=float(x), center_y=float(y)
+        ))
+        world.add_component(entity, AnimalReproductionComponent())
+        world.add_component(entity, AnimalPerceptionComponent())
+        world.add_component(entity, AnimalLearningComponent())
