@@ -160,27 +160,40 @@ class AnimalPerceptionSystem(System):
         self, world: World, entity,
         perception: AnimalPerceptionComponent, space: SpaceComponent
     ) -> None:
-        """将感知到的实体记录到记忆"""
+        """将感知到的实体记录到记忆（统一记忆层 + 传统记忆组件）"""
+        # === 传统记忆组件更新 ===
         memory = world.get_component(entity, AnimalMemoryComponent)
-        if memory is None:
-            return
+        if memory is not None:
+            for detected_id, entity_type in perception.detected_entities.items():
+                detected = world.query_entity(detected_id)
+                if detected is None:
+                    continue
 
-        for detected_id, entity_type in perception.detected_entities.items():
-            detected = world.query_entity(detected_id)
-            if detected is None:
-                continue
+                detected_space = world.get_component(detected, SpaceComponent)
+                if detected_space is None:
+                    continue
 
-            detected_space = world.get_component(detected, SpaceComponent)
-            if detected_space is None:
-                continue
+                memory_type = self._map_to_memory_type(entity_type)
+                if memory_type:
+                    memory.add_memory(
+                        detected_space.x, detected_space.y,
+                        memory_type, entity_id=detected_id,
+                        value=0.5, timestamp=getattr(world, 'time', 0)
+                    )
 
-            # 根据类型记录记忆
-            memory_type = self._map_to_memory_type(entity_type)
-            if memory_type:
-                memory.add_memory(
-                    detected_space.x, detected_space.y,
-                    memory_type, entity_id=detected_id,
-                    value=0.5, timestamp=getattr(world, 'time', 0)
+        # === 统一记忆层更新 ===
+        memory_layer = world.get_memory_layer()
+        if memory_layer is not None:
+            from memory_layer import SubjectType
+            for detected_id, entity_type in perception.detected_entities.items():
+                # 记录接触
+                memory_layer.record_contact(
+                    subject_id=entity.id,
+                    subject_type=SubjectType.ANIMAL,
+                    entity_id=detected_id,
+                    contact_type="visual",
+                    intensity=0.7,
+                    context=f"在({space.x}, {space.y})附近感知到",
                 )
 
     def _map_to_memory_type(self, entity_type: str) -> str | None:

@@ -162,6 +162,45 @@ class AnimalSocialSystem(System):
 
         return best_mate
 
+    def _share_memory(self, world: World, from_entity, to_entity) -> None:
+        """分享记忆：通过叙述传播重新生成记忆"""
+        import random
+        memory_layer = world.get_memory_layer()
+        if memory_layer is None:
+            return
+        
+        from memory_layer import SubjectType
+        
+        # 获取 from_entity 的记忆
+        from_memories = memory_layer.get_subject_memories(from_entity.id)
+        if not from_memories:
+            return
+        
+        # 选择一个有趣的记忆分享
+        interesting_memories = [
+            m for m in from_memories
+            if m.emotional_tag.intensity > 0.5 or m.recall_count > 2
+        ]
+        if not interesting_memories:
+            return
+        
+        selected = random.choice(interesting_memories)
+        
+        # 叙述传播（重新生成，不是复制）
+        new_memory = memory_layer.narrate_memory(
+            from_subject=from_entity.id,
+            to_subject=to_entity.id,
+            to_subject_type=SubjectType.ANIMAL,
+            concept_id=selected.concept_id,
+        )
+        
+        if new_memory:
+            logger.debug(
+                f"[Social] E{from_entity.id} 向 E{to_entity.id} "
+                f"叙述了 {selected.concept_id} "
+                f"(确信度: {new_memory.confidence:.2f})"
+            )
+
     def _decay_relationships(self, world: World, dt: float) -> None:
         """衰减所有社交关系"""
         decay_rate = 0.001 * dt

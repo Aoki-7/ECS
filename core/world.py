@@ -10,6 +10,19 @@ logger = logging.getLogger(__name__)
 from core.entity import Entity
 from core.component import Component
 
+# 记忆层导入（可选，延迟初始化以避免循环依赖）
+_memory_layer = None
+
+def _get_memory_layer():
+    global _memory_layer
+    if _memory_layer is None:
+        try:
+            from memory_layer import MemoryLayer
+            _memory_layer = MemoryLayer.get_instance()
+        except ImportError:
+            _memory_layer = None
+    return _memory_layer
+
 # 注意：core/world.py 不再在顶层导入任何应用层模块（如 time_module, environment, world.entity）
 # 以避免框架层依赖应用层。相关组件由 application 层在初始化时注入。
 
@@ -48,6 +61,15 @@ class World:
     def create_entity(self) -> Entity:
         entity = Entity.create()
         self.entities[entity.id] = entity
+        
+        # 注册到记忆层（如果可用）
+        memory_layer = _get_memory_layer()
+        if memory_layer is not None:
+            # 获取实体类型（从 CategoryComponent 或默认）
+            entity_type = getattr(entity, '_type', 'unknown')
+            # 延迟注册：等组件挂载后再注册概念
+            pass
+        
         return entity
 
     def remove_entity(self, entity: Entity):
@@ -78,6 +100,11 @@ class World:
 
         # 回收 id
         Entity.destroy(entity)
+        
+        # 通知记忆层实体消亡
+        memory_layer = _get_memory_layer()
+        if memory_layer is not None:
+            memory_layer.entity_destroyed(entity.id, timestamp=self.tick_count)
 
     def _unregister_entity_from_space(self, entity_id: int):
         """从 SpaceSystem 反注册实体（提取为独立方法，减少重复内联导入）"""
@@ -323,6 +350,10 @@ class World:
         if self._world_entity is None:
             return None
         return self._world_entity.get_component(component_type)
+
+    def get_memory_layer(self):
+        """获取统一记忆层实例（如果可用）"""
+        return _get_memory_layer()
 
         
     # ====

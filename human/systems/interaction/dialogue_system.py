@@ -242,7 +242,7 @@ class DialogueSystem(System):
                 action.status = ActionStatus.SUCCESS
                 dialogue.is_talking = False
 
-                # 记录到记忆
+                # 记录到记忆（传统 + 统一记忆层）
                 memory = world.get_component(entity, MemoryComponent)
                 if memory and dialogue.target_entity_id is not None:
                     current_time = world.get_time().total_hours
@@ -251,6 +251,47 @@ class DialogueSystem(System):
                         f"与 {dialogue.target_entity_id} 进行了对话",
                         impact=dialogue.sentiment * 0.3,
                     )
+
+                # 统一记忆层：叙述传播
+                memory_layer = world.get_memory_layer()
+                if memory_layer is not None:
+                    from memory_layer import SubjectType
+                    # 尝试获取对方的概念 ID
+                    target_concept_id = memory_layer.get_concept_by_entity(dialogue.target_entity_id)
+                    if target_concept_id:
+                        concept_id = target_concept_id.concept_id if hasattr(target_concept_id, 'concept_id') else str(target_concept_id)
+                        # 记录接触
+                        memory_layer.record_contact(
+                            subject_id=entity.id,
+                            subject_type=SubjectType.HUMAN,
+                            entity_id=dialogue.target_entity_id,
+                            contact_type="social",
+                            intensity=abs(dialogue.sentiment) + 0.5,
+                            context=f"对话: {dialogue.topic}",
+                        )
+                        # 如果对话内容有趣，尝试叙述传播
+                        if abs(dialogue.sentiment) > 0.3 and dialogue.topic:
+                            # 查找附近其他人类
+                            from space.space_system import SpaceSystem
+                            from space.space_component import SpaceComponent
+                            space_system = world.get_system(SpaceSystem)
+                            entity_space = world.get_component(entity, SpaceComponent)
+                            if space_system and entity_space:
+                                nearby = space_system.query_radius(
+                                    entity_space.x, entity_space.y, 5.0
+                                )
+                                for nearby_id in nearby:
+                                    if nearby_id == entity.id or nearby_id == dialogue.target_entity_id:
+                                        continue
+                                    nearby_entity = world.query_entity(nearby_id)
+                                    if nearby_entity and world.get_component(nearby_entity, DialogueComponent):
+                                        # 叙述传播：将对话内容作为记忆传播给旁观者
+                                        memory_layer.narrate_memory(
+                                            from_subject=entity.id,
+                                            to_subject=nearby_id,
+                                            to_subject_type=SubjectType.HUMAN,
+                                            concept_id=concept_id,
+                                        )
 
                 # 清理对话状态
                 dialogue.target_entity_id = None

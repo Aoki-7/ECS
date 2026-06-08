@@ -184,7 +184,7 @@ class PerceptionSystem(System):
         self, world: World, observer, observer_x: float, observer_y: float,
         vision: VisionComponent, visible_ids: list, memory: MemoryComponent
     ):
-        """将感知到的人、地点、异常写入记忆"""
+        """将感知到的人、地点、异常写入记忆（传统记忆组件 + 统一记忆层）"""
         from biology.lifecycle.components.morphology_component import MorphologyComponent
         from resource.food.components.food_component import FoodComponent
         from resource.water.components.water_component import WaterComponent
@@ -201,6 +201,10 @@ class PerceptionSystem(System):
         except Exception as e:
             logger.warning(f"[PerceptionSystem] 获取世界时间失败: {e}")
 
+        # === 统一记忆层集成 ===
+        memory_layer = world.get_memory_layer()
+        from memory_layer import SubjectType
+
         for eid in visible_ids:
             target = world.query_entity(eid)
             if target is None:
@@ -211,7 +215,7 @@ class PerceptionSystem(System):
 
             pos = (t_space.x, t_space.y)
 
-            # A) 看到其他人类 → record_person
+            # A) 看到其他人类 → record_person（传统）+ record_contact（统一记忆层）
             if world.get_component(target, HumanComponent) is not None:
                 name_comp = world.get_component(target, NameComponent)
                 name = name_comp.name if name_comp else f"E{eid}"
@@ -222,8 +226,18 @@ class PerceptionSystem(System):
                     relationship="acquaintance",
                     trust=0.5
                 )
+                # 统一记忆层：记录接触
+                if memory_layer is not None:
+                    memory_layer.record_contact(
+                        subject_id=observer.id,
+                        subject_type=SubjectType.HUMAN,
+                        entity_id=eid,
+                        contact_type="visual",
+                        intensity=0.8,
+                        context=f"看到人类 {name} 在 ({t_space.x:.0f}, {t_space.y:.0f})",
+                    )
 
-            # B) 看到资源/地点 → record_place
+            # B) 看到资源/地点 → record_place（传统）+ record_contact（统一记忆层）
             place_type = None
             if world.get_component(target, FoodComponent) is not None:
                 place_type = "food_source"
@@ -236,12 +250,21 @@ class PerceptionSystem(System):
                     place_type = "food_source"
 
             if place_type is not None:
-                # 只有不在 memory 中或很久没更新时才记录，避免每帧重复写入
                 existing = memory.places.get(pos)
                 if existing is None or (current_time - existing.get("last_visit", 0)) > 1.0:
                     memory.record_place(pos, place_type, current_time, sentiment=0.3)
+                # 统一记忆层：记录接触
+                if memory_layer is not None:
+                    memory_layer.record_contact(
+                        subject_id=observer.id,
+                        subject_type=SubjectType.HUMAN,
+                        entity_id=eid,
+                        contact_type="visual",
+                        intensity=0.6,
+                        context=f"发现{place_type}在 ({t_space.x:.0f}, {t_space.y:.0f})",
+                    )
 
-            # C) 看到异常实体（尸体）→ add_event
+            # C) 看到异常实体（尸体）→ add_event（传统）+ record_contact（统一记忆层）
             if world.get_component(target, DeadTagComponent) is not None:
                 name_comp = world.get_component(target, NameComponent)
                 name = name_comp.name if name_comp else f"E{eid}"
@@ -252,6 +275,17 @@ class PerceptionSystem(System):
                     impact=-0.4,
                     location=pos
                 )
+                # 统一记忆层：记录接触（高情感强度）
+                if memory_layer is not None:
+                    memory_layer.record_contact(
+                        subject_id=observer.id,
+                        subject_type=SubjectType.HUMAN,
+                        entity_id=eid,
+                        contact_type="visual",
+                        intensity=0.9,
+                        attention_level=0.95,
+                        context=f"在 ({t_space.x:.0f}, {t_space.y:.0f}) 看到尸体 {name}",
+                    )
 
 
 # 向后兼容的旧拼写别名

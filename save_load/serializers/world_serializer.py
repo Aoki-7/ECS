@@ -82,7 +82,8 @@ class WorldSerializer:
         world.components.clear()
         world._component_entities.clear()
         world._query_cache.clear()
-        world._system_cache.clear()
+        if hasattr(world, '_system_cache'):
+            world._system_cache.clear()
 
         world.tick_count = data.get("tick_count", 0)
 
