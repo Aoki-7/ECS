@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECS 世界模拟 — 全生态实时监控</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #050508;
+    --bg-secondary: #0c0c14;
+    --bg-card: #12121c;
+    --bg-card-hover: #1a1a28;
+    --border: #252538;
+    --text-primary: #e8e8f0;
+    --text-secondary: #6b6b8a;
+    --accent-human: #ff4757;
+    --accent-animal: #ffa502;
+    --accent-plant: #2ed573;
+    --accent-building: #1e90ff;
+    --accent-farm: #ffc107;
+    --accent-soil: #8b6914;
+    --accent-disaster: #ff3838;
+    --accent-tech: #a29bfe;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Glass card */
+  .glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-card:hover {
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+
+  /* Pulse dot */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+  .pulse-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2ed573;
+    animation: pulse 2s infinite;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Canvas */
+  .canvas-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+  }
+
+  /* Event log */
+  .event-item {
+    padding: 6px 10px;
+    border-left: 2px solid transparent;
+    margin-bottom: 3px;
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .event-item:hover { background: rgba(255,255,255,0.03); }
+  .event-human { border-left-color: var(--accent-human); }
+  .event-animal { border-left-color: var(--accent-animal); }
+  .event-plant { border-left-color: var(--accent-plant); }
+  .event-building { border-left-color: var(--accent-building); }
+  .event-farm { border-left-color: var(--accent-farm); }
+  .event-disaster { border-left-color: var(--accent-disaster); }
+  .event-tech { border-left-color: var(--accent-tech); }
+
+  /* Mini stat */
+  .mini-stat {
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Tab system */
+  .tab-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+  }
+  .tab-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+  .tab-btn.active { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+
+  /* Grid background */
+  .world-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 25px 25px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="border-b border-[#252538] bg-[#050508]/90 backdrop-blur-md sticky top-0 z-50">
+  <div class="max-w-[1800px] mx-auto px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="pulse-dot"></div>
+      <h1 class="text-lg font-semibold tracking-tight">
+        ECS 世界模拟 <span class="text-[#6b6b8a] font-normal">全生态实时监控</span>
+      </h1>
+    </div>
+    <div class="flex items-center gap-5 text-sm">
+      <div class="flex items-center gap-2">
+        <i data-lucide="clock" class="w-4 h-4 text-[#6b6b8a]"></i>
+        <span class="font-mono text-[#2ed573]" id="tick-display">Tick 0</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="activity" class="w-4 h-4 text-[#6b6b8a]"></i>
+        <span class="font-mono text-[#1e90ff]" id="fps-display">60 FPS</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="globe" class="w-4 h-4 text-[#6b6b8a]"></i>
+        <span class="font-mono" id="entity-count">0 实体</span>
+      </div>
+      <button id="pause-btn" class="px-3 py-1.5 bg-[#12121c] hover:bg-[#1a1a28] border border-[#252538] rounded-lg text-xs transition-colors flex items-center gap-1.5">
+        <i data-lucide="pause" class="w-3.5 h-3.5"></i>
+        <span>暂停</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1800px] mx-auto px-6 py-5">
+
+  <!-- Top Stats Row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-5">
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="users" class="w-3.5 h-3.5 text-[#ff4757]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">人类</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-humans">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="paw-print" class="w-3.5 h-3.5 text-[#ffa502]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">动物</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-animals">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="leaf" class="w-3.5 h-3.5 text-[#2ed573]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">植物</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-plants">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="home" class="w-3.5 h-3.5 text-[#1e90ff]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">建筑</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-buildings">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="wheat" class="w-3.5 h-3.5 text-[#ffc107]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">农田</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-farms">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="mountain" class="w-3.5 h-3.5 text-[#8b6914]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">土壤</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-soil">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="flame" class="w-3.5 h-3.5 text-[#a29bfe]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">知识</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-knowledge">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-[#ff3838]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">灾害</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-disasters">0</div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+    <!-- Left: World Map (8 cols) -->
+    <div class="lg:col-span-8 space-y-5">
+      <!-- Map -->
+      <div class="glass-card">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-semibold flex items-center gap-2">
+            <i data-lucide="map" class="w-4 h-4 text-[#1e90ff]"></i>
+            世界地图
+          </h2>
+          <div class="flex gap-2">
+            <button class="tab-btn active" data-layer="all">全部</button>
+            <button class="tab-btn" data-layer="human">人类</button>
+            <button class="tab-btn" data-layer="animal">动物</button>
+            <button class="tab-btn" data-layer="plant">植物</button>
+            <button class="tab-btn" data-layer="building">建筑</button>
+          </div>
+        </div>
+        <div class="canvas-container world-grid" style="height: 500px;">
+          <canvas id="world-canvas"></canvas>
+        </div>
+        <div class="flex gap-4 mt-3 text-[11px] text-[#6b6b8a]">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ff4757]"></span>人类</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ffa502]"></span>动物</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#2ed573]"></span>植物</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[#1e90ff]"></span>建筑</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ffc107]"></span>农田</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#8b6914]"></span>土壤</span>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+            生态种群趋势
+          </h3>
+          <canvas id="ecosystem-chart" height="180"></canvas>
+        </div>
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+            文明发展指标
+          </h3>
+          <canvas id="civilization-chart" height="180"></canvas>
+        </div>
+      </div>
+
+      <!-- Environment & System Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+            <i data-lucide="cloud-sun" class="w-3.5 h-3.5"></i>
+            环境指标
+          </h3>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-[#6b6b8a]">温度</span>
+                <span class="font-mono" id="env-temp">20°C</span>
+              </div>
+              <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+                <div class="h-full bg-[#ffa502] rounded-full transition-all" id="temp-bar" style="width: 40%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-[#6b6b8a]">湿度</span>
+                <span class="font-mono" id="env-humidity">50%</span>
+              </div>
+              <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+                <div class="h-full bg-[#1e90ff] rounded-full transition-all" id="humidity-bar" style="width: 50%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-[#6b6b8a]">降雨</span>
+                <span class="font-mono" id="env-rain">0mm</span>
+              </div>
+              <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+                <div class="h-full bg-[#a29bfe] rounded-full transition-all" id="rain-bar" style="width: 0%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-[#6b6b8a]">风速</span>
+                <span class="font-mono" id="env-wind">0m/s</span>
+              </div>
+              <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+                <div class="h-full bg-[#2ed573] rounded-full transition-all" id="wind-bar" style="width: 10%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+            <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+            系统性能
+          </h3>
+          <div class="space-y-2" id="system-list">
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">碰撞检测</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">农场系统</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">制作系统</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">灾害系统</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">衣物系统</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar (4 cols) -->
+    <div class="lg:col-span-4 space-y-5">
+      <!-- Knowledge Panel -->
+      <div class="glass-card">
+        <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+          <i data-lucide="brain" class="w-3.5 h-3.5"></i>
+          知识积累
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>制作技术</span>
+              <span class="font-mono text-[#a29bfe]" id="crafting-pct">0%</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#a29bfe] rounded-full transition-all" id="crafting-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>农业技术</span>
+              <span class="font-mono text-[#2ed573]" id="farming-pct">0%</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#2ed573] rounded-full transition-all" id="farming-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>建筑技术</span>
+              <span class="font-mono text-[#1e90ff]" id="building-pct">0%</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#1e90ff] rounded-full transition-all" id="building-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-[#252538]">
+            <div class="flex justify-between text-xs">
+              <span class="text-[#6b6b8a]">已知技术</span>
+              <span class="font-mono" id="tech-count">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Biodiversity -->
+      <div class="glass-card">
+        <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+          <i data-lucide="dna" class="w-3.5 h-3.5"></i>
+          生物多样性
+        </h3>
+        <div class="space-y-2">
+          <div class="mini-stat">
+            <span class="text-xs text-[#6b6b8a]">物种丰富度</span>
+            <span class="text-xs font-mono" id="biodiversity">0.00</span>
+          </div>
+          <div class="mini-stat">
+            <span class="text-xs text-[#6b6b8a]">总生物量</span>
+            <span class="text-xs font-mono" id="biomass">0 kg</span>
+          </div>
+          <div class="mini-stat">
+            <span class="text-xs text-[#6b6b8a]">平均植物健康</span>
+            <span class="text-xs font-mono text-[#2ed573]" id="plant-health">100%</span>
+          </div>
+          <div class="mini-stat">
+            <span class="text-xs text-[#6b6b8a]">平均动物能量</span>
+            <span class="text-xs font-mono text-[#ffa502]" id="animal-energy">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Log -->
+      <div class="glass-card">
+        <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+          <i data-lucide="list" class="w-3.5 h-3.5"></i>
+          事件日志
+          <span class="ml-auto text-[10px] bg-[#252538] px-2 py-0.5 rounded-full" id="event-counter">0</span>
+        </h3>
+        <div class="max-h-[350px] overflow-y-auto space-y-1" id="event-log">
+          <div class="text-xs text-[#6b6b8a] text-center py-6">等待事件...</div>
+        </div>
+      </div>
+
+      <!-- Disaster Alert -->
+      <div class="glass-card border-red-900/30" id="disaster-panel" style="display: none;">
+        <h3 class="text-xs font-medium text-[#ff3838] mb-2 flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+          活跃灾害
+        </h3>
+        <div id="disaster-list" class="space-y-1"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ============================================
+// ECS World Simulation Dashboard
+// ============================================
+
+lucide.createIcons();
+
+let isPaused = false;
+let tick = 0;
+let entities = [];
+let history = [];
+let events = [];
+let currentLayer = 'all';
+
+// Charts
+let ecosystemChart, civilizationChart;
+
+function initCharts() {
+  const opts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#6b6b8a', font: { size: 10 } } } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#6b6b8a', font: { size: 9 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#6b6b8a', font: { size: 9 } } }
+    },
+    elements: { line: { tension: 0.4 }, point: { radius: 0 } }
+  };
+
+  ecosystemChart = new Chart(document.getElementById('ecosystem-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: '人类', data: [], borderColor: '#ff4757', backgroundColor: 'rgba(255,71,87,0.1)', fill: true, borderWidth: 1.5 },
+        { label: '动物', data: [], borderColor: '#ffa502', backgroundColor: 'rgba(255,165,2,0.1)', fill: true, borderWidth: 1.5 },
+        { label: '植物', data: [], borderColor: '#2ed573', backgroundColor: 'rgba(46,213,115,0.1)', fill: true, borderWidth: 1.5 }
+      ]
+    },
+    options: opts
+  });
+
+  civilizationChart = new Chart(document.getElementById('civilization-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: '建筑', data: [], borderColor: '#1e90ff', backgroundColor: 'rgba(30,144,255,0.1)', fill: true, borderWidth: 1.5 },
+        { label: '农田', data: [], borderColor: '#ffc107', backgroundColor: 'rgba(255,193,7,0.1)', fill: true, borderWidth: 1.5 }
+      ]
+    },
+    options: opts
+  });
+}
+
+// World Map
+function initWorldMap() {
+  const canvas = document.getElementById('world-canvas');
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+  return canvas.getContext('2d');
+}
+
+function drawWorldMap(ctx, canvas) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < canvas.width; x += 25) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 25) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  // Draw entities
+  entities.forEach(e => {
+    if (currentLayer !== 'all' && e.type !== currentLayer) return;
+
+    const x = (e.x / 250) * canvas.width;
+    const y = (e.y / 250) * canvas.height;
+
+    const colors = {
+      human: '#ff4757',
+      animal: '#ffa502',
+      plant: '#2ed573',
+      building: '#1e90ff',
+      farm: '#ffc107',
+      soil: '#8b6914'
+    };
+
+    const sizes = {
+      human: 5,
+      animal: 4,
+      plant: 2.5,
+      building: 7,
+      farm: 3.5,
+      soil: 2
+    };
+
+    const color = colors[e.type] || '#888';
+    const size = sizes[e.type] || 3;
+
+    ctx.beginPath();
+    if (e.type === 'building') {
+      ctx.rect(x - size/2, y - size/2, size, size);
+    } else {
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Glow for humans and buildings
+    if (e.type === 'human' || e.type === 'building') {
+      ctx.beginPath();
+      ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+      ctx.fillStyle = color + '20';
+      ctx.fill();
+    }
+  });
+}
+
+// Update UI
+function updateStats(data) {
+  const stats = {
+    humans: data.humans || 0,
+    animals: data.animals || 0,
+    plants: data.plants || 0,
+    buildings: data.buildings || 0,
+    farms: data.farms || 0,
+    soil: data.soil_patches || 0,
+    knowledge: (data.crafting_knowledge || 0) + (data.farming_knowledge || 0),
+    disasters: data.active_disasters || 0
+  };
+
+  Object.entries(stats).forEach(([key, val]) => {
+    const el = document.getElementById('stat-' + key);
+    if (el) el.textContent = val;
+  });
+
+  // Environment
+  document.getElementById('env-temp').textContent = (data.temperature || 20).toFixed(1) + '°C';
+  document.getElementById('env-humidity').textContent = ((data.humidity || 0.5) * 100).toFixed(0) + '%';
+  document.getElementById('env-rain').textContent = (data.rainfall || 0).toFixed(1) + 'mm';
+  document.getElementById('env-wind').textContent = (data.wind_speed || 0).toFixed(1) + 'm/s';
+
+  // Bars
+  document.getElementById('temp-bar').style.width = Math.min(100, ((data.temperature || 20) / 50) * 100) + '%';
+  document.getElementById('humidity-bar').style.width = ((data.humidity || 0.5) * 100) + '%';
+  document.getElementById('rain-bar').style.width = Math.min(100, ((data.rainfall || 0) / 100) * 100) + '%';
+  document.getElementById('wind-bar').style.width = Math.min(100, ((data.wind_speed || 0) / 20) * 100) + '%';
+
+  // Knowledge
+  const maxCraft = 1000, maxFarm = 200, maxBuild = 50;
+  document.getElementById('crafting-bar').style.width = Math.min(100, ((data.crafting_knowledge || 0) / maxCraft) * 100) + '%';
+  document.getElementById('crafting-pct').textContent = Math.round(((data.crafting_knowledge || 0) / maxCraft) * 100) + '%';
+  document.getElementById('farming-bar').style.width = Math.min(100, ((data.farming_knowledge || 0) / maxFarm) * 100) + '%';
+  document.getElementById('farming-pct').textContent = Math.round(((data.farming_knowledge || 0) / maxFarm) * 100) + '%';
+  document.getElementById('tech-count').textContent = data.tech_count || 0;
+
+  // Biodiversity
+  document.getElementById('biodiversity').textContent = (data.biodiversity_index || 0).toFixed(2);
+  document.getElementById('biomass').textContent = (data.total_biomass || 0).toFixed(0) + ' kg';
+}
+
+function addEvent(tick, type, message) {
+  const log = document.getElementById('event-log');
+  const classes = {
+    human: 'event-human', animal: 'event-animal', plant: 'event-plant',
+    building: 'event-building', farm: 'event-farm', disaster: 'event-disaster', tech: 'event-tech'
+  };
+
+  const item = document.createElement('div');
+  item.className = 'event-item ' + (classes[type] || 'event-human');
+  item.innerHTML = `<span class="font-mono text-[#6b6b8a] text-[10px]">[${tick}]</span> ${message}`;
+
+  if (log.children.length === 1 && log.children[0].classList.contains('text-center')) {
+    log.innerHTML = '';
+  }
+  log.insertBefore(item, log.firstChild);
+  while (log.children.length > 50) log.removeChild(log.lastChild);
+
+  document.getElementById('event-counter').textContent = log.children.length;
+}
+
+function updateCharts() {
+  const labels = history.map(h => h.tick);
+  ecosystemChart.data.labels = labels;
+  ecosystemChart.data.datasets[0].data = history.map(h => h.humans);
+  ecosystemChart.data.datasets[1].data = history.map(h => h.animals);
+  ecosystemChart.data.datasets[2].data = history.map(h => h.plants);
+  ecosystemChart.update('none');
+
+  civilizationChart.data.labels = labels;
+  civilizationChart.data.datasets[0].data = history.map(h => h.buildings);
+  civilizationChart.data.datasets[1].data = history.map(h => h.farms);
+  civilizationChart.update('none');
+}
+
+// Simulation
+function generateEntities() {
+  const e = [];
+  // Humans
+  for (let i = 0; i < simData.humans; i++) e.push({ id: 'h'+i, type: 'human', x: Math.random()*200+25, y: Math.random()*200+25 });
+  // Animals
+  for (let i = 0; i < simData.animals; i++) e.push({ id: 'a'+i, type: 'animal', x: Math.random()*220+15, y: Math.random()*220+15 });
+  // Plants
+  for (let i = 0; i < simData.plants; i++) e.push({ id: 'p'+i, type: 'plant', x: Math.random()*240+5, y: Math.random()*240+5 });
+  // Buildings
+  for (let i = 0; i < simData.buildings; i++) e.push({ id: 'b'+i, type: 'building', x: Math.random()*200+25, y: Math.random()*200+25 });
+  // Farms
+  for (let i = 0; i < simData.farms; i++) e.push({ id: 'f'+i, type: 'farm', x: Math.random()*220+15, y: Math.random()*220+15 });
+  // Soil
+  for (let i = 0; i < simData.soil; i++) e.push({ id: 's'+i, type: 'soil', x: Math.random()*240+5, y: Math.random()*240+5 });
+  return e;
+}
+
+let simData = { humans: 10, animals: 15, plants: 30, buildings: 2, farms: 5, soil: 10, crafting: 0, farming: 0, tech: 0, temp: 22, disasters: 0 };
+
+function simulateTick() {
+  tick++;
+
+  // Random ecosystem events
+  if (Math.random() < 0.05) { simData.plants++; events.push({tick, type: 'plant', message: '新植物生长'}); }
+  if (Math.random() < 0.03) { simData.animals = Math.max(0, simData.animals + (Math.random() < 0.6 ? 1 : -1)); }
+  if (Math.random() < 0.08) { simData.humans++; events.push({tick, type: 'human', message: '新人类诞生'}); }
+  if (Math.random() < 0.04) { simData.buildings++; events.push({tick, type: 'building', message: '新建建筑'}); }
+  if (Math.random() < 0.06) { simData.farms++; events.push({tick, type: 'farm', message: '开垦农田'}); }
+  if (Math.random() < 0.15) { simData.crafting += Math.floor(Math.random()*3)+1; }
+  if (Math.random() < 0.10) { simData.farming += Math.floor(Math.random()*2)+1; }
+
+  // Environment changes
+  simData.temp += (Math.random() - 0.5) * 0.5;
+  simData.temp = Math.max(-10, Math.min(45, simData.temp));
+
+  // Disasters
+  if (Math.random() < 0.01) {
+    simData.disasters++;
+    events.push({tick, type: 'disaster', message: ['火灾爆发', '洪水泛滥', '干旱来袭'][Math.floor(Math.random()*3)]});
+  }
+
+  entities = generateEntities();
+
+  if (tick % 10 === 0) {
+    history.push({
+      tick, humans: simData.humans, animals: simData.animals, plants: simData.plants,
+      buildings: simData.buildings, farms: simData.farms, crafting_knowledge: simData.crafting,
+      farming_knowledge: simData.farming, temperature: simData.temp, active_disasters: simData.disasters
+    });
+    if (history.length > 100) history.shift();
+  }
+}
+
+function mainLoop() {
+  if (!isPaused) {
+    simulateTick();
+    document.getElementById('tick-display').textContent = `Tick ${tick}`;
+    document.getElementById('entity-count').textContent = `${entities.length} 实体`;
+
+    updateStats({
+      humans: simData.humans, animals: simData.animals, plants: simData.plants,
+      buildings: simData.buildings, farms: simData.farms, soil_patches: simData.soil,
+      crafting_knowledge: simData.crafting, farming_knowledge: simData.farming,
+      tech_count: simData.tech, temperature: simData.temp, humidity: 0.5,
+      rainfall: simData.temp > 30 ? 5 : 0, wind_speed: 2, active_disasters: simData.disasters,
+      biodiversity_index: (simData.humans + simData.animals + simData.plants) / 100,
+      total_biomass: simData.plants * 10 + simData.animals * 50
+    });
+
+    events.forEach(e => addEvent(e.tick, e.type, e.message));
+    events = [];
+
+    if (tick % 10 === 0) updateCharts();
+
+    const canvas = document.getElementById('world-canvas');
+    drawWorldMap(canvas.getContext('2d'), canvas);
+  }
+  requestAnimationFrame(mainLoop);
+}
+
+// Controls
+document.getElementById('pause-btn').addEventListener('click', () => {
+  isPaused = !isPaused;
+  const btn = document.getElementById('pause-btn');
+  btn.innerHTML = isPaused ? '<i data-lucide="play" class="w-3.5 h-3.5"></i><span>继续</span>' : '<i data-lucide="pause" class="w-3.5 h-3.5"></i><span>暂停</span>';
+  lucide.createIcons();
+});
+
+// Layer tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLayer = btn.dataset.layer;
+  });
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  const canvas = document.getElementById('world-canvas');
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+});
+
+// Init
+initCharts();
+initWorldMap();
+entities = generateEntities();
+mainLoop();
+</script>
+</body>
+</html>

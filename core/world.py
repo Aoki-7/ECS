@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 from core.entity import Entity
 from core.component import Component
+from core.event_bus import EventBus
 
 # 记忆层导入（可选，延迟初始化以避免循环依赖）
 _memory_layer = None
@@ -62,13 +63,16 @@ class World:
         entity = Entity.create()
         self.entities[entity.id] = entity
         
-        # 注册到记忆层（如果可用）
-        memory_layer = _get_memory_layer()
-        if memory_layer is not None:
-            # 获取实体类型（从 CategoryComponent 或默认）
-            entity_type = getattr(entity, '_type', 'unknown')
-            # 延迟注册：等组件挂载后再注册概念
-            pass
+        # 发布实体创建事件
+        try:
+            EventBus.get_instance().publish(
+                "entity_created",
+                {"entity_id": entity.id},
+                source="world",
+                timestamp=self.tick_count,
+            )
+        except Exception:
+            pass  # EventBus 可能未初始化
         
         return entity
 
@@ -105,6 +109,17 @@ class World:
         memory_layer = _get_memory_layer()
         if memory_layer is not None:
             memory_layer.entity_destroyed(entity.id, timestamp=self.tick_count)
+        
+        # 发布实体销毁事件
+        try:
+            EventBus.get_instance().publish(
+                "entity_destroyed",
+                {"entity_id": entity.id, "reason": "removed"},
+                source="world",
+                timestamp=self.tick_count,
+            )
+        except Exception:
+            pass
 
     def _unregister_entity_from_space(self, entity_id: int):
         """从 SpaceSystem 反注册实体（提取为独立方法，减少重复内联导入）"""
@@ -354,6 +369,10 @@ class World:
     def get_memory_layer(self):
         """获取统一记忆层实例（如果可用）"""
         return _get_memory_layer()
+
+    def get_event_bus(self):
+        """获取事件总线实例"""
+        return EventBus.get_instance()
 
         
     # ====

@@ -27,6 +27,9 @@ class SystemPriority:
     PATHFINDING = 28
     COMBAT_AI = 29
 
+    # 碰撞检测层（15）— 在移动后、行为前检测碰撞
+    COLLISION = 15
+
     # 人类核心层（30–43）
     HUMAN_COGNITIVE = 30
     CONFLICT_DETECTION = 31

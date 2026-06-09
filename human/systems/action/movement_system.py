@@ -35,81 +35,89 @@ class MovementSystem(System):
     """
 
     def update(self, world: World, dt: float):
-        """
-        更新所有可移动实体的位置。
-
-        Args:
-            world: ECS 世界实例
-            dt: 本帧时间增量，单位为秒
-        """
-
+        """更新所有可移动实体的位置"""
         for entity, [space, action, velocity] in world.get_components(
             SpaceComponent, ActionComponent, VelocityComponent
         ):
-            space: SpaceComponent
-            action: ActionComponent
-            velocity: VelocityComponent
-
             if action.current_action != ActionType.MOVE_TO:
                 continue
+            self._process_movement(entity, space, action, velocity, world, dt)
 
-            target = action.target_pos
-            if target is None:
-                action.current_action = ActionType.IDLE
-                action.status = ActionStatus.FAILED
-                action.progress = 0.0
-                continue
+    def _process_movement(self, entity, space, action, velocity, world, dt) -> None:
+        """处理单个实体的移动"""
+        target = self._validate_target(action.target_pos)
+        if target is None:
+            self._fail_movement(action)
+            return
 
-            if isinstance(target, list):
-                target = tuple(target)
+        target_x, target_y = target
+        dx = target_x - space.x
+        dy = target_y - space.y
+        dist = math.hypot(dx, dy)
 
-            try:
-                target_x, target_y = target
-            except (TypeError, ValueError):
-                action.current_action = ActionType.IDLE
-                action.status = ActionStatus.FAILED
-                action.progress = 0.0
-                continue
+        if dist < 1e-5:
+            self._arrive_at_target(space, action, target_x, target_y)
+            return
 
-            dx = target_x - space.x
-            dy = target_y - space.y
-            dist = math.hypot(dx, dy)
+        dir_x = dx / dist
+        dir_y = dy / dist
+        move_dist = velocity.speed * dt
 
-            if dist < 1e-5:
-                space.x = target_x
-                space.y = target_y
-                action.current_action = ActionType.IDLE
-                action.status = ActionStatus.SUCCESS
-                action.progress = 1.0
-                action.target_pos = None
-                continue
+        if move_dist >= dist:
+            self._complete_movement(space, action, target_x, target_y, entity, world)
+        else:
+            self._partial_movement(space, action, target_x, target_y, dir_x, dir_y, move_dist, dist)
 
-            dir_x = dx / dist
-            dir_y = dy / dist
-            move_dist = velocity.speed * dt
+    def _validate_target(self, target):
+        """验证并规范化目标位置"""
+        if target is None:
+            return None
+        if isinstance(target, list):
+            target = tuple(target)
+        try:
+            return tuple(target)
+        except (TypeError, ValueError):
+            return None
 
-            if move_dist >= dist:
-                space.x = round(target_x)
-                space.y = round(target_y)
-                space.dirty = True
-                action.current_action = ActionType.IDLE
-                action.status = ActionStatus.SUCCESS
-                action.progress = 1.0
-                action.target_pos = None
-                
-                # 如果当前任务是探索，记录探索成功
-                task = world.get_component(entity, TaskComponent)
-                if task and task.task == TaskType.EXPLORE:
-                    memory = world.get_component(entity, MemoryComponent)
-                    if memory:
-                        memory.record_success("explore")
-            else:
-                # Round to int to keep SpatialIndex keys valid
-                space.x = round(space.x + dir_x * move_dist)
-                space.y = round(space.y + dir_y * move_dist)
-                space.dirty = True
-                new_dx = target_x - space.x
-                new_dy = target_y - space.y
-                remain = math.hypot(new_dx, new_dy)
-                action.progress = 1.0 - (remain / dist)
-                action.status = ActionStatus.RUNNING
+    def _fail_movement(self, action) -> None:
+        """标记移动失败"""
+        action.current_action = ActionType.IDLE
+        action.status = ActionStatus.FAILED
+        action.progress = 0.0
+
+    def _arrive_at_target(self, space, action, target_x, target_y) -> None:
+        """到达目标位置"""
+        space.x = target_x
+        space.y = target_y
+        action.current_action = ActionType.IDLE
+        action.status = ActionStatus.SUCCESS
+        action.progress = 1.0
+        action.target_pos = None
+
+    def _complete_movement(self, space, action, target_x, target_y, entity, world) -> None:
+        """完成移动（到达或超过目标）"""
+        space.x = round(target_x)
+        space.y = round(target_y)
+        space.dirty = True
+        action.current_action = ActionType.IDLE
+        action.status = ActionStatus.SUCCESS
+        action.progress = 1.0
+        action.target_pos = None
+        self._record_explore_success(entity, world)
+
+    def _partial_movement(self, space, action, target_x, target_y, dir_x, dir_y, move_dist, total_dist) -> None:
+        """部分移动（未到达目标）"""
+        space.x = round(space.x + dir_x * move_dist)
+        space.y = round(space.y + dir_y * move_dist)
+        space.dirty = True
+        remain = math.hypot(target_x - space.x, target_y - space.y)
+        action.progress = 1.0 - (remain / total_dist)
+        action.status = ActionStatus.RUNNING
+
+    def _record_explore_success(self, entity, world) -> None:
+        """记录探索成功"""
+        task = world.get_component(entity, TaskComponent)
+        if task and task.task == TaskType.EXPLORE:
+            memory = world.get_component(entity, MemoryComponent)
+            if memory:
+                memory.record_success("explore")

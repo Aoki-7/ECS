@@ -18,7 +18,6 @@
     - 成员跟随领袖移动
 """
 
-import heapq
 import math
 
 from core.system import System
@@ -31,6 +30,7 @@ from animal.components.animal_social_component import AnimalSocialComponent
 from animal.components.animal_territory_component import AnimalTerritoryComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
+from space.pathfinding import PathfindingService
 
 import logging
 
@@ -45,6 +45,7 @@ class AnimalMigrationSystem(System):
         self._migration_states: dict[int, str] = {}  # entity_id -> state
         self._migration_paths: dict[int, list[tuple[float, float]]] = {}  # entity_id -> path
         self._path_index: dict[int, int] = {}  # entity_id -> current path index
+        self._pathfinding = PathfindingService(world_bounds=(0, 0, 100, 100))
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """更新迁徙状态"""
@@ -96,17 +97,40 @@ class AnimalMigrationSystem(System):
             return
 
         # 使用 A* 规划路径
-        path = self._astar_pathfinding(space.x, space.y, target.x, target.y, memory)
+        # 使用通用路径规划服务（v3.0.1）
+        path = self._pathfinding.find_path(
+            int(space.x), int(space.y),
+            int(target.x), int(target.y),
+            is_walkable=lambda x, y: self._is_walkable_for_animal(world, x, y, memory),
+            allow_diagonal=True,
+            max_steps=200,
+        )
         if path:
-            self._migration_paths[entity.id] = path
+            # 平滑路径
+            smoothed = self._pathfinding.smooth_path(
+                path,
+                is_walkable=lambda x, y: self._is_walkable_for_animal(world, x, y, memory),
+            )
+            self._migration_paths[entity.id] = smoothed
             self._path_index[entity.id] = 0
             self._migration_states[entity.id] = "migrating"
-            logger.debug(f"[Migration] E{entity.id} 路径规划完成，共 {len(path)} 个路径点")
+            logger.debug(f"[Migration] E{entity.id} 路径规划完成，共 {len(smoothed)} 个路径点")
         else:
-            # 路径规划失败，直接移动
-            self._migration_paths[entity.id] = [(target.x, target.y)]
-            self._path_index[entity.id] = 0
-            self._migration_states[entity.id] = "migrating"
+            # 路径规划失败，尝试最近可达点
+            nearest = self._pathfinding.find_nearest_reachable(
+                int(space.x), int(space.y),
+                int(target.x), int(target.y),
+                is_walkable=lambda x, y: self._is_walkable_for_animal(world, x, y, memory),
+                max_radius=10,
+            )
+            if nearest:
+                self._migration_paths[entity.id] = [nearest]
+                self._path_index[entity.id] = 0
+                self._migration_states[entity.id] = "migrating"
+            else:
+                # 完全无法到达，放弃迁徙
+                self._migration_states[entity.id] = "settled"
+                logger.debug(f"[Migration] E{entity.id} 无法找到可达路径，放弃迁徙")
 
         # 群体领袖通知成员
         social = world.get_component(entity, AnimalSocialComponent)
@@ -147,101 +171,33 @@ class AnimalMigrationSystem(System):
             space.x += (dx / dist) * min(move_speed, dist)
             space.y += (dy / dist) * min(move_speed, dist)
 
-    def _astar_pathfinding(
-        self, start_x: float, start_y: float,
-        target_x: float, target_y: float,
-        memory: AnimalMemoryComponent
-    ) -> list[tuple[float, float]]:
-        """
-        A* 路径规划（简化版网格实现）
-
-        使用记忆中的安全位置作为可通行区域，
-        威胁位置作为障碍物。
-        """
-        # 简化的 A*：直接直线 + 记忆引导
-        path = []
-
-        # 检查记忆中是否有中间路径点
-        intermediate = self._find_safe_waypoints(memory, start_x, start_y, target_x, target_y)
-
-        if intermediate:
-            path.append((start_x, start_y))
-            path.extend(intermediate)
-            path.append((target_x, target_y))
-        else:
-            # 无中间点，直接直线
-            path = self._generate_straight_path(start_x, start_y, target_x, target_y)
-
-        return path
-
-    def _find_safe_waypoints(
-        self, memory: AnimalMemoryComponent,
-        start_x: float, start_y: float,
-        target_x: float, target_y: float
-    ) -> list[tuple[float, float]]:
-        """从记忆中寻找安全的中间路径点"""
-        waypoints = []
-
-        # 获取所有食物和庇护所记忆作为路径点候选
-        candidates = []
-        candidates.extend(memory.get_memories_by_type("food"))
-        candidates.extend(memory.get_memories_by_type("shelter"))
-
-        # 筛选在起点和目标之间的点
-        for mem in candidates:
-            if mem.strength < 0.3:
-                continue
-            # 检查是否在路径附近
-            if self._is_near_path(mem.x, mem.y, start_x, start_y, target_x, target_y):
-                waypoints.append((mem.x, mem.y))
-
-        # 按距离起点排序
-        waypoints.sort(key=lambda p: math.hypot(p[0] - start_x, p[1] - start_y))
-
-        # 限制路径点数量
-        return waypoints[:3]
-
-    def _is_near_path(
-        self, px: float, py: float,
-        start_x: float, start_y: float,
-        target_x: float, target_y: float,
-        max_distance: float = 5.0
+    def _is_walkable_for_animal(
+        self, world: World, x: int, y: int, memory: AnimalMemoryComponent
     ) -> bool:
-        """检查点是否在路径附近"""
-        # 计算点到线段的距离
-        dx = target_x - start_x
-        dy = target_y - start_y
-        line_len_sq = dx * dx + dy * dy
+        """
+        判断坐标对动物是否可通行。
 
-        if line_len_sq == 0:
-            return math.hypot(px - start_x, py - start_y) <= max_distance
+        优先使用 CollisionSystem 的 is_walkable，
+        同时结合记忆中的威胁位置作为额外障碍物。
+        """
+        # 检查记忆中的威胁位置
+        threat_memories = memory.get_memories_by_type("threat")
+        for mem in threat_memories:
+            if mem.strength > 0.5:
+                dist = math.hypot(mem.x - x, mem.y - y)
+                if dist < 3.0:  # 避开威胁 3 格范围
+                    return False
 
-        t = max(0, min(1, ((px - start_x) * dx + (py - start_y) * dy) / line_len_sq))
-        nearest_x = start_x + t * dx
-        nearest_y = start_y + t * dy
+        # 检查 CollisionSystem（如果有）
+        try:
+            from space.collision_system import CollisionSystem
+            collision_system = world.get_system(CollisionSystem)
+            if collision_system:
+                return collision_system.is_walkable(world, x, y)
+        except Exception:
+            pass
 
-        return math.hypot(px - nearest_x, py - nearest_y) <= max_distance
-
-    def _generate_straight_path(
-        self, start_x: float, start_y: float,
-        target_x: float, target_y: float,
-        step_size: float = 3.0
-    ) -> list[tuple[float, float]]:
-        """生成直线路径点"""
-        path = []
-        dx = target_x - start_x
-        dy = target_y - start_y
-        dist = math.hypot(dx, dy)
-
-        if dist == 0:
-            return [(target_x, target_y)]
-
-        steps = max(1, int(dist / step_size))
-        for i in range(1, steps + 1):
-            t = i / steps
-            path.append((start_x + dx * t, start_y + dy * t))
-
-        return path
+        return True
 
     def _evaluate_location(self, world: World, space: SpaceComponent) -> float:
         """评估当前位置的资源价值"""

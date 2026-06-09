@@ -162,31 +162,30 @@ class TestMigrationPathfinding(unittest.TestCase):
         self.world = World()
         self.system = AnimalMigrationSystem()
 
-    def test_straight_path(self):
-        """测试直线路径生成"""
-        path = self.system._generate_straight_path(0, 0, 10, 10, step_size=3)
-        self.assertGreater(len(path), 1)
-        # 终点应在目标附近
-        last = path[-1]
-        self.assertAlmostEqual(last[0], 10, delta=0.1)
-        self.assertAlmostEqual(last[1], 10, delta=0.1)
+    def test_pathfinding_service(self):
+        """测试路径规划服务集成（v3.0.1）"""
+        from space.pathfinding import PathfindingService
+        pf = PathfindingService(world_bounds=(0, 0, 50, 50))
 
-    def test_safe_waypoints(self):
-        """测试安全路径点查找"""
+        # 测试直线路径
+        path = pf.find_path(0, 0, 10, 10, lambda x, y: True)
+        self.assertIsNotNone(path)
+        self.assertEqual(path[0], (0, 0))
+        self.assertEqual(path[-1], (10, 10))
+
+    def test_is_walkable_integration(self):
+        """测试 is_walkable 与 CollisionSystem 集成"""
         memory = AnimalMemoryComponent()
-        memory.add_memory(5, 5, "food", value=0.8, timestamp=0)
-        memory.add_memory(15, 15, "food", value=0.9, timestamp=0)
+        # 添加威胁记忆
+        memory.add_memory(5, 5, "threat", value=0.9, timestamp=0)
 
-        waypoints = self.system._find_safe_waypoints(memory, 0, 0, 20, 20)
-        # 至少应找到路径附近的点
-        self.assertGreaterEqual(len(waypoints), 0)
+        # 威胁位置应不可通行
+        result = self.system._is_walkable_for_animal(self.world, 5, 5, memory)
+        self.assertFalse(result)
 
-    def test_near_path(self):
-        """测试路径邻近判断"""
-        # 点在线段上
-        self.assertTrue(self.system._is_near_path(5, 5, 0, 0, 10, 10, max_distance=2))
-        # 点远离线段
-        self.assertFalse(self.system._is_near_path(20, 20, 0, 0, 10, 10, max_distance=2))
+        # 安全位置应可通行
+        result = self.system._is_walkable_for_animal(self.world, 20, 20, memory)
+        self.assertTrue(result)
 
 
 class TestIntegrationP2(unittest.TestCase):

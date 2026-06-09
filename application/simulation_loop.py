@@ -36,6 +36,7 @@ from core.world import World
 
 # 空间系统
 from space.space_system import SpaceSystem
+from space.collision_system import CollisionSystem
 
 # 时间系统
 from time_module.time_system import TimeSystem
@@ -196,6 +197,7 @@ class SimulationLoop:
         from world.world_entity import WorldEntity
         from time_module.time_component import TimeComponent
         from space.space_system import SpaceSystem
+        from space.collision_system import CollisionSystem
         from core.components.world_config_component import WorldConfigComponent
 
         world_entity = WorldEntity()
@@ -252,7 +254,7 @@ class SimulationLoop:
         self.world.add_system(self.event_log_system)
 
     def _init_environment_systems(self):
-        """环境层：环境管线、大气物理、天气效果、路径规划"""
+        """环境层：环境管线、大气物理、天气效果、碰撞检测、路径规划"""
         self.env_pipeline = EnvironmentBuilder.build(self.world)
         self.env_pipeline.priority = SystemPriority.ENVIRONMENT
         self.world.add_system(self.env_pipeline)
@@ -275,6 +277,11 @@ class SimulationLoop:
         self.pathfinding_system = PathfindingSystem()
         self.pathfinding_system.priority = SystemPriority.PATHFINDING
         self.world.add_system(self.pathfinding_system)
+
+        # 碰撞检测系统（v3.0.1 新增）
+        self.collision_system = CollisionSystem(auto_resolve=True)
+        self.collision_system.priority = SystemPriority.COLLISION
+        self.world.add_system(self.collision_system)
 
     def _init_human_systems(self):
         """人类核心层：感知→情绪→思维→目标→意图→决策→规划→动作→社交"""

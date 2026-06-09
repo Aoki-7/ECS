@@ -47,19 +47,21 @@ class CompetitionSystem(System):
             dt: 时间步长（当前模型与时间无关，预留参数）
         """
         competitors = self._collect_competitors(world)
+        self._reset_scores(competitors)
+        self._run_competition(competitors)
+        self._apply_competition_effects(competitors)
 
-        # 重置竞争分数
+    def _reset_scores(self, competitors: List[Dict]) -> None:
+        """重置竞争分数"""
         for c in competitors:
             c["morph"].light_competition_score = 0.0
             c["morph"].water_competition_score = 0.0
 
-        # 两两竞争
+    def _run_competition(self, competitors: List[Dict]) -> None:
+        """执行两两竞争"""
         for i, c1 in enumerate(competitors):
             for c2 in competitors[i + 1 :]:
                 self._compete_pair(c1, c2)
-
-        # 应用竞争结果
-        self._apply_competition_effects(competitors)
 
     # -------------------------------------------------
     # 数据收集

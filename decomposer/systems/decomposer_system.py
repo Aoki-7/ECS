@@ -59,13 +59,7 @@ class DecomposerSystem(System):
         self._soil_cache: dict = {}
 
     def update(self, world: World, dt: float = 1.0) -> None:
-        """
-        执行分解更新
-
-        Args:
-            world: World 实例
-            dt: 时间步长（预留）
-        """
+        """执行分解更新"""
         self._build_soil_cache(world)
 
         for entity, (corpse, space) in list(
@@ -73,65 +67,75 @@ class DecomposerSystem(System):
         ):
             if not world.has_entity(entity):
                 continue
+            self._process_decomposition(world, entity, corpse, space)
 
-            # 确保尸体挂载 DecompositionComponent
-            decomp = world.get_component(entity, DecompositionComponent)
-            if decomp is None:
-                decomp = self._init_decomposition(corpse, world, entity)
-                world.add_component(entity, decomp)
+    def _process_decomposition(self, world, entity, corpse, space) -> None:
+        """处理单个尸体的分解"""
+        # 确保尸体挂载 DecompositionComponent
+        decomp = world.get_component(entity, DecompositionComponent)
+        if decomp is None:
+            decomp = self._init_decomposition(corpse, world, entity)
+            world.add_component(entity, decomp)
 
-            # 确保尸体有 CategoryComponent（死亡流程可能遗漏）
-            cat = world.get_component(entity, CategoryComponent)
-            if cat is None:
-                corpse_subtype = CorpseSubCategory.UNKNOWN
-                if corpse.original_type == "human":
-                    corpse_subtype = CorpseSubCategory.HUMAN
-                elif corpse.original_type == "animal":
-                    corpse_subtype = CorpseSubCategory.ANIMAL
-                elif corpse.original_type == "plant":
-                    corpse_subtype = CorpseSubCategory.PLANT
-                world.add_component(entity, CategoryComponent(
-                    category=EntityCategory.CORPSE,
-                    subcategory=corpse_subtype,
-                ))
+        # 确保尸体有 CategoryComponent
+        self._ensure_category(world, entity, corpse)
 
-            # 查找尸体所在位置的土壤
-            soil = self._get_soil_at(space)
-            if soil is None:
-                continue
+        # 查找尸体所在位置的土壤
+        soil = self._get_soil_at(space)
+        if soil is None:
+            return
 
-            # 根据环境更新微生物活性
-            self._update_microbial_activity(decomp, soil)
+        # 根据环境更新微生物活性
+        self._update_microbial_activity(decomp, soil)
 
-            # 计算本次释放的养分
-            release = self._compute_release(decomp, corpse)
+        # 计算并释放养分
+        release = self._compute_release(decomp, corpse)
+        self._apply_release_to_soil(soil, release)
+        decomp.total_released += sum(release.values())
 
-            # 释放养分到土壤
-            soil.nitrogen += release["nitrogen"]
-            soil.phosphorus += release["phosphorus"]
-            soil.potassium += release["potassium"]
-            soil.organic_matter += release["organic_matter"]
-
-            # 更新累计释放量
-            total = sum(release.values())
-            decomp.total_released += total
-
-            # 腐败完全或养分耗尽后销毁尸体
-            fully_decomposed = corpse.decay_progress >= 1.0
-            nutrients_depleted = (
-                decomp.remaining_nitrogen < 0.01
-                and decomp.remaining_phosphorus < 0.01
-                and decomp.remaining_potassium < 0.01
-                and decomp.remaining_organic_matter < 0.01
+        # 检查是否完全分解
+        if self._is_fully_decomposed(corpse, decomp):
+            world.remove_entity(entity)
+            logger.debug(
+                f"[Decomposer] 尸体 E{corpse.original_entity_id}({corpse.original_type}) "
+                f"完全分解，累计释放养分 {decomp.total_released:.2f} "
+                f"到土壤 ({int(space.x)}, {int(space.y)})"
             )
 
-            if fully_decomposed or nutrients_depleted:
-                world.remove_entity(entity)
-                logger.debug(
-                    f"[Decomposer] 尸体 E{corpse.original_entity_id}({corpse.original_type}) "
-                    f"完全分解，累计释放养分 {decomp.total_released:.2f} "
-                    f"到土壤 ({int(space.x)}, {int(space.y)})"
-                )
+    def _ensure_category(self, world, entity, corpse) -> None:
+        """确保尸体有 CategoryComponent"""
+        cat = world.get_component(entity, CategoryComponent)
+        if cat is not None:
+            return
+        corpse_subtype = CorpseSubCategory.UNKNOWN
+        if corpse.original_type == "human":
+            corpse_subtype = CorpseSubCategory.HUMAN
+        elif corpse.original_type == "animal":
+            corpse_subtype = CorpseSubCategory.ANIMAL
+        elif corpse.original_type == "plant":
+            corpse_subtype = CorpseSubCategory.PLANT
+        world.add_component(entity, CategoryComponent(
+            category=EntityCategory.CORPSE,
+            subcategory=corpse_subtype,
+        ))
+
+    def _apply_release_to_soil(self, soil, release: dict) -> None:
+        """将释放的养分应用到土壤"""
+        soil.nitrogen += release["nitrogen"]
+        soil.phosphorus += release["phosphorus"]
+        soil.potassium += release["potassium"]
+        soil.organic_matter += release["organic_matter"]
+
+    def _is_fully_decomposed(self, corpse, decomp) -> bool:
+        """检查尸体是否完全分解"""
+        fully_decomposed = corpse.decay_progress >= 1.0
+        nutrients_depleted = (
+            decomp.remaining_nitrogen < 0.01
+            and decomp.remaining_phosphorus < 0.01
+            and decomp.remaining_potassium < 0.01
+            and decomp.remaining_organic_matter < 0.01
+        )
+        return fully_decomposed or nutrients_depleted
 
     # -------------------------------------------------
     # 分解初始化

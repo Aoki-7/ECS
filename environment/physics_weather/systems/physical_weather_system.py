@@ -118,70 +118,40 @@ class PhysicalWeatherSystem(System):
             return
 
         time = world.get_time()
-        season_comp = world.get_world_entity().get_component(SeasonComponent)
         climate_comp = world.get_world_entity().get_component(ClimateComponent)
 
-        # 天文参数计算（替代硬编码季节偏移）
+        # 天文参数计算
         hour = time.hour
         day_of_year = time.day_of_year
-
-        # 季节辐射因子：由太阳赤纬角和纬度实时计算，夏至≈1，冬至≈-1
         seasonal_factor = seasonal_insolation_factor(day_of_year, self.latitude)
-        # 日地距离因子：近日点辐射稍强，远日点稍弱
         distance_factor = earth_sun_distance_factor(day_of_year)
 
-        # 气候趋势（OU 过程驱动，替代硬编码 ENSO 相位）
-        climate_temp_bias = 0.0
-        climate_humidity_bias = 0.0
-        climate_rainfall_factor = 1.0
-        if climate_comp is not None:
-            climate_temp_bias = climate_comp.temp_trend
-            climate_humidity_bias = climate_comp.humidity_trend
-            climate_rainfall_factor = climate_comp.rainfall_trend
+        # 气候趋势
+        climate_biases = self._get_climate_biases(climate_comp)
 
         # 综合季节-气候温度偏移
         total_temp_offset = (
             SEASONAL_TEMP_AMPLITUDE * seasonal_factor * distance_factor
-            + climate_temp_bias
-        )
-        total_rainfall_factor = climate_rainfall_factor
-
-        # =
-        # 1️⃣ 温度演化
-        # =
-        self._update_temperature(
-            weather, hour, day_of_year, total_temp_offset, delta_hours,
+            + climate_biases["temp"]
         )
 
-        # =
-        # 2️⃣ 气压演化
-        # =
+        # 执行各物理量更新
+        self._update_temperature(weather, hour, day_of_year, total_temp_offset, delta_hours)
         self._update_pressure(weather, hour, day_of_year, delta_hours)
-
-        # =
-        # 3️⃣ 水汽演化 & 相对湿度计算
-        # =
-        self._update_humidity(
-            world, weather, delta_hours, total_rainfall_factor,
-            climate_humidity_bias,
-        )
-
-        # =
-        # 4️⃣ 云量演化
-        # =
+        self._update_humidity(world, weather, delta_hours, climate_biases["rainfall"], climate_biases["humidity"])
         self._update_cloud_cover(weather, hour, delta_hours)
-
-        # =
-        # 5️⃣ 降水演化
-        # =
-        self._update_precipitation(
-            weather, delta_hours, total_rainfall_factor,
-        )
-
-        # =
-        # 6️⃣ 风速演化
-        # =
+        self._update_precipitation(weather, delta_hours, climate_biases["rainfall"])
         self._update_wind_speed(weather, hour, day_of_year, delta_hours)
+
+    def _get_climate_biases(self, climate_comp) -> dict:
+        """获取气候趋势偏移量"""
+        if climate_comp is None:
+            return {"temp": 0.0, "humidity": 0.0, "rainfall": 1.0}
+        return {
+            "temp": climate_comp.temp_trend,
+            "humidity": climate_comp.humidity_trend,
+            "rainfall": climate_comp.rainfall_trend,
+        }
 
     # ====
     # 🌡 温度更新

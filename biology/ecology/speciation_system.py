@@ -63,78 +63,69 @@ class SpeciationSystem(System):
     _species_cooldown: Dict[str, int] = {}
 
     def update(self, world: World, dt: float = 1.0) -> None:
-        """
-        执行物种形成扫描
-        """
-        # 按物种标识分组收集实体
+        """执行物种形成扫描"""
         species_groups = self._group_by_species(world)
         if not species_groups:
             return
 
-        # 计算当前 tick_count（近似值，用于冷却判断）
         current_tick = getattr(world, 'tick_count', 0)
-
         new_species_count = 0
-        # 记录本次扫描已处理过的物种，避免同一物种多次分裂
         processed_species = set()
 
         for species_id, entities in species_groups.items():
             if species_id in processed_species:
                 continue
-
-            # 冷却检查：该物种最近是否已分裂过
-            last_split = self._species_cooldown.get(species_id, 0)
-            if current_tick - last_split < self.tick_interval * 2:
+            if not self._can_speciate(species_id, entities, current_tick):
                 continue
 
-            if len(entities) < self.MIN_GROUP_SIZE * 2:
-                # 群体太小，不足以分化出可识别的亚群
-                continue
-
-            # 提取该群体的基因型向量
-            id_vectors = self._extract_gene_vectors(world, entities)
-            if not id_vectors:
-                continue
-
-            vectors = [v for _, v in id_vectors]
-
-            # 计算群体中心（平均基因型）
-            centroid = self._compute_centroid(vectors)
-
-            # 寻找离群子集（距离中心最远的个体）
-            outliers = self._find_outlier_cluster(id_vectors, centroid)
-            if not outliers:
-                continue
-
-            # 计算离群子集的中心
-            outlier_centroid = self._compute_centroid([v for _, v in outliers])
-
-            # 计算离群子集与原型的遗传距离
-            distance = self._euclidean_distance(centroid, outlier_centroid)
-
-            if distance >= self.SPECIATION_DISTANCE_THRESHOLD:
-                # 形成新物种！
-                new_species_id = self._register_new_species(
-                    species_id, outlier_centroid, entities, world
-                )
-                if new_species_id:
-                    new_species_count += 1
-                    logger.info(
-                        f"[Speciation] 新物种形成: '{species_id}' → '{new_species_id}' "
-                        f"(距离={distance:.2f}, 群体={len(outliers)} 个体)"
-                    )
-
-                    # 更新离群个体的物种标识
-                    self._migrate_entities_to_species(world, outliers, new_species_id)
-                    processed_species.add(species_id)
-                    self._species_cooldown[species_id] = current_tick
-                    self._species_cooldown[new_species_id] = current_tick
-
-                    if new_species_count >= self.MAX_SPECIES_PER_SCAN:
-                        break
+            new_species = self._try_speciate(world, species_id, entities, current_tick)
+            if new_species:
+                new_species_count += 1
+                processed_species.add(species_id)
+                if new_species_count >= self.MAX_SPECIES_PER_SCAN:
+                    break
 
         if new_species_count > 0:
             logger.info(f"[Speciation] 本次扫描共形成 {new_species_count} 个新物种")
+
+    def _can_speciate(self, species_id: str, entities: List[int], current_tick: int) -> bool:
+        """检查物种是否满足分化条件"""
+        last_split = self._species_cooldown.get(species_id, 0)
+        if current_tick - last_split < self.tick_interval * 2:
+            return False
+        if len(entities) < self.MIN_GROUP_SIZE * 2:
+            return False
+        return True
+
+    def _try_speciate(self, world: World, species_id: str, entities: List[int], current_tick: int) -> str | None:
+        """尝试让物种分化，返回新物种ID或None"""
+        id_vectors = self._extract_gene_vectors(world, entities)
+        if not id_vectors:
+            return None
+
+        vectors = [v for _, v in id_vectors]
+        centroid = self._compute_centroid(vectors)
+        outliers = self._find_outlier_cluster(id_vectors, centroid)
+        if not outliers:
+            return None
+
+        outlier_centroid = self._compute_centroid([v for _, v in outliers])
+        distance = self._euclidean_distance(centroid, outlier_centroid)
+
+        if distance < self.SPECIATION_DISTANCE_THRESHOLD:
+            return None
+
+        new_species_id = self._register_new_species(species_id, outlier_centroid, entities, world)
+        if new_species_id:
+            logger.info(
+                f"[Speciation] 新物种形成: '{species_id}' → '{new_species_id}' "
+                f"(距离={distance:.2f}, 群体={len(outliers)} 个体)"
+            )
+            self._migrate_entities_to_species(world, outliers, new_species_id)
+            self._species_cooldown[species_id] = current_tick
+            self._species_cooldown[new_species_id] = current_tick
+
+        return new_species_id
 
     # -------------------------------------------------
     # 数据收集

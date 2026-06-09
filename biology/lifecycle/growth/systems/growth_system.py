@@ -48,116 +48,102 @@ class GrowthSystem(System):
         for entity, (pheno, energy) in world.get_components(
             PhenotypeComponent, EnergyComponent
         ):
-            # ==========================================================
-            # 1) 基础参数（来自基因，有默认值兜底）
-            # ==========================================================
-            max_photo = pheno.get("max_photosynthesis_rate", 20.0)
-            alpha = pheno.get("light_use_efficiency", 0.05)
-            optimal_temp = pheno.get("optimal_temp", 25.0)
-            growth_part = pheno.get("growth_partition", 0.6)
-            base_metab = pheno.get("metabolism_rate", 0.01)
+            # 计算光合参数
+            params = self._calc_photosynthesis_params(pheno, env)
+            # 计算环境因子
+            env_factors = self._calc_environment_factors(pheno, env, params)
+            # 计算能量收支
+            self._update_energy(energy, params, env_factors, delta_hours)
 
-            # 新增耐受基因
-            shade_tol = pheno.get("shade_tolerance", 0.3)
-            cold_tol = pheno.get("cold_tolerance", 0.4)
-            heat_tol = pheno.get("heat_tolerance", 0.5)
-            wue = pheno.get("water_use_efficiency", 0.05)
+    def _calc_photosynthesis_params(self, pheno, env) -> dict:
+        """计算光合基础参数"""
+        max_photo = pheno.get("max_photosynthesis_rate", 20.0)
+        alpha = pheno.get("light_use_efficiency", 0.05)
+        shade_tol = pheno.get("shade_tolerance", 0.3)
+        par = pheno.get("effective_par", env.par)
 
-            # ==========================================================
-            # 2) 光响应（带耐阴修正）
-            # ==========================================================
-            # 优先使用 PlantPhotosynthesisSystem 计算的有效 PAR
-            par = pheno.get("effective_par", env.par)
+        # Michaelis-Menten
+        if max_photo <= 0:
+            light_response = 0.0
+        else:
+            light_response = (alpha * par) / (1 + alpha * par / max_photo)
 
-            # 基础 Michaelis-Menten
-            if max_photo <= 0:
-                light_response = 0.0
-            else:
-                light_response = (alpha * par) / (1 + alpha * par / max_photo)
+        # 耐阴增益
+        if par < 200:
+            shade_boost = shade_tol * (1.0 - par / 200.0) * 0.3
+            light_response *= (1.0 + shade_boost)
 
-            # 耐阴增益：低光下提高光效
-            if par < 200:
-                shade_boost = shade_tol * (1.0 - par / 200.0) * 0.3
-                light_response = light_response * (1.0 + shade_boost)
+        return {
+            "max_photo": max_photo,
+            "light_response": light_response,
+            "par": par,
+        }
 
-            # ==========================================================
-            # 3) CO₂ 修正
-            # ==========================================================
-            co2_factor = env.co2 / 400.0
+    def _calc_environment_factors(self, pheno, env, params) -> dict:
+        """计算环境修正因子"""
+        optimal_temp = pheno.get("optimal_temp", 25.0)
+        cold_tol = pheno.get("cold_tolerance", 0.4)
+        heat_tol = pheno.get("heat_tolerance", 0.5)
+        wue = pheno.get("water_use_efficiency", 0.05)
+        temp = env.air_temperature
 
-            # ==========================================================
-            # 4) 温度响应（非对称钟形曲线）
-            # ==========================================================
-            temp = env.air_temperature
-            temp_diff = temp - optimal_temp
+        # CO₂
+        co2_factor = env.co2 / 400.0
 
-            if temp_diff < 0:
-                # 低温侧：耐寒性拉宽曲线
-                cold_width = 15.0 * (1.0 + cold_tol * 0.6)
-                temp_factor = max(0.0, 1.0 - (temp_diff / cold_width) ** 2)
-            else:
-                # 高温侧：耐热性拉宽曲线
-                heat_width = 15.0 * (1.0 + heat_tol * 0.6)
-                temp_factor = max(0.0, 1.0 - (temp_diff / heat_width) ** 2)
+        # 温度
+        temp_diff = temp - optimal_temp
+        if temp_diff < 0:
+            cold_width = 15.0 * (1.0 + cold_tol * 0.6)
+            temp_factor = max(0.0, 1.0 - (temp_diff / cold_width) ** 2)
+        else:
+            heat_width = 15.0 * (1.0 + heat_tol * 0.6)
+            temp_factor = max(0.0, 1.0 - (temp_diff / heat_width) ** 2)
 
-            # ==========================================================
-            # 5) 水分胁迫（WUE 修正）
-            # ==========================================================
-            # 优先使用 PlantWaterUptakeSystem 计算的植物水分胁迫
-            water_stress = pheno.get("plant_water_stress", env.water_stress_index)
-            # 高 WUE 的植物受水分胁迫影响更小
-            wue_bonus = wue * 2.0  # WUE=0.15 → 减免 30%
-            effective_stress = max(0.0, water_stress - wue_bonus)
-            water_factor = 1.0 - effective_stress
+        # 水分
+        water_stress = pheno.get("plant_water_stress", env.water_stress_index)
+        wue_bonus = wue * 2.0
+        effective_stress = max(0.0, water_stress - wue_bonus)
+        water_factor = 1.0 - effective_stress
 
-            # ==========================================================
-            # 6) VPD 胁迫
-            # ==========================================================
-            vpd_factor = max(0.0, 1.0 - abs(env.vpd - 1.0) / 2.0)
+        # VPD
+        vpd_factor = max(0.0, 1.0 - abs(env.vpd - 1.0) / 2.0)
 
-            # ==========================================================
-            # 7) 光合总收入
-            # ==========================================================
-            photosynthesis_rate = (
-                light_response
-                * co2_factor
-                * temp_factor
-                * water_factor
-                * vpd_factor
-            )
+        return {
+            "co2_factor": co2_factor,
+            "temp_factor": temp_factor,
+            "water_factor": water_factor,
+            "vpd_factor": vpd_factor,
+            "temperature": temp,
+        }
 
-            photosynthesis_gain = photosynthesis_rate * delta_hours
+    def _update_energy(self, energy, params, env_factors, delta_hours: float) -> None:
+        """更新能量收支"""
+        growth_part = energy.get("growth_partition", 0.6)
+        base_metab = energy.get("metabolism_rate", 0.01)
 
-            # ==========================================================
-            # 8) 呼吸消耗（温度指数 Q10）
-            # ==========================================================
-            q10 = 2.0
-            temp_resp_factor = q10 ** ((temp - 20) / 10)
+        # 光合总收入
+        photosynthesis_rate = (
+            params["light_response"]
+            * env_factors["co2_factor"]
+            * env_factors["temp_factor"]
+            * env_factors["water_factor"]
+            * env_factors["vpd_factor"]
+        )
+        photosynthesis_gain = photosynthesis_rate * delta_hours
 
-            respiration_cost = (
-                energy.value
-                * base_metab
-                * temp_resp_factor
-                * delta_hours
-            )
+        # 呼吸消耗
+        q10 = 2.0
+        temp = env_factors["temperature"]
+        temp_resp_factor = q10 ** ((temp - 20) / 10)
+        respiration_cost = energy.value * base_metab * temp_resp_factor * delta_hours
 
-            # ==========================================================
-            # 9) 生长分配
-            # ==========================================================
-            surplus = photosynthesis_gain - respiration_cost
+        # 生长分配
+        surplus = photosynthesis_gain - respiration_cost
+        growth_energy = surplus * growth_part if surplus > 0 else 0.0
 
-            growth_energy = 0.0
-            if surplus > 0:
-                growth_energy = surplus * growth_part
-
-            # ==========================================================
-            # 10) 能量变更
-            # ==========================================================
-            delta_energy = photosynthesis_gain - respiration_cost
-
-            energy.value += delta_energy
-            energy.growth_pool += growth_energy
-            energy.value -= growth_energy
-
-            # 安全边界
-            energy.value = max(0.0, min(energy.value, energy.max_energy))
+        # 能量变更
+        delta_energy = photosynthesis_gain - respiration_cost
+        energy.value += delta_energy
+        energy.growth_pool += growth_energy
+        energy.value -= growth_energy
+        energy.value = max(0.0, min(energy.value, energy.max_energy))
