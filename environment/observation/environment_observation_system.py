@@ -46,3 +46,7 @@ class EnvironmentObservationSystem(System):
         record.update(atm.to_dict())
 
         obs.history.append(record)
+        
+        # 限制历史记录大小
+        if len(obs.history) > obs.max_history:
+            obs.history = obs.history[-obs.max_history:]

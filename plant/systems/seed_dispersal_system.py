@@ -85,7 +85,8 @@ class SeedDispersalSystem(System):
 
     def _generate_seeds_for_entity(self, world, entity, genome, pheno, energy, lifecycle, space, world_config, soil_cache):
         """为单个实体生成种子位置列表，返回 [(x, y, genome, species, generation), ...]"""
-        if not lifecycle.is_mature:
+        from biology.lifecycle.systems.life_cycle_system import LifeCycleSystem
+        if not LifeCycleSystem.is_mature(lifecycle):
             return []
         if energy.value < self.BASE_ENERGY_THRESHOLD:
             return []

@@ -198,7 +198,7 @@ class IncrementalSaveSystem:
 
         to_delete = files[:-keep_count] if len(files) > keep_count else []
         deleted = 0
-        for f in to_delete:
+        for f in list(to_delete):
             os.remove(os.path.join(self.base_path, f))
             deleted += 1
 

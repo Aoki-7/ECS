@@ -41,7 +41,7 @@ class CraftingSystem(System):
         - 支持技术自然演化（无硬编码配方）
     """
 
-    tick_interval = 1
+    tick_interval = 2  # 每2帧执行一次（制作行为不需要每帧）
 
     # 材料基础属性（物理属性，非配方）
     # 这些属性决定材料在制作中的行为，而非固定产出

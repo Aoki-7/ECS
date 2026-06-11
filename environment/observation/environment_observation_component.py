@@ -7,3 +7,4 @@ from dataclasses import dataclass, field
 class EnvironmentObservationComponent(Component):
 
     history: list = field(default_factory=list)
+    max_history: int = 1000  # 历史记录上限

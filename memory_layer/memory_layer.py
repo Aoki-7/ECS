@@ -496,8 +496,8 @@ class MemoryLayer:
             if forget_probability > self.default_forget_threshold:
                 to_forget.append(key)
 
-        for key in to_forget:
-            del self._memories[key]
+        for key in list(to_forget):
+            self._memories.pop(key, None)
 
         return len(to_forget)
 
@@ -527,8 +527,8 @@ class MemoryLayer:
 
         # 遗忘超出容量的
         forgotten = 0
-        for key, _ in subject_memories[limit:]:
-            del self._memories[key]
+        for key, _ in list(subject_memories[limit:]):
+            self._memories.pop(key, None)
             forgotten += 1
 
         return forgotten

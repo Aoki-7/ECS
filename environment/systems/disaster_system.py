@@ -40,7 +40,7 @@ class DisasterSystem(System):
         - 记录灾害历史
     """
 
-    tick_interval = 10  # 每10帧检查一次
+    tick_interval = 20  # 每20帧检查一次（灾害检查频率降低）
 
     def __init__(self):
         super().__init__()
@@ -183,7 +183,7 @@ class DisasterSystem(System):
     def _update_active_disasters(self, world: World, dt: float) -> None:
         """更新活跃灾害"""
         for disaster_type, disasters in list(self._active_disasters.items()):
-            for disaster in disasters[:]:
+            for disaster in list(disasters):
                 if disaster_type == "fire":
                     self._update_fire(world, disaster, dt)
                 elif disaster_type == "flood":

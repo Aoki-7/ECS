@@ -118,7 +118,8 @@ class TestPerformance(unittest.TestCase):
             self.ml.register_entity(i, "stone", desc)
 
         elapsed = time.time() - start
-        print(f"\n  注册 {count} 个实体: {elapsed:.3f}s ({count/elapsed:.0f}/s)")
+        rate = count / elapsed if elapsed > 0 else float('inf')
+        print(f"\n  注册 {count} 个实体: {elapsed:.3f}s ({rate:.0f}/s)")
 
         # 应能在 2 秒内完成
         self.assertLess(elapsed, 2.0)
@@ -142,7 +143,8 @@ class TestPerformance(unittest.TestCase):
             )
 
         elapsed = time.time() - start
-        print(f"\n  记录 {count} 次接触: {elapsed:.3f}s ({count/elapsed:.0f}/s)")
+        rate = count / elapsed if elapsed > 0 else float('inf')
+        print(f"\n  记录 {count} 次接触: {elapsed:.3f}s ({rate:.0f}/s)")
 
         self.assertLess(elapsed, 2.0)
 

@@ -56,6 +56,22 @@ class LightFieldComponent(Component):
     green_ratio: float = 0.3
 
     # ====
+    # 紫外线
+    # ====
+
+    # UV-A (315-400nm) W/m²
+    uva: float = 20.0
+
+    # UV-B (280-315nm) W/m²
+    uvb: float = 1.5
+
+    # UV-C (100-280nm) W/m²（大部分被臭氧层吸收）
+    uvc: float = 0.01
+
+    # UV 指数 (0-11+)
+    uv_index: float = 5.0
+
+    # ====
     # 阴影信息
     # ====
 

@@ -127,13 +127,10 @@ class PlanningSystem(System):
 
         nearby_plant = self._find_harvestable_plant(entity, world)
         if nearby_plant is not None:
-            action.action_queue = [
-                ActionType.SEARCH, ActionType.MOVE_TO, ActionType.HARVEST, ActionType.EAT
-            ]
+            action.target_entity = nearby_plant.id
+            action.action_queue = [ActionType.MOVE_TO, ActionType.HARVEST, ActionType.EAT]
         else:
-            action.action_queue = [
-                ActionType.SEARCH, ActionType.MOVE_TO, ActionType.PICKUP, ActionType.EAT
-            ]
+            action.action_queue = [ActionType.SEARCH, ActionType.MOVE_TO, ActionType.PICKUP, ActionType.EAT]
 
     def _plan_drink(self, entity, task, action, world) -> None:
         """规划饮水行为"""
@@ -146,6 +143,7 @@ class PlanningSystem(System):
             action.action_queue = [ActionType.DRINK]
         else:
             action.action_queue = [ActionType.SEARCH, ActionType.MOVE_TO, ActionType.DRINK]
+            # SEARCH 会设置 target_pos，然后 MOVE_TO 使用它
 
     def _plan_sleep(self, task, action) -> None:
         """规划睡眠行为"""

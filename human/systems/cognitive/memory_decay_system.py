@@ -124,7 +124,7 @@ class MemoryDecaySystem(System):
             if visits < self.place_visit_threshold and age > self.event_age_threshold:
                 to_remove.append(pos)
 
-        for pos in to_remove:
+        for pos in list(to_remove):
             memory.places.pop(pos, None)
 
         # 若仍超过上限，删除 sentiment 最低且 oldest 的地点
@@ -153,7 +153,7 @@ class MemoryDecaySystem(System):
             if trust < self.people_trust_threshold:
                 to_remove.append(entity_id)
 
-        for entity_id in to_remove:
+        for entity_id in list(to_remove):
             memory.people.pop(entity_id, None)
 
         # 若仍超过上限，删除 trust 最低的人物

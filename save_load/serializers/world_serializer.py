@@ -112,6 +112,10 @@ class WorldSerializer:
                     logger.warning(f"[Load] 组件 {type_name} 引用了不存在的实体 {entity_id}")
                     continue
                 try:
+                    # 迁移旧版本数据
+                    from save_load.component_migrator import migrate_component_data
+                    comp_data = migrate_component_data(type_name, comp_data)
+                    
                     comp = comp_type.from_dict(comp_data)
                     world.components[comp_type][entity_id] = comp
                     world._component_entities[comp_type].add(entity_id)

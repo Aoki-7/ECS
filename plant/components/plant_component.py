@@ -45,3 +45,60 @@ class PlantComponent(Component):
 
     # 木材产量
     wood_amount: float = 0.0
+
+    # ===== v3.3 新增：生理状态 =====
+    # 健康度（0.0-1.0）
+    health: float = 1.0
+
+    # 水分（0.0-max_water）
+    water: float = 50.0
+    max_water: float = 100.0
+
+    # 养分（0.0-max_nutrients）
+    nutrients: float = 50.0
+    max_nutrients: float = 100.0
+
+    # 能量（光合作用积累）
+    energy: float = 50.0
+    max_energy: float = 100.0
+
+    def to_dict(self) -> dict:
+        return {
+            "harvestable_yield": self.harvestable_yield,
+            "max_yield": self.max_yield,
+            "harvest_stage": self.harvest_stage,
+            "yield_type": self.yield_type,
+            "nutrition_per_unit": self.nutrition_per_unit,
+            "is_perennial": self.is_perennial,
+            "regrowth_rate": self.regrowth_rate,
+            "produces_wood": self.produces_wood,
+            "wood_amount": self.wood_amount,
+            "health": self.health,
+            "water": self.water,
+            "max_water": self.max_water,
+            "nutrients": self.nutrients,
+            "max_nutrients": self.max_nutrients,
+            "energy": self.energy,
+            "max_energy": self.max_energy,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "PlantComponent":
+        return cls(
+            harvestable_yield=data.get("harvestable_yield", 0.0),
+            max_yield=data.get("max_yield", 0.0),
+            harvest_stage=data.get("harvest_stage", 3),
+            yield_type=data.get("yield_type", "berry"),
+            nutrition_per_unit=data.get("nutrition_per_unit", 5.0),
+            is_perennial=data.get("is_perennial", True),
+            regrowth_rate=data.get("regrowth_rate", 0.1),
+            produces_wood=data.get("produces_wood", False),
+            wood_amount=data.get("wood_amount", 0.0),
+            health=data.get("health", 1.0),
+            water=data.get("water", 50.0),
+            max_water=data.get("max_water", 100.0),
+            nutrients=data.get("nutrients", 50.0),
+            max_nutrients=data.get("max_nutrients", 100.0),
+            energy=data.get("energy", 50.0),
+            max_energy=data.get("max_energy", 100.0),
+        )

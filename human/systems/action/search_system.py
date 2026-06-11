@@ -30,6 +30,7 @@ from human.components.cognitive.intent_component import IntentComponent, IntentT
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
+from biology.components.smell_component import SmellComponent
 
 from resource.food.components.food_component import FoodComponent
 from resource.water.components.water_component import WaterComponent
@@ -37,6 +38,8 @@ from resource.components.resource_component import ResourceComponent
 from human.components.basic.human_component import HumanComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from plant.components.plant_component import PlantComponent
+
+from human.systems.action.search_strategies import SEARCH_STRATEGIES
 
 import logging
 
@@ -106,29 +109,11 @@ class SearchSystem(System):
 
     def _execute_search(self, world, entity, space, vision, search, task, target_component):
         """执行递进式搜索策略，返回 (nearest_entity, nearest_pos, used_strategy)"""
-        # ── 第 1 步：视觉扫描 ──
-        nearest_entity, _, nearest_pos = self._search_visual(
-            world, entity, space, vision, target_component, task
-        )
-        used_strategy = "visual"
-
-        # ── 第 2 步：记忆回溯（视觉失败时）──
-        if nearest_entity is None:
-            nearest_entity, nearest_pos = self._search_memory(
-                world, entity, space, task
-            )
-            if nearest_entity is not None:
-                used_strategy = "memory"
-
-        # ── 第 3 步：扩大探索（记忆也失败时）──
-        if nearest_entity is None:
-            nearest_entity, nearest_pos = self._search_explore(
-                world, entity, space, target_component, task
-            )
-            if nearest_entity is not None:
-                used_strategy = "explore"
-
-        return nearest_entity, nearest_pos, used_strategy
+        for strategy in SEARCH_STRATEGIES:
+            result = strategy.search(world, entity, space, task, target_component=target_component)
+            if result[0] is not None:
+                return result
+        return None, None, "none"
 
     def _handle_random_roam(self, world, world_config, entity, action, search, task, space):
         """全部搜索策略失败时，执行随机漫游"""
@@ -142,10 +127,13 @@ class SearchSystem(System):
             roam_y = max(0, roam_y)
 
         action.target_pos = (roam_x, roam_y)
-        action.current_action = ActionType.MOVE_TO
         action.progress = 0.0
         action.status = ActionStatus.RUNNING
         search.result_entity = None
+
+        # 移除 SEARCH，让 ActionSystem 调度 MOVE_TO
+        if ActionType.SEARCH in action.action_queue:
+            action.action_queue.remove(ActionType.SEARCH)
 
         self._record_search(search, world.tick_count, space.x, space.y, "random", found=False)
 
@@ -155,13 +143,12 @@ class SearchSystem(System):
         search.estimated_probability = (search.successful_searches + 1) / (search.total_searches + 2)
         search.strategy = used_strategy
 
-        action.target_entity = nearest_entity.id
+        action.target_entity = nearest_entity.id if hasattr(nearest_entity, 'id') else None
         action.target_pos = nearest_pos
-        action.current_action = ActionType.MOVE_TO
         action.progress = 0.0
         action.status = ActionStatus.RUNNING
         task.status = TaskStatus.RUNNING
-        search.result_entity = nearest_entity.id
+        search.result_entity = nearest_entity.id if hasattr(nearest_entity, 'id') else None
 
         # 记录搜索历史和策略
         self._record_search(search, world.tick_count, nearest_pos[0], nearest_pos[1], used_strategy, found=True)
@@ -170,141 +157,17 @@ class SearchSystem(System):
         # 发现即记忆
         self._record_discovery(world, entity, search, nearest_entity, nearest_pos, task)
 
-        # 队列处理
+        # 队列处理：移除当前 SEARCH，让 ActionSystem 调度下一个动作（MOVE_TO）
         if ActionType.SEARCH in action.action_queue:
             action.action_queue.remove(ActionType.SEARCH)
-        if world.get_component(nearest_entity, PlantComponent) is not None:
+        # 注意：不在这里设置 current_action = MOVE_TO
+        # 让 ActionSystem 在下一帧从 action_queue 中取出 MOVE_TO
+        # 这样 SEARCH → MOVE_TO → PICKUP/HARVEST → EAT/DRINK 的队列能正确执行
+        if hasattr(nearest_entity, 'id') and world.get_component(nearest_entity, PlantComponent) is not None:
             for i, act in enumerate(action.action_queue):
                 if act == ActionType.PICKUP:
                     action.action_queue[i] = ActionType.HARVEST
                     break
-
-    # ── 搜索策略实现 ──
-
-    def _search_visual(self, world, entity, space, vision, target_component, task):
-        """视觉扫描：在 focused_entity_ids 和 entity_ids 中查找最近目标"""
-        nearest_entity = None
-        nearest_distance = float("inf")
-        nearest_pos = None
-
-        # 优先扫描 focused_entity_ids（注意力目标），再扫描全部 entity_ids
-        ids_to_check = list(vision.focused_entity_ids) + [eid for eid in vision.entity_ids if eid not in vision.focused_entity_ids]
-        seen = set()
-
-        for eid in ids_to_check:
-            if eid in seen:
-                continue
-            seen.add(eid)
-
-            candidate = world.query_entity(eid)
-            if candidate is None or not candidate.is_alive():
-                continue
-
-            target_comp = world.get_component(candidate, target_component)
-            c_space = world.get_component(candidate, SpaceComponent)
-            if c_space is None:
-                continue
-
-            if target_comp is not None:
-                dist = math.hypot(c_space.x - space.x, c_space.y - space.y)
-                if dist < nearest_distance:
-                    nearest_distance = dist
-                    nearest_entity = candidate
-                    nearest_pos = (c_space.x, c_space.y)
-                continue
-
-            # 特殊处理：FIND_FOOD 时也搜索可收获植物
-            if task.task == TaskType.FIND_FOOD:
-                plant = self._check_harvestable_plant(world, candidate, space)
-                if plant:
-                    dist, cnd, pos = plant
-                    if dist < nearest_distance:
-                        nearest_distance = dist
-                        nearest_entity = cnd
-                        nearest_pos = pos
-
-        return nearest_entity, nearest_distance, nearest_pos
-
-    def _search_memory(self, world, entity, space, task):
-        """记忆回溯：从 MemoryComponent 读取已知位置"""
-        memory = world.get_component(entity, MemoryComponent)
-        if memory is None:
-            return None, None
-
-        place_type = None
-        if task.task == TaskType.DRINK_WATER:
-            place_type = "water_source"
-        elif task.task == TaskType.FIND_FOOD:
-            place_type = "food_source"
-
-        if place_type is None:
-            return None, None
-
-        mem_pos = memory.find_best_place_by_type(place_type)
-        if mem_pos is None:
-            return None, None
-
-        # 返回一个"虚拟实体"（仅用于统一接口），实际移动目标是 mem_pos
-        # 简化处理：直接返回位置，上层用 target_pos 移动
-        return "MEMORY_TARGET", mem_pos
-
-    def _search_explore(self, world, entity, space, target_component, task):
-        """扩大探索：使用空间索引大范围扫描"""
-        space_system = world.get_system(SpaceSystem)
-        if space_system is None:
-            return None, None
-
-        nearest_entity = None
-        nearest_distance = float("inf")
-        nearest_pos = None
-
-        for radius in (50, 100):
-            ids = space_system.query_radius(space.x, space.y, radius)
-            for eid in ids:
-                if eid == entity.id:
-                    continue
-                candidate = world.query_entity(eid)
-                if candidate is None:
-                    continue
-
-                if world.get_component(candidate, target_component) is not None:
-                    c_space = world.get_component(candidate, SpaceComponent)
-                    if c_space is None:
-                        continue
-                    dist = math.hypot(c_space.x - space.x, c_space.y - space.y)
-                    if dist < nearest_distance:
-                        nearest_distance = dist
-                        nearest_entity = candidate
-                        nearest_pos = (c_space.x, c_space.y)
-                    continue
-
-                if task.task == TaskType.FIND_FOOD:
-                    plant = self._check_harvestable_plant(world, candidate, space)
-                    if plant:
-                        dist, cnd, pos = plant
-                        if dist < nearest_distance:
-                            nearest_distance = dist
-                            nearest_entity = cnd
-                            nearest_pos = pos
-
-            if nearest_entity is not None:
-                break
-
-        return nearest_entity, nearest_pos
-
-    def _check_harvestable_plant(self, world, candidate, observer_space):
-        """检查候选实体是否为可收获植物，返回 (dist, entity, pos) 或 None"""
-        plant_comp = world.get_component(candidate, PlantComponent)
-        if plant_comp is None:
-            return None
-        lifecycle = world.get_component(candidate, LifeCycleComponent)
-        if lifecycle is None or lifecycle.stage < plant_comp.harvest_stage:
-            return None
-        c_space = world.get_component(candidate, SpaceComponent)
-        if c_space is None:
-            return None
-        dist = math.hypot(c_space.x - observer_space.x, c_space.y - observer_space.y)
-        return dist, candidate, (c_space.x, c_space.y)
 
     # ── 记录方法 ──
 

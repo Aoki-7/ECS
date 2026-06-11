@@ -213,5 +213,5 @@ class AnimalSocialSystem(System):
                     to_remove.append(other_id)
                 else:
                     social.relationship_scores[other_id] = new_score
-            for rid in to_remove:
-                del social.relationship_scores[rid]
+            for rid in list(to_remove):
+                social.relationship_scores.pop(rid, None)

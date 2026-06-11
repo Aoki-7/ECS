@@ -48,7 +48,7 @@ class Disease:
 
 
 class HealthcareSystem(System):
-    tick_interval = 10  # 每10帧执行一次
+    tick_interval = 10  # 每10帧执行一次（治疗不需要每帧）
     _MAX_HISTORY_SIZE = 100
 
     def __init__(self):

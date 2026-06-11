@@ -2,19 +2,21 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:life_cycle_component.py
-@说明:生命周期阶段组件，管理生物从出生到死亡的各阶段
-@时间:2026/05/28
-@版本:1.0
+@说明:生命周期阶段组件 — v3.8 纯数据化
+
+v3.8 变更：
+- 所有业务逻辑迁移到 LifeCycleSystem
+- Component 仅保留数据字段和常量
 '''
 
-from typing import Optional, List
+from typing import Optional
 
 from core.component import Component
 
 
 class LifeCycleComponent(Component):
     """
-    生命周期阶段组件
+    生命周期阶段组件 — 纯数据
 
     管理生物所处的生命阶段及相关参数。
     适用于植物、动物等所有有生命周期的 entity。
@@ -103,64 +105,3 @@ class LifeCycleComponent(Component):
 
         # 死亡原因（DeathSystem 填写）
         self.death_reason = None
-
-    # === 阶段判断 ===
-
-    @property
-    def is_seed(self) -> bool:
-        return self.stage == self.SEED
-
-    @property
-    def is_sprout(self) -> bool:
-        return self.stage == self.SPROUT
-
-    @property
-    def is_vegetative(self) -> bool:
-        return self.stage == self.VEGETATIVE
-
-    @property
-    def is_mature(self) -> bool:
-        return self.stage == self.MATURE
-
-    @property
-    def is_senescence(self) -> bool:
-        return self.stage == self.SENESCENCE
-
-    @property
-    def is_dead(self) -> bool:
-        return self.stage == self.DEAD
-
-    @property
-    def is_alive(self) -> bool:
-        return self.stage < self.SENESCENCE
-
-    @property
-    def stage_name(self) -> str:
-        return self.STAGE_NAMES.get(self.stage, "未知")
-
-    # === 年龄别名与辅助（从 AgeComponent 迁入） ===
-
-    @property
-    def age(self) -> float:
-        """年龄别名，兼容原 AgeComponent.age 接口"""
-        return self.current_age
-
-    @age.setter
-    def age(self, value: float):
-        self.current_age = value
-
-    def is_reproductive_age(self) -> bool:
-        """检查是否处于可生育年龄"""
-        return self.min_reproductive_age <= self.current_age <= self.max_reproductive_age
-
-    # === 阶段推进 ===
-
-    def advance_stage(self):
-        """推进到下一个生命阶段"""
-        if self.stage < self.DEAD:
-            self.stage += 1
-
-    def set_stage(self, stage: int):
-        """直接设置阶段（用于系统驱动）"""
-        if 0 <= stage <= self.DEAD:
-            self.stage = stage

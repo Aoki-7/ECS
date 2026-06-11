@@ -30,6 +30,12 @@ class AtmosphereComponent(Component):
 
     oxygen_ratio: float = 0.209      # 氧气比例
     co2_ratio: float = 0.00042       # 二氧化碳比例
+    co_ppm: float = 0.0              # 一氧化碳 ppm
+    o3_ppm: float = 0.03             # 臭氧 ppm
+    no2_ppm: float = 0.0             # 二氧化氮 ppm
+    so2_ppm: float = 0.0             # 二氧化硫 ppm
+    pm25: float = 0.0                # PM2.5 μg/m³
+    pm10: float = 0.0                # PM10 μg/m³
     aerosol: float = 0.0             # 气溶胶
 
     # === 湿度系统 ===

@@ -31,7 +31,7 @@ class ClothingSystem(System):
     管理衣物的耐久度、保暖效果和温度适应。
     """
 
-    tick_interval = 10
+    tick_interval = 10  # 已合理，保持不变
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """更新衣物状态"""

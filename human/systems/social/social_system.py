@@ -15,7 +15,7 @@ from human.components.social.social_component import SocialComponent
 
 
 class SocialSystem(System):
-    tick_interval = 10  # 每10帧执行一次
+    tick_interval = 10  # 每10帧执行一次（已合理，保持不变）
 
     def update(self, world, dt: float):
 

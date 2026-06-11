@@ -28,6 +28,7 @@ from animal.components.animal_needs_component import AnimalNeedsComponent
 from animal.components.animal_memory_component import AnimalMemoryComponent
 from animal.components.animal_social_component import AnimalSocialComponent
 from animal.components.animal_territory_component import AnimalTerritoryComponent
+from animal.migration.components.migration_component import MigrationComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 from space.pathfinding import PathfindingService
@@ -56,6 +57,13 @@ class AnimalMigrationSystem(System):
         for entity, (animal, needs, memory, space) in world.get_components(
             AnimalComponent, AnimalNeedsComponent, AnimalMemoryComponent, SpaceComponent
         ):
+            # 检查是否有迁徙组件
+            migration = world.get_component(entity, MigrationComponent)
+            if migration is not None and migration.is_migratory:
+                # 使用新迁徙系统
+                self._update_migration_component(world, entity, migration, animal, space, dt)
+                continue
+
             state = self._migration_states.get(entity.id, "settled")
 
             if state == "settled":
@@ -214,6 +222,27 @@ class AnimalMigrationSystem(System):
                 plant_count += 1
 
         return 1.0 + plant_count * 0.5
+
+    def _update_migration_component(self, world: World, entity, migration: MigrationComponent,
+                                    animal: AnimalComponent, space: SpaceComponent, dt: float) -> None:
+        """更新新迁徙组件状态"""
+        if migration.migration_status == "migrating" and migration.current_target:
+            # 同步动物状态为移动（如果支持）
+            if hasattr(animal, 'current_action'):
+                animal.current_action = "move"
+            
+            # 计算移动方向
+            target_x, target_y = migration.current_target
+            dx = target_x - space.x
+            dy = target_y - space.y
+            distance = (dx ** 2 + dy ** 2) ** 0.5
+            
+            if distance > 0:
+                # 设置动物移动方向（如果支持）
+                if hasattr(animal, 'movement_direction'):
+                    animal.movement_direction = (dx / distance, dy / distance)
+                if hasattr(animal, 'movement_speed'):
+                    animal.movement_speed = migration.migration_speed
 
     def _notify_group_members(
         self, world: World, leader_entity, group_id: int, target

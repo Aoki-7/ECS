@@ -52,16 +52,88 @@
 - [x] 增量存档系统（快照对比）
 - [x] 文明演化仪表盘（实时监控）
 
-### v3.1 性能优化深化
-- [ ] 多线程系统更新
-- [ ] 更复杂的空间索引（四叉树/R-tree）
-- [ ] 记忆层图数据库后端
-- [ ] 实时可视化 WebSocket 推送
+### v3.0.2 行为调度修复 + 性能优化（2026-06-09）✅
+- [x] 修复 SearchSystem 直接设置 current_action 导致动作队列中断
+- [x] 修复 PlanningSystem EAT 意图未设置 target_entity
+- [x] 系统 tick_interval 优化（55→45 系统每帧执行）
+- [x] 端到端行为链路测试（饥饿→寻找→移动→进食）
 
-### v3.2 大规模测试
-- [ ] 10,000+ 实体压力测试
-- [ ] 长时间模拟稳定性测试
-- [ ] 内存泄漏监控
+### v3.0.3 集合迭代修复 + 昼夜节律 + 气味扩散（2026-06-10）✅
+- [x] 修复 4 处集合迭代修改（`list()` 复制后再删除）
+- [x] 修复 EventBus `_dispatch()` 迭代安全性
+- [x] 修复内存泄漏风险（历史记录限制上限）
+- [x] 昼夜节律系统（CircadianComponent + CircadianSystem，11 测试）
+- [x] 气味扩散系统（SmellComponent + SmellDiffusionSystem，7 测试）
+
+### v3.1 系统集成（2026-06-10）✅
+- [x] 昼夜节律集成到决策系统（夜间降低活动，白天增加）
+- [x] 气味感知集成到搜索系统（visual → smell → memory → explore）
+- [x] 新增 5 个集成测试
+
+### v3.2 性能优化 + 生态深化（2026-06-10）✅
+- [x] 实体池系统（EntityPool + PooledEntity，8 测试）
+- [x] 根系系统（RootComponent + RootSystem，7 测试）
+- [x] 修复性能测试除零错误
+
+### v3.3 全功能迭代（2026-06-10）✅
+- [x] 实体池默认启用并集成到 World.create_entity()
+- [x] 植物 Component 补全（health/water/nutrients/energy）
+- [x] 季节变化系统（SeasonChangeSystem，5 测试）
+- [x] 多线程 System 更新（ParallelSystemExecutor，6 测试）
+
+### v3.4 监控 + 兼容性（2026-06-10）✅
+- [x] 实体池性能监控（命中率、自动调优，5 测试）
+- [x] PlantComponent 旧存档迁移（ComponentMigrator，4 测试）
+
+### v3.5 环境模块补全（2026-06-10）✅
+- [x] 水文系统（Hydrology）：水循环闭环，8 测试
+- [x] 地质系统（Geology）：侵蚀/沉积，4 测试
+- [x] 污染系统（Pollution）：三维扩散，4 测试
+- [x] 海洋系统（Ocean）：洋流/潮汐，6 测试
+- [x] 天文系统（Astronomy）：引力潮汐，7 测试
+- [x] 极端天气（ExtremeWeather）：风暴物理，9 测试
+
+### v3.6 系统联动 + 性能优化（2026-06-11）✅
+- [x] 物候学系统（PhenologyComponent + PhenologySystem，10 测试）
+- [x] 候鸟迁徙系统（MigrationComponent + MigrationSystem，10 测试）
+- [x] atmosphere 化学成分（CO/NO2/SO2/O3/PM2.5/PM10）
+- [x] light_field 紫外线（UV-A/UV-B/UV-C/UV指数）
+- [x] 系统集成测试：6 个联动测试全部通过
+- [x] 系统联动修复：Hydrology↔Plant / Ocean↔Climate / Astronomy↔Season / Pollution↔Biology / UV↔Biology / Migration↔Animal
+- [x] 新系统注册：SimulationLoop 注册 11 个系统
+- [x] 性能优化：SpatialIndex 空间索引
+- [x] 代码巡检修复：集合迭代修改 / 内存泄漏 / 并发安全警告
+
+### v3.7 核心重构（2026-06-11）✅
+- [x] Query API（`world.query()` 声明式查询，11 测试）
+- [x] SearchSystem 策略拆分（4 策略类，461→200 行）
+- [x] DecisionSystem 策略拆分（8 策略类，374→150 行）
+- [x] Component 纯数据化示例（HealthStatusComponent → HealthStatusSystem，8 测试）
+- [x] 第 11 次巡检问题修复（集合迭代 / 内存泄漏 / 并发安全）
+
+### v3.8 核心重构深化（2026-06-11）✅
+- [x] EnvironmentalContinuumSystem 处理器拆分（5 处理器，552→100 行）
+- [x] LifeCycleComponent 纯数据化（方法迁移到 LifeCycleSystem）
+- [x] EntityPool 自动调优定时触发（每 100 次调用）
+- [x] 适配现有系统（animal_reproduction / seed_dispersal / plant_tests）
+
+### v3.9 核心重构完成（2026-06-11）✅
+- [x] PhysicalWeatherSystem 处理器拆分（6 处理器，490→120 行）
+- [x] 性能监控系统（PerformanceMonitor + @monitored_update，11 测试）
+- [x] 适配 SeasonComponent 新 API（year_progress/year_length_hours）
+
+### v4.0-alpha 计划
+- [ ] 更多 Component 纯数据化（48 个含方法 Component 逐步迁移）
+- [ ] System 文件拆分（world_server.py 551 行）
+- [ ] 注册更多组件迁移（AnimalComponent, HumanComponent）
+- [ ] 季节系统细化（纬度、海拔影响）
+- [ ] 多线程执行器与 World 线程安全
+
+### v4.0 分布式模拟
+- [ ] 多进程/多机分布式
+- [ ] 机器学习驱动的行为系统
+- [ ] 3D 可视化支持
+- [ ] 插件系统
 
 ### v4.0 分布式模拟
 - [ ] 多进程/多机分布式

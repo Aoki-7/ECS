@@ -168,12 +168,30 @@ from environment.atmosphere.system.atmosphere_physics_system import AtmospherePh
 from human.systems.social.role_system import RoleSystem
 from human.systems.economy.economy_system import EconomySystem
 
+# v3.5-v3.6 新增环境系统
+from environment.hydrology.systems.water_cycle_system import WaterCycleSystem
+from environment.geology.systems.erosion_system import ErosionSystem
+from environment.pollution.systems.pollution_diffusion_system import PollutionDiffusionSystem
+from environment.ocean.systems.ocean_current_system import OceanCurrentSystem
+from environment.astronomy.systems.tidal_system import TidalSystem
+from environment.extreme_weather.systems.storm_system import StormSystem
+from environment.phenology.systems.phenology_system import PhenologySystem
+from environment.atmosphere.systems.atmospheric_chemistry_system import AtmosphericChemistrySystem
+from environment.light_field.systems.uv_system import UVSystem
+
+# v3.6 新增生物系统
+from biology.systems.pollution_health_system import PollutionHealthSystem
+from biology.systems.uv_biology_system import UVBiologySystem
+
 # 工厂
 from human.human_factory import HumanFactory
 from plant.plant_factory import PlantFactory
 from resource.food.food_factory import FoodFactory
 from resource.water.water_factory import WaterFactory
 from environment.environment_factory import EnvironmentFactory
+
+# 实体池
+from core.entity_pool import EntityPool
 
 
 
@@ -224,9 +242,26 @@ class SimulationLoop:
         # 初始化环境网格（10×10 低分辨率网格，供 Continuum 系统使用）
         self._init_environment_grid()
 
+        # 启用实体池（v3.3 新增）
+        self._init_entity_pool()
+
         # 统计信息
         self.step_count = 0
         self.start_time = time.time()
+
+    def _init_entity_pool(self):
+        """初始化实体池（可选启用）"""
+        try:
+            pool = EntityPool.get_instance()
+            # 默认启用，可通过环境变量禁用: ECS_DISABLE_ENTITY_POOL=1
+            import os
+            if os.environ.get('ECS_DISABLE_ENTITY_POOL') != '1':
+                pool.enable()
+                logger.info(f"[Init] 实体池已启用: 初始 {pool._initial_size}, 最大 {pool._max_size}")
+            else:
+                logger.info("[Init] 实体池已禁用 (ECS_DISABLE_ENTITY_POOL=1)")
+        except Exception as e:
+            logger.warning(f"[Init] 实体池初始化失败: {e}")
 
     def _init_systems(self):
         """初始化所有系统，按执行顺序分组并注册到 world"""
@@ -237,6 +272,7 @@ class SimulationLoop:
         self._init_plant_systems()
         self._init_biology_systems()
         self._init_ecology_systems()
+        self._init_v35_v36_systems()
         self._init_rule_and_civilization_systems()
 
     def _init_infrastructure_systems(self):
@@ -484,6 +520,63 @@ class SimulationLoop:
         self.speciation_system = SpeciationSystem()
         self.speciation_system.priority = SystemPriority.CIVILIZATION
         self.world.add_system(self.speciation_system)
+
+    def _init_v35_v36_systems(self):
+        """v3.5-v3.6 新增环境系统"""
+        # 水文系统
+        self.water_cycle_system = WaterCycleSystem()
+        self.water_cycle_system.priority = SystemPriority.ENVIRONMENT
+        self.world.add_system(self.water_cycle_system)
+
+        # 地质系统
+        self.erosion_system = ErosionSystem()
+        self.erosion_system.priority = SystemPriority.ENVIRONMENT
+        self.world.add_system(self.erosion_system)
+
+        # 污染系统
+        self.pollution_diffusion_system = PollutionDiffusionSystem()
+        self.pollution_diffusion_system.priority = SystemPriority.ENVIRONMENT
+        self.world.add_system(self.pollution_diffusion_system)
+
+        # 海洋系统
+        self.ocean_current_system = OceanCurrentSystem()
+        self.ocean_current_system.priority = SystemPriority.ENVIRONMENT
+        self.world.add_system(self.ocean_current_system)
+
+        # 天文系统
+        self.tidal_system = TidalSystem()
+        self.tidal_system.priority = SystemPriority.ENVIRONMENT
+        self.world.add_system(self.tidal_system)
+
+        # 极端天气
+        self.storm_system = StormSystem()
+        self.storm_system.priority = SystemPriority.ENVIRONMENT
+        self.world.add_system(self.storm_system)
+
+        # 物候系统
+        self.phenology_system = PhenologySystem()
+        self.phenology_system.priority = SystemPriority.PLANT_GROWTH
+        self.world.add_system(self.phenology_system)
+
+        # 大气化学
+        self.atmospheric_chemistry_system = AtmosphericChemistrySystem()
+        self.atmospheric_chemistry_system.priority = SystemPriority.ENVIRONMENT
+        self.world.add_system(self.atmospheric_chemistry_system)
+
+        # UV系统
+        self.uv_system = UVSystem()
+        self.uv_system.priority = SystemPriority.ENVIRONMENT
+        self.world.add_system(self.uv_system)
+
+        # 污染健康
+        self.pollution_health_system = PollutionHealthSystem()
+        self.pollution_health_system.priority = SystemPriority.BIOLOGY
+        self.world.add_system(self.pollution_health_system)
+
+        # UV生物
+        self.uv_biology_system = UVBiologySystem()
+        self.uv_biology_system.priority = SystemPriority.BIOLOGY
+        self.world.add_system(self.uv_biology_system)
 
     def _init_rule_and_civilization_systems(self):
         """规则系统与文明系统（最高层级）"""

@@ -104,6 +104,7 @@ class EcosystemLoop:
         # 统计信息
         self.step_count = 0
         self.stats_history = []
+        self._MAX_HISTORY_SIZE = 1000  # 限制历史大小防止内存泄漏
 
     def _init_systems(self):
         """初始化所有生态系统相关的系统，按 priority 排序注册"""
@@ -311,8 +312,12 @@ class EcosystemLoop:
         """打印当前步数的统计数据"""
         stats = self._collect_stats()
         self.stats_history.append(stats)
+        
+        # 限制历史大小防止内存泄漏
+        if len(self.stats_history) > self._MAX_HISTORY_SIZE:
+            self.stats_history = self.stats_history[-self._MAX_HISTORY_SIZE:]
 
-        logger.info(
+        logger.debug(
             f"[Step {step:4d}] "
             f"植物={stats['plants']:3d} "
             f"食草动物={stats['herbivores']:2d} "

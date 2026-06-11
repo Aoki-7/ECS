@@ -106,7 +106,7 @@ class PlantTestBase(unittest.TestCase):
         )
         # 强制推进到成熟期
         lifecycle = self.world.get_component(entity, LifeCycleComponent)
-        lifecycle.set_stage(LifeCycleComponent.MATURE)
+        lifecycle.stage = LifeCycleComponent.MATURE
         # 设置足够能量
         energy = self.world.get_component(entity, EnergyComponent)
         energy.value = energy_value
@@ -211,7 +211,8 @@ class TestPlantFactory(PlantTestBase):
 
         # 子代应以种子阶段开始
         lifecycle = self.world.get_component(child, LifeCycleComponent)
-        self.assertTrue(lifecycle.is_seed)
+        from biology.lifecycle.systems.life_cycle_system import LifeCycleSystem
+        self.assertTrue(LifeCycleSystem.is_seed(lifecycle))
 
         # 子代能量较低（种子状态）
         energy = self.world.get_component(child, EnergyComponent)
@@ -226,7 +227,8 @@ class TestPlantFactory(PlantTestBase):
         """新创建植物应以 SEED 阶段开始"""
         entity = PlantFactory.create_plant(self.world)
         lifecycle = self.world.get_component(entity, LifeCycleComponent)
-        self.assertTrue(lifecycle.is_seed)
+        from biology.lifecycle.systems.life_cycle_system import LifeCycleSystem
+        self.assertTrue(LifeCycleSystem.is_seed(lifecycle))
         self.assertEqual(lifecycle.stage, LifeCycleComponent.SEED)
 
     def test_all_species_can_create(self):
@@ -465,7 +467,8 @@ class TestSeedDispersalSystem(PlantTestBase):
         entity = PlantFactory.create_plant(self.world, species="basic", x=50, y=50)
         # 保持在 SEED 阶段
         lifecycle = self.world.get_component(entity, LifeCycleComponent)
-        self.assertTrue(lifecycle.is_seed)
+        from biology.lifecycle.systems.life_cycle_system import LifeCycleSystem
+        self.assertTrue(LifeCycleSystem.is_seed(lifecycle))
 
         count_before = len(list(self.world.get_entities_with(PlantComponent)))
         self.system.update(self.world, dt=1.0)
@@ -879,7 +882,7 @@ class TestPlantIntegration(PlantTestBase):
             e = PlantFactory.create_plant(self.world, x=random.randint(10, 90),
                                           y=random.randint(10, 90))
             lifecycle = self.world.get_component(e, LifeCycleComponent)
-            lifecycle.set_stage(LifeCycleComponent.MATURE)
+            lifecycle.stage = LifeCycleComponent.MATURE
             energy = self.world.get_component(e, EnergyComponent)
             energy.value = 100.0
 

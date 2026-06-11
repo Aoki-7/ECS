@@ -60,6 +60,30 @@ class World:
     # ====
 
     def create_entity(self) -> Entity:
+        # 尝试从实体池获取（如果已启用）
+        try:
+            from core.entity_pool import EntityPool
+            pool = EntityPool.get_instance()
+            if pool.is_enabled():
+                pooled_entity = pool.acquire()
+                if pooled_entity is not None:
+                    self.entities[pooled_entity.id] = pooled_entity
+                    
+                    # 发布实体创建事件
+                    try:
+                        EventBus.get_instance().publish(
+                            "entity_created",
+                            {"entity_id": pooled_entity.id},
+                            source="world",
+                            timestamp=self.tick_count,
+                        )
+                    except Exception:
+                        pass
+                    
+                    return pooled_entity
+        except ImportError:
+            pass
+        
         entity = Entity.create()
         self.entities[entity.id] = entity
         
@@ -102,9 +126,6 @@ class World:
         # 实体删除使查询缓存失效
         self._query_cache.clear()
 
-        # 回收 id
-        Entity.destroy(entity)
-        
         # 通知记忆层实体消亡
         memory_layer = _get_memory_layer()
         if memory_layer is not None:
@@ -120,6 +141,18 @@ class World:
             )
         except Exception:
             pass
+
+        # 尝试回收到实体池（如果已启用）
+        try:
+            from core.entity_pool import EntityPool
+            pool = EntityPool.get_instance()
+            if pool.is_enabled() and pool.release(entity):
+                return  # 成功回收，不销毁
+        except ImportError:
+            pass
+
+        # 回收 id
+        Entity.destroy(entity)
 
     def _unregister_entity_from_space(self, entity_id: int):
         """从 SpaceSystem 反注册实体（提取为独立方法，减少重复内联导入）"""
@@ -343,14 +376,20 @@ class World:
         if self._world_entity is None:
             return None
         from time_module.time_component import TimeComponent
-        return self._world_entity.get_component(TimeComponent)
+        # 兼容 WorldEntity 和 Entity
+        if hasattr(self._world_entity, 'get_component'):
+            return self._world_entity.get_component(TimeComponent)
+        return self.components.get(TimeComponent, {}).get(self._world_entity.id)
 
     def get_environment(self):
         """获取环境组件。返回 None 表示尚未注册 EnvironmentComponent。"""
         if self._world_entity is None:
             return None
         from environment.environment_component import EnvironmentComponent
-        return self._world_entity.get_component(EnvironmentComponent)
+        # 兼容 WorldEntity 和 Entity
+        if hasattr(self._world_entity, 'get_component'):
+            return self._world_entity.get_component(EnvironmentComponent)
+        return self.components.get(EnvironmentComponent, {}).get(self._world_entity.id)
 
     def get_world_entity(self) -> Entity | None:
         """获取世界实体。返回 None 表示尚未设置。"""
@@ -364,7 +403,10 @@ class World:
         """从世界实体上获取指定类型的组件。"""
         if self._world_entity is None:
             return None
-        return self._world_entity.get_component(component_type)
+        # 兼容 WorldEntity 和 Entity
+        if hasattr(self._world_entity, 'get_component'):
+            return self._world_entity.get_component(component_type)
+        return self.components.get(component_type, {}).get(self._world_entity.id)
 
     def get_memory_layer(self):
         """获取统一记忆层实例（如果可用）"""

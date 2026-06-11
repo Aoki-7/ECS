@@ -202,7 +202,7 @@ class EventBus:
             return
 
         to_remove = []
-        for sub in subs:
+        for sub in list(subs):
             # 过滤检查
             if sub.filter_fn and not sub.filter_fn(event):
                 continue

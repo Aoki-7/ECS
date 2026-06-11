@@ -19,7 +19,7 @@ from space.space_system import SpaceSystem
 
 
 class DiseaseSpreadSystem(System):
-    tick_interval = 10  # 每10帧执行一次
+    tick_interval = 5  # 每5帧执行一次（疾病传播适中频率）
     """
     疾病传播系统
     处理疾病在邻近实体间的传播和疾病进展

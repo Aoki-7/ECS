@@ -57,7 +57,8 @@ class AnimalReproductionSystem(System):
                 SpaceComponent,
             )
         ):
-            if not lifecycle.is_mature:
+            from biology.lifecycle.systems.life_cycle_system import LifeCycleSystem
+            if not LifeCycleSystem.is_mature(lifecycle):
                 continue
 
             # 处理怀孕分娩

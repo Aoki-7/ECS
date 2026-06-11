@@ -35,5 +35,5 @@ class GarbageCleanupSystem(System):
         if excess > 0:
             # 简单策略：删除 ID 最小的（通常是最早创建的）
             garbage_entities.sort(key=lambda e: e.id)
-            for entity in garbage_entities[:excess]:
+            for entity in list(garbage_entities[:excess]):
                 world.remove_entity(entity)

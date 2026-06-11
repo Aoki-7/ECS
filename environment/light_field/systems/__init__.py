@@ -14,6 +14,6 @@
     → LightFieldSystem
 """
 
-from .light_field_system import LightFieldSystem
+from .uv_system import UVSystem
 
-__all__ = ['LightFieldSystem']
+__all__ = ['UVSystem']

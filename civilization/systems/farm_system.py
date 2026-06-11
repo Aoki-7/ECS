@@ -171,6 +171,10 @@ class HarvestSystem(System):
         farm.growth_stage = 0.0
         farm.health = 1.0
         farm.yield_history.append(yield_amount)
+        
+        # 限制历史大小防止内存泄漏
+        if len(farm.yield_history) > 100:
+            farm.yield_history = farm.yield_history[-100:]
 
         # 标记完成
         action.status = ActionStatus.SUCCESS
