@@ -13,7 +13,7 @@ from core.world import World
 from core.entity import Entity
 from biology.components.circadian_component import CircadianComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from biology.systems.circadian_system import CircadianSystem
 
 

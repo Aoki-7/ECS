@@ -29,7 +29,7 @@ from time_module.time_component import TimeComponent
 
 from space.space_system import SpaceSystem
 from time_module.time_system import TimeSystem
-from core.systems.event_log_system import EventLogSystem
+from identity.event_log_system import EventLogSystem
 
 from environment.config.environment_builder import EnvironmentBuilder
 from environment.atmosphere.system.atmosphere_physics_system import AtmospherePhysicsSystem

@@ -14,7 +14,7 @@ from core.world import World
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from equipment.components.ownership_component import OwnershipComponent
 

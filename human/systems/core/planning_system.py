@@ -17,7 +17,7 @@ from core.world import World
 
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.cognitive.memory_component import MemoryComponent
@@ -26,7 +26,7 @@ from resource.food.components.food_component import FoodComponent
 from resource.water.components.water_component import WaterComponent
 from resource.components.resource_component import ResourceComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
-from core.components.vision_component import VisionComponent
+from human.components.perception.vision_component import VisionComponent
 
 
 class PlanningSystem(System):

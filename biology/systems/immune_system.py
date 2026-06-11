@@ -21,7 +21,7 @@ from typing import List, Tuple
 
 from core.system import System
 from core.world import World
-from core.systems.event_log_system import EventLog
+from identity.event_log_system import EventLog
 
 from biology.components.immune_component import ImmuneComponent
 from biology.lifecycle.components.energy_component import EnergyComponent

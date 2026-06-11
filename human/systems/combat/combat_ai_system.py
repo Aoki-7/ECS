@@ -14,13 +14,13 @@ import random
 from core.system import System
 from core.world import World
 
-from core.components.action_component import (
+from human.components.action.action_component import (
     ActionComponent, ActionType, ActionStatus
 )
 from human.components.combat.combat_stats_component import CombatStatsComponent
 from human.components.cognitive.emotion_component import EmotionComponent
 from human.components.cognitive.personality_component import PersonalityComponent
-from core.components.vision_component import VisionComponent
+from human.components.perception.vision_component import VisionComponent
 from human.components.social.relationship_component import RelationshipComponent
 
 

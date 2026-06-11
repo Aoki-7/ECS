@@ -19,7 +19,7 @@ from typing import List, Optional, Dict, Any
 
 from core.system import System
 from core.world import World
-from core.systems.event_log_system import EventLog
+from identity.event_log_system import EventLog
 
 from biology.lifecycle.death.components.dead_tag_component import DeadTagComponent
 from biology.lifecycle.death.components.death_reason_component import DeathReasonComponent
@@ -212,7 +212,7 @@ class DeathArchiveSystem(System):
         从 EventLogSystem 查询最近死亡事件（与本地档案交叉验证）。
         这是 EventLog 查询 API 的首个生产调用者，用于验证事件日志集成。
         """
-        from core.systems.event_log_system import EventLogSystem
+        from identity.event_log_system import EventLogSystem
         event_system = world.get_system(EventLogSystem)
         if event_system is None:
             return []
@@ -228,7 +228,7 @@ class DeathArchiveSystem(System):
         if archive is None:
             return {"archive_count": 0, "event_log_count": 0, "matched": False}
 
-        from core.systems.event_log_system import EventLogSystem
+        from identity.event_log_system import EventLogSystem
         event_system = world.get_system(EventLogSystem)
         if event_system is None:
             return {"archive_count": archive.total_deaths, "event_log_count": 0, "matched": False}

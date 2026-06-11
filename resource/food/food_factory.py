@@ -4,9 +4,9 @@ from resource.components.resource_component import ResourceComponent
 from space.space_component import SpaceComponent
 
 from core.world import World
-from core.category_component import CategoryComponent
-from core.category import EntityCategory
-from core.subcategory import FoodSubCategory
+from identity.category_component import CategoryComponent
+from identity.category import EntityCategory
+from identity.subcategory import FoodSubCategory
 
 class FoodFactory:
     """食物工厂类"""

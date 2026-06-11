@@ -222,7 +222,7 @@ class DeathSystem(System):
     def _emit_death_event(self, entity, reason: str, world_time: float, world: World) -> None:
         """发射死亡事件，供其他系统订阅"""
         try:
-            from core.systems.event_log_system import EventLog
+            from identity.event_log_system import EventLog
             EventLog.log(
                 world,
                 event_type="death",

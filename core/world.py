@@ -349,7 +349,7 @@ class World:
         Returns:
             生成器，产出 (Entity, CategoryComponent) 元组
         """
-        from core.category_component import CategoryComponent
+        from identity.category_component import CategoryComponent
         for entity, comp in self.query_components(CategoryComponent):
             if comp.matches(category, subcategory):
                 yield entity, comp

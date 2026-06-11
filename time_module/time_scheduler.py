@@ -3,7 +3,7 @@
 """
 时间事件调度器
 
-v3.0.1 新增 — P1
+v3.9 迁移：从 core/ 移回 time_module/，保持 core 层纯粹性。
 
 职责：
     - 注册定时/周期事件
@@ -77,20 +77,7 @@ class TimeScheduler:
         interval: int = 0,
         repeat: int = 1,
     ) -> int:
-        """
-        注册事件
-
-        Args:
-            tick: 首次触发 tick
-            callback: 回调函数
-            args: 位置参数
-            kwargs: 关键字参数
-            interval: 周期间隔（0=一次性）
-            repeat: 重复次数（-1=无限）
-
-        Returns:
-            event_id: 事件 ID（用于取消）
-        """
+        """注册事件"""
         self._event_counter += 1
         event = ScheduledEvent(
             tick=tick,
@@ -110,12 +97,7 @@ class TimeScheduler:
         return True
 
     def update(self, current_tick: int) -> List[Dict]:
-        """
-        更新调度器，执行到期的所有事件。
-
-        Returns:
-            执行结果列表
-        """
+        """更新调度器，执行到期的所有事件。"""
         results = []
 
         while self._events and self._events[0].tick <= current_tick:

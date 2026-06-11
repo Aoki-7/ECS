@@ -26,8 +26,8 @@ from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 from plant.components.plant_component import PlantComponent
 from resource.components.resource_component import ResourceComponent
-from core.category_component import CategoryComponent
-from core.category import EntityCategory
+from identity.category_component import CategoryComponent
+from identity.category import EntityCategory
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.lifecycle.components.morphology_component import MorphologyComponent
 

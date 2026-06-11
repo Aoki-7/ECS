@@ -22,8 +22,8 @@ from biology.lifecycle.components.energy_component import EnergyComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 from biology.lifecycle.death.components.pending_death_component import PendingDeathComponent
-from core.category_component import CategoryComponent
-from core.category import EntityCategory
+from identity.category_component import CategoryComponent
+from identity.category import EntityCategory
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.lifecycle.components.morphology_component import MorphologyComponent
 from animal.components.animal_needs_component import AnimalNeedsComponent

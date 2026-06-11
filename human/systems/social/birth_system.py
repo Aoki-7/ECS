@@ -19,7 +19,7 @@ BirthSystem — 生育执行系统
 import logging
 from core.system import System
 from core.world import World
-from core.systems.event_log_system import EventLog
+from identity.event_log_system import EventLog
 
 from human.components.social.birth_request_component import BirthRequestComponent
 from human.components.social.reproduction_component import ReproductionComponent

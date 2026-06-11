@@ -87,7 +87,7 @@ class MemoryRegistrationSystem(System):
 
         # 尝试 CategoryComponent
         try:
-            from core.category_component import CategoryComponent
+            from identity.category_component import CategoryComponent
             cat_comp = world.get_component(entity, CategoryComponent)
             if cat_comp:
                 return self._extract_category_info(cat_comp)

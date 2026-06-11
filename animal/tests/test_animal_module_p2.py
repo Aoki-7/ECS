@@ -116,8 +116,8 @@ class TestPerceptionSystem(unittest.TestCase):
         self.world.add_component(plant, SpaceComponent(x=2, y=2))
         from resource.components.resource_component import ResourceComponent
         self.world.add_component(plant, ResourceComponent(resource_type="food"))
-        from core.category_component import CategoryComponent
-        from core.category import EntityCategory
+        from identity.category_component import CategoryComponent
+        from identity.category import EntityCategory
         self.world.add_component(plant, CategoryComponent(category=EntityCategory.PLANT))
 
         # 运行感知系统（需要 SpaceSystem 注册）

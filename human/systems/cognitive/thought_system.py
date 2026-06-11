@@ -18,7 +18,7 @@ from core.world import World
 from human.components.cognitive.brain_component import BrainComponent
 from human.components.cognitive.emotion_component import EmotionComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-from core.components.action_component import ActionComponent, ActionType
+from human.components.action.action_component import ActionComponent, ActionType
 
 
 class ThoughtSystem(System):

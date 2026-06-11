@@ -10,7 +10,7 @@ import unittest
 
 from core.world import World
 from human.systems.action.cooking_system import CookingSystem
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 

@@ -21,7 +21,7 @@ from core.world import World
 
 from human.components.cognitive.emotion_component import EmotionComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-from core.components.action_component import ActionComponent, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionStatus
 from human.components.cognitive.memory_component import MemoryComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 

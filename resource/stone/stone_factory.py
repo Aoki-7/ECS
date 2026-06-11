@@ -5,9 +5,9 @@ from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 
 from core.world import World
-from core.category_component import CategoryComponent
-from core.category import EntityCategory
-from core.subcategory import ResourceSubCategory
+from identity.category_component import CategoryComponent
+from identity.category import EntityCategory
+from identity.subcategory import ResourceSubCategory
 
 class StoneFactory:
     """石头工厂类"""

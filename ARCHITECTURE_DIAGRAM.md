@@ -1,8 +1,8 @@
 # ECS 世界模拟系统 — 模块架构图
 
-**版本：** v3.6  
+**版本：** v3.9  
 **日期：** 2026-06-11  
-**统计：** 146 Component / 173 System / 581 文件
+**统计：** 149 Component / 181 System / 598 文件 / 542 测试
 
 ---
 
@@ -28,6 +28,11 @@
 │  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐   │
 │  │EntityPool│  │Generation│  │Dataclass │  │Tick调度  │  │SpatialIdx│   │
 │  │ 实体池   │  │ 世代管理  │  │ 数据类   │  │ tick_interval│  │ 空间索引 │   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
+│       │             │             │             │             │            │
+│  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐   │
+│  │QueryAPI  │  │PerfMon   │  │WorldConfig│  │Serializer│  │Migrator  │   │
+│  │ 查询API  │  │ 性能监控  │  │ 世界配置  │  │ 序列化   │  │ 迁移器   │   │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
 └─────────────────────────────────────────────────────────────────────────────┘
           │
@@ -55,7 +60,8 @@
 │       │             │             │             │             │            │
 │  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐   │
 │  │Weather   │  │SolarRad  │  │Moisture  │  │WaterCycle│  │Erosion   │   │
-│  │Cloud/Wind│  │UV/PAR    │  │Fertility │  │Groundwater│  │Sediment  │   │
+│  │PhysicsWx │  │UV/PAR    │  │Fertility │  │Groundwater│  │Sediment  │   │
+│  │Chem/Storm│  │Phenology │  │RootZone  │  │Hydrology │  │Geology   │   │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
 │                                                                             │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
@@ -65,7 +71,7 @@
 │       │             │             │             │             │            │
 │  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐   │
 │  │OU Process│  │Astronomy │  │Current   │  │Diffusion │  │Storm     │   │
-│  │气候振荡  │  │Tidal     │  │Tide      │  │Chemistry │  │Physical  │   │
+│  │Continuum │  │Tidal     │  │Tide      │  │Chemistry │  │Physical  │   │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
 └─────────────────────────────────────────────────────────────────────────────┘
           │
@@ -124,18 +130,18 @@
 
 | 层级 | 模块 | 组件 | 系统 | 文件 | 说明 |
 |------|------|------|------|------|------|
-| **核心** | core | 9 | 1 | 23 | World, Entity, Component, System, EventBus, EntityPool, SpatialIndex |
+| **核心** | core | 1 | 1 | 23 | World, Entity, Component, System, EventBus, EntityPool, SpatialIndex, QueryAPI, PerformanceMonitor |
 | **基础设施** | space | 3 | 2 | 8 | 位置、碰撞、路径规划 |
-| | time_module | 1 | 1 | 3 | 时间推进、调度器 |
+| | time_module | 1 | 1 | 4 | 时间推进、调度器 |
 | | save_load | 1 | 2 | 8 | 序列化、迁移、增量存档 |
-| **环境** | environment | 34 | 39 | 113 | 大气、光场、土壤、水文、地形、气候、季节、海洋、污染、极端天气 |
-| **生物** | biology | 23 | 25 | 78 | 基因组、免疫、营养、生命周期、昼夜节律、气味 |
+| **环境** | environment | 35 | 48 | 134 | 大气、光场、土壤、水文、地形、气候、季节、海洋、污染、极端天气、物候、天文、连续统 |
+| **生物** | biology | 28 | 43 | 84 | 基因组、免疫、营养、生命周期、昼夜节律、气味、健康状态 |
 | | plant | 4 | 5 | 13 | 光合作用、根系、生长、物候 |
 | | animal | 9 | 11 | 25 | 感知、记忆、社交、学习、迁徙 |
 | | human | 31 | 62 | 136 | 认知、情感、决策、社会、文明 |
 | **文明** | civilization | 7 | 10 | 14 | 建筑、制作、农业、经济、文化 |
-| **元层** | memory_layer | 0 | 1 | 12 | 统一记忆层 |
-| | identity | 4 | 0 | 5 | 身份、年龄 |
+| **元层** | memory_layer | 0 | 1 | 16 | 统一记忆层 |
+| | identity | 4 | 1 | 9 | 身份、分类、事件日志 |
 | | physiology | 8 | 6 | 15 | 生理需求、健康 |
 | | resource | 7 | 5 | 23 | 食物、水、材料 |
 | | equipment | 1 | 0 | 5 | 装备 |
@@ -144,7 +150,7 @@
 | | death_archive | 1 | 1 | 4 | 死亡档案 |
 | | rules | 0 | 1 | 5 | 变换规则 |
 | | presentation | 1 | 1 | 11 | 可视化、仪表盘 |
-| **应用** | application | 0 | 0 | 3 | 模拟循环、生态循环 |
+| **应用** | application | 0 | 2 | 4 | 模拟循环、生态循环、并行执行 |
 
 ---
 
@@ -286,13 +292,13 @@ System 不直接调用 System
 
 ### 4. 分层 tick 模式
 ```
-tick_interval = 1:  Movement, Collision, Circadian, DeathTrigger
-tick_interval = 2:  SmellDiffusion, Migration, UV
-tick_interval = 5:  WaterCycle, Phenology, Farm
-tick_interval = 10: Weather, Pollution, Storm
-tick_interval = 20: Disaster, SeedDispersal, Growth, Reproduction
-tick_interval = 50: Population, Ecology
-tick_interval = 100: Speciation, Balance
+tick_interval = 1:  Movement, Collision, Circadian, DeathTrigger, Action, Perception
+tick_interval = 2:  SmellDiffusion, Migration, UV, Emotion, Phenology
+tick_interval = 5:  WaterCycle, Farm, Decision, Thought, CombatAI, Crafting
+tick_interval = 10: Weather, Pollution, Storm, DiseaseSpread, RootSystem
+tick_interval = 20: Disaster, SeedDispersal, Growth, Reproduction, PhysicalWeather
+tick_interval = 50: Population, Ecology, Tidal, OceanCurrent
+tick_interval = 100: Speciation, Balance, Astronomy
 ```
 
 ---
@@ -327,6 +333,7 @@ tick_interval = 100: Speciation, Balance
 |--------|------|------|
 | 新 Component | `*/components/` | 继承 Component，自动序列化 |
 | 新 System | `*/systems/` | 继承 System，注册到 SimulationLoop |
+| 新处理器 | `*/processors.py` | 独立物理/业务逻辑单元，便于测试和替换 |
 | 新环境类型 | `environment/` | 新增子模块，自动集成 |
 | 新生物类型 | `biology/` / `animal/` / `plant/` | 新增组件+系统 |
 | 新文明系统 | `civilization/` | 新增组件+系统 |
@@ -346,4 +353,4 @@ Plugin Interface:
 ---
 
 *架构图生成时间：2026-06-11*  
-*ECS 世界模拟系统版本：v3.6*
+*ECS 世界模拟系统版本：v3.9*

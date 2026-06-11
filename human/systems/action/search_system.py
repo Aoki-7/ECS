@@ -21,10 +21,10 @@ import random
 from core.system import System
 from core.world import World
 
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
-from core.components.search_component import SearchComponent
-from core.components.vision_component import VisionComponent
+from human.components.action.search_component import SearchComponent
+from human.components.perception.vision_component import VisionComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.cognitive.memory_component import MemoryComponent

@@ -8,7 +8,7 @@ v3.0.1
 
 import unittest
 
-from core.time_scheduler import TimeScheduler, ScheduledEvent
+from time_module.time_scheduler import TimeScheduler, ScheduledEvent
 
 
 class TestTimeScheduler(unittest.TestCase):

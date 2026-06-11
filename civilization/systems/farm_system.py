@@ -107,7 +107,7 @@ class HarvestSystem(System):
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """处理 HARVEST 动作"""
-        from core.components.action_component import ActionComponent, ActionType, ActionStatus
+        from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
         from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
         from human.components.economic.inventory.inventory_component import InventoryComponent
 
@@ -123,7 +123,7 @@ class HarvestSystem(System):
         self, world, entity, action, task, inventory
     ) -> None:
         """处理单个收割行为"""
-        from core.components.action_component import ActionStatus
+        from human.components.action.action_component import ActionStatus
         from human.components.cognitive.task_component import TaskStatus
 
         # 获取目标农田
@@ -187,7 +187,7 @@ class HarvestSystem(System):
 
     def _fail(self, action, task, reason: str) -> None:
         """标记失败"""
-        from core.components.action_component import ActionStatus
+        from human.components.action.action_component import ActionStatus
         from human.components.cognitive.task_component import TaskStatus
 
         action.status = ActionStatus.FAILED
@@ -218,7 +218,7 @@ class IrrigationSystem(System):
     def update(self, world: World, dt: float = 1.0) -> None:
         """更新灌溉系统"""
         # 处理 IRRIGATE 动作
-        from core.components.action_component import ActionComponent, ActionType
+        from human.components.action.action_component import ActionComponent, ActionType
 
         for entity, (action,) in world.get_components(ActionComponent):
             if action.current_action != ActionType.DRINK:  # 复用 DRINK 或新增 IRRIGATE

@@ -21,7 +21,7 @@ from biology.components.health_status_component import HealthStatusComponent
 from biology.components.disease_component import DiseaseComponent
 from human.components.cognitive.emotion_component import EmotionComponent
 from human.components.cognitive.intent_component import IntentComponent
-from core.components.action_component import ActionComponent
+from human.components.action.action_component import ActionComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
 from space.space_component import SpaceComponent
 

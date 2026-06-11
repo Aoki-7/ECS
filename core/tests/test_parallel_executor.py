@@ -11,7 +11,7 @@ import time
 
 from core.world import World
 from core.system import System
-from core.parallel_system_executor import ParallelSystemExecutor
+from application.parallel_system_executor import ParallelSystemExecutor
 
 
 class DummySystem(System):

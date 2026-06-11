@@ -10,7 +10,7 @@
 
 from core.system import System
 from core.world import World
-from core.systems.event_log_system import EventLog
+from identity.event_log_system import EventLog
 
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
@@ -19,7 +19,7 @@ from human.components.social.social_component import SocialComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from biology.components.gender_component import GenderComponent, Gender
-from core.components.action_component import ActionComponent, ActionType
+from human.components.action.action_component import ActionComponent, ActionType
 
 
 class PairingSystem(System):

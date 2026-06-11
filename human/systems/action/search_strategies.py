@@ -15,8 +15,8 @@ from typing import Optional, Tuple
 from core.world import World
 from core.entity import Entity
 
-from core.components.search_component import SearchComponent
-from core.components.vision_component import VisionComponent
+from human.components.action.search_component import SearchComponent
+from human.components.perception.vision_component import VisionComponent
 from human.components.cognitive.task_component import TaskComponent, TaskType
 from space.space_component import SpaceComponent
 from biology.components.smell_component import SmellComponent

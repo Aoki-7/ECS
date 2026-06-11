@@ -10,6 +10,6 @@
 此文件保留用于向后兼容，将在下一版本中删除。
 '''
 
-from core.components.search_component import SearchComponent
+from human.components.action.search_component import SearchComponent
 
 __all__ = ["SearchComponent"]

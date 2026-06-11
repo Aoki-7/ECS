@@ -12,7 +12,7 @@ from core.system import System
 from core.world import World
 
 from human.components.social.dialogue_component import DialogueComponent
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.memory_component import MemoryComponent
 
 

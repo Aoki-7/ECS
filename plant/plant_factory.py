@@ -28,9 +28,9 @@ from space.space_component import SpaceComponent
 from biology.ecology.components.food_chain_component import FoodChainComponent
 from biology.ecology.components.population_component import PopulationComponent
 from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
-from core.category_component import CategoryComponent
-from core.category import EntityCategory
-from core.subcategory import PlantSubCategory
+from identity.category_component import CategoryComponent
+from identity.category import EntityCategory
+from identity.subcategory import PlantSubCategory
 from environment.light_field.components.light_receiver_component import LightReceiverComponent
 from plant.components.plant_component import PlantComponent
 from plant.components.root_component import RootComponent

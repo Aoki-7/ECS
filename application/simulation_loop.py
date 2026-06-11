@@ -163,7 +163,7 @@ from resource.food.components.food_component import FoodComponent
 from civilization import CivilizationSystem
 from presentation.human_panel import HumanStatePanel
 from presentation.human_observation_system import HumanObservationSystem
-from core.systems.event_log_system import EventLogSystem
+from identity.event_log_system import EventLogSystem
 from environment.atmosphere.system.atmosphere_physics_system import AtmospherePhysicsSystem
 from human.systems.social.role_system import RoleSystem
 from human.systems.economy.economy_system import EconomySystem

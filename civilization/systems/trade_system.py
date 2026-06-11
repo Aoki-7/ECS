@@ -17,7 +17,7 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.economic.economy_component import EconomyComponent
 from human.components.social.social_component import SocialComponent

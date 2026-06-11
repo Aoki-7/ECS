@@ -142,11 +142,11 @@ class HumanStatePanel:
         from biology.components.physiology_needs_component import PhysiologyNeedsComponent
         from human.components.cognitive.emotion_component import EmotionComponent
         from human.components.cognitive.intent_component import IntentComponent
-        from core.components.action_component import ActionComponent
+        from human.components.action.action_component import ActionComponent
         from human.components.social.tribe_membership_component import TribeMembershipComponent
         from space.space_component import SpaceComponent
         from human.components.social.tribe_component import TribeComponent
-        from core.systems.event_log_system import EventLog
+        from identity.event_log_system import EventLog
         
         # 统计总体信息
         total_humans = 0

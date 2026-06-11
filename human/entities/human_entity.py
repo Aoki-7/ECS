@@ -27,8 +27,8 @@ from biology.components.disease_component import DiseaseComponent
 from human.components.combat.combat_stats_component import CombatStatsComponent
 from human.components.social.dialogue_component import DialogueComponent
 from human.components.social.conflict_component import ConflictComponent
-from core.components.velocity_component import VelocityComponent
-from core.components.vision_component import VisionComponent
+from human.components.abilities.velocity_component import VelocityComponent
+from human.components.perception.vision_component import VisionComponent
 from human.components.abilities.skill_component import SkillComponent
 from human.components.abilities.search_component import SearchComponent
 from human.components.economic.economy_component import EconomyComponent
@@ -44,7 +44,7 @@ from human.components.social.social_component import SocialComponent
 from human.components.social.relationship_component import RelationshipComponent
 from human.components.social.reproduction_component import ReproductionComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
-from core.components.action_component import ActionComponent
+from human.components.action.action_component import ActionComponent
 from space.space_component import SpaceComponent
 
 
@@ -204,9 +204,9 @@ class HumanEntity:
         ))
 
         # 分类组件：标记为人类
-        from core.category_component import CategoryComponent
-        from core.category import EntityCategory
-        from core.subcategory import HumanSubCategory
+        from identity.category_component import CategoryComponent
+        from identity.category import EntityCategory
+        from identity.subcategory import HumanSubCategory
         world.add_component(entity, CategoryComponent(
             category=EntityCategory.HUMAN,
             subcategory=HumanSubCategory.CIVILIAN,

@@ -154,7 +154,7 @@ class TestHarvestSystem(unittest.TestCase):
 
     def test_harvest_mature_crop(self):
         """收割成熟作物"""
-        from core.components.action_component import ActionComponent, ActionType
+        from human.components.action.action_component import ActionComponent, ActionType
         from human.components.cognitive.task_component import TaskComponent
         from human.components.economic.inventory.inventory_component import InventoryComponent
 
@@ -185,7 +185,7 @@ class TestHarvestSystem(unittest.TestCase):
 
     def test_harvest_immature(self):
         """收割未成熟作物失败"""
-        from core.components.action_component import ActionComponent, ActionType, ActionStatus
+        from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
         from human.components.cognitive.task_component import TaskComponent
         from human.components.economic.inventory.inventory_component import InventoryComponent
 

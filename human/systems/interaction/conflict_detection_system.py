@@ -22,7 +22,7 @@ from human.components.social.conflict_component import ConflictComponent
 from human.components.social.relationship_component import RelationshipComponent
 from human.components.cognitive.personality_component import PersonalityComponent
 from human.components.cognitive.emotion_component import EmotionComponent
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.systems.interaction.conflict_resolution_system import ResolutionStrategy
 
 logger = logging.getLogger(__name__)

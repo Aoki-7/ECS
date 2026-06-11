@@ -23,7 +23,7 @@ from memory_layer.cognitive_framework import create_human_framework
 from human.components.basic.human_component import HumanComponent
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
-from core.components.vision_component import VisionComponent
+from human.components.perception.vision_component import VisionComponent
 
 
 class TestHumanPerceptionMemoryIntegration(unittest.TestCase):

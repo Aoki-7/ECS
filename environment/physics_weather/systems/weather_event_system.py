@@ -27,7 +27,7 @@ from typing import Dict, Optional
 
 from core.system import System
 from core.world import World
-from core.systems.event_log_system import EventLog
+from identity.event_log_system import EventLog
 
 from environment.physics_weather.components.physical_weather_component import (
     PhysicalWeatherComponent,

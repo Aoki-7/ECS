@@ -86,7 +86,7 @@ class CraftingSystem(System):
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """处理制作行为"""
-        from core.components.action_component import ActionComponent, ActionType, ActionStatus
+        from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 
         for entity, (action, task, inventory, skill) in world.get_components(
             ActionComponent, TaskComponent, InventoryComponent, SkillComponent
@@ -317,7 +317,7 @@ class CraftingSystem(System):
 
     def _fail_crafting(self, action, task, reason: str) -> None:
         """标记制作失败"""
-        from core.components.action_component import ActionStatus
+        from human.components.action.action_component import ActionStatus
         from human.components.cognitive.task_component import TaskStatus
 
         action.status = ActionStatus.FAILED

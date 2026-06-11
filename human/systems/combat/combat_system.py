@@ -15,7 +15,7 @@ import random
 from core.system import System
 from core.world import World
 
-from core.components.action_component import (
+from human.components.action.action_component import (
     ActionComponent, ActionType, ActionStatus
 )
 from biology.components.health_status_component import HealthStatusComponent
@@ -219,4 +219,4 @@ class CombatSystem(System):
         action.status = ActionStatus.RUNNING
 
 
-from core.components.velocity_component import VelocityComponent
+from human.components.abilities.velocity_component import VelocityComponent

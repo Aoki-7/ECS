@@ -27,9 +27,9 @@ from space.space_component import SpaceComponent
 from environment.soil.components.soil_component import SoilComponent
 
 from decomposer.components.decomposition_component import DecompositionComponent
-from core.category_component import CategoryComponent
-from core.category import EntityCategory
-from core.subcategory import CorpseSubCategory
+from identity.category_component import CategoryComponent
+from identity.category import EntityCategory
+from identity.subcategory import CorpseSubCategory
 
 logger = logging.getLogger(__name__)
 

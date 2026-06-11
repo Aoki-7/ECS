@@ -14,10 +14,10 @@ from space.space_component import SpaceComponent
 from biology.components.smell_component import SmellComponent
 from biology.systems.smell_diffusion_system import SmellDiffusionSystem
 from human.systems.action.search_strategies import SmellSearchStrategy
-from core.components.action_component import ActionComponent, ActionType
+from human.components.action.action_component import ActionComponent, ActionType
 from human.components.cognitive.task_component import TaskComponent, TaskType
-from core.components.search_component import SearchComponent
-from core.components.vision_component import VisionComponent
+from human.components.action.search_component import SearchComponent
+from human.components.perception.vision_component import VisionComponent
 from resource.food.components.food_component import FoodComponent
 
 

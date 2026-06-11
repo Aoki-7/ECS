@@ -22,7 +22,7 @@ from core.system import System
 from core.world import World
 
 from space.space_system import SpaceSystem
-from core.components.vision_component import VisionComponent
+from human.components.perception.vision_component import VisionComponent
 from space.space_component import SpaceComponent
 from human.components.cognitive.memory_component import MemoryComponent
 from identity.name_component import NameComponent
@@ -153,7 +153,7 @@ class PerceptionSystem(System):
             score += norm_dist * 0.2
 
             # 动态性加分
-            from core.components.velocity_component import VelocityComponent
+            from human.components.abilities.velocity_component import VelocityComponent
             if world.get_component(target, VelocityComponent) is not None:
                 score += 0.3
 

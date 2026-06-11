@@ -17,8 +17,8 @@ from core.system import System
 from core.world import World
 
 # ── 分类系统 ───────────────
-from core.category import EntityCategory
-from core.category_component import (
+from identity.category import EntityCategory
+from identity.category_component import (
     CategoryComponent,
     get_subcategory_enum,
     get_category_by_subcategory,
@@ -28,7 +28,7 @@ from core.category_component import (
     SUBCATEGORY_TO_CATEGORY,
     SubCategoryType,
 )
-from core.subcategory import (
+from identity.subcategory import (
     # 生物
     HumanSubCategory,
     AnimalSubCategory,
