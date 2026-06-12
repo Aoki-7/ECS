@@ -1,3 +1,21 @@
+"""
+社交包 — 关系、配对、繁衍、部落、对话
+
+依赖：
+    - human.components/
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -8,3 +26,4 @@
     - RelationshipComponent: 亲密关系（伴侣、婚姻状态、信任度）
     - ReproductionComponent: 繁衍状态（怀孕进度、生育能力）
 """
+

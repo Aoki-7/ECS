@@ -1,3 +1,12 @@
+"""
+世界实体 — 全局世界实体与配置组件
+
+职责：
+
+依赖：
+    - core/
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -23,3 +32,4 @@ from .world_entity import WorldEntity
 __all__ = [
     "WorldEntity",
 ]
+

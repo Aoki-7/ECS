@@ -14,6 +14,7 @@ from typing import Dict, Any, List
 from core.world import World
 from core.entity import Entity
 from core.component import Component
+from core.component_serializer import ComponentSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +45,18 @@ class WorldSerializer:
             data["entities"].append(entity.to_dict())
 
         # 序列化组件（按类型分组）
+        # v4.0: 优先使用 ComponentSerializer
         for comp_type, comp_dict in world.components.items():
             type_name = f"{comp_type.__module__}.{comp_type.__name__}"
             data["components"][type_name] = {}
             for entity_id, comp in comp_dict.items():
                 try:
-                    data["components"][type_name][str(entity_id)] = comp.to_dict()
+                    # 尝试使用 ComponentSerializer
+                    if ComponentSerializer.is_registered(type_name):
+                        data["components"][type_name][str(entity_id)] = ComponentSerializer.serialize(comp)
+                    else:
+                        # 回退到旧方式
+                        data["components"][type_name][str(entity_id)] = comp.to_dict()
                 except Exception as e:
                     logger.warning(f"[Save] 序列化组件 {type_name} 失败 (entity={entity_id}): {e}")
 
@@ -64,7 +71,11 @@ class WorldSerializer:
             for comp_type, comp in we._components.items():
                 type_name = f"{comp_type.__module__}.{comp_type.__name__}"
                 try:
-                    data["world_entity"]["components"][type_name] = comp.to_dict()
+                    # v4.0: 优先使用 ComponentSerializer
+                    if ComponentSerializer.is_registered(type_name):
+                        data["world_entity"]["components"][type_name] = ComponentSerializer.serialize(comp)
+                    else:
+                        data["world_entity"]["components"][type_name] = comp.to_dict()
                 except Exception as e:
                     logger.warning(f"[Save] 序列化 world_entity 组件 {type_name} 失败: {e}")
 
@@ -77,10 +88,8 @@ class WorldSerializer:
 
         警告：这会清空当前 World 的所有状态！
         """
-        # 清空当前状态
-        world.entities.clear()
+        # 清空当前状态（兼容 v3.9 和 v4.0）
         world.components.clear()
-        world._component_entities.clear()
         world._query_cache.clear()
         if hasattr(world, '_system_cache'):
             world._system_cache.clear()
@@ -91,7 +100,11 @@ class WorldSerializer:
         entity_map = {}  # old_id -> new Entity
         for entity_data in data.get("entities", []):
             entity = Entity(entity_data["id"], entity_data["generation"])
-            world.entities[entity.id] = entity
+            # v4.0: 使用 EntityManager
+            if hasattr(world, '_entity_manager'):
+                world._entity_manager._entities[entity.id] = entity
+            else:
+                world.entities[entity.id] = entity
             entity_map[entity_data["id"]] = entity
 
         # 重建组件
@@ -102,25 +115,53 @@ class WorldSerializer:
                 logger.warning(f"[Load] 无法解析组件类型 {type_name}: {e}")
                 continue
 
-            world.components[comp_type] = {}
-            world._component_entities[comp_type] = set()
+            # v4.0: 使用 ArchetypeStore
+            if hasattr(world, '_component_store'):
+                for entity_id_str, comp_data in comp_dict.items():
+                    entity_id = int(entity_id_str)
+                    entity = entity_map.get(entity_id)
+                    if entity is None:
+                        logger.warning(f"[Load] 组件 {type_name} 引用了不存在的实体 {entity_id}")
+                        continue
+                    try:
+                        # v4.0: 优先使用 ComponentSerializer
+                        if isinstance(comp_data, dict) and "__type__" in comp_data:
+                            comp = ComponentSerializer.deserialize(comp_data)
+                        else:
+                            # 迁移旧版本数据
+                            from save_load.component_migrator import migrate_component_data
+                            comp_data = migrate_component_data(type_name, comp_data)
+                            comp = comp_type.from_dict(comp_data)
+                        
+                        if comp is not None:
+                            world._component_store.add_component(entity, comp)
+                    except Exception as e:
+                        logger.warning(f"[Load] 反序列化组件 {type_name} 失败 (entity={entity_id}): {e}")
+            else:
+                # v3.9 兼容路径
+                world.components[comp_type] = {}
+                world._component_entities[comp_type] = set()
 
-            for entity_id_str, comp_data in comp_dict.items():
-                entity_id = int(entity_id_str)
-                entity = entity_map.get(entity_id)
-                if entity is None:
-                    logger.warning(f"[Load] 组件 {type_name} 引用了不存在的实体 {entity_id}")
-                    continue
-                try:
-                    # 迁移旧版本数据
-                    from save_load.component_migrator import migrate_component_data
-                    comp_data = migrate_component_data(type_name, comp_data)
-                    
-                    comp = comp_type.from_dict(comp_data)
-                    world.components[comp_type][entity_id] = comp
-                    world._component_entities[comp_type].add(entity_id)
-                except Exception as e:
-                    logger.warning(f"[Load] 反序列化组件 {type_name} 失败 (entity={entity_id}): {e}")
+                for entity_id_str, comp_data in comp_dict.items():
+                    entity_id = int(entity_id_str)
+                    entity = entity_map.get(entity_id)
+                    if entity is None:
+                        logger.warning(f"[Load] 组件 {type_name} 引用了不存在的实体 {entity_id}")
+                        continue
+                    try:
+                        # v4.0: 优先使用 ComponentSerializer
+                        if isinstance(comp_data, dict) and "__type__" in comp_data:
+                            comp = ComponentSerializer.deserialize(comp_data)
+                        else:
+                            from save_load.component_migrator import migrate_component_data
+                            comp_data = migrate_component_data(type_name, comp_data)
+                            comp = comp_type.from_dict(comp_data)
+                        
+                        if comp is not None:
+                            world.components[comp_type][entity_id] = comp
+                            world._component_entities[comp_type].add(entity_id)
+                    except Exception as e:
+                        logger.warning(f"[Load] 反序列化组件 {type_name} 失败 (entity={entity_id}): {e}")
 
         # 重建 world_entity
         world_entity_data = data.get("world_entity")

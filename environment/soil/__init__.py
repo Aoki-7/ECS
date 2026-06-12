@@ -1,3 +1,14 @@
+"""
+土壤包 — 水分平衡、温度、肥力、养分
+
+依赖：
+    - core/
+    - space/
+    - time_module/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -29,3 +40,4 @@ __all__ = [
     "SoilQualityComponent",
     "SoilTemperatureComponent",
 ]
+

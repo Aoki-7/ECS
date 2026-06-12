@@ -1,3 +1,21 @@
+"""
+人类系统 — 最复杂的智能实体（认知、社交、经济、行动流水线） 的 子模块
+
+依赖：
+    - human.components/
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -15,3 +33,4 @@
     - society/ 关注个体在社会网络中的位置
     - civilization/ 关注群体级别的文明演进
 """
+

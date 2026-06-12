@@ -1,3 +1,13 @@
+"""
+组件包 — 纯数据组件定义
+
+依赖：
+    - core/
+    - identity/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -14,3 +24,4 @@
     - biology/components/     → 通用生物属性（基因、免疫、健康）
     - biology/lifecycle/components/ → 生命周期特有（能量、形态、阶段）
 """
+

@@ -1,3 +1,13 @@
+"""
+系统包 — 业务逻辑与行为处理
+
+依赖：
+    - core/
+    - identity/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -21,3 +31,4 @@
     - 通常在 SimulationLoop 中以 priority 50 统一调度
     - 确保在环境系统（priority 20）之后、规则系统（priority 60）之前执行
 """
+

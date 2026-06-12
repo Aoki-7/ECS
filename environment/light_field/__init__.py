@@ -1,3 +1,14 @@
+"""
+光场包 — 太阳辐射、地表光照、直射/散射
+
+依赖：
+    - core/
+    - space/
+    - time_module/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -26,3 +37,4 @@
     - system/     : LightFieldSystem（辐射传输计算）
     - systems/    : 光场主系统
 """
+

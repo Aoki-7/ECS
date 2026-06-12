@@ -1,3 +1,16 @@
+"""
+组件包 — 纯数据组件定义
+
+依赖：
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - resource/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
@@ -25,3 +38,4 @@ __all__ = [
     "AnimalPerceptionComponent",
     "AnimalLearningComponent",
 ]
+

@@ -1,3 +1,12 @@
+"""
+食物包 — 食物类型、营养、收获
+
+依赖：
+    - core/
+    - biology/
+    - environment/
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -18,3 +27,4 @@
     - 通过 EatSystem 消耗食物，恢复 HungerComponent
     - 腐败食物可能导致 DiseaseSystem 触发
 """
+

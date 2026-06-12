@@ -1,3 +1,14 @@
+"""
+尸体包 — 尸体状态与分解准备
+
+依赖：
+    - biology.lifecycle/
+    - core/
+    - identity/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -16,3 +27,4 @@
     - 尸体分解增加土壤肥力（SoilFertilityComponent）
     - 分解过程受环境温度和湿度影响
 """
+

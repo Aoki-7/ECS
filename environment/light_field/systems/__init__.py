@@ -1,3 +1,15 @@
+"""
+系统包 — 业务逻辑与行为处理
+
+依赖：
+    - environment.light_field/
+    - core/
+    - space/
+    - time_module/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -17,3 +29,4 @@
 from .uv_system import UVSystem
 
 __all__ = ['UVSystem']
+

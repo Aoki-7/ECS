@@ -1,3 +1,15 @@
+"""
+系统包 — 业务逻辑与行为处理
+
+依赖：
+    - environment.soil/
+    - core/
+    - space/
+    - time_module/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -18,3 +30,4 @@
 from .soil_system import SoilSystem
 
 __all__ = ['SoilSystem']
+

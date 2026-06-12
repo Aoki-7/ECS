@@ -1,3 +1,14 @@
+"""
+系统包 — 业务逻辑与行为处理
+
+依赖：
+    - biology.lifecycle/
+    - core/
+    - identity/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -6,3 +17,4 @@
 本包聚合了 lifecycle 下各子领域的系统，提供统一导入接口。
 各子系统按 priority 顺序在 world.update() 中调度执行。
 """
+

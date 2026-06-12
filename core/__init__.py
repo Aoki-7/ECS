@@ -1,3 +1,14 @@
+"""
+ECS 核心框架 — 实体、组件、系统、世界的底层架构
+
+职责：
+    - 提供 ECS 基础架构：Entity、Component、System、World
+    - v4.0 新增：EntityManager、ArchetypeStore、SystemScheduler
+    - 提供统一序列化、事件总线、空间索引等基础设施
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -56,3 +67,4 @@ from identity.subcategory import (
     SystemSubCategory,
     EventSubCategory,
 )
+

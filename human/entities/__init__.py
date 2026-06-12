@@ -1,3 +1,20 @@
+"""
+实体包 — 实体定义与模板
+
+依赖：
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -12,3 +29,4 @@
     - entities/ 提供模板定义
     - human_factory.py 负责按模板实例化实体并注册到 World
 """
+

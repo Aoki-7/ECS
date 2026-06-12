@@ -1,3 +1,13 @@
+"""
+生态包 — 种群动态、物种形成、食物链
+
+依赖：
+    - core/
+    - identity/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -41,3 +51,4 @@ __all__ = [
     "TrophicLevelSystem",
     "SpeciationSystem",
 ]
+

@@ -1,3 +1,14 @@
+"""
+大气包 — 气压、风场、对流、热力学
+
+依赖：
+    - core/
+    - space/
+    - time_module/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -16,3 +27,4 @@
     - atmosphere/    → 更底层的物理（大气结构、气体动力学）
     - physics_weather/ → 直接可观测的天气状态（温度、云量、降水）
 """
+

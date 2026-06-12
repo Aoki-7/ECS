@@ -1,3 +1,7 @@
+"""
+组件包 — 纯数据组件定义
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -8,3 +12,4 @@
     - DurabilityComponent: 耐久度跟踪（当前耐久/最大耐久）
     - 未来扩展：WeaponComponent, ArmorComponent, ToolComponent 等细分组件
 """
+

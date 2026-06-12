@@ -1,3 +1,20 @@
+"""
+组件包 — 纯数据组件定义
+
+依赖：
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -107,3 +124,4 @@ from .economic.inventory.inventory_component import InventoryComponent
 
 # 行动与控制
 from .action.action_component import ActionComponent
+

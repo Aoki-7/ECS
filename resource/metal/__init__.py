@@ -1,3 +1,12 @@
+"""
+资源系统 — 食物、水、木材、材料等可收集资源 的 子模块
+
+依赖：
+    - core/
+    - biology/
+    - environment/
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -16,3 +25,4 @@
     - 人类通过采集/采矿行为获取金属
     - 金属用于制造装备（equipment/）和建筑（civilization/）
 """
+

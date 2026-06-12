@@ -92,12 +92,23 @@ class ActionComponent(Component):
     _path: list = field(default_factory=list, repr=False)
     _path_index: int = field(default=0, repr=False)
 
-    def reset(self):
-        """重置当前动作"""
-        self.current_action = ActionType.IDLE
-        self.status = ActionStatus.IDLE
-        self.progress = 0.0
-        self.target_entity = None
-        self.target_pos = None
-        self._path = []
-        self._path_index = 0
+    def to_dict(self) -> dict:
+        return {
+            "current_action": self.current_action.name,
+            "status": self.status.name,
+            "action_queue": [a.name for a in self.action_queue],
+            "target_entity": self.target_entity,
+            "target_pos": self.target_pos,
+            "progress": self.progress,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ActionComponent":
+        return cls(
+            current_action=ActionType[data.get("current_action", "IDLE")],
+            status=ActionStatus[data.get("status", "IDLE")],
+            action_queue=[ActionType[a] for a in data.get("action_queue", [])],
+            target_entity=data.get("target_entity"),
+            target_pos=data.get("target_pos"),
+            progress=data.get("progress", 0.0),
+        )

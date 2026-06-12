@@ -1,3 +1,21 @@
+"""
+基础包 — 核心标识组件
+
+依赖：
+    - human.components/
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -8,3 +26,4 @@
     - IdentityComponent : 身份信息（ID、文化背景）
     - HumanComponent    : 人类标识（标记实体为人类，用于系统筛选）
 """
+

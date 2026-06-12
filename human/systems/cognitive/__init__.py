@@ -1,3 +1,21 @@
+"""
+认知包 — 感知、情绪、思维、记忆、决策
+
+依赖：
+    - human.systems/
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -14,3 +32,4 @@
     PerceptionSystem → EmotionSystem → ThoughtSystem → GoalSystem
     → DecisionSystem → IntentSystem（core/）
 """
+

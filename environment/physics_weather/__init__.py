@@ -1,3 +1,14 @@
+"""
+物理天气包 — 连续物理量天气系统
+
+依赖：
+    - core/
+    - space/
+    - time_module/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -105,3 +116,4 @@ __all__ = [
     "saturation_absolute_humidity",
     "relative_humidity",
 ]
+

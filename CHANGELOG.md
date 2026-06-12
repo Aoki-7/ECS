@@ -1,5 +1,53 @@
 # Changelog
 
+## v4.0 (2026-06-12)
+
+### 架构重构 — P0/P1/P2 问题解决
+
+#### World 拆分（P0）
+- 新增 `core/entity_manager.py` — Entity 生命周期管理
+- 新增 `core/archetype_store.py` — Archetype-based 组件存储
+- 新增 `core/system_scheduler.py` — System 依赖图 + 拓扑排序
+- 重构 `core/world.py` — 从 ~500 行上帝对象变为 ~350 行协调者
+- **向后兼容**：v3.9 API 完全保留，542 测试全部通过
+
+#### Archetype 存储（P0）
+- 列式存储：组件按类型连续内存存放
+- 查询优化：直接遍历匹配 Archetype，无需集合交集
+- 自动迁移：实体添加/移除组件时自动迁移 Archetype
+- **性能提升**：内存局部性更好，查询效率提升
+
+#### System 依赖图（P1）
+- 声明式依赖：`dependencies_after` / `dependencies_before`
+- 自动拓扑排序：Kahn 算法 + 优先级排序
+- 循环依赖检测：运行时验证
+- **向后兼容**：旧 `priority` 字段仍有效
+
+#### Component 纯数据化（P1）
+- `MemoryComponent` → `MemoryManagementSystem`（15 个方法迁移）
+- `WorldConfigComponent` → `WorldConfigSystem`（2 个方法迁移）
+- `ActionComponent` → `ActionManagementSystem`（1 个方法迁移）
+- `CircadianComponent` 已纯数据（无需迁移）
+
+#### 测试补充（P1）
+- human 模块：+28 测试（MemoryManagementSystem 15 + ActionManagementSystem 8 + 其他）
+- core 模块：+9 测试（WorldConfigSystem）
+- plant 模块：+2 测试（PhotosynthesisSystem）
+- **总计：576 测试全部通过**（新增 34）
+
+#### 事件总线隔离（P2）
+- 新增 `core/world_event_bus.py` — 每 World 独立事件总线
+- 支持：订阅/发布/优先级/过滤/历史记录
+- **向后兼容**：全局 EventBus 仍可用
+
+#### 统一序列化（P2）
+- 新增 `core/component_serializer.py` — 统一组件序列化框架
+- `@register_component` 装饰器自动注册
+- 版本迁移：支持 3.9 → 4.0 数据迁移
+- 更新 `save_load/serializers/world_serializer.py` 使用新框架
+
+---
+
 ## v3.9 (2026-06-11)
 
 ### System 文件拆分

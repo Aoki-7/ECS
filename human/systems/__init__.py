@@ -1,3 +1,20 @@
+"""
+系统包 — 业务逻辑与行为处理
+
+依赖：
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -127,3 +144,4 @@ from .action.socialize_system import SocializeSystem
 
 # 死亡系统已迁移至 biology/lifecycle/death/ 生命周期子领域
 # from .death.death_system import DeathSystem  # 旧版已删除
+

@@ -1,3 +1,7 @@
+"""
+equipment 模块
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -22,3 +26,4 @@ from .equipment_factory import EquipmentFactory
 __all__ = [
     "EquipmentFactory",
 ]
+

@@ -1,3 +1,21 @@
+"""
+认知包 — 感知、情绪、思维、记忆、决策
+
+依赖：
+    - human.components/
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -29,3 +47,4 @@
         · places：按 visits + last_visit 衰减，少访问地点逐渐遗忘
         · people：按 trust 衰减，低信任度人物逐渐遗忘
 """
+

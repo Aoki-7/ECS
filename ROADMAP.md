@@ -1,7 +1,7 @@
 # ECS 世界模拟系统 — 迭代路线图
 
-> 当前版本: v3.0
-> 最后更新: 2026-06-08
+> 当前版本: v4.0
+> 最后更新: 2026-06-12
 
 ---
 
@@ -122,14 +122,22 @@
 - [x] 性能监控系统（PerformanceMonitor + @monitored_update，11 测试）
 - [x] 适配 SeasonComponent 新 API（year_progress/year_length_hours）
 
-### v4.0-alpha 计划
-- [ ] 更多 Component 纯数据化（48 个含方法 Component 逐步迁移）
-- [ ] System 文件拆分（world_server.py 551 行）
-- [ ] 注册更多组件迁移（AnimalComponent, HumanComponent）
-- [ ] 季节系统细化（纬度、海拔影响）
-- [ ] 多线程执行器与 World 线程安全
+### ✅ v4.0 架构重构（2026-06-12）
+- [x] World 拆分：EntityManager + ArchetypeStore + SystemScheduler
+- [x] Archetype 存储：列式存储，查询性能提升
+- [x] System 依赖图：声明式依赖，自动拓扑排序
+- [x] Component 纯数据化：MemoryComponent / WorldConfigComponent / ActionComponent
+- [x] 测试补充：human +28 / core +9 / plant +2 = +39 测试
+- [x] WorldEventBus：每 World 独立事件总线
+- [x] ComponentSerializer：统一序列化框架
 
-### v4.0 分布式模拟
+### v4.1 计划
+- [ ] 更多 Component 纯数据化（剩余 40+ 个含方法 Component）
+- [ ] 各模块 README 补充
+- [ ] API 文档自动生成
+- [ ] 季节系统细化（纬度、海拔影响）
+
+### v5.0 分布式模拟
 - [ ] 多进程/多机分布式
 - [ ] 机器学习驱动的行为系统
 - [ ] 3D 可视化支持
@@ -147,6 +155,13 @@
 
 | 债务 | 优先级 | 状态 | 计划版本 |
 |------|--------|------|----------|
-| 各模块 README 缺失 | 低 | ⚠️ 待补充 | v3.1 |
-| API 文档自动生成 | 低 | ⚠️ 待实现 | v3.1 |
-| 类型注解覆盖率提升 | 中 | ⚠️ 待提升 | v3.1 |
+| World 职责过重 | P0 | ✅ v4.0 已拆分 | v4.0 |
+| Archetype 存储 | P0 | ✅ v4.0 已实现 | v4.0 |
+| System 依赖图 | P1 | ✅ v4.0 已实现 | v4.0 |
+| Component 纯数据化 | P1 | ✅ v4.0 已迁移核心组件 | v4.0 |
+| 测试覆盖均衡 | P1 | ✅ v4.0 已补充 | v4.0 |
+| 事件总线隔离 | P2 | ✅ v4.0 已实现 | v4.0 |
+| 统一序列化 | P2 | ✅ v4.0 已实现 | v4.0 |
+| 各模块 README 缺失 | 低 | ⚠️ 待补充 | v4.1 |
+| API 文档自动生成 | 低 | ⚠️ 待实现 | v4.1 |
+| 类型注解覆盖率提升 | 中 | ⚠️ 待提升 | v4.1 |

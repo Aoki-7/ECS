@@ -1,3 +1,16 @@
+"""
+系统包 — 业务逻辑与行为处理
+
+依赖：
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - resource/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
@@ -29,3 +42,4 @@ __all__ = [
     "AnimalPerceptionSystem",
     "AnimalLearningSystem",
 ]
+

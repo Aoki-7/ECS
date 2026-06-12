@@ -1,3 +1,14 @@
+"""
+出生包 — 繁殖与新生儿创建
+
+依赖：
+    - biology.lifecycle/
+    - core/
+    - identity/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -15,3 +26,4 @@
     - 动物/人类：BiologyReproductionSystem 判定配对成功后生成 PregnancyComponent
     - 植物：BiologyReproductionSystem 判定成熟后生成 SeedComponent 或直接萌芽
 """
+

@@ -1,3 +1,12 @@
+"""
+水包 — 水体、水源、水分资源
+
+依赖：
+    - core/
+    - biology/
+    - environment/
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -16,3 +25,4 @@
     - 人类通过 DrinkSystem 从水源获取水分
     - 水质影响健康（污染水源可能导致 DiseaseSystem 触发）
 """
+

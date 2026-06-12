@@ -1,3 +1,16 @@
+"""
+可视化层 — 仪表盘、实时图表、HTML 导出
+
+职责：
+    - 实时可视化仪表盘
+    - WebSocket 后端 + Canvas 前端
+    - 世界状态图表、事件日志、性能监控
+
+依赖：
+    - core/
+    - application/
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -27,3 +40,4 @@ __all__ = [
     "HumanObservationSystem",
     "HumanObservationComponent",
 ]
+

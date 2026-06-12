@@ -1,3 +1,15 @@
+"""
+组件包 — 纯数据组件定义
+
+依赖：
+    - environment.soil/
+    - core/
+    - space/
+    - time_module/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''

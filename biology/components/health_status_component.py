@@ -19,9 +19,10 @@ from dataclasses import dataclass, field
 from typing import List
 
 from core.component import Component
+from core.component_serializer import register_component
 
 
-@dataclass(slots=True)
+@dataclass
 class WoundRecord:
     """伤口记录"""
     type: str                    # 伤口类型：physical, bleeding, poison, fracture
@@ -31,6 +32,7 @@ class WoundRecord:
     duration: float = -1.0       # 持续时间，-1 表示永久
 
 
+@register_component
 @dataclass(slots=True)
 class HealthStatusComponent(Component):
     """

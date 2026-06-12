@@ -1,3 +1,14 @@
+"""
+分解者系统 — 尸体分解、养分循环、土壤肥力
+
+职责：
+
+依赖：
+    - core/
+    - biology/
+    - environment/
+
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -26,3 +37,4 @@ __all__ = [
     "DecompositionComponent",
     "DecomposerSystem",
 ]
+

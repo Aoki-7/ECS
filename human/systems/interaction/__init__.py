@@ -1,3 +1,21 @@
+"""
+交互包 — 采集、使用、操作
+
+依赖：
+    - human.systems/
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -12,3 +30,4 @@
     - interaction/ 关注个体执行层面的建造/制造
     - civilization/ 关注群体层面的建筑规划和科技发展
 """
+

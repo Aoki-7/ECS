@@ -1,3 +1,15 @@
+"""
+系统包 — 业务逻辑与行为处理
+
+依赖：
+    - environment.terrain/
+    - core/
+    - space/
+    - time_module/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -13,3 +25,4 @@
     - 山地    : 低通行性，提供石材和矿产，温度随海拔降低
     - 沙漠    : 低水源，高蒸发，昼夜温差大
 """
+

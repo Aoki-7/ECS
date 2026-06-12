@@ -1,3 +1,20 @@
+"""
+规则包 — 约束、道德、法律、习俗
+
+依赖：
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -13,3 +30,4 @@
     - rules/ 处理通用资源转换（腐败、风化）
     - human/rules/ 处理人类社会特有的行为约束和进阶规则
 """
+

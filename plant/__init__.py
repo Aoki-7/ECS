@@ -1,3 +1,21 @@
+"""
+植物系统 — 植物实体、光合作用、种子传播、水分吸收、地形适应
+
+职责：
+    - 植物实体工厂与物种预设
+    - 光合作用、种子传播、水分吸收、地形适应
+    - 与 environment/ 深度耦合（光照/土壤/气候）
+
+依赖：
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - resource/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -120,3 +138,4 @@ __all__ = [
     "PlantWaterUptakeSystem",
     "TerrainAdaptationSystem",
 ]
+

@@ -1,3 +1,7 @@
+"""
+规则包 — 约束、道德、法律、习俗
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -41,3 +45,4 @@ __all__ = [
     "resource_depletion_condition",
     "resource_depletion_transform",
 ]
+

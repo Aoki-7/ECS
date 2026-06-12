@@ -1,3 +1,21 @@
+"""
+社交包 — 关系、配对、繁衍、部落、对话
+
+依赖：
+    - human.systems/
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -13,3 +31,4 @@
     - social/ 的 ReproductionSystem 处理人类特有的社会性繁衍（择偶、育儿）
     - biology/lifecycle/birth/ 处理通用的出生创建逻辑
 """
+

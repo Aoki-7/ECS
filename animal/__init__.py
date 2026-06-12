@@ -1,3 +1,21 @@
+"""
+动物系统 — 动物实体创建、行为、生态交互（食草/捕食/社交/迁徙）
+
+职责：
+    - 动物实体工厂与物种预设
+    - 食草/捕食/社交/迁徙等行为系统
+    - 与 plant/、environment/ 生态交互
+
+依赖：
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - resource/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -79,3 +97,4 @@ __all__ = [
     "AnimalPerceptionSystem",
     "AnimalLearningSystem",
 ]
+

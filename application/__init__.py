@@ -1,3 +1,25 @@
+"""
+应用层 — 模拟循环、世界构建、入口程序
+
+职责：
+    - 模拟入口与主循环
+    - 世界构建、系统注册、运行控制
+    - 整合所有子系统形成完整模拟
+
+依赖：
+    - core/
+    - biology/
+    - animal/
+    - human/
+    - plant/
+    - environment/
+    - civilization/
+    - space/
+    - time_module/
+    - memory_layer/
+    - save_load/
+
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 #!/usr/bin/env python3
@@ -19,3 +41,4 @@ application/ — 应用层
 from .simulation_loop import SimulationLoop
 
 __all__ = ["SimulationLoop"]
+

@@ -1,3 +1,12 @@
+"""
+身份系统 — 实体分类、子类别、标签管理
+
+职责：
+
+依赖：
+    - core/
+
+"""
 from .category import EntityCategory
 from .subcategory import (
     HumanSubCategory, AnimalSubCategory, PlantSubCategory, MicrobeSubCategory,
@@ -21,3 +30,4 @@ __all__ = [
     "EventLogComponent",
     "EventLogSystem",
 ]
+

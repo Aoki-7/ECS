@@ -1,3 +1,25 @@
+"""
+人类系统 — 最复杂的智能实体（认知、社交、经济、行动流水线）
+
+职责：
+    - 人类实体：最复杂的智能生物
+    - 行为流水线：感知 → 情绪 → 思维 → 目标 → 决策 → 行动
+    - 社交、经济、文明等高级功能
+
+依赖：
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - animal/
+    - plant/
+    - resource/
+    - civilization/
+    - memory_layer/
+
+版本：v4.0
+
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -39,3 +61,4 @@ from .human_factory import HumanFactory
 __all__ = [
     "HumanFactory",
 ]
+
