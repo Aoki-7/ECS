@@ -1,20 +1,12 @@
 """
-人类系统 — 最复杂的智能实体（认知、社交、经济、行动流水线） 的 子模块
+human/components/health 子模块
 
-依赖：
-    - human.components/
+依赖:
+    - human/
     - core/
     - biology/
-    - space/
-    - environment/
-    - animal/
-    - plant/
-    - resource/
-    - civilization/
-    - memory_layer/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -30,4 +22,5 @@
     - health/ 处理结构层面的损伤（伤口、骨折）
     - biology/ 的 HealthStatusComponent 提供综合健康评估
 """
+
 

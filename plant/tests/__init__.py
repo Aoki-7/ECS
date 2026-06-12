@@ -1,13 +1,11 @@
 """
-测试包 — 单元测试与集成测试
+植物测试包 — 工厂/组件/系统全覆盖
 
-依赖：
+依赖:
+    - plant/
     - core/
     - biology/
-    - space/
     - environment/
-    - resource/
 
-版本：v4.0
-
+版本: v4.0
 """

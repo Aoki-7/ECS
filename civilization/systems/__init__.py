@@ -1,14 +1,14 @@
 """
-系统包 — 业务逻辑与行为处理
+文明系统包 — 阶段检测、资源采集、建筑、贸易、科技
 
-依赖：
+依赖:
+    - civilization/
     - core/
     - human/
     - resource/
     - environment/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -26,4 +26,5 @@
     - 通常在 SimulationLoop 中以 priority 70 执行
     - 位于所有个体系统之后，基于聚合数据做群体级判定
 """
+
 

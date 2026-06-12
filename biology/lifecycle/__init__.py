@@ -1,12 +1,11 @@
 """
-生命周期包 — 出生、成长、衰老、死亡
+生命周期子模块 — 出生、成长、衰老、死亡
 
-依赖：
+依赖:
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
@@ -25,4 +24,5 @@ biology/lifecycle/ — 生命周期子领域
     - 死亡执行由 death/systems/death_system.py 统一处理
     - 尸体处理由 corpse/systems/corpse_system.py 负责
 """
+
 

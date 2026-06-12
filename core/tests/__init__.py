@@ -1,6 +1,8 @@
 """
-测试包 — 单元测试与集成测试
+核心测试包 — Entity/Component/System/World/管理器
 
-版本：v4.0
+依赖:
+    - core/
 
+版本: v4.0
 """

@@ -1,14 +1,12 @@
 """
-组件包 — 纯数据组件定义
+土壤组件包 — 土壤水分、温度、养分
 
-依赖：
-    - environment.soil/
+依赖:
+    - environment/soil/
+    - environment/
     - core/
-    - space/
-    - time_module/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
@@ -32,3 +30,4 @@ __all__ = [
     "SoilQualityComponent",
     "SoilTemperatureComponent",
 ]
+

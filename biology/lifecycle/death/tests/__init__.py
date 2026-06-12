@@ -1,11 +1,11 @@
 """
-测试包 — 单元测试与集成测试
+死亡测试包 — 死亡触发、尸体生成、分解
 
-依赖：
-    - biology.lifecycle.death/
+依赖:
+    - biology/lifecycle/death/
+    - biology/lifecycle/
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """

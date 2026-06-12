@@ -1,20 +1,12 @@
 """
-战斗包 — 战斗属性、攻击、防御
+human/components/combat 子模块
 
-依赖：
-    - human.components/
+依赖:
+    - human/
     - core/
     - biology/
-    - space/
-    - environment/
-    - animal/
-    - plant/
-    - resource/
-    - civilization/
-    - memory_layer/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -27,4 +19,5 @@
     - DefenseComponent    : 防御姿态与护甲值
     - 未来扩展：TacticComponent, FormationComponent
 """
+
 

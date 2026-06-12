@@ -1,20 +1,15 @@
 """
-战斗包 — 战斗属性、攻击、防御
+human/systems/combat 子模块
 
-依赖：
-    - human.systems/
+依赖:
+    - human/
     - core/
     - biology/
     - space/
     - environment/
-    - animal/
-    - plant/
-    - resource/
-    - civilization/
     - memory_layer/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -30,4 +25,5 @@
     - 读取 EquipmentComponent 修正攻击力和防御力
     - 武器耐久在战斗中消耗
 """
+
 

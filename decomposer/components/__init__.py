@@ -1,11 +1,12 @@
 """
-组件包 — 纯数据组件定义
+分解者组件包 — 分解状态、养分释放
 
-依赖：
+依赖:
+    - decomposer/
     - core/
     - biology/
-    - environment/
 
+版本: v4.0
 """
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
@@ -19,4 +20,5 @@
 from decomposer.components.decomposition_component import DecompositionComponent
 
 __all__ = ["DecompositionComponent"]
+
 

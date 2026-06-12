@@ -1,11 +1,13 @@
 """
-系统包 — 业务逻辑与行为处理
+分解者系统包 — 尸体分解、土壤肥力更新
 
-依赖：
+依赖:
+    - decomposer/
     - core/
     - biology/
     - environment/
 
+版本: v4.0
 """
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
@@ -19,4 +21,5 @@
 from decomposer.systems.decomposer_system import DecomposerSystem
 
 __all__ = ["DecomposerSystem"]
+
 

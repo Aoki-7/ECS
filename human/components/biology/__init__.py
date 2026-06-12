@@ -1,20 +1,13 @@
 """
-人类系统 — 最复杂的智能实体（认知、社交、经济、行动流水线） 的 子模块
+生理组件包 — 健康、饥饿、口渴、睡眠
 
-依赖：
-    - human.components/
+依赖:
+    - human/components/
+    - human/
     - core/
     - biology/
-    - space/
-    - environment/
-    - animal/
-    - plant/
-    - resource/
-    - civilization/
-    - memory_layer/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -26,4 +19,5 @@
     - 通用的基因、健康、免疫组件请直接从 biology/ 导入
     - 例如：人类特有的寿命预期、衰老曲线等可在此定义
 """
+
 

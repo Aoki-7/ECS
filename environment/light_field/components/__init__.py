@@ -1,14 +1,12 @@
 """
-组件包 — 纯数据组件定义
+光场组件包 — 光照接收、辐射强度
 
-依赖：
-    - environment.light_field/
+依赖:
+    - environment/light_field/
+    - environment/
     - core/
-    - space/
-    - time_module/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -29,4 +27,5 @@
 from .light_field_component import LightFieldComponent
 
 __all__ = ['LightFieldComponent']
+
 

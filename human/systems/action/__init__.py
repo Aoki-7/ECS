@@ -1,20 +1,17 @@
 """
-行动包 — 搜索、移动、进食、采集、建造
+行动系统包 — 调度、搜索、移动、进食、战斗
 
-依赖：
-    - human.systems/
+依赖:
+    - human/systems/
+    - human/
     - core/
-    - biology/
     - space/
     - environment/
     - animal/
     - plant/
     - resource/
-    - civilization/
-    - memory_layer/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -51,4 +48,5 @@ __all__ = [
     'EatSystem',
     'SearchSystem',
 ]
+
 

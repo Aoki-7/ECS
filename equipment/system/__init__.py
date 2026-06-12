@@ -1,6 +1,12 @@
 """
-equipment/system 模块
+装备系统 — 装备穿戴、属性加成、耐久
 
+依赖:
+    - equipment/
+    - core/
+    - human/
+
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -15,4 +21,5 @@ equipment/system 模块
     - 读取人类的 InventoryComponent 获取已装备物品
     - 将装备属性加成写回人类的对应组件（如修正攻击力、防御力）
 """
+
 

@@ -1,11 +1,10 @@
 """
-组件包 — 纯数据组件定义
+生态组件包 — 种群、竞争、共生
 
-依赖：
-    - biology.ecology/
+依赖:
+    - biology/ecology/
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """

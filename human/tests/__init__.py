@@ -1,17 +1,12 @@
 """
-测试包 — 单元测试与集成测试
+人类测试包 — 工厂/组件/系统/行为流水线
 
-依赖：
+依赖:
+    - human/
     - core/
     - biology/
     - space/
     - environment/
-    - animal/
-    - plant/
-    - resource/
-    - civilization/
-    - memory_layer/
 
-版本：v4.0
-
+版本: v4.0
 """

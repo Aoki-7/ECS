@@ -1,13 +1,13 @@
 """
-系统包 — 业务逻辑与行为处理
+衰老系统包 — 代谢下降、修复降低、死亡触发
 
-依赖：
-    - biology.lifecycle.aging/
+依赖:
+    - biology/lifecycle/aging/
+    - biology/lifecycle/
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -17,4 +17,5 @@
 包含：
     - SenescenceSystem : 渐进式生理衰退，降低代谢效率与恢复能力
 """
+
 

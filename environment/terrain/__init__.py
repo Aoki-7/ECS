@@ -1,13 +1,12 @@
 """
-地形包 — 海拔、坡度、地表类型、通行性
+地形子模块 — 海拔、坡度、地表类型、通行性
 
-依赖：
+依赖:
+    - environment/
     - core/
     - space/
-    - time_module/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -51,4 +50,5 @@ __all__ = [
     'get_terrain_config',
     'get_classification_rules',
 ]
+
 

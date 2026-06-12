@@ -1,12 +1,13 @@
 """
-生态包 — 种群动态、物种形成、食物链
+生态子模块 — 种群动态、物种形成、食物链
 
-依赖：
+依赖:
+    - biology/
     - core/
-    - identity/
+    - animal/
+    - plant/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
@@ -51,4 +52,5 @@ __all__ = [
     "TrophicLevelSystem",
     "SpeciationSystem",
 ]
+
 

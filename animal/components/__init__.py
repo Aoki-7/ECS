@@ -1,15 +1,12 @@
 """
-组件包 — 纯数据组件定义
+动物组件包 — 基础属性、需求、社交、记忆、领地、繁殖、感知、学习
 
-依赖：
+依赖:
+    - animal/
     - core/
     - biology/
-    - space/
-    - environment/
-    - resource/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -38,4 +35,5 @@ __all__ = [
     "AnimalPerceptionComponent",
     "AnimalLearningComponent",
 ]
+
 

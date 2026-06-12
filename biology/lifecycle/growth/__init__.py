@@ -1,13 +1,12 @@
 """
-生长包 — 形态发育与体型变化
+生长子模块 — 形态发育与体型变化
 
-依赖：
-    - biology.lifecycle/
+依赖:
+    - biology/lifecycle/
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -27,4 +26,5 @@
     - lifecycle/ 负责"阶段推进"（种子→幼苗→成熟→衰老）
     - 两者通过 LifeCycleComponent 和 MorphologyComponent 数据耦合
 """
+
 

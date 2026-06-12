@@ -1,13 +1,12 @@
 """
-衰老包 — 衰老机制与老年期处理
+衰老子模块 — 衰老机制与老年期处理
 
-依赖：
-    - biology.lifecycle/
+依赖:
+    - biology/lifecycle/
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -27,4 +26,5 @@
     - death/ 负责"死亡判定与执行"
     - aging 过程中产生的健康恶化会被 death 系统检测到并触发死亡
 """
+
 

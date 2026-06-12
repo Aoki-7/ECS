@@ -1,13 +1,12 @@
 """
-死亡包 — 死亡触发与执行
+死亡子模块 — 死亡触发与执行
 
-依赖：
-    - biology.lifecycle/
+依赖:
+    - biology/lifecycle/
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -28,4 +27,5 @@
     - components/ : PendingDeathComponent, DeathCauseComponent
     - systems/    : DeathSystem（死亡执行）、CreatureDeathTriggerSystem（死亡触发检测）
 """
+
 

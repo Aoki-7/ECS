@@ -1,13 +1,13 @@
 """
-系统包 — 业务逻辑与行为处理
+死亡系统包 — 健康检查、寿命检查、死亡执行
 
-依赖：
-    - biology.lifecycle.death/
+依赖:
+    - biology/lifecycle/death/
+    - biology/lifecycle/
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -20,4 +20,5 @@
     - DeathEventSystem           : 记录死亡事件
     - HumanDeathTriggerSystem    : 扫描健康状态，判定是否满足死亡条件
 """
+
 

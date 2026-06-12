@@ -1,12 +1,11 @@
 """
-遗传包 — 基因原子定义与遗传机制
+遗传子模块 — 基因原子定义与遗传机制
 
-依赖：
+依赖:
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -22,4 +21,5 @@
     - genetics/ 提供基因的数据结构和算法
     - GenomeComponent 使用 genetics.Gene 存储个体的完整基因型
 """
+
 

@@ -1,14 +1,12 @@
 """
-系统包 — 业务逻辑与行为处理
+光场系统群 — 直射/散射/地表光照
 
-依赖：
-    - environment.light_field/
+依赖:
+    - environment/light_field/
+    - environment/
     - core/
-    - space/
-    - time_module/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -29,4 +27,5 @@
 from .uv_system import UVSystem
 
 __all__ = ['UVSystem']
+
 

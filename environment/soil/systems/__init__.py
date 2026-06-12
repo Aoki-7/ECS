@@ -1,14 +1,12 @@
 """
-系统包 — 业务逻辑与行为处理
+土壤系统包 — 水分平衡、温度传导、肥力更新
 
-依赖：
-    - environment.soil/
+依赖:
+    - environment/soil/
+    - environment/
     - core/
-    - space/
-    - time_module/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -30,4 +28,5 @@
 from .soil_system import SoilSystem
 
 __all__ = ['SoilSystem']
+
 

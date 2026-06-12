@@ -1,13 +1,12 @@
 """
-组件包 — 纯数据组件定义
+生命周期组件包 — 能量、形态、生命周期阶段
 
-依赖：
-    - biology.lifecycle/
+依赖:
+    - biology/lifecycle/
+    - biology/
     - core/
-    - identity/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -19,4 +18,5 @@
     - MorphologyComponent  : 形态属性（高度、茎粗、冠幅、根系深度）
     - LifeCycleComponent   : 生命周期阶段（种子/幼苗/成熟/衰老/死亡）
 """
+
 

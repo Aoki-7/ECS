@@ -1,20 +1,15 @@
 """
-人类系统 — 最复杂的智能实体（认知、社交、经济、行动流水线） 的 子模块
+human/systems/identity 子模块
 
-依赖：
-    - human.systems/
+依赖:
+    - human/
     - core/
     - biology/
     - space/
     - environment/
-    - animal/
-    - plant/
-    - resource/
-    - civilization/
     - memory_layer/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -30,4 +25,5 @@
     - identity/ 提供身份数据组件（BiologyComponent, SocialComponent）
     - human/systems/identity/ 提供身份逻辑处理
 """
+
 

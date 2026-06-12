@@ -1,20 +1,13 @@
 """
-经济包 — 库存、钱包、交易、资源管理
+经济组件包 — 物品库存、货币资源
 
-依赖：
-    - human.components/
+依赖:
+    - human/components/
+    - human/
     - core/
-    - biology/
-    - space/
-    - environment/
-    - animal/
-    - plant/
     - resource/
-    - civilization/
-    - memory_layer/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -28,4 +21,5 @@
 子目录：
     - inventory/ : 背包系统的详细实现（容量、重量、分类）
 """
+
 

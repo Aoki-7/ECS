@@ -1,15 +1,16 @@
 """
-系统包 — 业务逻辑与行为处理
+动物系统包 — 觅食、捕食、社交、记忆、领地、迁徙、感知、学习
 
-依赖：
+依赖:
+    - animal/
     - core/
     - biology/
     - space/
     - environment/
+    - plant/
     - resource/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -42,4 +43,5 @@ __all__ = [
     "AnimalPerceptionSystem",
     "AnimalLearningSystem",
 ]
+
 

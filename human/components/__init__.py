@@ -1,19 +1,12 @@
 """
-组件包 — 纯数据组件定义
+人类组件包 — 基础/生理/认知/社交/能力/经济/行动
 
-依赖：
+依赖:
+    - human/
     - core/
     - biology/
-    - space/
-    - environment/
-    - animal/
-    - plant/
-    - resource/
-    - civilization/
-    - memory_layer/
 
-版本：v4.0
-
+版本: v4.0
 """
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
@@ -124,4 +117,5 @@ from .economic.inventory.inventory_component import InventoryComponent
 
 # 行动与控制
 from .action.action_component import ActionComponent
+
 

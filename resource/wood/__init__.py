@@ -1,11 +1,12 @@
 """
-木材包 — 木材资源、砍伐、加工
+resource/wood 子模块
 
-依赖：
+依赖:
     - core/
     - biology/
     - environment/
 
+版本: v4.0
 """
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -25,4 +26,5 @@
     - 人类采集木材用于建筑、燃料、工具
     - 干燥木材 vs 湿木材有不同的燃烧效率和腐败速率
 """
+
 
