@@ -108,15 +108,27 @@ ECS/
 ├── memory_layer/           # 统一记忆层（元层服务）
 ├── save_load/              # 统一存档系统
 ├── presentation/           # 可视化工具
-├── doc/                    # 设计文档
-│   ├── DESIGN_PATTERNS.md  # 设计模式
-│   └── TROUBLESHOOTING.md  # 问题排查
-├── reports/                # 巡检与更新报告
-├── README.md               # 本文件
-├── ARCHITECTURE.md         # 架构总览
-├── USER_MANUAL.md          # 使用说明
-├── ROADMAP.md              # 迭代路线图
-└── CHANGELOG.md            # 更新日志
+├── doc/                    # 项目文档
+│   ├── README_WEB.md       # Web 开发套件说明
+│   ├── CHANGELOG.md        # 更新日志
+│   ├── ROADMAP.md          # 迭代路线图
+│   ├── USER_MANUAL.md      # 使用说明
+│   ├── architecture/       # 架构文档
+│   │   ├── ARCHITECTURE.md
+│   │   ├── ARCHITECTURE_DIAGRAM.md
+│   │   ├── ARCHITECTURE_OVERVIEW.md
+│   │   └── DESIGN_v4.0_ARCHITECTURE_REFACTOR.md
+│   ├── design/             # 设计文档
+│   │   └── DESIGN_PATTERNS.md
+│   └── troubleshooting/    # 问题排查
+│       └── TROUBLESHOOTING.md
+├── reports/                # 各类报告
+│   ├── releases/           # 版本发布报告
+│   ├── inspections/        # 巡检报告
+│   ├── updates/            # 更新报告
+│   ├── simulations/        # 模拟/测试/可视化报告
+│   └── analysis/           # 分析类报告
+└── README.md               # 本文件
 ```
 
 ---
@@ -125,12 +137,15 @@ ECS/
 
 | 文档 | 内容 |
 |------|------|
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | 完整架构文档、模块状态、技术债务 |
-| [`USER_MANUAL.md`](USER_MANUAL.md) | 使用说明、API 参考、常见问题 |
-| [`ROADMAP.md`](ROADMAP.md) | 里程碑与迭代计划 |
-| [`CHANGELOG.md`](CHANGELOG.md) | 版本更新日志 |
-| [`doc/DESIGN_PATTERNS.md`](doc/DESIGN_PATTERNS.md) | ECS 架构中的设计模式 |
-| [`doc/TROUBLESHOOTING.md`](doc/TROUBLESHOOTING.md) | 常见问题排查 |
+| [`doc/architecture/ARCHITECTURE.md`](doc/architecture/ARCHITECTURE.md) | 完整架构文档、模块状态、技术债务 |
+| [`doc/USER_MANUAL.md`](doc/USER_MANUAL.md) | 使用说明、API 参考、常见问题 |
+| [`doc/ROADMAP.md`](doc/ROADMAP.md) | 里程碑与迭代计划 |
+| [`doc/CHANGELOG.md`](doc/CHANGELOG.md) | 版本更新日志 |
+| [`doc/architecture/ARCHITECTURE_DIAGRAM.md`](doc/architecture/ARCHITECTURE_DIAGRAM.md) | 模块架构图 |
+| [`doc/architecture/ARCHITECTURE_OVERVIEW.md`](doc/architecture/ARCHITECTURE_OVERVIEW.md) | 全架构总览 |
+| [`doc/design/DESIGN_PATTERNS.md`](doc/design/DESIGN_PATTERNS.md) | ECS 架构中的设计模式 |
+| [`doc/troubleshooting/TROUBLESHOOTING.md`](doc/troubleshooting/TROUBLESHOOTING.md) | 常见问题排查 |
+| [`doc/README_WEB.md`](doc/README_WEB.md) | Web 开发套件说明 |
 | [`animal/README.md`](animal/README.md) | Animal 模块文档 |
 | [`memory_layer/README.md`](memory_layer/README.md) | 统一记忆层文档 |
 

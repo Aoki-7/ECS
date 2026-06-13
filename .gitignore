@@ -20,6 +20,8 @@ Thumbs.db
 
 # Project specific
 *.log
+.ecs_backend.pid
+.ecs_frontend.pid
 
 # Reports
 reports/

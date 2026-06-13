@@ -1,29 +1,48 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-污染扩散系统
+污染扩散系统 — 基于连续统框架的统一扩散
 
-v3.5 新增 — P1
+v4.0 重构：使用 continuum_utils 的通用扩散内核，
+替代原有的独立扩散实现。
 
-职责：
-    - 模拟污染物在空气/水/土壤中的扩散
-    - 污染从污染源向周围传播
-    - 与天气（风速、水流）交互
+物理模型:
+    空气扩散: dC_air/dt = D_air * ∇²C_air * wind_factor - decay
+    水扩散:   dC_water/dt = D_water * ∇²C_water - decay
+    土壤扩散: dC_soil/dt = D_soil * ∇²C_soil - decay
 
-依赖：
-    - PollutionComponent
-    - EnvironmentComponent（风速、水流）
+参数:
+    D_air = 0.05 /h (空气扩散系数)
+    D_water = 0.03 /h (水扩散系数)
+    D_soil = 0.01 /h (土壤扩散系数)
+    decay = 0.001 /h (自然降解速率)
+
+与其他模块的关系:
+    - continuum/: 使用通用扩散内核 (compute_diffusion_flux)
+    - environment/: 读取风速 (wind_speed) 影响空气扩散
+    - pollution/: 读取/写入 PollutionComponent
+
+版本: v4.0
 """
 
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple, Optional
 
 from core.system import System
 from core.world import World
+from core.entity import Entity
 
 from environment.pollution.components.pollution_component import PollutionComponent
 from environment.environment_component import EnvironmentComponent
 from space.space_component import SpaceComponent
+
+from environment.continuum.continuum_utils import (
+    ContinuumCache,
+    resolve_boundary,
+    compute_diffusion_flux,
+    clamp,
+    get_neighbor_offsets,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,133 +51,207 @@ class PollutionDiffusionSystem(System):
     """
     污染扩散系统
 
-    每帧更新：
-    1. 空气污染物随风扩散
-    2. 水污染物随水流扩散
-    3. 土壤污染物缓慢渗透
-    4. 污染浓度自然衰减
+    使用连续统框架的通用扩散内核，统一处理空气/水/土壤污染扩散。
+
+    在管线中应运行在 EnvironmentalContinuumSystem 之后，
+    利用连续统建立的环境梯度进行污染扩散。
     """
 
     tick_interval = 5  # 每5帧执行一次
 
     # 扩散参数
-    AIR_DIFFUSION_RATE = 0.05    # 空气扩散速率
-    WATER_DIFFUSION_RATE = 0.03  # 水扩散速率
-    SOIL_DIFFUSION_RATE = 0.01   # 土壤扩散速率
-    NATURAL_DECAY = 0.001        # 自然降解速率
+    AIR_DIFFUSION_RATE = 0.05    # 空气扩散系数 (1/h)
+    WATER_DIFFUSION_RATE = 0.03  # 水扩散系数 (1/h)
+    SOIL_DIFFUSION_RATE = 0.01   # 土壤扩散系数 (1/h)
+    NATURAL_DECAY = 0.001        # 自然降解速率 (1/h)
+    MAX_CHANGE = 0.1             # 最大单步变化
+
+    def __init__(self, neighborhood: str = "moore"):
+        super().__init__()
+        self._neighbor_offsets = get_neighbor_offsets(neighborhood)
 
     def update(self, world: World, dt: float) -> None:
         """更新污染扩散"""
-        # 空气扩散
-        self._diffuse_air_pollution(world, dt)
+        grid = self._build_grid(world)
+        if not grid:
+            return
+
+        bounds = self._compute_bounds(grid)
+        cache = self._build_cache(world, grid)
+
+        # 空气扩散 (随风速增强)
+        self._diffuse_air(world, cache, grid, dt, bounds)
 
         # 水扩散
-        self._diffuse_water_pollution(world, dt)
+        self._diffuse_water(world, cache, grid, dt, bounds)
 
         # 土壤扩散
-        self._diffuse_soil_pollution(world, dt)
+        self._diffuse_soil(world, cache, grid, dt, bounds)
 
         # 自然降解
-        self._natural_decay(world, dt)
+        self._natural_decay(world, cache, dt)
 
-    def _diffuse_air_pollution(self, world: World, dt: float) -> None:
-        """空气污染物随风扩散"""
-        # 收集所有带污染的实体
-        pollution_entities = []
-        for entity, (pollution, space) in world.get_components(PollutionComponent, SpaceComponent):
-            if pollution is None or space is None:
-                continue
-            if pollution.air_pollution > 0:
-                pollution_entities.append((entity, pollution, space))
-
-        # 扩散到附近实体
-        for entity, pollution, space in pollution_entities:
-            env = world.get_component(entity, EnvironmentComponent)
-            wind_factor = env.wind_speed if env else 1.0
-
-            # 扩散范围
-            diffusion_range = 20 * wind_factor
-
-            for other_entity, (other_pollution, other_space) in world.get_components(
-                PollutionComponent, SpaceComponent
-            ):
-                if other_entity == entity or other_pollution is None:
-                    continue
-
-                dist = ((space.x - other_space.x) ** 2 + (space.y - other_space.y) ** 2) ** 0.5
-                if dist > diffusion_range:
-                    continue
-
-                # 扩散量与距离成反比
-                diffusion_amount = pollution.air_pollution * self.AIR_DIFFUSION_RATE * (1 - dist / diffusion_range) * dt
-
-                # 污染源减少，目标增加
-                pollution.air_pollution -= diffusion_amount
-                other_pollution.air_pollution = min(1.0, other_pollution.air_pollution + diffusion_amount)
-
-    def _diffuse_water_pollution(self, world: World, dt: float) -> None:
-        """水污染物随水流扩散"""
-        pollution_entities = []
-        for entity, (pollution, space) in world.get_components(PollutionComponent, SpaceComponent):
-            if pollution is None or space is None:
-                continue
-            if pollution.water_pollution > 0:
-                pollution_entities.append((entity, pollution, space))
-
-        for entity, pollution, space in pollution_entities:
-            for other_entity, (other_pollution, other_space) in world.get_components(
-                PollutionComponent, SpaceComponent
-            ):
-                if other_entity == entity or other_pollution is None:
-                    continue
-
-                dist = ((space.x - other_space.x) ** 2 + (space.y - other_space.y) ** 2) ** 0.5
-                if dist > 15:  # 水扩散范围较小
-                    continue
-
-                diffusion_amount = pollution.water_pollution * self.WATER_DIFFUSION_RATE * (1 - dist / 15) * dt
-
-                pollution.water_pollution -= diffusion_amount
-                other_pollution.water_pollution = min(1.0, other_pollution.water_pollution + diffusion_amount)
-
-    def _diffuse_soil_pollution(self, world: World, dt: float) -> None:
-        """土壤污染物缓慢渗透"""
-        pollution_entities = []
-        for entity, (pollution, space) in world.get_components(PollutionComponent, SpaceComponent):
-            if pollution is None or space is None:
-                continue
-            if pollution.soil_pollution > 0:
-                pollution_entities.append((entity, pollution, space))
-
-        for entity, pollution, space in pollution_entities:
-            for other_entity, (other_pollution, other_space) in world.get_components(
-                PollutionComponent, SpaceComponent
-            ):
-                if other_entity == entity or other_pollution is None:
-                    continue
-
-                dist = ((space.x - other_space.x) ** 2 + (space.y - other_space.y) ** 2) ** 0.5
-                if dist > 5:  # 土壤扩散范围最小
-                    continue
-
-                diffusion_amount = pollution.soil_pollution * self.SOIL_DIFFUSION_RATE * (1 - dist / 5) * dt
-
-                pollution.soil_pollution -= diffusion_amount
-                other_pollution.soil_pollution = min(1.0, other_pollution.soil_pollution + diffusion_amount)
-
-    def _natural_decay(self, world: World, dt: float) -> None:
-        """污染自然降解"""
-        for entity, (pollution,) in world.get_components(PollutionComponent):
+    def _diffuse_air(self, world: World, cache: Dict, grid: Dict, dt: float,
+                     bounds: Optional[Tuple]) -> None:
+        """空气污染物扩散 — 使用通用扩散内核
+        
+        注意: 此实现使用通量累加方式，确保守恒:
+        - 源减少 = 目标增加 (总污染量守恒)
+        """
+        n_nei = len(self._neighbor_offsets)
+        
+        # 计算每个单元格的净通量 (流出为正，流入为负)
+        net_fluxes = {key: 0.0 for key in grid.keys()}
+        
+        for key, eid in grid.items():
+            pollution = world.get_component(eid, PollutionComponent)
+            env = world.get_component(eid, EnvironmentComponent)
             if pollution is None:
                 continue
 
-            # 所有污染类型都缓慢降解
-            pollution.air_pollution = max(0.0, pollution.air_pollution - self.NATURAL_DECAY * dt)
-            pollution.water_pollution = max(0.0, pollution.water_pollution - self.NATURAL_DECAY * dt)
-            pollution.soil_pollution = max(0.0, pollution.soil_pollution - self.NATURAL_DECAY * dt)
+            wind_factor = env.wind_speed if env else 1.0
+            eff_diff = self.AIR_DIFFUSION_RATE * wind_factor
+
+            for dx, dy in self._neighbor_offsets:
+                nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
+                if nk is None or nk not in grid:
+                    continue
+
+                n_pollution = world.get_component(grid[nk], PollutionComponent)
+                if n_pollution is None:
+                    continue
+
+                # 计算从 key -> nk 的通量
+                flux = compute_diffusion_flux(
+                    pollution.air_pollution, n_pollution.air_pollution,
+                    eff_diff, dt, self.MAX_CHANGE
+                )
+                
+                # compute_diffusion_flux(self, neighbor) 返回从 neighbor -> self 的通量
+                # flux > 0: neighbor 向 self 流入 (self 增加, neighbor 减少)
+                # flux < 0: self 向 neighbor 流出 (self 减少, neighbor 增加)
+                net_fluxes[key] += flux   # key 获得 flux (flux > 0) 或损失 |flux| (flux < 0)
+                net_fluxes[nk] -= flux    # nk 损失 flux (flux > 0) 或获得 |flux| (flux < 0)
+
+        # 应用净通量 (不再除以 n_nei，因为 net_fluxes 已经累加了所有邻居的通量)
+        for key, net_flux in net_fluxes.items():
+            pollution = world.get_component(grid[key], PollutionComponent)
+            if pollution is None:
+                continue
+            pollution.air_pollution += net_flux
+            pollution.air_pollution = clamp(pollution.air_pollution, 0.0, 1.0)
+
+    def _diffuse_water(self, world: World, cache: Dict, grid: Dict, dt: float,
+                       bounds: Optional[Tuple]) -> None:
+        """水污染物扩散"""
+        n_nei = len(self._neighbor_offsets)
+        fluxes = {}
+
+        for key, eid in grid.items():
+            pollution = world.get_component(eid, PollutionComponent)
+            if pollution is None or pollution.water_pollution <= 0:
+                continue
+
+            net_flux = 0.0
+            for dx, dy in self._neighbor_offsets:
+                nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
+                if nk is None or nk not in grid:
+                    continue
+
+                n_pollution = world.get_component(grid[nk], PollutionComponent)
+                if n_pollution is None:
+                    continue
+
+                net_flux += compute_diffusion_flux(
+                    pollution.water_pollution, n_pollution.water_pollution,
+                    self.WATER_DIFFUSION_RATE, dt, self.MAX_CHANGE
+                )
+
+            fluxes[key] = net_flux
+
+        for key, net_flux in fluxes.items():
+            pollution = world.get_component(grid[key], PollutionComponent)
+            if pollution is None:
+                continue
+            pollution.water_pollution += net_flux / n_nei
+            pollution.water_pollution = clamp(pollution.water_pollution, 0.0, 1.0)
+
+    def _diffuse_soil(self, world: World, cache: Dict, grid: Dict, dt: float,
+                      bounds: Optional[Tuple]) -> None:
+        """土壤污染物扩散"""
+        n_nei = len(self._neighbor_offsets)
+        fluxes = {}
+
+        for key, eid in grid.items():
+            pollution = world.get_component(eid, PollutionComponent)
+            if pollution is None or pollution.soil_pollution <= 0:
+                continue
+
+            net_flux = 0.0
+            for dx, dy in self._neighbor_offsets:
+                nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
+                if nk is None or nk not in grid:
+                    continue
+
+                n_pollution = world.get_component(grid[nk], PollutionComponent)
+                if n_pollution is None:
+                    continue
+
+                net_flux += compute_diffusion_flux(
+                    pollution.soil_pollution, n_pollution.soil_pollution,
+                    self.SOIL_DIFFUSION_RATE, dt, self.MAX_CHANGE
+                )
+
+            fluxes[key] = net_flux
+
+        for key, net_flux in fluxes.items():
+            pollution = world.get_component(grid[key], PollutionComponent)
+            if pollution is None:
+                continue
+            pollution.soil_pollution += net_flux / n_nei
+            pollution.soil_pollution = clamp(pollution.soil_pollution, 0.0, 1.0)
+
+    def _natural_decay(self, world: World, cache: Dict, dt: float) -> None:
+        """污染自然降解"""
+        for key, eid in cache.items():
+            pollution = world.get_component(eid, PollutionComponent)
+            if pollution is None:
+                continue
+
+            decay = self.NATURAL_DECAY * dt
+            pollution.air_pollution = max(0.0, pollution.air_pollution - decay)
+            pollution.water_pollution = max(0.0, pollution.water_pollution - decay)
+            pollution.soil_pollution = max(0.0, pollution.soil_pollution - decay)
 
             # 污染物浓度降解
             for pollutant_type in list(pollution.pollutants.keys()):
-                pollution.pollutants[pollutant_type] = max(0.0, pollution.pollutants[pollutant_type] - self.NATURAL_DECAY * 10 * dt)
+                pollution.pollutants[pollutant_type] = max(
+                    0.0, pollution.pollutants[pollutant_type] - decay * 10
+                )
                 if pollution.pollutants[pollutant_type] <= 0:
                     del pollution.pollutants[pollutant_type]
+
+    def _build_grid(self, world: World) -> Dict[Tuple[int, int], Entity]:
+        """构建网格索引"""
+        grid = {}
+        for entity, (space, pollution) in world.get_components(SpaceComponent, PollutionComponent):
+            if space is None or pollution is None:
+                continue
+            key = (int(space.x), int(space.y))
+            grid[key] = entity
+        return grid
+
+    def _compute_bounds(self, grid: Dict) -> Optional[Tuple[int, int, int, int]]:
+        """计算网格边界"""
+        if not grid:
+            return None
+        xs = [k[0] for k in grid.keys()]
+        ys = [k[1] for k in grid.keys()]
+        return min(xs), max(xs), min(ys), max(ys)
+
+    def _build_cache(self, world: World, grid: Dict) -> Dict:
+        """构建缓存"""
+        cache = {}
+        for key, eid in grid.items():
+            cache[key] = eid
+        return cache

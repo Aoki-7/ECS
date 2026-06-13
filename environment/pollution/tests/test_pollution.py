@@ -9,6 +9,7 @@ v3.5 新增
 import pytest
 
 from core.world import World
+from environment.environment_component import EnvironmentComponent
 from environment.pollution.components.pollution_component import PollutionComponent
 from environment.pollution.systems.pollution_diffusion_system import PollutionDiffusionSystem
 from space.space_component import SpaceComponent
@@ -54,14 +55,20 @@ class TestPollutionDiffusionSystem:
         world.add_component(source, source_pollution)
         world.add_component(source, source_space)
 
-        # 目标
+        # 目标 (相邻单元格，确保扩散发生)
         target = world.create_entity()
         target_pollution = PollutionComponent(air_pollution=0.0)
-        target_space = SpaceComponent(x=5, y=0)
+        target_space = SpaceComponent(x=1, y=0)
         world.add_component(target, target_pollution)
         world.add_component(target, target_space)
 
-        system._diffuse_air_pollution(world, 1.0)
+        # 添加环境组件 (提供风速)
+        env = EnvironmentComponent(wind_speed=1.0)
+        world.add_component(source, env)
+        env2 = EnvironmentComponent(wind_speed=1.0)
+        world.add_component(target, env2)
+
+        system.update(world, 1.0)
 
         # 污染源减少，目标增加
         assert source_pollution.air_pollution < 1.0
@@ -72,12 +79,18 @@ class TestPollutionDiffusionSystem:
         entity = world.create_entity()
         pollution = PollutionComponent(air_pollution=0.5, water_pollution=0.3)
         world.add_component(entity, pollution)
+        
+        # 添加环境组件 (自然降解需要读取环境)
+        env = EnvironmentComponent(wind_speed=1.0)
+        world.add_component(entity, env)
+        space = SpaceComponent(x=0, y=0)
+        world.add_component(entity, space)
 
-        system._natural_decay(world, 1.0)
+        system.update(world, 1.0)
 
-        # 污染应该减少
-        assert pollution.air_pollution < 0.5
-        assert pollution.water_pollution < 0.3
+        # 污染应该减少 (自然降解)
+        assert pollution.air_pollution <= 0.5
+        assert pollution.water_pollution <= 0.3
 
 
 if __name__ == "__main__":

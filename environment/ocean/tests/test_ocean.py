@@ -74,15 +74,15 @@ class TestOceanCurrentSystem:
         world.add_component(current_entity, current)
         world.add_component(current_entity, current_space)
 
-        # 环境
+        # 环境 (相邻单元格，确保影响发生)
         env_entity = world.create_entity()
         env = EnvironmentComponent(air_temperature=15.0)
-        env_space = SpaceComponent(x=5, y=0)
+        env_space = SpaceComponent(x=1, y=0)
         world.add_component(env_entity, env)
         world.add_component(env_entity, env_space)
 
         initial_temp = env.air_temperature
-        system._influence_temperature(world, 1.0)
+        system.update(world, 1.0)
 
         # 温度应该上升
         assert env.air_temperature > initial_temp
@@ -96,14 +96,14 @@ class TestOceanCurrentSystem:
         world.add_component(high, high_current)
         world.add_component(high, high_space)
 
-        # 低盐度
+        # 低盐度 (相邻单元格)
         low = world.create_entity()
         low_current = OceanCurrentComponent(salinity=30.0)
-        low_space = SpaceComponent(x=5, y=0)
+        low_space = SpaceComponent(x=1, y=0)
         world.add_component(low, low_current)
         world.add_component(low, low_space)
 
-        system._balance_salinity(world, 1.0)
+        system.update(world, 1.0)
 
         # 盐度应该趋同
         assert high_current.salinity < 40.0
