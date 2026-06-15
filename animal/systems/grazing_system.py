@@ -58,7 +58,11 @@ class GrazingSystem(System):
                 continue
 
             pheno = world.get_component(entity, PhenotypeComponent)
+            if pheno is None:
+                pheno = PhenotypeComponent()  # 使用默认表型
             morph = world.get_component(entity, MorphologyComponent)
+            if morph is None:
+                morph = MorphologyComponent()  # 使用默认形态
             max_graze, efficiency = self._derive_grazing_params(pheno, morph)
 
             # 记忆驱动：优先尝试记忆中的食物位置

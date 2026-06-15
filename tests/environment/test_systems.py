@@ -4,7 +4,7 @@
 系统单元测试 —— 所有独立环境系统的输入/输出行为验证
 """
 
-from environment.tests.base import T, build_test_world, setup_weather_world, setup_light_world
+from tests.environment.base import T, build_test_world, setup_weather_world, setup_light_world
 
 
 # ════════════════════════════════════════════════════════════

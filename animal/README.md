@@ -222,13 +222,13 @@ SPECIES_PRESETS = {
 ```bash
 # 运行全部测试
 cd D:\个人助手\workspace\ECS
-python -m pytest animal/tests/ -v
+python -m pytest tests/animal/ -v
 
 # 运行 P1 测试
-python -m pytest animal/tests/test_animal_module.py -v
+python -m pytest tests/animal/test_animal_module.py -v
 
 # 运行 P2 测试
-python -m pytest animal/tests/test_animal_module_p2.py -v
+python -m pytest tests/animal/test_animal_module_p2.py -v
 ```
 
 **当前状态**: 25/25 测试通过

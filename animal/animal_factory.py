@@ -271,7 +271,7 @@ class AnimalFactory:
             )
 
             # 构建基因：name 用于调试和日志，expression_target 用于表型映射
-            genome.add_gene(
+            genome.genes.append(
                 Gene(
                     name=f"{species.upper()}_{trait_name.upper()}",
                     expression_target=trait_name,

@@ -39,6 +39,8 @@ class AnimalNeedsSystem(System):
             AnimalComponent, AnimalNeedsComponent, EnergyComponent
         ):
             pheno = world.get_component(entity, PhenotypeComponent)
+            if pheno is None:
+                pheno = PhenotypeComponent()  # 使用默认表型
             self._update_hunger(needs, energy, pheno, dt)
             self._update_thirst(needs, pheno, dt)
             self._update_sleepiness(needs, animal, dt)

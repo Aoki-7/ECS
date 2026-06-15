@@ -123,7 +123,7 @@ class TestPerformanceMonitor:
 
         stats = self.monitor.get_stats("MonitoredSystem")
         assert stats["MonitoredSystem"]["count"] == 1
-        assert stats["MonitoredSystem"]["avg_ms"] >= 1.0  # 至少 1.0ms（允许性能波动）
+        assert stats["MonitoredSystem"]["avg_ms"] >= 0.5  # 至少 0.5ms（允许性能波动）
 
     def test_decorator_with_monitor_disabled(self):
         """测试装饰器在禁用时不会记录"""

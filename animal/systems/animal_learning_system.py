@@ -22,7 +22,7 @@ from core.system import System
 from core.world import World
 
 from animal.components.animal_component import AnimalComponent
-from animal.components.animal_learning_component import AnimalLearningComponent
+from animal.components.animal_learning_component import AnimalLearningComponent, BehaviorRecord
 from animal.components.animal_needs_component import AnimalNeedsComponent
 from animal.components.animal_perception_component import AnimalPerceptionComponent
 from animal.components.animal_memory_component import AnimalMemoryComponent
@@ -49,6 +49,59 @@ class AnimalLearningSystem(System):
             # 更新敏感化（对强烈刺激）
             self._update_sensitizations(world, entity, learning, needs)
 
+    # ── 静态工具方法（供外部调用，保持向后兼容） ──
+
+    @staticmethod
+    def record_behavior(learning: AnimalLearningComponent, behavior: str, context: str, outcome: float) -> None:
+        """记录一次行为及其结果"""
+        # 查找是否已有相同行为-上下文记录
+        for record in learning.behavior_records:
+            if record.behavior == behavior and record.context == context:
+                # 更新现有记录（加权平均）
+                total = record.outcome * record.count + outcome
+                record.count += 1
+                record.outcome = total / record.count
+                return
+
+        # 新增记录
+        if len(learning.behavior_records) >= learning.max_records:
+            # 淘汰最弱的记录
+            learning.behavior_records.sort(key=lambda r: abs(r.outcome))
+            learning.behavior_records.pop(0)
+
+        learning.behavior_records.append(BehaviorRecord(behavior, context, outcome))
+
+    @staticmethod
+    def get_behavior_value(learning: AnimalLearningComponent, behavior: str, context: str) -> float:
+        """获取某行为在特定上下文中的预期价值"""
+        for record in learning.behavior_records:
+            if record.behavior == behavior and record.context == context:
+                return record.outcome
+        return 0.0  # 未知行为中性评价
+
+    @staticmethod
+    def update_habituation(learning: AnimalLearningComponent, stimulus: str, exposure_count: int) -> None:
+        """更新习惯化程度：重复暴露导致反应减弱"""
+        import math
+        learning.habituation[stimulus] = 1.0 - math.exp(-exposure_count / 10.0)
+
+    @staticmethod
+    def update_sensitization(learning: AnimalLearningComponent, stimulus: str, intensity: float) -> None:
+        """更新敏感化：强烈刺激导致反应增强"""
+        current = learning.sensitization.get(stimulus, 0.0)
+        learning.sensitization[stimulus] = min(1.0, current + intensity * learning.learning_rate)
+
+    @staticmethod
+    def get_best_behavior(learning: AnimalLearningComponent, context: str) -> str | None:
+        """获取在特定上下文中最优的行为"""
+        best_value = -float('inf')
+        best_behavior = None
+        for record in learning.behavior_records:
+            if record.context == context and record.outcome > best_value:
+                best_value = record.outcome
+                best_behavior = record.behavior
+        return best_behavior
+
     def _evaluate_recent_behavior(
         self, world: World, entity, animal: AnimalComponent,
         learning: AnimalLearningComponent, needs: AnimalNeedsComponent
@@ -64,19 +117,19 @@ class AnimalLearningSystem(System):
         # 饥饿需求变化
         if needs.hunger < 0.3:
             # 饥饿降低 → 觅食行为成功
-            learning.record_behavior("graze", context, 0.8)
+            AnimalLearningSystem.record_behavior(learning, "graze", context, 0.8)
         elif needs.hunger > 0.8:
             # 饥饿升高 → 觅食行为失败
-            learning.record_behavior("graze", context, -0.5)
+            AnimalLearningSystem.record_behavior(learning, "graze", context, -0.5)
 
         # 恐惧需求变化
         if needs.fear > 0.7:
             # 恐惧升高 → 可能遭遇威胁
-            learning.record_behavior("flee", context, 0.6)
-            learning.update_sensitization("predator", 0.3)
+            AnimalLearningSystem.record_behavior(learning, "flee", context, 0.6)
+            AnimalLearningSystem.update_sensitization(learning, "predator", 0.3)
         elif needs.fear < 0.2:
             # 恐惧降低 → 环境安全
-            learning.record_behavior("explore", context, 0.4)
+            AnimalLearningSystem.record_behavior(learning, "explore", context, 0.4)
 
     def _derive_context(
         self, perception: AnimalPerceptionComponent, needs: AnimalNeedsComponent
@@ -118,7 +171,7 @@ class AnimalLearningSystem(System):
             if entity_type == "plant":
                 # 植物是安全的，频繁出现会导致习惯化
                 current_count = learning.habituation.get("plant", 0) * 10
-                learning.update_habituation("plant", int(current_count) + 1)
+                AnimalLearningSystem.update_habituation(learning, "plant", int(current_count) + 1)
 
     def _update_sensitizations(
         self, world: World, entity,
@@ -127,8 +180,8 @@ class AnimalLearningSystem(System):
         """更新敏感化程度"""
         # 高恐惧状态增强对威胁的敏感化
         if needs.fear > 0.8:
-            learning.update_sensitization("predator", 0.5)
-            learning.update_sensitization("danger", 0.3)
+            AnimalLearningSystem.update_sensitization(learning, "predator", 0.5)
+            AnimalLearningSystem.update_sensitization(learning, "danger", 0.3)
 
         # 自然衰减敏感化
         for stimulus in list(learning.sensitization.keys()):

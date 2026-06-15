@@ -4,7 +4,7 @@
 组件单元测试 —— 所有环境相关组件的创建、属性、边界值、序列化
 """
 
-from environment.tests.base import T, build_test_world
+from tests.environment.base import T, build_test_world
 
 # ---------------------------------------------
 # 核心环境组件

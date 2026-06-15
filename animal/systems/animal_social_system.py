@@ -204,7 +204,8 @@ class AnimalSocialSystem(System):
     def _decay_relationships(self, world: World, dt: float) -> None:
         """衰减所有社交关系"""
         decay_rate = 0.001 * dt
-        for entity, social in world.get_components(AnimalSocialComponent):
+        # 使用 list() 复制避免迭代修改风险
+        for entity, social in list(world.get_components(AnimalSocialComponent)):
             # 衰减关系分数
             to_remove = []
             for other_id, score in social.relationship_scores.items():

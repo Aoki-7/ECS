@@ -62,7 +62,11 @@ class PredationSystem(System):
     ) -> None:
         """处理单个捕食者的行为"""
         pred_pheno = world.get_component(entity, PhenotypeComponent)
+        if pred_pheno is None:
+            pred_pheno = PhenotypeComponent()  # 使用默认表型
         pred_morph = world.get_component(entity, MorphologyComponent)
+        if pred_morph is None:
+            pred_morph = MorphologyComponent()  # 使用默认形态
 
         if not self._can_attack(entity, pred_pheno):
             return

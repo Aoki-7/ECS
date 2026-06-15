@@ -6,7 +6,7 @@
 
 import math
 
-from environment.tests.base import T, build_test_world, setup_weather_world, setup_light_world
+from tests.environment.base import T, build_test_world, setup_weather_world, setup_light_world
 
 
 # ════════════════════════════════════════════════════════════

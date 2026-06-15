@@ -26,11 +26,11 @@
 运行方式
 ============================================================
 
-python -m environment.physics_weather.test
+python -m pytest tests/environment/physics_weather/test_physics_weather.py
 
 或：
 
-python environment/physics_weather/test.py
+python tests/environment/physics_weather/test_physics_weather.py
 """
 
 import math

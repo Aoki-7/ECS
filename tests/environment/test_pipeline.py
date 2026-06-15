@@ -7,7 +7,7 @@
 import io
 import sys as _sys
 
-from environment.tests.base import T, build_test_world, setup_weather_world
+from tests.environment.base import T, build_test_world, setup_weather_world
 
 
 # ════════════════════════════════════════════════════════════

@@ -43,6 +43,40 @@ class AnimalReproductionSystem(System):
         self._rng = random.Random(seed)
         self._tick_counter = 0
 
+    # ── 静态工具方法（供外部调用） ──
+
+    @staticmethod
+    def is_ready(repro: AnimalReproductionComponent, current_tick: int) -> bool:
+        """检查是否已过冷却期"""
+        return (current_tick - repro.last_reproduction_tick) >= repro.cooldown_ticks
+
+    @staticmethod
+    def record_reproduction(repro: AnimalReproductionComponent, current_tick: int) -> None:
+        """记录一次繁殖"""
+        repro.last_reproduction_tick = current_tick
+        repro.reproduction_count += 1
+
+    @staticmethod
+    def start_pregnancy(repro: AnimalReproductionComponent, current_tick: int, mate_id: int) -> None:
+        """开始怀孕"""
+        repro.is_pregnant = True
+        repro.pregnancy_tick = current_tick
+        repro.mate_id = mate_id
+
+    @staticmethod
+    def check_birth_ready(repro: AnimalReproductionComponent, current_tick: int) -> bool:
+        """检查是否到分娩时间"""
+        if not repro.is_pregnant:
+            return False
+        return (current_tick - repro.pregnancy_tick) >= repro.pregnancy_duration
+
+    @staticmethod
+    def give_birth(repro: AnimalReproductionComponent) -> None:
+        """分娩后重置状态"""
+        repro.is_pregnant = False
+        repro.pregnancy_tick = 0
+        repro.mate_id = -1
+
     def update(self, world: World, dt: float = 1.0) -> None:
         """执行动物繁衍更新"""
         self._tick_counter += 1
@@ -63,7 +97,7 @@ class AnimalReproductionSystem(System):
 
             # 处理怀孕分娩
             if repro.is_pregnant and animal.gender == "female":
-                if repro.check_birth_ready(self._tick_counter):
+                if AnimalReproductionSystem.check_birth_ready(repro, self._tick_counter):
                     self._give_birth(world, entity, animal, repro, genome, space)
                 continue
 
@@ -83,7 +117,7 @@ class AnimalReproductionSystem(System):
         self, entity, repro: AnimalReproductionComponent, energy: EnergyComponent
     ) -> bool:
         """检查繁殖条件：冷却期 + 能量阈值"""
-        if not repro.is_ready(self._tick_counter):
+        if not AnimalReproductionSystem.is_ready(repro, self._tick_counter):
             return False
 
         # 能量阈值：至少 30% 最大能量
@@ -129,11 +163,11 @@ class AnimalReproductionSystem(System):
 
         # 更新冷却期
         repro.cooldown_ticks = max(3, int(30.0 / (metabolism * 100 + 0.5)))
-        repro.record_reproduction(self._tick_counter)
+        AnimalReproductionSystem.record_reproduction(repro, self._tick_counter)
 
         if animal.gender == "female":
             # 雌性进入怀孕状态
-            repro.start_pregnancy(self._tick_counter, mate_id)
+            AnimalReproductionSystem.start_pregnancy(repro, self._tick_counter, mate_id)
             logger.debug(
                 f"[Reproduction] E{entity.id}({animal.species}) 怀孕，"
                 f"配偶 E{mate_id}，冷却期 {repro.cooldown_ticks} ticks"

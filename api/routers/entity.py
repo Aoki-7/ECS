@@ -149,6 +149,9 @@ async def delete_entity(
     """
     删除实体
     
+    ⚠️ 注意：此操作仅删除实体本身，不会清理其他组件中的引用。
+    各系统应在收到 EntityDestroyed 事件后自行清理引用。
+    
     Args:
         entity_id: 实体 ID
     
@@ -160,9 +163,18 @@ async def delete_entity(
     if not world.has_entity_id(entity_id):
         raise HTTPException(status_code=404, detail=f"Entity {entity_id} not found")
     
+    # 触发 EntityDestroyed 事件，通知各系统清理引用
+    try:
+        from core.event_bus import EventBus
+        event_bus = EventBus.get_instance()
+        event_bus.emit("EntityDestroyed", {"entity_id": entity_id})
+    except Exception:
+        pass  # 事件系统可能未初始化
+    
     world.remove_entity_by_id(entity_id)
     
     return {
         "id": entity_id,
         "deleted": True,
+        "note": "各系统应在收到 EntityDestroyed 事件后清理引用"
     }

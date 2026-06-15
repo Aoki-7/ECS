@@ -227,8 +227,9 @@ class PlantFactory:
         entity = world.create_entity()
 
         # 深拷贝基因组并进行突变，产生子代基因型
-        child_genome = parent_genome.copy()
-        child_genome.mutate(mutation_rate=variation)
+        from biology.systems.genome_system import GenomeSystem
+        child_genome = GenomeSystem.copy(parent_genome)
+        GenomeSystem.mutate(child_genome, mutation_rate=variation)
 
         # 从子代基因组提取基因值，用于推导生命周期
         child_preset = cls._genes_to_preset(child_genome)
@@ -300,7 +301,7 @@ class PlantFactory:
             )
 
             # 构建基因：name 用于调试和日志，expression_target 用于表型映射
-            genome.add_gene(
+            genome.genes.append(
                 Gene(
                     name=f"{species.upper()}_{trait_name.upper()}",
                     expression_target=trait_name,

@@ -66,7 +66,7 @@ class EventStreamManager:
         """处理 WebSocket 连接"""
         await self.connect(websocket)
         try:
-            while True:
+            while websocket.client_state == WebSocketState.CONNECTED:
                 # 接收客户端消息 (订阅/取消订阅)
                 data = await websocket.receive_text()
                 message = json.loads(data)
@@ -78,6 +78,8 @@ class EventStreamManager:
                 elif message.get("action") == "unsubscribe":
                     # TODO: 处理取消订阅
                     pass
+                elif message.get("action") == "disconnect":
+                    break
         except Exception:
             pass
         finally:

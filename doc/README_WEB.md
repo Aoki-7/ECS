@@ -120,13 +120,13 @@ ECS/
 pytest -x -q
 
 # API 测试
-pytest api/tests/ -v
+pytest tests/api/ -v
 
 # 数据库测试
-pytest db/tests/ -v
+pytest tests/db/ -v
 
 # 性能测试
-pytest api/tests/test_performance.py -v
+pytest tests/api/test_performance.py -v
 ```
 
 ## 版本

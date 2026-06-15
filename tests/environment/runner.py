@@ -5,14 +5,14 @@
 
 运行所有测试:
     cd D:\个人助手\workspace\ECS
-    python -m environment.tests.runner
+    python -m tests.environment.runner
 
 或单独运行某一模块:
-    python -m environment.tests.test_components
-    python -m environment.tests.test_physics
-    python -m environment.tests.test_systems
-    python -m environment.tests.test_pipeline
-    python -m environment.tests.test_scenarios
+    python -m tests.environment.test_components
+    python -m tests.environment.test_physics
+    python -m tests.environment.test_systems
+    python -m tests.environment.test_pipeline
+    python -m tests.environment.test_scenarios
 """
 
 import sys
@@ -24,16 +24,14 @@ if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
-from environment.tests.base import T
+from tests.environment.base import T
 
 # 各测试模块
-from environment.tests import test_components
-from environment.tests import test_physics
-from environment.tests import test_systems
-from environment.tests import test_pipeline
-from environment.tests import test_scenarios
+from tests.environment import test_components
+from tests.environment import test_physics
+from tests.environment import test_systems
+from tests.environment import test_pipeline
+from tests.environment import test_scenarios
 
 
 MODULES = [

@@ -4,11 +4,7 @@
 测试基础设施 —— 结果收集器、辅助函数、通用 World 构建器
 """
 
-import sys
-import os
 import math
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from core.world import World
 

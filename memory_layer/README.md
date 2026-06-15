@@ -101,7 +101,7 @@ world.remove_entity(entity)  # → 自动调用 ml.entity_destroyed()
 
 ```bash
 cd D:\个人助手\workspace\ECS
-python -m pytest memory_layer/tests/ -v
+python -m pytest tests/memory_layer/ -v
 ```
 
 **状态**: 29/29 通过（含 6 个 ECS 集成测试）

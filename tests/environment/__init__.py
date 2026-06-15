@@ -16,10 +16,10 @@
 
 运行所有测试:
     cd D:\\个人助手\\workspace\\ECS
-    python -m environment.tests.runner
+    python -m tests.environment.runner
 
 或单独运行某一模块:
-    python -m environment.tests.test_components
+    python -m tests.environment.test_components
 
 测试范围：
     - 组件序列化/反序列化
