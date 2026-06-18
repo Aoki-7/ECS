@@ -76,9 +76,9 @@ class BiologyReproductionSystem(System):
         if not lifecycle.is_mature:
             return []
 
-        growth = pheno.get("growth_partition", 0.4)
-        metabolism = pheno.get("metabolism_rate", 0.02)
-        energy_threshold = 15.0 + growth * 40.0 + (1.0 - pheno.get("water_use_efficiency", 0.05)) * 10.0
+        growth = PhenotypeSystem.get(pheno, "growth_partition", 0.4)
+        metabolism = PhenotypeSystem.get(pheno, "metabolism_rate", 0.02)
+        energy_threshold = 15.0 + growth * 40.0 + (1.0 - PhenotypeSystem.get(pheno, "water_use_efficiency", 0.05)) * 10.0
 
         if energy.value < energy_threshold:
             return []
@@ -92,8 +92,8 @@ class BiologyReproductionSystem(System):
         energy.value *= (1.0 - energy_cost)
         self._last_reproduction[entity.id] = self._tick_counter
 
-        seed_prod = pheno.get("seed_production", 1.0)
-        dispersal = pheno.get("dispersal_radius", 3.0)
+        seed_prod = PhenotypeSystem.get(pheno, "seed_production", 1.0)
+        dispersal = PhenotypeSystem.get(pheno, "dispersal_radius", 3.0)
         seed_count = max(1, int(seed_prod * self._rng.uniform(0.8, 1.2)))
 
         tracker = world.get_component(entity, SpeciationTrackerComponent)

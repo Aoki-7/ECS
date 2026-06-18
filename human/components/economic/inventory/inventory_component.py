@@ -1,45 +1,33 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-"""
-物品栏组件
-
-v3.9 迁移：从 core/components/ 移回 human/components/economic/inventory/
-保持 core 层纯粹性。
-"""
+'''
+@文件:inventory_component.py
+@说明:库存组件 v2.0 - 纯数据版
+'''
 
 from dataclasses import dataclass, field
-from core.component import Component
-from core.world import World
+from typing import Dict, List, Optional
 
+from core.component import Component
 
 @dataclass(slots=True)
 class InventoryComponent(Component):
     """
-    非堆叠库存（存 entity_id，避免对已删除实体的对象引用泄漏）
+    库存组件 - 纯数据版
+    存储物品库存。
     """
-    capacity: int = 20
-    items: list = field(default_factory=list)
-
-    def add(self, entity) -> bool:
-        """添加物品"""
-        if len(self.items) >= self.capacity:
-            return False
-        entity_id = entity.id if hasattr(entity, 'id') else entity
-        self.items.append(entity_id)
-        return True
-
-    def remove(self, entity) -> bool:
-        """移除物品"""
-        entity_id = entity.id if hasattr(entity, 'id') else entity
-        if entity_id in self.items:
-            self.items.remove(entity_id)
-            return True
-        return False
-
-    def find(self, component_type: type, world: World):
-        """查找某类物品"""
-        for entity_id in self.items:
-            entity = world.query_entity(entity_id)
-            if entity is not None and world.get_component(entity, component_type) is not None:
-                return entity
-        return None
+    # 物品 {item_id: quantity}
+    items: Dict[int, float] = field(default_factory=dict)
+    
+    # 容量限制
+    max_capacity: float = 100.0
+    current_weight: float = 0.0
+    
+    # 装备槽位
+    equipped_items: Dict[str, int] = field(default_factory=dict)
+    
+    # 货币
+    currency: float = 0.0
+    
+    # 交易记录
+    trade_history: List[Dict] = field(default_factory=list)

@@ -82,7 +82,12 @@ class DecisionSystem(System):
         ]
 
     def update(self, world: World, dt: float):
-        current_time = world.get_time().total_hours
+        time = world.get_time()
+        # 防御：如果 get_time() 返回 None，使用默认值 0.0
+        if time is None:
+            current_time = 0.0
+        else:
+            current_time = time.total_hours
 
         for entity, (intent, emotion, memory, personality, brain, health, needs) in world.get_components(
             IntentComponent, EmotionComponent, MemoryComponent, 
@@ -154,19 +159,34 @@ class DecisionSystem(System):
                 if best_score > current_score + 5.0:
                     intent.intent = best_intent
                     intent.priority = best_score
-                    brain.set_thought(f"我决定{best_intent.name}")
+                    if hasattr(brain, 'set_thought'):
+                        brain.set_thought(f"我决定{best_intent.name}")
+                    else:
+                        brain.thought = f"我决定{best_intent.name}"
         
         # 更新决策信心和心理状态
-        brain.decision_confidence = min(1.0, scores.get(intent.intent, 50) / 100.0)
-        brain.update_mental_state(emotion.get_mood_score(), emotion.stress)
+        if hasattr(brain, 'decision_confidence'):
+            brain.decision_confidence = min(1.0, scores.get(intent.intent, 50) / 100.0)
+        if hasattr(brain, 'update_mental_state'):
+            mood_score = emotion.get_mood_score() if hasattr(emotion, 'get_mood_score') else 0.0
+            brain.update_mental_state(mood_score, emotion.stress)
+        else:
+            brain.mental_state = emotion.get_mood_score() if hasattr(emotion, 'get_mood_score') else 0.0
         
         # 记录决策到记忆
-        if memory and not is_survival_critical:
+        if memory and hasattr(memory, 'add_event') and not is_survival_critical:
             memory.add_event(
                 current_time, "decision",
                 f"决定执行{intent.intent.name}",
-                impact=emotion.get_mood_score() * 0.3
+                impact=emotion.get_mood_score() * 0.3 if hasattr(emotion, 'get_mood_score') else 0.0
             )
+        elif memory and hasattr(memory, 'events') and not is_survival_critical:
+            memory.events.append({
+                'time': current_time,
+                'type': 'decision',
+                'description': f"决定执行{intent.intent.name}",
+                'impact': emotion.get_mood_score() * 0.3 if hasattr(emotion, 'get_mood_score') else 0.0
+            })
 
     def _apply_emergency_modifiers(self, intent: IntentComponent, emotion: EmotionComponent, scores: dict):
         """生理紧急状态下的情绪微调（不覆盖生存意图）"""

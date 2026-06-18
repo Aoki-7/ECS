@@ -28,13 +28,12 @@ class SoilWaterBalanceSystem(System):
     - 自然流失
     """
     def update(self, world: World, delta_hours: float):
+        # 防御：使用 world.get_world_component 替代 entity.get_components
+        weather = world.get_world_component(PhysicalWeatherComponent)
+        soil = world.get_world_component(SoilMoistureComponent)
 
-        weather, soil = world.get_world_entity().get_components(
-            PhysicalWeatherComponent, SoilMoistureComponent,
-        )
-
-        weather: PhysicalWeatherComponent
-        soil: SoilMoistureComponent
+        if weather is None or soil is None:
+            return
 
         # 降雨补给 (mm/h → 土壤湿度增量)
         soil.moisture += weather.precipitation_rate * 0.1 * delta_hours

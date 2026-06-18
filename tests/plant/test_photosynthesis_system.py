@@ -14,6 +14,7 @@ from core.entity import Entity
 from environment.light_field.components.light_receiver_component import LightReceiverComponent
 from plant.components.canopy_component import CanopyComponent
 from biology.components.phenotype_component import PhenotypeComponent
+from biology.systems.phenotype_system import PhenotypeSystem
 from plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
 
 
@@ -39,7 +40,7 @@ class TestPhotosynthesisSystem:
         system.update(world, dt=1.0)
 
         # 表型应被更新
-        effective_par = pheno.get("effective_par")
+        effective_par = PhenotypeSystem.get(pheno, "effective_par")
         assert effective_par is not None
         assert effective_par == 80.0  # 100 * (1 - 0.2)
 
@@ -49,7 +50,7 @@ class TestPhotosynthesisSystem:
         light = LightReceiverComponent(received_total=200.0, shade_ratio=0.0)
         canopy = CanopyComponent(photosynthetic_efficiency=0.8)
         pheno = PhenotypeComponent()
-        pheno.set_trait(type('Trait', (), {'name': 'max_photosynthesis_rate', 'value': 50.0, 'source': 'test'})())
+        PhenotypeSystem.set_trait(pheno, type('Trait', (), {'name': 'max_photosynthesis_rate', 'value': 50.0, 'source': 'test'})())
 
         world.add_component(entity, light)
         world.add_component(entity, canopy)
@@ -58,7 +59,7 @@ class TestPhotosynthesisSystem:
         system = PlantPhotosynthesisSystem()
         system.update(world, dt=1.0)
 
-        photo_rate = pheno.get("canopy_photosynthesis_rate")
+        photo_rate = PhenotypeSystem.get(pheno, "canopy_photosynthesis_rate")
         assert photo_rate is not None
         assert photo_rate > 0.0
 

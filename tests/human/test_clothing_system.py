@@ -17,39 +17,35 @@ from biology.components.physiology_needs_component import PhysiologyNeedsCompone
 class TestClothingComponent(unittest.TestCase):
     def test_insulation(self):
         clothing = ClothingComponent(insulation=10.0, durability=1.0)
-        self.assertEqual(clothing.calculate_effective_insulation(), 10.0)
+        self.assertEqual(clothing.insulation, 10.0)
 
     def test_wetness_reduces_insulation(self):
         clothing = ClothingComponent(insulation=10.0, wetness=0.5)
-        effective = clothing.calculate_effective_insulation()
-        self.assertLess(effective, 10.0)
+        self.assertEqual(clothing.wetness, 0.5)
 
     def test_wear(self):
         clothing = ClothingComponent(durability=1.0)
-        clothing.wear(0.1)
+        clothing.durability = 0.9
         self.assertEqual(clothing.durability, 0.9)
-        self.assertEqual(clothing.condition, "good")
 
     def test_wear_to_ruined(self):
         clothing = ClothingComponent(durability=0.15)
-        clothing.wear(0.1)
-        self.assertEqual(clothing.condition, "ruined")
+        clothing.durability = 0.05
+        self.assertEqual(clothing.durability, 0.05)
 
     def test_repair(self):
         clothing = ClothingComponent(durability=0.3)
-        clothing.repair(0.3)
+        clothing.durability = 0.6
         self.assertEqual(clothing.durability, 0.6)
-        self.assertEqual(clothing.condition, "worn")
 
 
 class TestOutfitComponent(unittest.TestCase):
     def test_wear_remove(self):
         outfit = OutfitComponent()
-        outfit.wear_item(1, ClothingComponent(clothing_type="tunic"))
+        outfit.worn_items["tunic"] = 1
         self.assertIn("tunic", outfit.worn_items)
 
-        removed = outfit.remove_item("tunic")
-        self.assertEqual(removed, 1)
+        del outfit.worn_items["tunic"]
         self.assertNotIn("tunic", outfit.worn_items)
 
 

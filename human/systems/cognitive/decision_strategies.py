@@ -86,16 +86,16 @@ class PersonalityStrategy(DecisionStrategy):
             return
 
         # 外向 → 社交
-        if personality.extraversion > 0.6:
+        if hasattr(personality, 'extraversion') and personality.extraversion > 0.6:
             scores[IntentType.SOCIALIZE] = scores.get(IntentType.SOCIALIZE, 0) + personality.extraversion * 20
         # 神经质 → 更容易恐惧/焦虑
-        if personality.neuroticism > 0.6:
+        if hasattr(personality, 'neuroticism') and personality.neuroticism > 0.6:
             scores[IntentType.FLEE] = scores.get(IntentType.FLEE, 0) + personality.neuroticism * 15
         # 开放性 → 探索
-        if personality.openness > 0.6:
+        if hasattr(personality, 'openness') and personality.openness > 0.6:
             scores[IntentType.EXPLORE] = scores.get(IntentType.EXPLORE, 0) + personality.openness * 25
         # 尽责性 → 工作/目标导向
-        if personality.conscientiousness > 0.6:
+        if hasattr(personality, 'conscientiousness') and personality.conscientiousness > 0.6:
             scores[IntentType.WORK] = scores.get(IntentType.WORK, 0) + personality.conscientiousness * 20
 
 
@@ -151,7 +151,7 @@ class SocialStrategy(DecisionStrategy):
         if relation.partner_id is not None:
             scores[IntentType.SOCIALIZE] = scores.get(IntentType.SOCIALIZE, 0) + 10
         # 有敌人时增加攻击或逃跑
-        if relation.enemies:
+        if hasattr(relation, 'enemies') and relation.enemies:
             scores[IntentType.ATTACK] = scores.get(IntentType.ATTACK, 0) + 20
             scores[IntentType.FLEE] = scores.get(IntentType.FLEE, 0) + 15
 

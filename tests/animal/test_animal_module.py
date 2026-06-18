@@ -80,22 +80,24 @@ class TestAnimalComponents(unittest.TestCase):
         self.assertFalse(repro.is_pregnant)
 
     def test_animal_territory_component(self):
+        from animal.systems.animal_territory_system import AnimalTerritorySystem
         terr = AnimalTerritoryComponent(center_x=5.0, center_y=5.0, radius=3.0)
-        self.assertTrue(terr.is_inside(5.0, 5.0))
-        self.assertTrue(terr.is_inside(7.0, 5.0))
-        self.assertFalse(terr.is_inside(10.0, 10.0))
+        self.assertTrue(AnimalTerritorySystem.is_inside(terr, 5.0, 5.0))
+        self.assertTrue(AnimalTerritorySystem.is_inside(terr, 7.0, 5.0))
+        self.assertFalse(AnimalTerritorySystem.is_inside(terr, 10.0, 10.0))
 
-        terr.add_intruder(99)
+        AnimalTerritorySystem.add_intruder(terr, 99)
         self.assertIn(99, terr.intruders)
-        terr.remove_intruder(99)
+        AnimalTerritorySystem.remove_intruder(terr, 99)
         self.assertNotIn(99, terr.intruders)
 
     def test_animal_social_component(self):
+        from animal.systems.animal_social_system import AnimalSocialSystem
         social = AnimalSocialComponent(group_id=1, group_role="leader")
-        social.update_relationship(2, 0.5)
-        self.assertAlmostEqual(social.get_relationship(2), 0.5)
-        social.update_relationship(2, 0.6)
-        self.assertAlmostEqual(social.get_relationship(2), 1.0)
+        AnimalSocialSystem.update_relationship(social, 2, 0.5)
+        self.assertAlmostEqual(AnimalSocialSystem.get_relationship(social, 2), 0.5)
+        AnimalSocialSystem.update_relationship(social, 2, 0.6)
+        self.assertAlmostEqual(AnimalSocialSystem.get_relationship(social, 2), 1.0)
 
 
 class TestAnimalSystems(unittest.TestCase):

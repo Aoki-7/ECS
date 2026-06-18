@@ -181,8 +181,8 @@ class NutrientSystem(System):
         )
 
         if stress > 0:
-            current_photo = pheno.get("max_photosynthesis_rate", 20.0)
-            pheno.set_trait(
+            current_photo = PhenotypeSystem.get(pheno, "max_photosynthesis_rate", 20.0)
+            PhenotypeSystem.set_trait(pheno, 
                 Trait(
                     name="max_photosynthesis_rate",
                     value=current_photo * (1.0 - stress * 0.5),

@@ -81,8 +81,9 @@ class PhysicalWeatherSystem(System):
         total_hours = time.total_hours if time else 0.0
 
         # 获取季节和气候（可选）
-        season = world.get_world_entity().get_component(SeasonComponent)
-        climate = world.get_world_entity().get_component(ClimateComponent)
+        # 防御：使用 world.get_world_component 替代 entity.get_component
+        season = world.get_world_component(SeasonComponent)
+        climate = world.get_world_component(ClimateComponent)
 
         # 季节因子
         seasonal_temp_offset = 0.0

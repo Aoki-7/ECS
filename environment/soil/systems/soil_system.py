@@ -34,8 +34,8 @@ class SoilSystem(System):
         self.priority = 10
 
     def update(self, world: World, delta_hours: float):
-        # 获取当前环境数据
-        env = world.get_world_entity().get_component(EnvironmentComponent)
+        # 防御：使用 world.get_world_component 替代 entity.get_component
+        env = world.get_world_component(EnvironmentComponent)
         weather_temp = env.air_temperature if env else 20.0
 
         for entity, (soil,) in world.get_components(SoilComponent):

@@ -120,7 +120,7 @@ class SearchSystem(System):
         roam_range = 15
         roam_x = space.x + random.randint(-roam_range, roam_range)
         roam_y = space.y + random.randint(-roam_range, roam_range)
-        if world_config is not None:
+        if world_config is not None and hasattr(world_config, 'clamp_position'):
             roam_x, roam_y = world_config.clamp_position(roam_x, roam_y)
         else:
             roam_x = max(0, roam_x)

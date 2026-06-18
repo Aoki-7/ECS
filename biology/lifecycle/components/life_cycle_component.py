@@ -105,3 +105,37 @@ class LifeCycleComponent(Component):
 
         # 死亡原因（DeathSystem 填写）
         self.death_reason = None
+
+    @property
+    def age(self) -> float:
+        """兼容旧系统：age 属性映射到 current_age"""
+        return self.current_age
+
+    @age.setter
+    def age(self, value: float) -> None:
+        """兼容旧系统：age 属性映射到 current_age"""
+        self.current_age = value
+
+    def is_reproductive_age(self) -> bool:
+        """判断是否为生育年龄"""
+        return self.min_reproductive_age <= self.current_age <= self.max_reproductive_age
+
+    @property
+    def is_mature(self) -> bool:
+        """是否为成熟期"""
+        return self.stage == self.MATURE
+
+    @property
+    def is_senescence(self) -> bool:
+        """是否为衰老期"""
+        return self.stage == self.SENESCENCE
+
+    @property
+    def is_dead(self) -> bool:
+        """是否已死亡"""
+        return self.stage == self.DEAD
+
+    @property
+    def is_alive(self) -> bool:
+        """是否存活"""
+        return self.stage != self.DEAD

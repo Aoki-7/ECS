@@ -120,7 +120,17 @@ class PlanningSystem(System):
         task.status = TaskStatus.RUNNING
 
         inventory = world.get_component(entity, InventoryComponent)
-        has_food = inventory is not None and inventory.find(FoodComponent, world) is not None
+        # 防御：InventoryComponent 可能没有 find 方法
+        if inventory is not None and hasattr(inventory, 'find'):
+            has_food = inventory.find(FoodComponent, world) is not None
+        else:
+            # 简单检查：items 字典中是否有 FoodComponent 类型的实体
+            has_food = False
+            if inventory and hasattr(inventory, 'items'):
+                for item_id in inventory.items:
+                    if world.get_component(item_id, FoodComponent) is not None:
+                        has_food = True
+                        break
         if has_food:
             action.action_queue = [ActionType.EAT]
             return
@@ -138,7 +148,17 @@ class PlanningSystem(System):
         task.status = TaskStatus.RUNNING
 
         inventory = world.get_component(entity, InventoryComponent)
-        has_water = inventory is not None and inventory.find(WaterComponent, world) is not None
+        # 防御：InventoryComponent 可能没有 find 方法
+        if inventory is not None and hasattr(inventory, 'find'):
+            has_water = inventory.find(WaterComponent, world) is not None
+        else:
+            # 简单检查：items 字典中是否有 WaterComponent 类型的实体
+            has_water = False
+            if inventory and hasattr(inventory, 'items'):
+                for item_id in inventory.items:
+                    if world.get_component(item_id, WaterComponent) is not None:
+                        has_water = True
+                        break
         if has_water:
             action.action_queue = [ActionType.DRINK]
         else:
@@ -164,7 +184,12 @@ class PlanningSystem(System):
         else:
             target_x = space.x + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
             target_y = space.y + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
-            target_x, target_y = world_config.clamp_position(target_x, target_y)
+            # 防御：world_config 可能为 None 或没有 clamp_position 方法
+            if world_config is not None and hasattr(world_config, 'clamp_position'):
+                target_x, target_y = world_config.clamp_position(target_x, target_y)
+            else:
+                target_x = max(0, min(target_x, 99))
+                target_y = max(0, min(target_y, 99))
             action.target_pos = (target_x, target_y)
 
         action.action_queue = [ActionType.MOVE_TO]

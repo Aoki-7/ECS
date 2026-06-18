@@ -154,8 +154,8 @@ class AnimalReproductionSystem(System):
         """执行繁殖逻辑"""
         # 动态推导繁殖参数
         pheno = world.get_component(entity, PhenotypeComponent)
-        growth = pheno.get("growth_partition", 0.4) if pheno else 0.4
-        metabolism = pheno.get("metabolism_rate", 0.02) if pheno else 0.02
+        growth = PhenotypeSystem.get(pheno, "growth_partition", 0.4) if pheno else 0.4
+        metabolism = PhenotypeSystem.get(pheno, "metabolism_rate", 0.02) if pheno else 0.02
 
         # 能量消耗
         energy_cost = max(0.1, min(0.5, 0.5 - growth * 0.3))

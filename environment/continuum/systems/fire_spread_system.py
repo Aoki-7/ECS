@@ -145,7 +145,7 @@ class FireSpreadSystem(System):
                 # 计算点燃概率
                 ignition_prob = self._compute_ignition_probability(env, terrain, n_env)
 
-                if ignition_prob > 0.5:  # 阈值
+                if ignition_prob > 0.1:  # 阈值（降低以允许合理点燃）
                     env.air_temperature = self.IGNITION_TEMP
                     logger.info(f"Fire ignited at {key} from neighbor {nk}")
                     break

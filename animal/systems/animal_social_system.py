@@ -34,6 +34,23 @@ class AnimalSocialSystem(System):
 
     _next_group_id = 1
 
+    @staticmethod
+    def add_offspring(social: AnimalSocialComponent, offspring_id: int) -> None:
+        """添加后代"""
+        if offspring_id not in social.offspring_ids:
+            social.offspring_ids.append(offspring_id)
+
+    @staticmethod
+    def update_relationship(social: AnimalSocialComponent, other_id: int, delta: float) -> None:
+        """更新与某实体的关系分数"""
+        current = social.relationship_scores.get(other_id, 0.0)
+        social.relationship_scores[other_id] = max(-1.0, min(1.0, current + delta))
+
+    @staticmethod
+    def get_relationship(social: AnimalSocialComponent, other_id: int) -> float:
+        """获取与某实体的关系分数"""
+        return social.relationship_scores.get(other_id, 0.0)
+
     def update(self, world: World, dt: float = 1.0) -> None:
         """更新动物社交状态"""
         space_system = world.get_system(SpaceSystem)

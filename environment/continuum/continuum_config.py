@@ -95,9 +95,9 @@ WIND_DIRECTIONAL_WEIGHT: float = 0.7
 RECOVERY_RATE_TEMPERATURE: float = 0.02      # 气温缓慢回归气候基线
 RECOVERY_RATE_HUMIDITY: float = 0.015        # 湿度回归
 RECOVERY_RATE_MOISTURE: float = 0.01         # 土壤湿度回归（慢）
-RECOVERY_RATE_NITROGEN: float = 0.002        # 养分回归（极慢）
-RECOVERY_RATE_PHOSPHORUS: float = 0.001
-RECOVERY_RATE_POTASSIUM: float = 0.0015
+RECOVERY_RATE_NITROGEN: float = 0.002        # 氮回归（极慢）
+RECOVERY_RATE_PHOSPHORUS: float = 0.001      # 磷回归（极慢）
+RECOVERY_RATE_POTASSIUM: float = 0.0015      # 钾回归（极慢）
 
 # 自恢复的 sigmoid 形状因子 — 偏离越大恢复越快
 # K = 0: 线性恢复; K > 0: 偏离大时恢复更快

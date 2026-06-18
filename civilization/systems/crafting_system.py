@@ -23,6 +23,7 @@ from human.components.abilities.skill_component import SkillComponent
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from civilization.components.crafting_knowledge_component import CraftingKnowledgeComponent
+from civilization.systems.crafting_knowledge_system import CraftingKnowledgeSystem
 from space.space_component import SpaceComponent
 
 import logging
@@ -193,7 +194,7 @@ class CraftingSystem(System):
         base_success = 0.3
         workability_bonus = avg_props["workability"] * 0.3
         skill_bonus = min(0.3, skill.exp.get("crafting", 0) * 0.01)
-        knowledge_bonus = knowledge.get_technique_level(f"craft_{output_type}") * 0.2
+        knowledge_bonus = CraftingKnowledgeSystem.get_technique_level(knowledge, f"craft_{output_type}") * 0.2
 
         success_rate = base_success + workability_bonus + skill_bonus + knowledge_bonus
         success_rate = min(0.95, max(0.05, success_rate))

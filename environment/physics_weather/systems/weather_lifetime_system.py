@@ -47,5 +47,7 @@ class WeatherLifetimeSystem(System):
                 expired.append(entity)
 
         for entity in expired:
-            if world.has_entity(entity):
-                world.remove_entity(entity)
+            # 防御：entity 可能是 int 或 Entity 对象
+            entity_id = entity.id if hasattr(entity, 'id') else entity
+            if world.has_entity(entity_id):
+                world.remove_entity(entity_id)

@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 """
 @文件:biology/components/immune_component.py
-@说明:免疫组件
+@说明:免疫组件 - 纯数据版
 
 存储生物实体的免疫状态，包括抵抗力、感染状态、免疫记忆。
 被 ImmuneSystem 读写，被 DeathSystem 间接影响（感染致死）。
@@ -17,7 +17,7 @@ from core.component import Component
 @dataclass(slots=True)
 class ImmuneComponent(Component):
     """
-    免疫组件
+    免疫组件 - 纯数据
 
     Attributes:
         resistance: 基础抵抗力 (0~1)，受基因和健康状况影响。
@@ -38,31 +38,15 @@ class ImmuneComponent(Component):
     symptom_severity: float = 0.0
     infection_count: int = 0
 
-    # -------------------------------------------------
-    # 便捷属性
-    # -------------------------------------------------
-
+    # 兼容旧系统：属性别名
     @property
     def is_healthy(self) -> bool:
         return self.infection_status == "healthy"
 
     @property
-    def is_infected(self) -> bool:
-        return self.infection_status in ("incubating", "infected")
+    def is_contagious(self) -> bool:
+        return self.infection_status in ("infected", "incubating")
 
     @property
-    def is_contagious(self) -> bool:
-        """
-        是否具有传染性
-
-        感染期全程具有传染性；潜伏期超过一半时间后也开始传染。
-        """
-        if self.infection_status == "infected":
-            return True
-        if self.infection_status == "incubating" and self.infection_duration > 12:
-            return True
-        return False
-
-    def get_immunity(self, pathogen_type: str) -> float:
-        """获取对特定病原体的免疫强度 (0~1)"""
-        return self.immune_memory.get(pathogen_type, 0.0)
+    def is_infected(self) -> bool:
+        return self.infection_status == "infected"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
-动物需求组件
+动物需求组件 - 纯数据版
 
 存储动物的基本生理需求状态，驱动行为决策。
 所有值域为 0.0~1.0，1.0 表示需求极度强烈。
@@ -15,7 +15,7 @@ from core.component import Component
 @dataclass(slots=True)
 class AnimalNeedsComponent(Component):
     """
-    动物需求组件
+    动物需求组件 - 纯数据
 
     属性:
         hunger: 饥饿度 (0=饱足, 1=极度饥饿)
@@ -31,21 +31,3 @@ class AnimalNeedsComponent(Component):
     fear: float = 0.0
     reproductive_urge: float = 0.0
     last_satisfied: float = 0.0
-
-    def get_dominant_need(self) -> str:
-        """返回当前最强烈的需求名称"""
-        needs = {
-            "hunger": self.hunger,
-            "thirst": self.thirst,
-            "sleepiness": self.sleepiness,
-            "fear": self.fear,
-            "reproductive_urge": self.reproductive_urge,
-        }
-        return max(needs, key=needs.get)
-
-    def is_critical(self, threshold: float = 0.8) -> bool:
-        """是否有任何需求达到临界值"""
-        return any(
-            v >= threshold
-            for v in [self.hunger, self.thirst, self.sleepiness, self.fear]
-        )

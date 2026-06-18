@@ -15,6 +15,7 @@ from core.world import World
 
 from plant.components.plant_component import PlantComponent
 from biology.components.phenotype_component import PhenotypeComponent
+from biology.systems.phenotype_system import PhenotypeSystem
 from biology.traits.trait import Trait
 from space.space_component import SpaceComponent
 from environment.terrain.components.terrain_component import TerrainComponent
@@ -81,10 +82,10 @@ class TerrainAdaptationSystem(System):
             final_modifier = modifier * slope_penalty
 
             # 读取当前光合速率并修正
-            current_photo = pheno.get("max_photosynthesis_rate", 20.0)
+            current_photo = PhenotypeSystem.get(pheno, "max_photosynthesis_rate", 20.0)
             adjusted = current_photo * final_modifier
 
-            pheno.set_trait(
+            PhenotypeSystem.set_trait(pheno, 
                 Trait(
                     name="max_photosynthesis_rate",
                     value=adjusted,
@@ -100,8 +101,8 @@ class TerrainAdaptationSystem(System):
                 water_stress_bonus = -0.2
 
             if water_stress_bonus != 0.0:
-                current_stress = pheno.get("plant_water_stress", 0.0)
-                pheno.set_trait(
+                current_stress = PhenotypeSystem.get(pheno, "plant_water_stress", 0.0)
+                PhenotypeSystem.set_trait(pheno, 
                     Trait(
                         name="plant_water_stress",
                         value=max(0.0, min(1.0, current_stress + water_stress_bonus)),

@@ -72,23 +72,17 @@ class ParallelSystemExecutor:
 
     def execute_systems(self, world: World, systems: List[System], dt: float = 1.0) -> None:
         """
-        并行执行系统列表
+        执行系统列表 — 强制单线程串行执行以消除数据竞争。
 
-        ⚠️ 警告：所有 System 同时读取 World 状态，可能产生竞态条件。
-        仅用于纯读取型 System（如统计、可视化）。
+        原多线程实现已移除：Python GIL 下多线程无法真正并行 CPU 计算，
+        且 World 状态非线程安全，任何写入型 System 并行执行都会产生竞态条件。
+        若未来需要并行，应使用多进程 + 状态快照，或 Rust/C++ 扩展。
         """
-        if self._executor is None:
-            self.start()
+        if not systems:
+            return
 
-        def run_system(system: System) -> None:
+        for system in systems:
             try:
                 system.update(world, dt)
             except Exception as e:
                 logger.error(f"[ParallelExecutor] {system.__class__.__name__} 执行失败: {e}")
-
-        # 提交所有任务
-        futures = [self._executor.submit(run_system, s) for s in systems]
-
-        # 等待完成
-        for future in futures:
-            future.result()

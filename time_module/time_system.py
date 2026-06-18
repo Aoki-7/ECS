@@ -4,6 +4,11 @@ from core.world import World
 from time_module.time_component import TimeComponent
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class TimeSystem(System):
     tick_interval = 1  # 每1帧执行一次
     """
@@ -27,6 +32,21 @@ class TimeSystem(System):
         scaled_delta = delta_hours * self.time_scale
 
         time = world.get_time()
+        
+        # 防御：如果 get_time() 返回 None，初始化一个默认时间
+        if time is None:
+            from time_module.time_component import TimeComponent
+            time = TimeComponent()
+            # 尝试将时间组件添加到世界实体
+            world_entity = world.get_world_entity()
+            if world_entity is not None:
+                world.add_component(world_entity, time)
+            else:
+                # 如果连世界实体都没有，创建一个
+                world_entity = world.create_entity()
+                world.add_component(world_entity, time)
+                world.set_world_entity(world_entity)
+            logger.warning("[TimeSystem] 世界时间组件未初始化，已自动创建")
         
         # 更新总时间
         time.total_hours += scaled_delta

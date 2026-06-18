@@ -56,10 +56,10 @@ class MorphologySystem(System):
             morph.wilting = min(1.0, morph.wilting + 0.01)
             return
 
-        metabolism_rate = pheno.get("metabolism_rate", 0.01)
-        growth_partition = pheno.get("growth_partition", 0.6)
-        maintenance_cost = pheno.get("maintenance_cost", 0.02)
-        storage_partition = pheno.get("storage_partition", 0.2)
+        metabolism_rate = PhenotypeSystem.get(pheno, "metabolism_rate", 0.01)
+        growth_partition = PhenotypeSystem.get(pheno, "growth_partition", 0.6)
+        maintenance_cost = PhenotypeSystem.get(pheno, "maintenance_cost", 0.02)
+        storage_partition = PhenotypeSystem.get(pheno, "storage_partition", 0.2)
 
         effective_growth = growth_energy * growth_partition
         self._update_biomass_and_structure(morph, effective_growth, metabolism_rate, storage_partition)

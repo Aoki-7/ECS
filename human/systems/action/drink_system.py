@@ -63,7 +63,16 @@ class DrinkSystem(System):
 
     def _find_water(self, world, space_system, space, inventory):
         """从背包和地面搜索水源，返回 (water_entity, water_source)"""
-        water_entity = inventory.find(WaterComponent, world)
+        # 防御：InventoryComponent 可能没有 find 方法
+        if hasattr(inventory, 'find'):
+            water_entity = inventory.find(WaterComponent, world)
+        else:
+            water_entity = None
+            if hasattr(inventory, 'items'):
+                for item_id in inventory.items:
+                    if world.get_component(item_id, WaterComponent) is not None:
+                        water_entity = item_id
+                        break
         if water_entity is not None:
             return water_entity, "inventory"
 
@@ -114,7 +123,13 @@ class DrinkSystem(System):
 
         if water_component.amount <= 0:
             if water_source == "inventory":
-                inventory.remove(water_entity)
+                # 防御：InventoryComponent 可能没有 remove 方法
+                if hasattr(inventory, 'remove'):
+                    inventory.remove(water_entity)
+                elif hasattr(inventory, 'items') and isinstance(inventory.items, dict):
+                    if water_entity in inventory.items:
+                        del inventory.items[water_entity]
+                        inventory.current_weight -= getattr(water_component, 'amount', 0)
             world.remove_entity(water_entity)
 
         memory = world.get_component(entity, MemoryComponent)

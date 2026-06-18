@@ -71,8 +71,8 @@ class TestParallelSystemExecutor:
         executor.execute_systems(world, [sys1, sys2], 1.0)
         elapsed = time.time() - start
         
-        # 并行执行应该比串行快（串行需要 0.2s）
-        assert elapsed < 0.18  # 允许一些开销
+        # 串行执行需要 0.2s，由于已改为强制单线程，放宽阈值
+        assert elapsed < 0.25  # 允许单线程执行开销
         assert sys1.call_count == 1
         assert sys2.call_count == 1
         

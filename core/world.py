@@ -103,24 +103,24 @@ class World:
         if not self.has_entity(entity):
             return
 
-        # 从 SpaceSystem 反注册
-        self._unregister_entity_from_space(entity.id)
-
-        # 从 ArchetypeStore 移除
-        self._component_store.remove_entity(entity)
-
-        # 从 EntityManager 移除
+        # 1. 先标记实体为已销毁（generation 递增），防止后续系统通过旧引用访问
         self._entity_manager.destroy(entity)
 
-        # 清除旧缓存（v3.9 兼容）
+        # 2. 从 ArchetypeStore 移除组件数据（此时 entity 已失效，但 id 仍可用）
+        self._component_store.remove_entity(entity)
+
+        # 3. 从 SpaceSystem 反注册（使用 entity_id，不依赖 entity 有效性）
+        self._unregister_entity_from_space(entity.id)
+
+        # 4. 清除旧缓存（v3.9 兼容）
         self._query_cache.clear()
 
-        # 通知记忆层
+        # 5. 通知记忆层
         memory_layer = _get_memory_layer()
         if memory_layer is not None:
             memory_layer.entity_destroyed(entity.id, timestamp=self.tick_count)
 
-        # 发布事件
+        # 6. 发布事件
         try:
             EventBus.get_instance().publish(
                 "entity_destroyed",
@@ -128,8 +128,8 @@ class World:
                 source="world",
                 timestamp=self.tick_count,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[World] 发布 entity_destroyed 事件失败: {e}")
 
     def has_entity(self, entity: Entity) -> bool:
         """检查实体是否存在"""
@@ -176,6 +176,11 @@ class World:
 
     def get_component(self, entity: Entity, component_type: type) -> Optional[Component]:
         """获取实体的指定组件"""
+        # 防御：entity 可能是 int 而不是 Entity 对象
+        if isinstance(entity, int):
+            entity = self._entity_manager.get_entity(entity)
+            if entity is None:
+                return None
         return self._component_store.get_component(entity, component_type)
 
     def get_components(self, *component_types: type) -> Iterator[Tuple[Entity, ...]]:

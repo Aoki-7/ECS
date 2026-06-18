@@ -26,12 +26,33 @@ from plant.components.plant_component import PlantComponent
 from biology.lifecycle.components.energy_component import EnergyComponent
 
 import logging
+from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class AnimalPerceptionSystem(System):
     tick_interval = 8
+
+    @staticmethod
+    def add_detection(perception: AnimalPerceptionComponent, entity_id: int, entity_type: str) -> None:
+        """添加感知到的实体"""
+        perception.detected_entities[entity_id] = entity_type
+
+    @staticmethod
+    def clear_detection(perception: AnimalPerceptionComponent) -> None:
+        """清空感知列表"""
+        perception.detected_entities.clear()
+
+    @staticmethod
+    def get_by_type(perception: AnimalPerceptionComponent, entity_type: str) -> List[int]:
+        """获取某类型的所有感知实体"""
+        return [eid for eid, etype in perception.detected_entities.items() if etype == entity_type]
+
+    @staticmethod
+    def has_detected(perception: AnimalPerceptionComponent, entity_id: int) -> bool:
+        """检查是否感知到某实体"""
+        return entity_id in perception.detected_entities
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """更新所有动物的感知状态"""
@@ -46,7 +67,7 @@ class AnimalPerceptionSystem(System):
         for entity, (animal, perception, space) in world.get_components(
             AnimalComponent, AnimalPerceptionComponent, SpaceComponent
         ):
-            perception.clear_detection()
+            AnimalPerceptionSystem.clear_detection(perception)
 
             # 视觉感知
             self._visual_perception(

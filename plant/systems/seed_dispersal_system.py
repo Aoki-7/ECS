@@ -25,6 +25,7 @@ from identity.event_log_system import EventLog
 
 from biology.components.genome_component import GenomeComponent
 from biology.components.phenotype_component import PhenotypeComponent
+from biology.systems.phenotype_system import PhenotypeSystem
 from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from space.space_component import SpaceComponent
@@ -95,8 +96,8 @@ class SeedDispersalSystem(System):
         if self._tick_counter - last_tick < self.REPRODUCTION_COOLDOWN_TICKS:
             return []
 
-        seed_prod = pheno.get("seed_production", 1.0)
-        dispersal = pheno.get("dispersal_radius", 3.0)
+        seed_prod = PhenotypeSystem.get(pheno, "seed_production", 1.0)
+        dispersal = PhenotypeSystem.get(pheno, "dispersal_radius", 3.0)
 
         energy.value *= (1.0 - self.REPRODUCTION_ENERGY_COST)
         self._last_reproduction[entity.id] = self._tick_counter

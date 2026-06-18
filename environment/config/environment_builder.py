@@ -62,13 +62,13 @@ class EnvironmentBuilder:
 
         # 季节组件
         from environment.season.season_component import SeasonComponent
-        if we.get_component(SeasonComponent) is None:
-            we.add_component(SeasonComponent())
+        if world.get_world_component(SeasonComponent) is None:
+            world.add_component(we, SeasonComponent())
 
         # 气候组件
         from environment.climate.climate_component import ClimateComponent
-        if we.get_component(ClimateComponent) is None:
-            we.add_component(ClimateComponent())
+        if world.get_world_component(ClimateComponent) is None:
+            world.add_component(we, ClimateComponent())
 
         # 太阳位置 / 辐射 / 光散射 / 地表光照
         from environment.light_field.components.solar_position_component import (
@@ -83,28 +83,28 @@ class EnvironmentBuilder:
         from environment.light_field.components.surface_light_component import (
             SurfaceLightComponent,
         )
-        if we.get_component(SolarPositionComponent) is None:
-            we.add_component(SolarPositionComponent())
-        if we.get_component(SolarRadiationComponent) is None:
-            we.add_component(SolarRadiationComponent())
-        if we.get_component(LightScatterComponent) is None:
-            we.add_component(LightScatterComponent())
-        if we.get_component(SurfaceLightComponent) is None:
-            we.add_component(SurfaceLightComponent())
+        if world.get_world_component(SolarPositionComponent) is None:
+            world.add_component(we, SolarPositionComponent())
+        if world.get_world_component(SolarRadiationComponent) is None:
+            world.add_component(we, SolarRadiationComponent())
+        if world.get_world_component(LightScatterComponent) is None:
+            world.add_component(we, LightScatterComponent())
+        if world.get_world_component(SurfaceLightComponent) is None:
+            world.add_component(we, SurfaceLightComponent())
 
         # 物理天气组件
         from environment.physics_weather.components.physical_weather_component import (
             PhysicalWeatherComponent,
         )
-        if we.get_component(PhysicalWeatherComponent) is None:
-            we.add_component(PhysicalWeatherComponent())
+        if world.get_world_component(PhysicalWeatherComponent) is None:
+            world.add_component(we, PhysicalWeatherComponent())
 
         # 大气组件（可选，用于散射耦合）
         from environment.atmosphere.components.atmosphere_component import (
             AtmosphereComponent,
         )
-        if we.get_component(AtmosphereComponent) is None:
-            we.add_component(AtmosphereComponent())
+        if world.get_world_component(AtmosphereComponent) is None:
+            world.add_component(we, AtmosphereComponent())
 
         # 土壤组件（世界级）
         from environment.soil.components.soil_moisture_component import (
@@ -113,15 +113,15 @@ class EnvironmentBuilder:
         from environment.soil.components.soil_temperature_component import (
             SoilTemperatureComponent,
         )
-        if we.get_component(SoilMoistureComponent) is None:
-            we.add_component(SoilMoistureComponent())
-        if we.get_component(SoilTemperatureComponent) is None:
-            we.add_component(SoilTemperatureComponent())
+        if world.get_world_component(SoilMoistureComponent) is None:
+            world.add_component(we, SoilMoistureComponent())
+        if world.get_world_component(SoilTemperatureComponent) is None:
+            world.add_component(we, SoilTemperatureComponent())
 
         # 环境组件（世界级，供其他系统引用）
         from environment.environment_component import EnvironmentComponent
-        if we.get_component(EnvironmentComponent) is None:
-            we.add_component(EnvironmentComponent())
+        if world.get_world_component(EnvironmentComponent) is None:
+            world.add_component(we, EnvironmentComponent())
 
         # ════════════════════════════════════════════
         # 2. 创建所有系统并构建管线

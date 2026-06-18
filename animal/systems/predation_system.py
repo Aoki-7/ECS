@@ -84,7 +84,7 @@ class PredationSystem(System):
         if needs and needs.fear > 0.5:
             return False
 
-        metabolism = pred_pheno.get("metabolism_rate", 0.02) if pred_pheno else 0.02
+        metabolism = pred_PhenotypeSystem.get(pheno, "metabolism_rate", 0.02) if pred_pheno else 0.02
         attack_cooldown = max(1, int(5.0 / (metabolism * 100 + 0.1)))
         return True
 
@@ -157,15 +157,15 @@ class PredationSystem(System):
 
     def _calculate_damage(self, pred_pheno: PhenotypeComponent, pred_morph: MorphologyComponent) -> float:
         """计算攻击伤害"""
-        speed = pred_pheno.get("speed_factor", 1.0) if pred_pheno else 1.0
+        speed = pred_PhenotypeSystem.get(pheno, "speed_factor", 1.0) if pred_pheno else 1.0
         strength = getattr(pred_morph, 'strength', 10.0) if pred_morph else 10.0
         return speed * strength * self._rng.uniform(0.8, 1.2)
 
     def _check_attack_success(self, pred_pheno: PhenotypeComponent, prey) -> bool:
         """检查攻击是否成功"""
-        pred_speed = pred_pheno.get("speed_factor", 1.0) if pred_pheno else 1.0
+        pred_speed = pred_PhenotypeSystem.get(pheno, "speed_factor", 1.0) if pred_pheno else 1.0
         prey_pheno = getattr(prey, '_pheno', None)
-        prey_speed = prey_pheno.get("speed_factor", 1.0) if prey_pheno else 1.0
+        prey_speed = prey_PhenotypeSystem.get(pheno, "speed_factor", 1.0) if prey_pheno else 1.0
         success_rate = min(0.95, pred_speed / max(prey_speed, 0.1))
         return self._rng.random() < success_rate
 

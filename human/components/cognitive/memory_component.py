@@ -73,3 +73,25 @@ class MemoryComponent(Component):
                 "rest": 0,
             }),
         )
+
+    # 兼容旧系统：add_event 方法
+    def add_event(self, time, event_type, description, impact=0.0, location=None):
+        self.events.append({
+            'time': time,
+            'type': event_type,
+            'description': description,
+            'impact': impact,
+            'location': location,
+        })
+
+    def has_memory_of(self, event_type: str) -> bool:
+        """检查是否有某类记忆"""
+        for event in self.events:
+            if isinstance(event, dict) and event.get('type') == event_type:
+                return True
+        return False
+
+    def record_success(self, action_type: str) -> None:
+        """记录成功行为"""
+        if isinstance(self.recent_successes, dict):
+            self.recent_successes[action_type] = self.recent_successes.get(action_type, 0) + 1

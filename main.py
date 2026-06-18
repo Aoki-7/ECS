@@ -37,6 +37,7 @@ def main():
 
     world = World()
     simulation = SimulationLoop(world)
+    simulation.init()  # 初始化系统 + 世界配置 + 环境网格
     simulation.create_initial_resources(food_count=80, water_count=80)
     simulation.create_initial_plants(plant_count=30)
     simulation.create_initial_population(human_count=10)

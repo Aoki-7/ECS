@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
-动物领地组件
+动物领地组件 - 纯数据版
 
 存储动物的领地范围、边界标记和防御状态。
 """
@@ -15,7 +15,7 @@ from core.component import Component
 @dataclass(slots=True)
 class AnimalTerritoryComponent(Component):
     """
-    动物领地组件
+    动物领地组件 - 纯数据
 
     属性:
         center_x: 领地中心 X
@@ -35,27 +35,3 @@ class AnimalTerritoryComponent(Component):
     intruders: List[int] = field(default_factory=list)
     last_patrol_time: float = 0.0
     scent_strength: float = 1.0
-
-    def is_inside(self, x: float, y: float) -> bool:
-        """检查坐标是否在领地内"""
-        dx = x - self.center_x
-        dy = y - self.center_y
-        return (dx * dx + dy * dy) <= self.radius * self.radius
-
-    def add_intruder(self, intruder_id: int) -> None:
-        """添加入侵者"""
-        if intruder_id not in self.intruders:
-            self.intruders.append(intruder_id)
-
-    def remove_intruder(self, intruder_id: int) -> None:
-        """移除入侵者"""
-        if intruder_id in self.intruders:
-            self.intruders.remove(intruder_id)
-
-    def decay_scent(self, rate: float = 0.02) -> None:
-        """衰减气味标记"""
-        self.scent_strength = max(0.0, self.scent_strength - rate)
-
-    def refresh_scent(self) -> None:
-        """刷新气味标记"""
-        self.scent_strength = 1.0

@@ -104,12 +104,12 @@ class SenescenceSystem(System):
         morph.wilting = min(1.0, senescence_ratio * 0.5)
 
         # ---------- 光合效率衰减 ----------
-        current_photo = pheno.get("max_photosynthesis_rate", 20.0)
+        current_photo = PhenotypeSystem.get(pheno, "max_photosynthesis_rate", 20.0)
 
         if current_photo > 0:
             senesced_photo = current_photo * (1.0 - senescence_ratio * 0.8)
             # 更新表型中的光合速率值（来源标记为 senescence）
-            pheno.set_trait(Trait(
+            PhenotypeSystem.set_trait(pheno, Trait(
                 name="max_photosynthesis_rate",
                 value=max(0.5, senesced_photo),
                 source="senescence"

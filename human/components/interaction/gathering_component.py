@@ -2,27 +2,32 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:gathering_component.py
-@说明:
-@时间:2026/04/15 13:10:30
-@作者:Sherry
-@版本:1.0
+@说明:采集组件 v2.0 - 纯数据版
 '''
 
+from dataclasses import dataclass, field
+from typing import Dict, List
 
 from core.component import Component
-
-from dataclasses import dataclass
 
 @dataclass(slots=True)
 class GatheringComponent(Component):
     """
-    描述采集行为的组件。
-    包括采集资源的类型和数量。
+    采集组件 - 纯数据版
+    存储采集技能和经验。
     """
-    resource_type: str = ""  # 采集的资源类型（如树木、果实）
-    amount: float = 0.0       # 采集的资源数量
-
-    def gather(self, resource_type: str, amount: float):
-        """采集资源"""
-        self.resource_type = resource_type
-        self.amount += amount
+    # 采集技能 {resource_type: skill_level}
+    gathering_skills: Dict[str, float] = field(default_factory=dict)
+    
+    # 采集记录
+    gathering_history: List[Dict] = field(default_factory=list)
+    
+    # 当前采集目标
+    current_target: int = -1
+    gathering_progress: float = 0.0
+    
+    # 采集效率
+    efficiency: float = 1.0
+    
+    # 工具质量
+    tool_quality: float = 1.0

@@ -202,8 +202,8 @@ class AnimalMigrationSystem(System):
             collision_system = world.get_system(CollisionSystem)
             if collision_system:
                 return collision_system.is_walkable(world, x, y)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[AnimalMigration] 碰撞检测失败: {e}")
 
         return True
 

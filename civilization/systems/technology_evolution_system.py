@@ -24,6 +24,7 @@ from human.components.social.social_component import SocialComponent
 from civilization.components.crafting_knowledge_component import (
     CraftingKnowledgeComponent, CulturalTechPoolComponent
 )
+from civilization.systems.crafting_knowledge_system import CraftingKnowledgeSystem
 
 import logging
 
@@ -63,7 +64,7 @@ class TechnologyEvolutionSystem(System):
             CraftingKnowledgeComponent, SocialComponent
         ):
             # 获取高成功率的新配方
-            new_recipes = knowledge.get_known_recipes(min_confidence=0.7)
+            new_recipes = CraftingKnowledgeSystem.get_known_recipes(knowledge, min_confidence=0.7)
 
             for recipe in new_recipes:
                 # 检查是否是"新"技术（之前不知道）
@@ -72,7 +73,7 @@ class TechnologyEvolutionSystem(System):
                 # 记录到个体知识
                 know_comp = world.get_component(entity, KnowledgeComponent)
                 if know_comp and tech_name not in know_comp.known_technologies:
-                    know_comp.add_technology(tech_name)
+                    know_comp.known_technologies.add(tech_name)
                     logger.info(
                         f"[TechEvolution] E{entity.id} 发现了 {tech_name} "
                         f"(成功率:{recipe['success_rate']:.1%}, "

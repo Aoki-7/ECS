@@ -1,121 +1,100 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-迁徙组件
-
-v3.6 新增 — P0
-
-职责：
-    - 存储动物迁徙状态
-    - 记录繁殖地/越冬地、迁徙路线、能量储备
-
-设计原则：
-    - 纯物理量驱动：温度、光周期、食物可用性
-    - 无硬编码迁徙时间，由环境条件自发决定
-"""
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+'''
+@文件:migration_component.py
+@说明:迁徙组件 v2.0 - 纯数据版
+'''
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from core.component import Component
 
-
-@dataclass
+@dataclass(slots=True)
 class MigrationComponent(Component):
     """
-    迁徙组件
-
-    迁徙驱动因子：
-    - 温度变化 → 离开/到达触发
-    - 光周期 → 迁徙方向（春季北迁/秋季南迁）
-    - 食物可用性 → 停留/离开决策
-    - 能量储备 → 迁徙能力
-
-    Attributes:
-        is_migratory: 是否迁徙物种
-        migration_status: 迁徙状态
-            - resident: 定居
-            - pre_migratory: 迁徙前准备
-            - migrating: 迁徙中
-            - arrived: 已到达
-        breeding_ground: 繁殖地坐标 (x, y)
-        wintering_ground: 越冬地坐标 (x, y)
-        current_target: 当前目标坐标
-        migration_route: 迁徙路线点列表
-        energy_reserve: 能量储备 (0-1)
-        migration_speed: 迁徙速度
-        temperature_threshold_depart: 离开温度阈值
-        temperature_threshold_arrive: 到达温度阈值
-        day_length_trigger: 光周期触发点（小时）
+    迁徙组件 - 纯数据版
+    存储迁徙信息。
     """
-
+    # 迁徙状态
+    is_migrating: bool = False
+    migration_direction: str = "north"
+    
+    # 目标位置
+    destination_x: Optional[float] = None
+    destination_y: Optional[float] = None
+    
+    # 迁徙进度
+    distance_traveled: float = 0.0
+    total_distance: float = 0.0
+    
+    # 触发条件
+    spring_trigger: Dict = field(default_factory=dict)
+    autumn_trigger: Dict = field(default_factory=dict)
+    
+    # 历史记录
+    migration_history: List[Dict] = field(default_factory=list)
+    
+    # 兼容性字段（兼容旧测试）
     is_migratory: bool = False
     migration_status: str = "resident"
-    breeding_ground: Tuple[float, float] = field(default_factory=lambda: (0.0, 0.0))
-    wintering_ground: Tuple[float, float] = field(default_factory=lambda: (0.0, 0.0))
-    current_target: Optional[Tuple[float, float]] = None
-    migration_route: List[Tuple[float, float]] = field(default_factory=list)
     energy_reserve: float = 1.0
-    migration_speed: float = 1.0
     temperature_threshold_depart: float = 10.0
-    temperature_threshold_arrive: float = 15.0
     day_length_trigger: float = 12.0
-
-    def to_dict(self) -> dict:
-        return {
-            "is_migratory": self.is_migratory,
-            "migration_status": self.migration_status,
-            "breeding_ground": list(self.breeding_ground),
-            "wintering_ground": list(self.wintering_ground),
-            "current_target": list(self.current_target) if self.current_target else None,
-            "migration_route": [list(p) for p in self.migration_route],
-            "energy_reserve": self.energy_reserve,
-            "migration_speed": self.migration_speed,
-            "temperature_threshold_depart": self.temperature_threshold_depart,
-            "temperature_threshold_arrive": self.temperature_threshold_arrive,
-            "day_length_trigger": self.day_length_trigger,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "MigrationComponent":
-        target = data.get("current_target")
-        return cls(
-            is_migratory=data.get("is_migratory", False),
-            migration_status=data.get("migration_status", "resident"),
-            breeding_ground=tuple(data.get("breeding_ground", [0.0, 0.0])),
-            wintering_ground=tuple(data.get("wintering_ground", [0.0, 0.0])),
-            current_target=tuple(target) if target else None,
-            migration_route=[tuple(p) for p in data.get("migration_route", [])],
-            energy_reserve=data.get("energy_reserve", 1.0),
-            migration_speed=data.get("migration_speed", 1.0),
-            temperature_threshold_depart=data.get("temperature_threshold_depart", 10.0),
-            temperature_threshold_arrive=data.get("temperature_threshold_arrive", 15.0),
-            day_length_trigger=data.get("day_length_trigger", 12.0),
-        )
-
+    temperature_threshold_arrive: float = 15.0
+    breeding_ground: tuple = None
+    wintering_ground: tuple = None
+    migration_speed: float = 1.0
+    migration_route: List = field(default_factory=list)
+    migration_season: str = "spring"
+    migration_reason: str = "temperature"
+    migration_start_time: float = 0.0
+    migration_end_time: float = 0.0
+    migration_duration: float = 0.0
+    migration_distance: float = 0.0
+    migration_success: bool = False
+    migration_failure_reason: str = ""
+    current_target: tuple = None
+    migration_progress: float = 0.0
+    
     def should_depart_spring(self, temperature: float, day_length: float) -> bool:
-        """
-        春季北迁条件
-        温度适宜 + 光周期变长
-        """
-        temp_ok = temperature >= self.temperature_threshold_depart
-        day_ok = day_length > self.day_length_trigger
-        energy_ok = self.energy_reserve > 0.3
-        return temp_ok and day_ok and energy_ok
-
+        """春季出发条件"""
+        if not self.is_migratory:
+            return False
+        return (temperature >= self.temperature_threshold_depart and 
+                day_length >= self.day_length_trigger and
+                self.energy_reserve >= 0.3)
+    
     def should_depart_autumn(self, temperature: float, day_length: float) -> bool:
-        """
-        秋季南迁条件
-        温度降低 + 光周期变短
-        """
-        temp_ok = temperature < self.temperature_threshold_depart
-        day_ok = day_length < self.day_length_trigger
-        energy_ok = self.energy_reserve > 0.3
-        return temp_ok and day_ok and energy_ok
-
+        """秋季出发条件"""
+        if not self.is_migratory:
+            return False
+        return (temperature < self.temperature_threshold_depart and 
+                day_length < self.day_length_trigger and
+                self.energy_reserve >= 0.3)
+    
     def can_arrive(self, temperature: float) -> bool:
-        """
-        到达条件
-        温度适宜
-        """
+        """到达条件"""
         return temperature >= self.temperature_threshold_arrive
+    
+    def to_dict(self) -> dict:
+        """序列化"""
+        return {
+            'is_migratory': self.is_migratory,
+            'migration_status': self.migration_status,
+            'energy_reserve': self.energy_reserve,
+            'breeding_ground': self.breeding_ground,
+            'wintering_ground': self.wintering_ground,
+            'temperature_threshold_depart': self.temperature_threshold_depart,
+            'day_length_trigger': self.day_length_trigger,
+            'temperature_threshold_arrive': self.temperature_threshold_arrive,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> 'MigrationComponent':
+        """反序列化"""
+        comp = cls()
+        for key, value in data.items():
+            if hasattr(comp, key):
+                setattr(comp, key, value)
+        return comp

@@ -38,11 +38,27 @@ class ThoughtSystem(System):
                 continue
 
             thought = self._generate_thought(entity, emotion, needs, action)
-            brain.set_thought(thought)
-            brain.update_mental_state(emotion.get_mood_score(), emotion.stress)
+            # 防御：BrainComponent 可能没有 set_thought 方法
+            if hasattr(brain, 'set_thought'):
+                brain.set_thought(thought)
+            else:
+                brain.thought = thought
+                brain.last_thought = thought
+                brain.thought_count = getattr(brain, 'thought_count', 0) + 1
+            # 防御：EmotionComponent 可能没有 get_mood_score 方法
+            if hasattr(emotion, 'get_mood_score'):
+                mood_score = emotion.get_mood_score()
+            else:
+                mood_score = 0.0
+            # 防御：BrainComponent 可能没有 update_mental_state 方法
+            if hasattr(brain, 'update_mental_state'):
+                brain.update_mental_state(mood_score, emotion.stress)
+            else:
+                brain.mental_state = mood_score
             
             # 根据行为模式更新
-            brain.behavior_mode = self._determine_behavior_mode(action, needs, emotion)
+            if hasattr(brain, 'behavior_mode'):
+                brain.behavior_mode = self._determine_behavior_mode(action, needs, emotion)
 
     def _generate_thought(self, entity, emotion: EmotionComponent, 
                           needs: PhysiologyNeedsComponent, action: ActionComponent) -> str:
@@ -98,7 +114,11 @@ class ThoughtSystem(System):
             thoughts.append("和朋友们在一起真开心。")
         
         # 心情综合思维（低优先级）
-        mood = emotion.get_mood_label()
+        # 防御：EmotionComponent 可能没有 get_mood_label 方法
+        if hasattr(emotion, 'get_mood_label'):
+            mood = emotion.get_mood_label()
+        else:
+            mood = "平静"
         if mood == "非常开心" and not thoughts:
             thoughts.append("今天真是美好的一天。")
         elif mood == "痛苦" and not thoughts:

@@ -33,6 +33,35 @@ logger = logging.getLogger(__name__)
 class AnimalTerritorySystem(System):
     tick_interval = 25
 
+    @staticmethod
+    def is_inside(territory: AnimalTerritoryComponent, x: float, y: float) -> bool:
+        """检查坐标是否在领地内"""
+        dx = x - territory.center_x
+        dy = y - territory.center_y
+        return (dx * dx + dy * dy) <= territory.radius * territory.radius
+
+    @staticmethod
+    def add_intruder(territory: AnimalTerritoryComponent, intruder_id: int) -> None:
+        """添加入侵者"""
+        if intruder_id not in territory.intruders:
+            territory.intruders.append(intruder_id)
+
+    @staticmethod
+    def remove_intruder(territory: AnimalTerritoryComponent, intruder_id: int) -> None:
+        """移除入侵者"""
+        if intruder_id in territory.intruders:
+            territory.intruders.remove(intruder_id)
+
+    @staticmethod
+    def decay_scent(territory: AnimalTerritoryComponent, rate: float = 0.02) -> None:
+        """衰减气味标记"""
+        territory.scent_strength = max(0.0, territory.scent_strength - rate)
+
+    @staticmethod
+    def refresh_scent(territory: AnimalTerritoryComponent) -> None:
+        """刷新气味标记"""
+        territory.scent_strength = 1.0
+
     def update(self, world: World, dt: float = 1.0) -> None:
         """更新动物领地状态"""
         space_system = world.get_system(SpaceSystem)
@@ -55,7 +84,7 @@ class AnimalTerritorySystem(System):
             self._patrol_and_mark(world, entity, territory, space, dt)
 
             # 衰减气味
-            territory.decay_scent(0.02 * dt)
+            AnimalTerritorySystem.decay_scent(territory, 0.02 * dt)
 
     def _update_territory_center(
         self, territory: AnimalTerritoryComponent, space: SpaceComponent

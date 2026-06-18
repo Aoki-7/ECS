@@ -7,7 +7,7 @@
 并考虑冠层结构修正，将结果写入 PhenotypeComponent 供 GrowthSystem 使用。
 
 与 GrowthSystem 的配合：
-    GrowthSystem 优先读取 phenotype.get("effective_par")，
+    GrowthSystem 优先读取 PhenotypeSystem.get(phenotype, "effective_par")，
     若不存在则回退到全局 EnvironmentComponent.par。
 """
 
@@ -20,6 +20,7 @@ from environment.light_field.components.light_receiver_component import LightRec
 from plant.components.canopy_component import CanopyComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.traits.trait import Trait
+from biology.systems.phenotype_system import PhenotypeSystem
 
 
 class PlantPhotosynthesisSystem(System):
@@ -54,7 +55,7 @@ class PlantPhotosynthesisSystem(System):
             efficiency = canopy.photosynthetic_efficiency
 
             # 读取基因决定的最大光合速率
-            max_photo = pheno.get("max_photosynthesis_rate", 20.0)
+            max_photo = PhenotypeSystem.get(pheno, "max_photosynthesis_rate", 20.0)
 
             # 简化 Michaelis-Menten 光响应
             if max_photo <= 0 or effective_par <= 0:
@@ -65,7 +66,7 @@ class PlantPhotosynthesisSystem(System):
                 ) / (1.0 + efficiency * effective_par / max_photo)
 
             # 将有效 PAR 写入 phenotype，供 GrowthSystem 读取
-            pheno.set_trait(
+            PhenotypeSystem.set_trait(pheno, 
                 Trait(
                     name="effective_par",
                     value=effective_par,
@@ -74,7 +75,7 @@ class PlantPhotosynthesisSystem(System):
             )
 
             # 同时写入冠层修正后的光合速率预估
-            pheno.set_trait(
+            PhenotypeSystem.set_trait(pheno, 
                 Trait(
                     name="canopy_photosynthesis_rate",
                     value=photo_rate,

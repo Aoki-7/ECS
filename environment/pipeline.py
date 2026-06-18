@@ -75,9 +75,15 @@ class EnvironmentPipeline(System):
         self._entries = entries
 
     def update(self, world: World, delta_hours: float):
-        """按管线顺序执行所有系统"""
-        for system, _, _ in self._entries:
-            system.update(world, delta_hours)
+        """按管线顺序执行所有系统，带异常捕获"""
+        for system, name, _ in self._entries:
+            try:
+                system.update(world, delta_hours)
+            except Exception as e:
+                # 防御：捕获子系统异常，避免一个系统失败导致整个管线中断
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"[EnvironmentPipeline] 系统 {name} 执行失败: {e}")
 
     def __len__(self) -> int:
         return len(self._entries)

@@ -2,59 +2,34 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:social_component.py
-@说明:社会关系组件
-@时间:2026/03/13 11:21:48
-@作者:Sherry
-@版本:1.0
+@说明:社交组件 v2.0 - 纯数据版
 '''
 
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from core.component import Component
-
 
 @dataclass(slots=True)
 class SocialComponent(Component):
     """
-    社会关系组件
-    
-    用于管理实体与其他实体的社会关系、家庭关系和友谊。
-    
-    属性:
-        relations: 关系映射表 {entity_id: relation_score}，关系值范围 -100 到 100
-        family: 家庭成员ID列表
-        friends: 朋友ID列表
-        acquaintances: 熟人ID列表
+    社交组件 - 纯数据版
+    存储社交关系和冲突。
     """
-    relations: Dict[int, float] = field(default_factory=dict)  # entity_id -> relation_score (-100 ~ 100)
-    family: List[int] = field(default_factory=list)  # 家庭成员ID
-    friends: List[int] = field(default_factory=list)  # 朋友ID
-    acquaintances: List[int] = field(default_factory=list)  # 熟人ID
+    # 社交关系 {entity_id: relation_type}
+    relations: Dict[int, str] = field(default_factory=dict)
     
-    def add_relation(self, entity_id: int, score: float = 0.0) -> None:
-        """添加关系"""
-        self.relations[entity_id] = max(-100, min(100, score))
+    # 关系强度 {entity_id: strength}
+    relation_strength: Dict[int, float] = field(default_factory=dict)
     
-    def update_relation(self, entity_id: int, delta: float) -> None:
-        """修改关系分值"""
-        if entity_id in self.relations:
-            self.relations[entity_id] = max(-100, min(100, self.relations[entity_id] + delta))
-        else:
-            self.add_relation(entity_id, delta)
+    # 冲突记录
+    conflicts: List[Dict] = field(default_factory=list)
     
-    def get_relation(self, entity_id: int) -> float:
-        """获取关系分值"""
-        return self.relations.get(entity_id, 0.0)
+    # 社交状态
+    is_socializing: bool = False
+    current_interaction_partner: Optional[int] = None
     
-    def is_family(self, entity_id: int) -> bool:
-        """检查是否为家庭成员"""
-        return entity_id in self.family
-    
-    def is_friend(self, entity_id: int) -> bool:
-        """检查是否为朋友"""
-        return entity_id in self.friends
-    
-    def is_acquaintance(self, entity_id: int) -> bool:
-        """检查是否为熟人"""
-        return entity_id in self.acquaintances
+    # 社交统计
+    total_interactions: int = 0
+    successful_interactions: int = 0
+    failed_interactions: int = 0

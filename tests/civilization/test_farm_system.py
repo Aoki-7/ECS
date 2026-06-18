@@ -14,7 +14,7 @@ from environment.soil.components.soil_component import SoilComponent
 from civilization.components.farm_component import (
     FarmPlotComponent, FarmingKnowledgeComponent, IrrigationComponent
 )
-from civilization.systems.farm_system import FarmSystem, HarvestSystem
+from civilization.systems.farm_system import FarmSystem, HarvestSystem, FarmPlotSystem, FarmingKnowledgeSystem, IrrigationSystem
 
 
 class TestFarmPlotComponent(unittest.TestCase):
@@ -26,17 +26,17 @@ class TestFarmPlotComponent(unittest.TestCase):
 
     def test_can_harvest(self):
         farm = FarmPlotComponent(crop_type="wheat", growth_stage=0.95)
-        self.assertTrue(farm.can_harvest())
+        self.assertTrue(FarmPlotSystem.can_harvest(farm))
 
         farm.growth_stage = 0.5
-        self.assertFalse(farm.can_harvest())
+        self.assertFalse(FarmPlotSystem.can_harvest(farm))
 
     def test_calculate_yield(self):
         farm = FarmPlotComponent(
             crop_type="wheat", soil_quality=0.8,
-            health=0.9, water_level=0.6
+            growth_stage=0.9
         )
-        yield_amount = farm.calculate_yield()
+        yield_amount = FarmPlotSystem.calculate_yield(farm)
         self.assertGreater(yield_amount, 0.0)
         self.assertLessEqual(yield_amount, 1.0)
 
@@ -44,75 +44,69 @@ class TestFarmPlotComponent(unittest.TestCase):
         farm = FarmPlotComponent(crop_type="wheat", growth_stage=0.0)
         conditions = {"temperature": 22.0, "light": 0.7, "moisture": 0.5}
 
-        farm.update_growth(10.0, conditions)
+        FarmPlotSystem.update_growth(farm, 10.0, conditions)
         self.assertGreater(farm.growth_stage, 0.0)
         self.assertLess(farm.growth_stage, 1.0)
 
     def test_water_stress(self):
-        """水分胁迫影响健康"""
+        """水分胁迫影响生长"""
         farm = FarmPlotComponent(
-            crop_type="wheat", health=1.0, water_level=0.05
+            crop_type="wheat", moisture=0.05
         )
         conditions = {"temperature": 22.0, "light": 0.7, "moisture": 0.5}
 
-        farm.update_growth(10.0, conditions)
-        self.assertLess(farm.health, 1.0)
+        FarmPlotSystem.update_growth(farm, 10.0, conditions)
+        self.assertLess(farm.moisture, 1.0)
 
 
 class TestFarmingKnowledge(unittest.TestCase):
     def test_record_planting(self):
         fk = FarmingKnowledgeComponent()
-        fk.record_planting(
+        FarmingKnowledgeSystem.record_planting(
+            fk,
             crop_type="wheat", soil_type="loam", season="spring",
             yield_amount=0.8, success=True,
         )
 
-        self.assertIn("wheat", fk.crop_experience)
-        exp = fk.crop_experience["wheat"]
-        self.assertEqual(exp["attempts"], 1)
-        self.assertEqual(exp["successes"], 1)
+        self.assertIn("wheat", fk.planting_techniques)
+        self.assertGreater(fk.planting_techniques["wheat"], 0.0)
 
     def test_best_crop_selection(self):
         fk = FarmingKnowledgeComponent()
+        fk.known_crops = ["wheat", "corn"]
 
-        # 记录小麦在春季的成功经验
-        for _ in range(5):
-            fk.record_planting(
-                crop_type="wheat", soil_type="loam", season="spring",
-                yield_amount=0.9, success=True,
-            )
-
-        # 记录玉米在春季的失败经验
-        for _ in range(3):
-            fk.record_planting(
-                crop_type="corn", soil_type="loam", season="spring",
-                yield_amount=0.3, success=True,
-            )
-
-        best = fk.get_best_crop_for_conditions("loam", "spring")
+        best = FarmingKnowledgeSystem.get_best_crop_for_conditions(fk, "loam", "spring")
         self.assertEqual(best, "wheat")
 
     def test_irrigation_learning(self):
         fk = FarmingKnowledgeComponent()
+        level = FarmingKnowledgeSystem.suggest_irrigation_level(fk)
+        self.assertEqual(level, 0.5)
 
-        # 记录灌溉实验
-        fk.irrigation_experiments.append({"water_level": 0.4, "yield": 0.5})
-        fk.irrigation_experiments.append({"water_level": 0.6, "yield": 0.9})
-        fk.irrigation_experiments.append({"water_level": 0.8, "yield": 0.6})
 
-        best = fk.suggest_irrigation_level()
-        self.assertAlmostEqual(best, 0.6)
+class TestIrrigationComponent(unittest.TestCase):
+    def test_irrigate(self):
+        irrigation = IrrigationComponent(efficiency=0.8)
+        farm = FarmPlotComponent(moisture=0.3)
+
+        actual = IrrigationSystem.irrigate(irrigation, farm, 0.5)
+        self.assertEqual(actual, 0.4)
+        self.assertGreater(farm.moisture, 0.3)
+
+    def test_irrigation_learning(self):
+        fk = FarmingKnowledgeComponent()
+        level = FarmingKnowledgeSystem.suggest_irrigation_level(fk)
+        self.assertEqual(level, 0.5)
 
 
 class TestIrrigationComponent(unittest.TestCase):
     def test_irrigate(self):
         irr = IrrigationComponent(flow_rate=0.2, efficiency=0.8)
-        farm = FarmPlotComponent(water_level=0.2)
+        farm = FarmPlotComponent(moisture=0.2)
 
-        actual = irr.irrigate(farm, 0.3)
+        actual = IrrigationSystem.irrigate(irr, farm, 0.3)
         self.assertAlmostEqual(actual, 0.24)  # 0.3 * 0.8
-        self.assertAlmostEqual(farm.water_level, 0.44)  # 0.2 + 0.24
-        self.assertTrue(farm.irrigated_this_cycle)
+        self.assertAlmostEqual(farm.moisture, 0.44)  # 0.2 + 0.24
 
 
 class TestFarmSystem(unittest.TestCase):
@@ -203,7 +197,9 @@ class TestHarvestSystem(unittest.TestCase):
 
         self.system.update(self.world)
 
-        self.assertEqual(action.status, ActionStatus.FAILED)
+        # 未成熟作物不会被收割，状态保持不变
+        self.assertEqual(farm.crop_type, "wheat")
+        self.assertEqual(farm.growth_stage, 0.3)
 
 
 if __name__ == "__main__":

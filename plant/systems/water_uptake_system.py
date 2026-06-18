@@ -7,7 +7,7 @@
 计算植物的水分胁迫并写入 PhenotypeComponent，供 GrowthSystem 使用。
 
 与 GrowthSystem 的配合：
-    GrowthSystem 优先读取 phenotype.get("plant_water_stress")，
+    GrowthSystem 优先读取 PhenotypeSystem.get(phenotype, "plant_water_stress")，
     若不存在则回退到全局 EnvironmentComponent.water_stress_index。
 """
 
@@ -17,6 +17,7 @@ from core.world import World
 from plant.components.root_component import RootComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.traits.trait import Trait
+from biology.systems.phenotype_system import PhenotypeSystem
 from space.space_component import SpaceComponent
 from environment.soil.components.soil_component import SoilComponent
 
@@ -75,7 +76,7 @@ class PlantWaterUptakeSystem(System):
                 )
 
             # 写入 phenotype，供 GrowthSystem 使用
-            pheno.set_trait(
+            PhenotypeSystem.set_trait(pheno, 
                 Trait(
                     name="plant_water_stress",
                     value=min(1.0, stress),

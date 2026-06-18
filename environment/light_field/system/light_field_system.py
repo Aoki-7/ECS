@@ -19,16 +19,13 @@ class LightFieldSystem(System):
     漫射光
     """
     def update(self, world: World, delta_hours: float = 0.0):
+        # 防御：使用 world.get_world_component 替代 entity.get_components
+        radiation = world.get_world_component(SolarRadiationComponent)
+        scatter = world.get_world_component(LightScatterComponent)
+        surface = world.get_world_component(SurfaceLightComponent)
 
-        radiation, scatter, surface = world.get_world_entity().get_components(
-            SolarRadiationComponent,
-            LightScatterComponent,
-            SurfaceLightComponent
-        )
-
-        radiation: SolarRadiationComponent
-        scatter: LightScatterComponent
-        surface: SurfaceLightComponent
+        if radiation is None or scatter is None or surface is None:
+            return
 
         # 太阳辐射
         toa = radiation.toa_radiation

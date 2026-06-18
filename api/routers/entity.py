@@ -168,8 +168,8 @@ async def delete_entity(
         from core.event_bus import EventBus
         event_bus = EventBus.get_instance()
         event_bus.emit("EntityDestroyed", {"entity_id": entity_id})
-    except Exception:
-        pass  # 事件系统可能未初始化
+    except Exception as e:
+        logger.warning(f"[API Entity] 发布 EntityDestroyed 事件失败: {e}")  # 事件系统可能未初始化
     
     world.remove_entity_by_id(entity_id)
     

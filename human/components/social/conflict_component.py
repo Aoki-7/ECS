@@ -2,37 +2,31 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:conflict_component.py
-@说明:冲突状态组件
-@时间:2026/05/29
-@版本:1.0
+@说明:冲突组件 v2.0 - 纯数据版
 '''
 
 from dataclasses import dataclass, field
-from typing import List, Dict
+from typing import Dict, List
 
 from core.component import Component
-
 
 @dataclass(slots=True)
 class ConflictComponent(Component):
     """
-    冲突状态组件
-    存储实体当前参与的冲突列表
+    冲突组件 - 纯数据版
+    存储冲突信息。
     """
-    active_conflicts: List[Dict] = field(default_factory=list)
-    # 每项: {
-    #   "conflict_id": str,
-    #   "type": str,
-    #   "opponent_id": int,
-    #   "intensity": float,
-    #   "strategy": str,
-    # }
-
-    def add_conflict(self, conflict: Dict):
-        self.active_conflicts.append(conflict)
-
-    def remove_conflict(self, conflict_id: str):
-        self.active_conflicts = [
-            c for c in self.active_conflicts
-            if c.get("conflict_id") != conflict_id
-        ]
+    # 活跃冲突 {entity_id: conflict_level}
+    active_conflicts: Dict[int, float] = field(default_factory=dict)
+    
+    # 冲突历史
+    conflict_history: List[Dict] = field(default_factory=list)
+    
+    # 当前冲突状态
+    is_in_conflict: bool = False
+    current_opponent: int = -1
+    
+    # 冲突统计
+    total_conflicts: int = 0
+    resolved_conflicts: int = 0
+    escalated_conflicts: int = 0

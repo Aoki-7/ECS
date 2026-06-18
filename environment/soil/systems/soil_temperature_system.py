@@ -22,11 +22,11 @@ class SoilTemperatureSystem(System):
     tick_interval = 2  # 每2帧执行一次
 
     def update(self, world: World, delta_hours: float):
+        # 防御：使用 world.get_world_component 替代 entity.get_components
+        weather = world.get_world_component(PhysicalWeatherComponent)
+        soil = world.get_world_component(SoilTemperatureComponent)
 
-        weather, soil = world.get_world_entity().get_components(
-            PhysicalWeatherComponent, SoilTemperatureComponent
-        )
-        weather: PhysicalWeatherComponent
-        soil: SoilTemperatureComponent
+        if weather is None or soil is None:
+            return
 
         soil.temperature = soil.temperature * 0.9 + weather.temperature * 0.1

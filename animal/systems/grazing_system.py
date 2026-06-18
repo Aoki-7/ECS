@@ -117,7 +117,7 @@ class GrazingSystem(System):
         """根据表型和形态动态推导食草参数"""
         weight = morph.weight if morph else 10.0
         max_graze_amount = weight * 0.1
-        metabolism = pheno.get("metabolism_rate", 0.02) if pheno else 0.02
+        metabolism = PhenotypeSystem.get(pheno, "metabolism_rate", 0.02) if pheno else 0.02
         conversion_efficiency = max(1.0, 5.0 - metabolism * 80)
         return max_graze_amount, conversion_efficiency
 

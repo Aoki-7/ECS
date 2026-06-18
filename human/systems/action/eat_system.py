@@ -58,7 +58,16 @@ class EatSystem(System):
 
     def _find_food(self, world, space_system, space, inventory):
         """查找食物：先背包后地面，返回 (food_entity, food_source)"""
-        food_entity = inventory.find(FoodComponent, world)
+        # 防御：InventoryComponent 可能没有 find 方法
+        if hasattr(inventory, 'find'):
+            food_entity = inventory.find(FoodComponent, world)
+        else:
+            food_entity = None
+            if hasattr(inventory, 'items'):
+                for item_id in inventory.items:
+                    if world.get_component(item_id, FoodComponent) is not None:
+                        food_entity = item_id
+                        break
         if food_entity is not None:
             return food_entity, "inventory"
 
@@ -88,7 +97,13 @@ class EatSystem(System):
         food_component.amount -= food_component.bite_size
         if food_component.amount <= 0:
             if food_source == "inventory":
-                inventory.remove(food_entity)
+                # 防御：InventoryComponent 可能没有 remove 方法
+                if hasattr(inventory, 'remove'):
+                    inventory.remove(food_entity)
+                elif hasattr(inventory, 'items') and isinstance(inventory.items, dict):
+                    if food_entity in inventory.items:
+                        del inventory.items[food_entity]
+                        inventory.current_weight -= getattr(food_component, 'amount', 0)
 
             ownership = world.get_component(food_entity, OwnershipComponent)
             if ownership is not None:

@@ -77,7 +77,13 @@ class AtmosphereSystem(System):
         super().on_add(world)
         if not world.get_world_component(AtmosphereComponent):
             atm = AtmosphereComponent()
-            world.get_world_entity().add_component(atm)
+            world_entity = world.get_world_entity()
+            if world_entity is not None:
+                world.add_component(world_entity, atm)
+            else:
+                world_entity = world.create_entity()
+                world.add_component(world_entity, atm)
+                world.set_world_entity(world_entity)
 
     def update(self, world: World, delta_hours: float):
         """
@@ -91,7 +97,10 @@ class AtmosphereSystem(System):
 
         for subsystem in self._subsystems:
             if subsystem.is_enabled:
-                subsystem.update(world, delta_hours)
+                try:
+                    subsystem.update(world, delta_hours)
+                except Exception as e:
+                    logger.warning(f"[AtmosphereSystem] 子系统 {subsystem.__class__.__name__} 执行失败: {e}")
 
     def get_atmosphere_state(self, world: World) -> AtmosphereComponent | None:
         """获取当前大气的物理状态"""

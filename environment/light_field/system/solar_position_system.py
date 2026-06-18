@@ -46,7 +46,8 @@ class SolarPositionSystem(System):
 
     def update(self, world: World, delta_hours: float):
         time = world.get_time()
-        solar_pos = world.get_world_entity().get_component(SolarPositionComponent)
+        # 防御：使用 world.get_world_component 替代 entity.get_component
+        solar_pos = world.get_world_component(SolarPositionComponent)
 
         if solar_pos is None:
             return

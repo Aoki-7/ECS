@@ -53,14 +53,27 @@ class SaveLoadSystem(System):
     def on_add(self, world: World):
         """自动挂载 SaveSlotComponent"""
         if world.get_world_component(SaveSlotComponent) is None:
-            world.get_world_entity().add_component(SaveSlotComponent())
+            slot = SaveSlotComponent()
+            world_entity = world.get_world_entity()
+            if world_entity is not None:
+                world.add_component(world_entity, slot)
+            else:
+                world_entity = world.create_entity()
+                world.add_component(world_entity, slot)
+                world.set_world_entity(world_entity)
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """检查是否需要自动存档"""
-        super().update(world, dt)
+        try:
+            super().update(world, dt)
+        except Exception:
+            pass
         # 每 AUTOSAVE_INTERVAL tick 自动存档一次
         if world.tick_count > 0 and world.tick_count % self.AUTOSAVE_INTERVAL == 0:
-            self.save(world, slot_name="autosave")
+            try:
+                self.save(world, slot_name="autosave")
+            except Exception as e:
+                logger.warning(f"[SaveLoad] 自动存档失败: {e}")
 
     # ── 存档 API ──
 
@@ -75,11 +88,16 @@ class SaveLoadSystem(System):
 
         data = WorldSerializer.serialize(world)
 
-        # 更新存档元数据
         slot = world.get_world_component(SaveSlotComponent)
         if slot is None:
             slot = SaveSlotComponent()
-            world.get_world_entity().add_component(slot)
+            world_entity = world.get_world_entity()
+            if world_entity is not None:
+                world.add_component(world_entity, slot)
+            else:
+                world_entity = world.create_entity()
+                world.add_component(world_entity, slot)
+                world.set_world_entity(world_entity)
 
         slot.slot_name = slot_name
         slot.save_time = datetime.now().isoformat()

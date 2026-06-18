@@ -2,35 +2,32 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:solar_position_component.py
-@说明:太阳位置组件
-@时间:2026/05/17
-@作者:Sherry
-@版本:2.0
+@说明:太阳位置组件 v2.0 - 纯数据版
 '''
 
 from dataclasses import dataclass
 
 from core.component import Component
 
-
-@dataclass
+@dataclass(slots=True)
 class SolarPositionComponent(Component):
     """
-    太阳位置组件
-
-    elevation:   太阳高度角 (°)，0=地平线, 90=天顶。夜间 ≤ 0
-    azimuth:     太阳方位角 (°)，从北顺时针，0=北, 90=东, 180=南, 270=西
-    day_length:  昼长 (h)，当前日期的理论日照小时数
-    is_night:    是否夜间（elevation ≤ 0）
-    latitude:    纬度 (°)，北正南负，用于计算太阳位置
+    太阳位置组件 - 纯数据版
+    存储太阳位置信息。
     """
-
-    elevation: float = 0.0
+    # 位置角度
     azimuth: float = 0.0
+    elevation: float = 0.0
+    
+    # 时间相关
+    sunrise_time: float = 6.0
+    sunset_time: float = 18.0
     day_length: float = 12.0
-    latitude: float = 35.0
-
-    @property
-    def is_night(self) -> bool:
-        """是否夜间（elevation ≤ 0）"""
-        return self.elevation <= 0.0
+    
+    # 状态
+    is_daytime: bool = True
+    is_twilight: bool = False
+    
+    # 光照强度
+    light_intensity: float = 1.0
+    uv_index: float = 0.0

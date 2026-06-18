@@ -78,7 +78,8 @@ class WeatherEventSystem(System):
         self._pending_anomalies: Dict[str, Dict] = {}
 
     def update(self, world: World, delta_hours: float):
-        weather = world.get_world_entity().get_component(PhysicalWeatherComponent)
+        # 防御：使用 world.get_world_component 替代 entity.get_component
+        weather = world.get_world_component(PhysicalWeatherComponent)
         if weather is None:
             return
 

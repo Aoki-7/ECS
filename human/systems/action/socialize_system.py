@@ -73,7 +73,12 @@ class SocializeSystem(System):
     MEMORY_TRUST_QUALITY_FACTOR = 0.2
 
     def update(self, world: World, dt: float):
-        current_time = world.get_time().total_hours
+        time = world.get_time()
+        # 防御：如果 get_time() 返回 None，使用默认值 0.0
+        if time is None:
+            current_time = 0.0
+        else:
+            current_time = time.total_hours
 
         for entity, (needs, action, task) in world.get_components(
             PhysiologyNeedsComponent, ActionComponent, TaskComponent

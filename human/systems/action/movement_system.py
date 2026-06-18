@@ -119,5 +119,10 @@ class MovementSystem(System):
         task = world.get_component(entity, TaskComponent)
         if task and task.task == TaskType.EXPLORE:
             memory = world.get_component(entity, MemoryComponent)
-            if memory:
+            if memory and hasattr(memory, 'record_success'):
                 memory.record_success("explore")
+            elif memory and hasattr(memory, 'recent_successes'):
+                if isinstance(memory.recent_successes, list):
+                    memory.recent_successes.append("explore")
+                elif isinstance(memory.recent_successes, dict):
+                    memory.recent_successes["explore"] = memory.recent_successes.get("explore", 0) + 1

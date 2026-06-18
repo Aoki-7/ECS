@@ -42,6 +42,7 @@ from plant.systems.terrain_adaptation_system import TerrainAdaptationSystem
 
 from biology.components.genome_component import GenomeComponent
 from biology.components.phenotype_component import PhenotypeComponent
+from biology.systems.phenotype_system import PhenotypeSystem
 from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from biology.lifecycle.components.morphology_component import MorphologyComponent
@@ -373,8 +374,8 @@ class TestPlantPhotosynthesisSystem(PlantTestBase):
         self.system.update(self.world, dt=1.0)
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
-        self.assertEqual(pheno.get("canopy_photosynthesis_rate"), 0.0)
-        self.assertEqual(pheno.get("effective_par"), 0.0)
+        self.assertEqual(PhenotypeSystem.get(pheno, "canopy_photosynthesis_rate"), 0.0)
+        self.assertEqual(PhenotypeSystem.get(pheno, "effective_par"), 0.0)
 
     def test_zero_max_photo_rate(self):
         """max_photo = 0 时 photo_rate = 0"""
@@ -384,12 +385,12 @@ class TestPlantPhotosynthesisSystem(PlantTestBase):
         light.shade_ratio = 0.0
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
-        pheno.set_trait(__import__("biology.traits.trait", fromlist=["Trait"]).Trait(
+        PhenotypeSystem.set_trait(pheno, __import__("biology.traits.trait", fromlist=["Trait"]).Trait(
             name="max_photosynthesis_rate", value=0.0, source="test"
         ))
 
         self.system.update(self.world, dt=1.0)
-        self.assertEqual(pheno.get("canopy_photosynthesis_rate"), 0.0)
+        self.assertEqual(PhenotypeSystem.get(pheno, "canopy_photosynthesis_rate"), 0.0)
 
     def test_photosynthesis_calculation(self):
         """有光照时光合速率计算正确"""
@@ -402,14 +403,14 @@ class TestPlantPhotosynthesisSystem(PlantTestBase):
         canopy.photosynthetic_efficiency = 0.05
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
-        pheno.set_trait(__import__("biology.traits.trait", fromlist=["Trait"]).Trait(
+        PhenotypeSystem.set_trait(pheno, __import__("biology.traits.trait", fromlist=["Trait"]).Trait(
             name="max_photosynthesis_rate", value=20.0, source="test"
         ))
 
         self.system.update(self.world, dt=1.0)
 
-        effective_par = pheno.get("effective_par")
-        photo_rate = pheno.get("canopy_photosynthesis_rate")
+        effective_par = PhenotypeSystem.get(pheno, "effective_par")
+        photo_rate = PhenotypeSystem.get(pheno, "canopy_photosynthesis_rate")
 
         # effective_par = received_total * (1 - shade_ratio) = 200
         self.assertEqual(effective_par, 200.0)
@@ -431,7 +432,7 @@ class TestPlantPhotosynthesisSystem(PlantTestBase):
         self.system.update(self.world, dt=1.0)
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
-        effective_par = pheno.get("effective_par")
+        effective_par = PhenotypeSystem.get(pheno, "effective_par")
         # effective_par = 100 * (1 - 0.5) = 50
         self.assertEqual(effective_par, 50.0)
 
@@ -652,7 +653,7 @@ class TestPlantWaterUptakeSystem(PlantTestBase):
         self.system.update(self.world, dt=1.0)
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
-        stress = pheno.get("plant_water_stress")
+        stress = PhenotypeSystem.get(pheno, "plant_water_stress")
         self.assertEqual(stress, 1.0)
 
     def test_field_capacity_no_stress(self):
@@ -665,7 +666,7 @@ class TestPlantWaterUptakeSystem(PlantTestBase):
         self.system.update(self.world, dt=1.0)
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
-        stress = pheno.get("plant_water_stress")
+        stress = PhenotypeSystem.get(pheno, "plant_water_stress")
         # 吸水后土壤湿度可能略降，stress 应非常接近 0
         self.assertLess(stress, 0.1)
 
@@ -678,7 +679,7 @@ class TestPlantWaterUptakeSystem(PlantTestBase):
         self.system.update(self.world, dt=1.0)
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
-        stress = pheno.get("plant_water_stress")
+        stress = PhenotypeSystem.get(pheno, "plant_water_stress")
         self.assertGreater(stress, 0.0)
         self.assertLess(stress, 1.0)
 
@@ -723,11 +724,11 @@ class TestTerrainAdaptationSystem(PlantTestBase):
         # 预设一个基准光合速率
         pheno = self.world.get_component(entity, PhenotypeComponent)
         from biology.traits.trait import Trait
-        pheno.set_trait(Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
+        PhenotypeSystem.set_trait(pheno, Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
 
         self.system.update(self.world, dt=1.0)
 
-        adjusted = pheno.get("max_photosynthesis_rate")
+        adjusted = PhenotypeSystem.get(pheno, "max_photosynthesis_rate")
         self.assertAlmostEqual(adjusted, 20.0, places=5)
 
     def test_desert_modifier(self):
@@ -737,11 +738,11 @@ class TestTerrainAdaptationSystem(PlantTestBase):
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
         from biology.traits.trait import Trait
-        pheno.set_trait(Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
+        PhenotypeSystem.set_trait(pheno, Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
 
         self.system.update(self.world, dt=1.0)
 
-        adjusted = pheno.get("max_photosynthesis_rate")
+        adjusted = PhenotypeSystem.get(pheno, "max_photosynthesis_rate")
         self.assertAlmostEqual(adjusted, 20.0 * 0.4, places=5)
 
     def test_water_modifier(self):
@@ -751,11 +752,11 @@ class TestTerrainAdaptationSystem(PlantTestBase):
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
         from biology.traits.trait import Trait
-        pheno.set_trait(Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
+        PhenotypeSystem.set_trait(pheno, Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
 
         self.system.update(self.world, dt=1.0)
 
-        adjusted = pheno.get("max_photosynthesis_rate")
+        adjusted = PhenotypeSystem.get(pheno, "max_photosynthesis_rate")
         self.assertEqual(adjusted, 0.0)
 
     def test_slope_penalty(self):
@@ -765,11 +766,11 @@ class TestTerrainAdaptationSystem(PlantTestBase):
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
         from biology.traits.trait import Trait
-        pheno.set_trait(Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
+        PhenotypeSystem.set_trait(pheno, Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
 
         self.system.update(self.world, dt=1.0)
 
-        adjusted = pheno.get("max_photosynthesis_rate")
+        adjusted = PhenotypeSystem.get(pheno, "max_photosynthesis_rate")
         # slope_penalty = max(0.3, 1.0 - (30-15)/50) = max(0.3, 0.7) = 0.7
         expected = 20.0 * 1.0 * 0.7
         self.assertAlmostEqual(adjusted, expected, places=5)
@@ -781,11 +782,11 @@ class TestTerrainAdaptationSystem(PlantTestBase):
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
         from biology.traits.trait import Trait
-        pheno.set_trait(Trait(name="plant_water_stress", value=0.2, source="test"))
+        PhenotypeSystem.set_trait(pheno, Trait(name="plant_water_stress", value=0.2, source="test"))
 
         self.system.update(self.world, dt=1.0)
 
-        stress = pheno.get("plant_water_stress")
+        stress = PhenotypeSystem.get(pheno, "plant_water_stress")
         # 0.2 + 0.3 = 0.5
         self.assertAlmostEqual(stress, 0.5, places=5)
 
@@ -796,11 +797,11 @@ class TestTerrainAdaptationSystem(PlantTestBase):
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
         from biology.traits.trait import Trait
-        pheno.set_trait(Trait(name="plant_water_stress", value=0.5, source="test"))
+        PhenotypeSystem.set_trait(pheno, Trait(name="plant_water_stress", value=0.5, source="test"))
 
         self.system.update(self.world, dt=1.0)
 
-        stress = pheno.get("plant_water_stress")
+        stress = PhenotypeSystem.get(pheno, "plant_water_stress")
         # 0.5 - 0.2 = 0.3
         self.assertAlmostEqual(stress, 0.3, places=5)
 
@@ -811,7 +812,7 @@ class TestTerrainAdaptationSystem(PlantTestBase):
 
         pheno = self.world.get_component(entity, PhenotypeComponent)
         from biology.traits.trait import Trait
-        pheno.set_trait(Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
+        PhenotypeSystem.set_trait(pheno, Trait(name="max_photosynthesis_rate", value=20.0, source="test"))
 
         self.system.update(self.world, dt=1.0)
 

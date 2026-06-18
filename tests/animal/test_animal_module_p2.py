@@ -14,6 +14,7 @@ from animal.components.animal_needs_component import AnimalNeedsComponent
 from animal.components.animal_perception_component import AnimalPerceptionComponent
 from animal.components.animal_memory_component import AnimalMemoryComponent
 from animal.systems.animal_learning_system import AnimalLearningSystem
+from animal.systems.animal_perception_system import AnimalPerceptionSystem
 from space.space_component import SpaceComponent
 
 
@@ -88,20 +89,20 @@ class TestPerceptionSystem(unittest.TestCase):
         self.world.add_component(target, target_space)
 
         # 手动添加检测
-        perception.add_detection(target.id, "plant")
-        self.assertTrue(perception.has_detected(target.id))
+        AnimalPerceptionSystem.add_detection(perception, target.id, "plant")
+        self.assertTrue(AnimalPerceptionSystem.has_detected(perception, target.id))
 
     def test_detection_types(self):
         """测试按类型检测"""
         perception = AnimalPerceptionComponent()
-        perception.add_detection(1, "plant")
-        perception.add_detection(2, "predator")
-        perception.add_detection(3, "plant")
+        AnimalPerceptionSystem.add_detection(perception, 1, "plant")
+        AnimalPerceptionSystem.add_detection(perception, 2, "predator")
+        AnimalPerceptionSystem.add_detection(perception, 3, "plant")
 
-        plants = perception.get_by_type("plant")
+        plants = AnimalPerceptionSystem.get_by_type(perception, "plant")
         self.assertEqual(len(plants), 2)
 
-        predators = perception.get_by_type("predator")
+        predators = AnimalPerceptionSystem.get_by_type(perception, "predator")
         self.assertEqual(len(predators), 1)
 
 
@@ -142,13 +143,14 @@ class TestNeedsSystem(unittest.TestCase):
 
     def test_critical_needs(self):
         """测试临界需求"""
+        from animal.systems.animal_needs_system import AnimalNeedsSystem
         needs = AnimalNeedsComponent()
         needs.hunger = 0.9
         needs.thirst = 0.9
         needs.fear = 0.9
 
         # 应该返回最紧急的需求
-        dominant = needs.get_dominant_need()
+        dominant = AnimalNeedsSystem.get_dominant_need(needs)
         self.assertIn(dominant, ["hunger", "thirst", "fear"])
 
 

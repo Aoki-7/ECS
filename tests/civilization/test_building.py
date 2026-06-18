@@ -14,6 +14,7 @@ from space.collision_system import ColliderComponent, ObstacleComponent
 from civilization.components.building_component import (
     BuildingComponent, BuildingInventoryComponent
 )
+from civilization.systems.building_system import BuildingSystem
 from civilization.building_factory import BuildingFactory
 
 
@@ -26,46 +27,46 @@ class TestBuildingComponent(unittest.TestCase):
 
     def test_take_damage(self):
         b = BuildingComponent(durability=100.0)
-        b.take_damage(30.0)
+        BuildingSystem.take_damage(b, 30.0)
         self.assertEqual(b.durability, 70.0)
         self.assertTrue(b.is_active)
 
     def test_destroy(self):
         b = BuildingComponent(durability=50.0)
-        b.take_damage(50.0)
+        BuildingSystem.take_damage(b, 50.0)
         self.assertEqual(b.durability, 0.0)
         self.assertFalse(b.is_active)
 
     def test_repair(self):
         b = BuildingComponent(durability=50.0, max_durability=100.0)
-        b.take_damage(30.0)
-        b.repair(20.0)
+        BuildingSystem.take_damage(b, 30.0)
+        BuildingSystem.repair(b, 20.0)
         self.assertEqual(b.durability, 40.0)
         self.assertTrue(b.is_active)
 
     def test_occupants(self):
         b = BuildingComponent(capacity=2)
-        self.assertTrue(b.add_occupant(1))
-        self.assertTrue(b.add_occupant(2))
-        self.assertFalse(b.add_occupant(3))  # 超出容量
-        b.remove_occupant(1)
+        self.assertTrue(BuildingSystem.add_occupant(b, 1))
+        self.assertTrue(BuildingSystem.add_occupant(b, 2))
+        self.assertFalse(BuildingSystem.add_occupant(b, 3))  # 超出容量
+        BuildingSystem.remove_occupant(b, 1)
         self.assertEqual(len(b.occupants), 1)
 
 
 class TestBuildingInventory(unittest.TestCase):
     def test_add_remove(self):
         inv = BuildingInventoryComponent()
-        self.assertTrue(inv.add_item(101, 5.0))
+        self.assertTrue(BuildingSystem.add_item(inv, 101, 5.0))
         self.assertEqual(inv.items[101], 5.0)
-        removed = inv.remove_item(101, 2.0)
+        removed = BuildingSystem.remove_item(inv, 101, 2.0)
         self.assertEqual(removed, 2.0)
         self.assertEqual(inv.items[101], 3.0)
 
     def test_capacity_limit(self):
         inv = BuildingInventoryComponent(max_items=2)
-        inv.add_item(1)
-        inv.add_item(2)
-        self.assertFalse(inv.add_item(3))  # 超出容量
+        BuildingSystem.add_item(inv, 1)
+        BuildingSystem.add_item(inv, 2)
+        self.assertFalse(BuildingSystem.add_item(inv, 3))  # 超出容量
 
 
 class TestBuildingFactory(unittest.TestCase):

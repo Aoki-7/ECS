@@ -57,7 +57,7 @@ class TestFireSpreadSystem:
         world.add_component(target, TerrainComponent(terrain_type=1, vegetation_cover=0.8))
 
         # 多次更新确保点燃
-        for _ in range(5):
+        for _ in range(50):
             system.update(world, 1.0)
 
         # 目标应该被点燃

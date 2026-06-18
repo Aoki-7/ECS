@@ -33,6 +33,26 @@ logger = logging.getLogger(__name__)
 class AnimalNeedsSystem(System):
     tick_interval = 5
 
+    @staticmethod
+    def get_dominant_need(needs: AnimalNeedsComponent) -> str:
+        """返回当前最强烈的需求名称"""
+        needs_dict = {
+            "hunger": needs.hunger,
+            "thirst": needs.thirst,
+            "sleepiness": needs.sleepiness,
+            "fear": needs.fear,
+            "reproductive_urge": needs.reproductive_urge,
+        }
+        return max(needs_dict, key=needs_dict.get)
+
+    @staticmethod
+    def is_critical(needs: AnimalNeedsComponent, threshold: float = 0.8) -> bool:
+        """是否有任何需求达到临界值"""
+        return any(
+            v >= threshold
+            for v in [needs.hunger, needs.thirst, needs.sleepiness, needs.fear]
+        )
+
     def update(self, world: World, dt: float = 1.0) -> None:
         """更新所有动物的需求状态"""
         for entity, (animal, needs, energy) in world.get_components(
@@ -52,7 +72,7 @@ class AnimalNeedsSystem(System):
         pheno: PhenotypeComponent, dt: float
     ) -> None:
         """更新饥饿度：能量越低，饥饿度越高"""
-        metabolism = pheno.get("metabolism_rate", 0.02) if pheno else 0.02
+        metabolism = PhenotypeSystem.get(pheno, "metabolism_rate", 0.02) if pheno else 0.02
         max_energy = getattr(energy, "max_energy", 100.0)
         energy_ratio = energy.value / max_energy if max_energy > 0 else 1.0
 
@@ -68,7 +88,7 @@ class AnimalNeedsSystem(System):
         self, needs: AnimalNeedsComponent, pheno: PhenotypeComponent, dt: float
     ) -> None:
         """更新口渴度：基础增长 + 代谢影响"""
-        metabolism = pheno.get("metabolism_rate", 0.02) if pheno else 0.02
+        metabolism = PhenotypeSystem.get(pheno, "metabolism_rate", 0.02) if pheno else 0.02
         thirst_increase = 0.01 * metabolism * 50.0 * dt
         needs.thirst = min(1.0, needs.thirst + thirst_increase)
 

@@ -22,6 +22,7 @@ from human.components.cognitive.task_component import TaskComponent, TaskType, T
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.abilities.skill_component import SkillComponent
 from civilization.components.crafting_knowledge_component import CraftingKnowledgeComponent
+from civilization.systems.crafting_knowledge_system import CraftingKnowledgeSystem
 
 import logging
 
@@ -80,7 +81,7 @@ class CookingSystem(System):
         )
 
         # 记录知识
-        knowledge.record_attempt(
+        CraftingKnowledgeSystem.record_attempt(knowledge,
             inputs={"food": 1.0, "heat": temp},
             output=result["state"],
             quality=result["quality"],

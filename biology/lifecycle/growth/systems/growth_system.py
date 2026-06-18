@@ -57,10 +57,10 @@ class GrowthSystem(System):
 
     def _calc_photosynthesis_params(self, pheno, env) -> dict:
         """计算光合基础参数"""
-        max_photo = pheno.get("max_photosynthesis_rate", 20.0)
-        alpha = pheno.get("light_use_efficiency", 0.05)
-        shade_tol = pheno.get("shade_tolerance", 0.3)
-        par = pheno.get("effective_par", env.par)
+        max_photo = PhenotypeSystem.get(pheno, "max_photosynthesis_rate", 20.0)
+        alpha = PhenotypeSystem.get(pheno, "light_use_efficiency", 0.05)
+        shade_tol = PhenotypeSystem.get(pheno, "shade_tolerance", 0.3)
+        par = PhenotypeSystem.get(pheno, "effective_par", env.par)
 
         # Michaelis-Menten
         if max_photo <= 0:
@@ -81,10 +81,10 @@ class GrowthSystem(System):
 
     def _calc_environment_factors(self, pheno, env, params) -> dict:
         """计算环境修正因子"""
-        optimal_temp = pheno.get("optimal_temp", 25.0)
-        cold_tol = pheno.get("cold_tolerance", 0.4)
-        heat_tol = pheno.get("heat_tolerance", 0.5)
-        wue = pheno.get("water_use_efficiency", 0.05)
+        optimal_temp = PhenotypeSystem.get(pheno, "optimal_temp", 25.0)
+        cold_tol = PhenotypeSystem.get(pheno, "cold_tolerance", 0.4)
+        heat_tol = PhenotypeSystem.get(pheno, "heat_tolerance", 0.5)
+        wue = PhenotypeSystem.get(pheno, "water_use_efficiency", 0.05)
         temp = env.air_temperature
 
         # CO₂
@@ -100,7 +100,7 @@ class GrowthSystem(System):
             temp_factor = max(0.0, 1.0 - (temp_diff / heat_width) ** 2)
 
         # 水分
-        water_stress = pheno.get("plant_water_stress", env.water_stress_index)
+        water_stress = PhenotypeSystem.get(pheno, "plant_water_stress", env.water_stress_index)
         wue_bonus = wue * 2.0
         effective_stress = max(0.0, water_stress - wue_bonus)
         water_factor = 1.0 - effective_stress

@@ -14,6 +14,7 @@ from civilization.components.crafting_knowledge_component import (
 )
 from civilization.systems.crafting_system import CraftingSystem
 from civilization.systems.technology_evolution_system import TechnologyEvolutionSystem
+from civilization.systems.crafting_knowledge_system import CraftingKnowledgeSystem
 from human.components.cognitive.knowledge_component import KnowledgeComponent
 from human.components.social.social_component import SocialComponent
 
@@ -23,14 +24,14 @@ class TestCraftingKnowledgeComponent(unittest.TestCase):
         """记录制作尝试"""
         ck = CraftingKnowledgeComponent()
         for _ in range(3):
-            ck.record_attempt(
+            CraftingKnowledgeSystem.record_attempt(ck, 
                 inputs={"wood": 5.0, "stone": 2.0},
                 output="axe",
                 quality=0.8,
                 success=True,
             )
 
-        recipes = ck.get_known_recipes(min_confidence=0.5)
+        recipes = CraftingKnowledgeSystem.get_known_recipes(ck, min_confidence=0.5)
         self.assertEqual(len(recipes), 1)
         self.assertEqual(recipes[0]["output"], "axe")
         self.assertEqual(recipes[0]["success_rate"], 1.0)
@@ -38,42 +39,50 @@ class TestCraftingKnowledgeComponent(unittest.TestCase):
     def test_failure_learning(self):
         """从失败中学习"""
         ck = CraftingKnowledgeComponent()
-        ck.record_attempt(
+        CraftingKnowledgeSystem.record_attempt(ck, 
             inputs={"wood": 5.0},
             output="axe",
             quality=0.0,
             success=False,
         )
-        ck.record_attempt(
+        CraftingKnowledgeSystem.record_attempt(ck, 
             inputs={"wood": 5.0},
             output="axe",
             quality=0.6,
             success=True,
         )
 
-        recipes = ck.get_known_recipes(min_confidence=0.5)
+        recipes = CraftingKnowledgeSystem.get_known_recipes(ck, min_confidence=0.5)
         self.assertEqual(len(recipes), 1)
         self.assertEqual(recipes[0]["success_rate"], 0.5)
 
     def test_suggest_experiment(self):
         """建议实验"""
         ck = CraftingKnowledgeComponent()
+        # 添加失败记录以确保有建议
+        CraftingKnowledgeSystem.record_attempt(
+            ck,
+            inputs={"wood": 5.0},
+            output="axe",
+            quality=0.0,
+            success=False,
+        )
         available = {"wood": 10.0, "stone": 5.0, "metal": 2.0}
 
-        suggestion = ck.suggest_experiment(available)
+        suggestion = CraftingKnowledgeSystem.suggest_exploration(ck, available)
         self.assertIsNotNone(suggestion)
-        self.assertIn("materials", suggestion)
+        self.assertIn("wood", suggestion)
 
     def test_improve_technique(self):
         """技术提升"""
         ck = CraftingKnowledgeComponent()
-        ck.improve_technique("sharpening", 0.1)
-        self.assertAlmostEqual(ck.get_technique_level("sharpening"), 0.1)
+        CraftingKnowledgeSystem.improve_technique(ck, "sharpening", 0.1)
+        self.assertAlmostEqual(CraftingKnowledgeSystem.get_technique_level(ck, "sharpening"), 0.1)
 
         # 递减增长
-        ck.improve_technique("sharpening", 0.1)
-        self.assertGreater(ck.get_technique_level("sharpening"), 0.15)
-        self.assertLessEqual(ck.get_technique_level("sharpening"), 1.0)
+        CraftingKnowledgeSystem.improve_technique(ck, "sharpening", 0.1)
+        self.assertGreater(CraftingKnowledgeSystem.get_technique_level(ck, "sharpening"), 0.15)
+        self.assertLessEqual(CraftingKnowledgeSystem.get_technique_level(ck, "sharpening"), 1.0)
 
 
 class TestCulturalTechPool(unittest.TestCase):
@@ -84,7 +93,7 @@ class TestCulturalTechPool(unittest.TestCase):
 
         # 记录多次成功
         for _ in range(5):
-            ck.record_attempt(
+            CraftingKnowledgeSystem.record_attempt(ck, 
                 inputs={"wood": 5.0, "stone": 2.0},
                 output="axe",
                 quality=0.7,
@@ -97,7 +106,7 @@ class TestCulturalTechPool(unittest.TestCase):
         # 再次整合（模拟另一个人贡献）
         ck2 = CraftingKnowledgeComponent()
         for _ in range(3):
-            ck2.record_attempt(
+            CraftingKnowledgeSystem.record_attempt(ck2,
                 inputs={"wood": 5.0, "stone": 2.0},
                 output="axe",
                 quality=0.8,
@@ -116,7 +125,7 @@ class TestCulturalTechPool(unittest.TestCase):
         ck = CraftingKnowledgeComponent()
         for i, output in enumerate(["axe", "spear", "knife", "shield"]):
             for _ in range(3):
-                ck.record_attempt(
+                CraftingKnowledgeSystem.record_attempt(ck, 
                     inputs={"wood": float(i + 1)},
                     output=output,
                     quality=0.6,
@@ -195,7 +204,7 @@ class TestTechnologyEvolutionSystem(unittest.TestCase):
         # 记录成功配方
         ck = self.world.get_component(entity, CraftingKnowledgeComponent)
         for _ in range(5):
-            ck.record_attempt(
+            CraftingKnowledgeSystem.record_attempt(ck, 
                 inputs={"wood": 5.0, "stone": 2.0},
                 output="super_axe",
                 quality=0.8,
@@ -215,7 +224,7 @@ class TestTechnologyEvolutionSystem(unittest.TestCase):
         entity = self.world.create_entity()
         know = KnowledgeComponent()
         self.world.add_component(entity, know)
-        know.add_technology("endangered_tech")
+        know.known_technologies.add("endangered_tech")
 
         # 运行检测（不应抛异常）
         self.system._check_technology_loss(self.world)
