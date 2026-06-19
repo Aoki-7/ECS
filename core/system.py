@@ -26,7 +26,6 @@ class System:
         self._enabled = value
 
     #     # 生命周期
-    # 
     def on_add(self, world: World):
         """系统被添加到 world 时调用"""
         pass
@@ -46,8 +45,7 @@ class System:
         if not self.enabled:
             return
 
-    #     # 调试信息
-    # 
+    # 调试信息
     @property
     def last_duration(self):
         return self._last_duration
