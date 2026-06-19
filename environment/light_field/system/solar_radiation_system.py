@@ -22,14 +22,12 @@ class SolarRadiationSystem(System):
     tick_interval = 20  # 每20帧执行一次
     """根据太阳位置进行计算"""
     def update(self, world: World, delta_hour: float):
+        # 防御：使用 world.get_world_component 替代 entity.get_components
+        solar_pos = world.get_world_component(SolarPositionComponent)
+        radiation = world.get_world_component(SolarRadiationComponent)
 
-        solar_pos, radiation = world.get_world_entity().get_components(
-            SolarPositionComponent,
-            SolarRadiationComponent
-        )
-
-        solar_pos: SolarPositionComponent
-        radiation: SolarRadiationComponent
+        if solar_pos is None or radiation is None:
+            return
         
         elevation = solar_pos.elevation
 

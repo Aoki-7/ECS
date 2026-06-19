@@ -56,7 +56,7 @@ class GeneExpressionSystem(System):
             phenotype: PhenotypeComponent
 
             # 1️⃣ 清理旧 gene trait，避免跨帧累加
-            phenotype.remove_by_source("gene")
+            PhenotypeSystem.remove_by_source(phenotype, "gene")
 
             # 2️⃣ 按 expression_target 累加表达值
             accumulator: dict[str, float] = {}
@@ -77,4 +77,4 @@ class GeneExpressionSystem(System):
                 # trait 约束逻辑在 System 层统一处理
                 trait.clamp()
 
-                phenotype.set_trait(trait)
+                PhenotypeSystem.set_trait(phenotype, trait)

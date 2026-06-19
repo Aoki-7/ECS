@@ -13,7 +13,7 @@ from core.world import World
 
 from human.components.cognitive.goal_component import GoalComponent
 from human.components.cognitive.personality_component import PersonalityComponent
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from biology.components.gender_component import GenderComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 from human.components.economic.economy_component import EconomyComponent
@@ -115,6 +115,14 @@ class GoalSystem(System):
         Returns:
             str: 人生阶段标识
         """
+        # 防御：如果 age 是对象，尝试获取 age 属性
+        if hasattr(age, 'age'):
+            age = age.age
+        elif hasattr(age, 'value'):
+            age = age.value
+        elif not isinstance(age, (int, float)):
+            age = 25.0  # 默认成年
+        
         if age < self.CHILDHOOD[1]:
             return "childhood"
         elif age < self.ADOLESCENCE[1]:

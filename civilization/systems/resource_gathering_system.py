@@ -13,7 +13,7 @@ from core.world import World
 from core.entity import Entity
 from typing import List, Tuple
 
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.abilities.skill_component import SkillComponent
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus

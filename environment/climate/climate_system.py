@@ -16,6 +16,8 @@ import math
 from core.world import World
 from core.system import System
 from environment.climate.climate_component import ClimateComponent
+from environment.ocean.components.ocean_current_component import OceanCurrentComponent
+from space.space_component import SpaceComponent
 
 
 class ClimateSystem(System):
@@ -43,7 +45,8 @@ class ClimateSystem(System):
     RAIN_TREND_MAX: float = 1.3
 
     def update(self, world: World, delta_hours: float):
-        climate: ClimateComponent = world.get_world_entity().get_component(ClimateComponent)
+        # 防御：使用 world.get_world_component 替代 entity.get_component
+        climate = world.get_world_component(ClimateComponent)
         if climate is None:
             return
 
@@ -85,3 +88,24 @@ class ClimateSystem(System):
             min(self.RAIN_TREND_MAX, climate.rainfall_trend)
         )
         climate._rainfall_velocity *= 0.95
+
+        # ── 洋流影响 ──
+        self._apply_ocean_current_effects(world, climate)
+
+    def _apply_ocean_current_effects(self, world: World, climate: ClimateComponent) -> None:
+        """洋流对气候的影响"""
+        for entity, (current, space) in world.get_components(OceanCurrentComponent, SpaceComponent):
+            if current is None:
+                continue
+
+            # 暖流增加温度趋势，寒流降低
+            if current.current_type == "warm":
+                climate.temp_trend += 0.001 * current.temperature / 25.0
+            elif current.current_type == "cold":
+                climate.temp_trend -= 0.001 * (25.0 - current.temperature) / 25.0
+
+            # 限制范围
+            climate.temp_trend = max(
+                self.TEMP_TREND_MIN,
+                min(self.TEMP_TREND_MAX, climate.temp_trend)
+            )

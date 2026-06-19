@@ -5,14 +5,17 @@ from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 
 from core.world import World
+from identity.category_component import CategoryComponent
+from identity.category import EntityCategory
+from identity.subcategory import ResourceSubCategory
 
 class MetalFactory:
     """金属工厂类"""
-    
+
     @staticmethod
     def create_metal(world: World, x, y):
         entity = world.create_entity()
-        
+
         space = SpaceComponent(x=x, y=y)
         world.add_component(entity, space)
         space_system = world.get_system(SpaceSystem)
@@ -22,5 +25,10 @@ class MetalFactory:
         world.add_component(entity, NameComponent(name="金属", category="metal"))
         world.add_component(entity, MetalComponent())
         world.add_component(entity, ResourceComponent(resource_type="metal", amount=1.0))
+
+        world.add_component(entity, CategoryComponent(
+            category=EntityCategory.RESOURCE,
+            subcategory=ResourceSubCategory.METAL,
+        ))
 
         return entity

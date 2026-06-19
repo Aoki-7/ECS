@@ -58,7 +58,6 @@ class EconomySystem(System):
 
     def on_add(self, world: World):
         """自动挂载 MarketPricesComponent 到 world_entity"""
-        from core.event_log_component import EventLogComponent
         we = world.get_world_entity()
         # 使用 EconomyComponent 作为市场价格载体（已存在）
         if world.get_world_component(EconomyComponent) is None:

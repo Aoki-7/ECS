@@ -10,6 +10,6 @@
 此文件保留用于向后兼容，将在下一版本中删除。
 '''
 
-from core.components.vision_component import VisionComponent
+from human.components.perception.vision_component import VisionComponent
 
 __all__ = ["VisionComponent"]

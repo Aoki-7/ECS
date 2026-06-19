@@ -107,7 +107,7 @@ class EnvironmentAdaptationSystem(System):
         if len(self.adaptation_log) > self.MAX_LOG_ENTRIES:
             self.adaptation_log = self.adaptation_log[-self.MAX_LOG_ENTRIES:]
 
-    def update(self, world: World, dt) -> None:
+    def update(self, world: World, dt: float) -> None:
         """系统更新：从世界读取真实环境并更新季节判定"""
         env_data = self._get_environment(world)
         self.current_season = self._determine_season(

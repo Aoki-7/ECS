@@ -1,0 +1,75 @@
+.layout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 200px;
+  background: #16213e;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  border-right: 1px solid #0f3460;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  padding: 0 20px 20px;
+  color: #e94560;
+  border-bottom: 1px solid #0f3460;
+}
+
+.nav-list {
+  list-style: none;
+  padding: 20px 0;
+  flex: 1;
+}
+
+.nav-list li {
+  margin: 4px 0;
+}
+
+.nav-list a {
+  display: block;
+  padding: 12px 20px;
+  color: #a0a0a0;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.nav-list a:hover {
+  background: #0f3460;
+  color: #fff;
+}
+
+.nav-list a.active {
+  background: #e94560;
+  color: #fff;
+}
+
+.status-bar {
+  padding: 15px 20px;
+  border-top: 1px solid #0f3460;
+}
+
+.connection-status {
+  font-size: 12px;
+}
+
+.connection-status.connected {
+  color: #4ecca3;
+}
+
+.connection-status.disconnected {
+  color: #e94560;
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}

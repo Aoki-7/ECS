@@ -14,8 +14,8 @@ from core.world import World
 from core.entity import Entity
 
 # 导入所有组件
-from biology.components.life_cycle_component import LifeCycleComponent
-from biology.components.morphology_component import MorphologyComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.morphology_component import MorphologyComponent
 from biology.components.gender_component import GenderComponent
 from human.components.basic.identity_component import IdentityComponent
 
@@ -27,8 +27,8 @@ from biology.components.disease_component import DiseaseComponent
 from human.components.combat.combat_stats_component import CombatStatsComponent
 from human.components.social.dialogue_component import DialogueComponent
 from human.components.social.conflict_component import ConflictComponent
-from core.components.velocity_component import VelocityComponent
-from core.components.vision_component import VisionComponent
+from human.components.abilities.velocity_component import VelocityComponent
+from human.components.perception.vision_component import VisionComponent
 from human.components.abilities.skill_component import SkillComponent
 from human.components.abilities.search_component import SearchComponent
 from human.components.economic.economy_component import EconomyComponent
@@ -44,7 +44,7 @@ from human.components.social.social_component import SocialComponent
 from human.components.social.relationship_component import RelationshipComponent
 from human.components.social.reproduction_component import ReproductionComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
-from core.components.action_component import ActionComponent
+from human.components.action.action_component import ActionComponent
 from space.space_component import SpaceComponent
 
 
@@ -194,6 +194,23 @@ class HumanEntity:
         world.add_component(entity, MemoryComponent())
         world.add_component(entity, PersonalityComponent())
         world.add_component(entity, EmotionComponent())
+
+        # 生态组件：人类作为杂食动物参与食物链
+        from biology.ecology.components.food_chain_component import FoodChainComponent
+        world.add_component(entity, FoodChainComponent(
+            trophic_level=2,
+            niche="omnivore",
+            energy_transfer_efficiency=0.1,
+        ))
+
+        # 分类组件：标记为人类
+        from identity.category_component import CategoryComponent
+        from identity.category import EntityCategory
+        from identity.subcategory import HumanSubCategory
+        world.add_component(entity, CategoryComponent(
+            category=EntityCategory.HUMAN,
+            subcategory=HumanSubCategory.CIVILIAN,
+        ))
 
         # 社交组件
         world.add_component(entity, SocialComponent())

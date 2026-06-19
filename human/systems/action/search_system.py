@@ -2,10 +2,17 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:search_system.py
-@说明:搜索系统
+@说明:搜索系统 v2.0 — 递进式策略 + 搜索历史 + 记忆写入
 @时间:2026/04/13
 @作者:AI Assistant
 @版本:2.0
+
+增强说明（v2.0）：
+    1. 递进式搜索策略：visual → memory → explore → random
+    2. 搜索历史管理：避免在同一区域重复搜索
+    3. 概率更新：根据成功率动态调整 estimated_probability
+    4. 发现即记忆：找到目标后立即 record_place，无需等到动作完成
+    5. 策略切换记录：写入 search.strategy_history 供分析
 '''
 
 import math
@@ -14,40 +21,58 @@ import random
 from core.system import System
 from core.world import World
 
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
-from core.components.search_component import SearchComponent
-from core.components.vision_component import VisionComponent
+from human.components.action.search_component import SearchComponent
+from human.components.perception.vision_component import VisionComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
+from biology.components.smell_component import SmellComponent
 
 from resource.food.components.food_component import FoodComponent
 from resource.water.components.water_component import WaterComponent
 from resource.components.resource_component import ResourceComponent
 from human.components.basic.human_component import HumanComponent
-from biology.components.life_cycle_component import LifeCycleComponent
-from biology.components.plant_component import PlantComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
+from plant.components.plant_component import PlantComponent
+
+from human.systems.action.search_strategies import SEARCH_STRATEGIES
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SearchSystem(System):
-    tick_interval = 1  # 每帧执行一次，避免搜索动作"卡住"导致饥渴持续增长
+    tick_interval = 1
     """
-    SEARCH 行为系统。
-    依赖 VisionComponent 将视野内实体反馈到行动目标。
-    
-    当视野内无目标时，尝试随机移动以扩大搜索范围。
+    SEARCH 行为系统 v2.0
+
+    递进式搜索策略：
+        1. visual  : 视觉扫描（VisionComponent 的 focused_entity_ids）
+        2. memory  : 记忆回溯（MemoryComponent.find_best_place_by_type）
+        3. explore : 扩大探索（空间索引 query_radius 50/100）
+        4. random  : 随机漫游（扩大搜索范围）
+
+    每次搜索后更新：
+        - search.strategy         : 当前使用的策略
+        - search.strategy_history : 策略切换记录
+        - search.search_history   : 搜索过的位置
+        - search.total_searches   : 累计搜索次数
+        - search.successful_searches : 累计成功次数
+        - search.estimated_probability : 动态概率 = (success+1)/(total+2)
+        - search.discoveries      : 发现记录（供记忆系统读取）
     """
 
     def update(self, world: World, dt: float):
+        from core.components.world_config_component import WorldConfigComponent
+        world_config = world.get_world_component(WorldConfigComponent)
+
         for entity, (action, vision, search, task, space) in world.get_components(
-            ActionComponent,
-            VisionComponent,
-            SearchComponent,
-            TaskComponent,
-            SpaceComponent,
+            ActionComponent, VisionComponent, SearchComponent, TaskComponent, SpaceComponent
         ):
             action: ActionComponent
             vision: VisionComponent
@@ -59,7 +84,6 @@ class SearchSystem(System):
                 continue
 
             target_component = self._resolve_target_component(task)
-
             if target_component is None:
                 self._fail_search(action, task, search)
                 continue
@@ -67,257 +91,130 @@ class SearchSystem(System):
             if search.target_component is None:
                 search.target_component = target_component
 
-            # 在视野范围内搜索目标
-            nearest_entity = None
-            nearest_distance = float("inf")
-            nearest_pos = None
+            # 更新搜索统计
+            search.total_searches += 1
+            search.last_search_tick = world.tick_count
 
-            for eid in vision.entity_ids:
-                candidate = world.query_entity(eid)
-                if candidate is None or not candidate.is_alive():
-                    continue
+            nearest_entity, nearest_pos, used_strategy = self._execute_search(
+                world, entity, space, vision, search, task, target_component
+            )
 
-                # 检查是否是目标组件类型
-                target_comp = world.get_component(candidate, target_component)
-                if target_comp is not None:
-                    target_space = world.get_component(candidate, SpaceComponent)
-                    if target_space is not None:
-                        dx = target_space.x - space.x
-                        dy = target_space.y - space.y
-                        dist = math.hypot(dx, dy)
-                        if dist < nearest_distance:
-                            nearest_distance = dist
-                            nearest_entity = candidate
-                            nearest_pos = (target_space.x, target_space.y)
-                        continue
+            if nearest_entity is None:
+                self._handle_random_roam(world, world_config, entity, action, search, task, space)
+                continue
 
-                # 对于 FIND_FOOD 任务，也搜索可收获植物
-                if task.task == TaskType.FIND_FOOD:
-                    # 通过 PlantComponent 搜索可收获植物
-                    plant_comp = world.get_component(candidate, PlantComponent)
-                    if plant_comp is not None:
-                        lifecycle = world.get_component(candidate, LifeCycleComponent)
-                        if lifecycle is not None and lifecycle.stage >= plant_comp.harvest_stage:
-                            target_space = world.get_component(candidate, SpaceComponent)
-                            if target_space is not None:
-                                dx = target_space.x - space.x
-                                dy = target_space.y - space.y
-                                dist = math.hypot(dx, dy)
-                                if dist < nearest_distance:
-                                    nearest_distance = dist
-                                    nearest_entity = candidate
-                                    nearest_pos = (target_space.x, target_space.y)
-                                    continue
-                    # 也搜索 ResourceComponent 标记的植物资源
-                    res = world.get_component(candidate, ResourceComponent)
-                    if res is not None and res.resource_type == "plant" and res.amount > 0:
-                        lifecycle = world.get_component(candidate, LifeCycleComponent)
-                        if lifecycle is not None and lifecycle.stage >= LifeCycleComponent.VEGETATIVE:
-                            target_space = world.get_component(candidate, SpaceComponent)
-                            if target_space is not None:
-                                dx = target_space.x - space.x
-                                dy = target_space.y - space.y
-                                dist = math.hypot(dx, dy)
-                                if dist < nearest_distance:
-                                    nearest_distance = dist
-                                    nearest_entity = candidate
-                                    nearest_pos = (target_space.x, target_space.y)
+            self._handle_target_found(
+                world, entity, action, search, task, nearest_entity, nearest_pos, used_strategy
+            )
 
-            if nearest_entity is not None:
-                # 找到目标了！
-                action.target_entity = nearest_entity.id
-                action.target_pos = nearest_pos
-                action.current_action = ActionType.MOVE_TO
-                action.progress = 0.0
-                action.status = ActionStatus.RUNNING
-                task.status = TaskStatus.RUNNING
-                search.result_entity = nearest_entity.id
-                # 从队列中移除已完成的 SEARCH
-                if ActionType.SEARCH in action.action_queue:
-                    action.action_queue.remove(ActionType.SEARCH)
-                # 如果目标是植物而非地面食物，将后续 PICKUP 替换为 HARVEST
-                if world.get_component(nearest_entity, PlantComponent) is not None:
-                    for i, act in enumerate(action.action_queue):
-                        if act == ActionType.PICKUP:
-                            action.action_queue[i] = ActionType.HARVEST
-                            break
-            else:
-                # 视野内无目标，优先查询记忆中的地点
-                found_memory = False
-                memory = world.get_component(entity, MemoryComponent)
-                if memory:
-                    if task.task == TaskType.DRINK_WATER:
-                        mem_pos = memory.find_best_place_by_type("water_source")
-                        if mem_pos:
-                            action.target_pos = mem_pos
-                            action.current_action = ActionType.MOVE_TO
-                            action.progress = 0.0
-                            action.status = ActionStatus.RUNNING
-                            task.status = TaskStatus.RUNNING
-                            search.result_entity = None
-                            found_memory = True
-                    elif task.task == TaskType.FIND_FOOD:
-                        mem_pos = memory.find_best_place_by_type("food_source")
-                        if mem_pos:
-                            action.target_pos = mem_pos
-                            action.current_action = ActionType.MOVE_TO
-                            action.progress = 0.0
-                            action.status = ActionStatus.RUNNING
-                            task.status = TaskStatus.RUNNING
-                            search.result_entity = None
-                            found_memory = True
-                
-                if not found_memory:
-                    # 记忆中也无目标，使用空间索引进行大范围全局搜索
-                    space_system = world.get_system(SpaceSystem)
-                    found_global = False
-                    if space_system is not None:
-                        # 对食物和水源都使用 query_radius(30) 全局搜索最近目标
-                        if task.task == TaskType.DRINK_WATER:
-                            ids = space_system.query_radius(space.x, space.y, 50)
-                            best_id = None
-                            best_dist = float("inf")
-                            for eid in ids:
-                                if eid == entity.id:
-                                    continue
-                                candidate = world.query_entity(eid)
-                                if candidate is None:
-                                    continue
-                                if world.get_component(candidate, WaterComponent) is None:
-                                    continue
-                                c_space = world.get_component(candidate, SpaceComponent)
-                                if c_space is None:
-                                    continue
-                                d = math.hypot(c_space.x - space.x, c_space.y - space.y)
-                                if d < best_dist:
-                                    best_dist = d
-                                    best_id = candidate
-                            # 兜底：遍历所有地面水源
-                            if best_id is None:
-                                for w_ent, (w_comp, w_space) in world.get_components(WaterComponent, SpaceComponent):
-                                    d = math.hypot(w_space.x - space.x, w_space.y - space.y)
-                                    if d < best_dist:
-                                        best_dist = d
-                                        best_id = w_ent
-                            if best_id is not None:
-                                c_space = world.get_component(best_id, SpaceComponent)
-                                action.target_entity = best_id.id
-                                action.target_pos = (c_space.x, c_space.y)
-                                action.current_action = ActionType.MOVE_TO
-                                action.progress = 0.0
-                                action.status = ActionStatus.RUNNING
-                                task.status = TaskStatus.RUNNING
-                                search.result_entity = best_id.id
-                                found_global = True
+    def _execute_search(self, world, entity, space, vision, search, task, target_component):
+        """执行递进式搜索策略，返回 (nearest_entity, nearest_pos, used_strategy)"""
+        for strategy in SEARCH_STRATEGIES:
+            result = strategy.search(world, entity, space, task, target_component=target_component)
+            if result[0] is not None:
+                return result
+        return None, None, "none"
 
-                        elif task.task == TaskType.FIND_FOOD:
-                            # 先用空间索引查询半径50内的食物
-                            ids = space_system.query_radius(space.x, space.y, 50)
-                            best_id = None
-                            best_dist = float("inf")
-                            for eid in ids:
-                                if eid == entity.id:
-                                    continue
-                                candidate = world.query_entity(eid)
-                                if candidate is None:
-                                    continue
-                                # 搜索地面食物
-                                if world.get_component(candidate, FoodComponent) is not None:
-                                    c_space = world.get_component(candidate, SpaceComponent)
-                                    if c_space is None:
-                                        continue
-                                    d = math.hypot(c_space.x - space.x, c_space.y - space.y)
-                                    if d < best_dist:
-                                        best_dist = d
-                                        best_id = candidate
-                                    continue
-                                # 也搜索可收获植物（PlantComponent）
-                                plant_comp = world.get_component(candidate, PlantComponent)
-                                if plant_comp is not None:
-                                    lifecycle = world.get_component(candidate, LifeCycleComponent)
-                                    if lifecycle is not None and lifecycle.stage >= plant_comp.harvest_stage:
-                                        c_space = world.get_component(candidate, SpaceComponent)
-                                        if c_space is None:
-                                            continue
-                                        d = math.hypot(c_space.x - space.x, c_space.y - space.y)
-                                        if d < best_dist:
-                                            best_dist = d
-                                            best_id = candidate
-                                            continue
-                                # 也搜索 ResourceComponent 标记的植物资源
-                                res = world.get_component(candidate, ResourceComponent)
-                                if res is not None and res.resource_type == "plant" and res.amount > 0:
-                                    lifecycle = world.get_component(candidate, LifeCycleComponent)
-                                    if lifecycle is not None and lifecycle.stage >= LifeCycleComponent.VEGETATIVE:
-                                        c_space = world.get_component(candidate, SpaceComponent)
-                                        if c_space is None:
-                                            continue
-                                        d = math.hypot(c_space.x - space.x, c_space.y - space.y)
-                                        if d < best_dist:
-                                            best_dist = d
-                                            best_id = candidate
-                            # 如果空间索引没找到，直接遍历所有地面食物（兜底，确保不饿死）
-                            if best_id is None:
-                                for f_ent, (f_comp, f_space) in world.get_components(FoodComponent, SpaceComponent):
-                                    d = math.hypot(f_space.x - space.x, f_space.y - space.y)
-                                    if d < best_dist:
-                                        best_dist = d
-                                        best_id = f_ent
-                            # 兜底遍历可收获植物（PlantComponent）
-                            if best_id is None:
-                                for p_ent, (p_comp, p_space) in world.get_components(PlantComponent, SpaceComponent):
-                                    lifecycle = world.get_component(p_ent, LifeCycleComponent)
-                                    if lifecycle is None or lifecycle.stage < p_comp.harvest_stage:
-                                        continue
-                                    d = math.hypot(p_space.x - space.x, p_space.y - space.y)
-                                    if d < best_dist:
-                                        best_dist = d
-                                        best_id = p_ent
-                            # 兜底遍历 ResourceComponent 标记的植物资源
-                            if best_id is None:
-                                for p_ent, (p_res, p_space) in world.get_components(ResourceComponent, SpaceComponent):
-                                    if p_res.resource_type != "plant" or p_res.amount <= 0:
-                                        continue
-                                    lifecycle = world.get_component(p_ent, LifeCycleComponent)
-                                    if lifecycle is None or lifecycle.stage < LifeCycleComponent.VEGETATIVE:
-                                        continue
-                                    d = math.hypot(p_space.x - space.x, p_space.y - space.y)
-                                    if d < best_dist:
-                                        best_dist = d
-                                        best_id = p_ent
-                            if best_id is not None:
-                                c_space = world.get_component(best_id, SpaceComponent)
-                                action.target_entity = best_id.id
-                                action.target_pos = (c_space.x, c_space.y)
-                                action.current_action = ActionType.MOVE_TO
-                                action.progress = 0.0
-                                action.status = ActionStatus.RUNNING
-                                task.status = TaskStatus.RUNNING
-                                search.result_entity = best_id.id
-                                found_global = True
-                                # 从队列中移除已完成的 SEARCH
-                                if ActionType.SEARCH in action.action_queue:
-                                    action.action_queue.remove(ActionType.SEARCH)
-                                # 如果目标是植物而非地面食物，将后续 PICKUP 替换为 HARVEST
-                                if world.get_component(best_id, PlantComponent) is not None:
-                                    for i, act in enumerate(action.action_queue):
-                                        if act == ActionType.PICKUP:
-                                            action.action_queue[i] = ActionType.HARVEST
-                                            break
+    def _handle_random_roam(self, world, world_config, entity, action, search, task, space):
+        """全部搜索策略失败时，执行随机漫游"""
+        roam_range = 15
+        roam_x = space.x + random.randint(-roam_range, roam_range)
+        roam_y = space.y + random.randint(-roam_range, roam_range)
+        if world_config is not None and hasattr(world_config, 'clamp_position'):
+            roam_x, roam_y = world_config.clamp_position(roam_x, roam_y)
+        else:
+            roam_x = max(0, roam_x)
+            roam_y = max(0, roam_y)
 
-                    if not found_global:
-                        # 随机向较远位置漫游以扩大搜索范围
-                        roam_range = 15
-                        roam_x = space.x + random.randint(-roam_range, roam_range)
-                        roam_y = space.y + random.randint(-roam_range, roam_range)
-                        roam_x = max(0, min(99, roam_x))
-                        roam_y = max(0, min(99, roam_y))
+        action.target_pos = (roam_x, roam_y)
+        action.progress = 0.0
+        action.status = ActionStatus.RUNNING
+        search.result_entity = None
 
-                        action.target_pos = (roam_x, roam_y)
-                        action.current_action = ActionType.MOVE_TO
-                        action.progress = 0.0
-                        action.status = ActionStatus.RUNNING
-                        search.result_entity = None
+        # 移除 SEARCH，让 ActionSystem 调度 MOVE_TO
+        if ActionType.SEARCH in action.action_queue:
+            action.action_queue.remove(ActionType.SEARCH)
+
+        self._record_search(search, world.tick_count, space.x, space.y, "random", found=False)
+
+    def _handle_target_found(self, world, entity, action, search, task, nearest_entity, nearest_pos, used_strategy):
+        """找到目标后的处理逻辑"""
+        search.successful_searches += 1
+        search.estimated_probability = (search.successful_searches + 1) / (search.total_searches + 2)
+        search.strategy = used_strategy
+
+        action.target_entity = nearest_entity.id if hasattr(nearest_entity, 'id') else None
+        action.target_pos = nearest_pos
+        action.progress = 0.0
+        action.status = ActionStatus.RUNNING
+        task.status = TaskStatus.RUNNING
+        search.result_entity = nearest_entity.id if hasattr(nearest_entity, 'id') else None
+
+        # 记录搜索历史和策略
+        self._record_search(search, world.tick_count, nearest_pos[0], nearest_pos[1], used_strategy, found=True)
+        self._record_strategy(search, world.tick_count, used_strategy, found=True)
+
+        # 发现即记忆
+        self._record_discovery(world, entity, search, nearest_entity, nearest_pos, task)
+
+        # 队列处理：移除当前 SEARCH，让 ActionSystem 调度下一个动作（MOVE_TO）
+        if ActionType.SEARCH in action.action_queue:
+            action.action_queue.remove(ActionType.SEARCH)
+        # 注意：不在这里设置 current_action = MOVE_TO
+        # 让 ActionSystem 在下一帧从 action_queue 中取出 MOVE_TO
+        # 这样 SEARCH → MOVE_TO → PICKUP/HARVEST → EAT/DRINK 的队列能正确执行
+        if hasattr(nearest_entity, 'id') and world.get_component(nearest_entity, PlantComponent) is not None:
+            for i, act in enumerate(action.action_queue):
+                if act == ActionType.PICKUP:
+                    action.action_queue[i] = ActionType.HARVEST
+                    break
+
+    # ── 记录方法 ──
+
+    def _record_search(self, search: SearchComponent, tick: int, x: float, y: float, strategy: str, found: bool):
+        """记录搜索历史"""
+        search.search_history.append((tick, x, y, strategy, found))
+        if len(search.search_history) > search.max_history_size:
+            search.search_history.pop(0)
+
+    def _record_strategy(self, search: SearchComponent, tick: int, strategy: str, found: bool):
+        """记录策略切换历史"""
+        search.strategy_history.append((tick, strategy, found))
+        if len(search.strategy_history) > 10:
+            search.strategy_history.pop(0)
+
+    def _record_discovery(self, world, entity, search, target, target_pos, task):
+        """发现即记忆：立即记录到 search.discoveries 和 memory"""
+        # A) 写入 search.discoveries
+        place_type = self._task_to_place_type(task)
+        search.discoveries.append((
+            search.last_search_tick, target.id if hasattr(target, 'id') else None,
+            target_pos[0], target_pos[1], place_type
+        ))
+
+        # B) 写入 memory
+        memory = world.get_component(entity, MemoryComponent)
+        if memory is None:
+            return
+
+        current_time = 0.0
+        try:
+            time_comp = world.get_time()
+            if time_comp:
+                current_time = time_comp.total_hours
+        except Exception as e:
+            logger.warning(f"[SearchSystem] 获取世界时间失败: {e}")
+
+        if place_type is not None:
+            memory.record_place(target_pos, place_type, current_time, sentiment=0.5)
+
+    def _task_to_place_type(self, task: TaskComponent) -> str | None:
+        """任务类型转换为地点类型"""
+        if task.task == TaskType.DRINK_WATER:
+            return "water_source"
+        elif task.task == TaskType.FIND_FOOD:
+            return "food_source"
+        return None
 
     def _resolve_target_component(self, task: TaskComponent):
         """根据当前任务类型解析需要搜索的目标组件类型"""
@@ -336,7 +233,6 @@ class SearchSystem(System):
         action.progress = 0.0
         action.target_pos = None
         action.target_entity = None
-        # 移除队列前端的 SEARCH/MOVE_TO，保留最终的 EAT/DRINK/SOCIALIZE 等
         while action.action_queue and action.action_queue[0] in (ActionType.SEARCH, ActionType.MOVE_TO):
             action.action_queue.pop(0)
         task.status = TaskStatus.FAILED

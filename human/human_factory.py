@@ -17,6 +17,9 @@ from human.components.economic.inventory.inventory_component import InventoryCom
 from resource.water.water_factory import WaterFactory
 from space.space_component import SpaceComponent
 import random
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -65,7 +68,14 @@ class HumanFactory:
         ))
         inventory = world.get_component(entity, InventoryComponent)
         if inventory is not None:
-            inventory.add(water_bottle)
+            # InventoryComponent.items 是 Dict[int, float]
+            if hasattr(inventory, 'items') and isinstance(inventory.items, dict):
+                inventory.items[water_bottle] = water_amount
+                inventory.current_weight += water_amount
+            elif hasattr(inventory, 'add'):
+                inventory.add(water_bottle)
+            else:
+                logger.warning(f"[HumanFactory] InventoryComponent 无法添加物品: {inventory}")
 
         # 为人类添加初始食物
         food_ration = world.create_entity()
@@ -77,7 +87,13 @@ class HumanFactory:
             resource_type="food", amount=food_amount
         ))
         if inventory is not None:
-            inventory.add(food_ration)
+            if hasattr(inventory, 'items') and isinstance(inventory.items, dict):
+                inventory.items[food_ration] = food_amount
+                inventory.current_weight += food_amount
+            elif hasattr(inventory, 'add'):
+                inventory.add(food_ration)
+            else:
+                logger.warning(f"[HumanFactory] InventoryComponent 无法添加物品: {inventory}")
 
         return entity
 

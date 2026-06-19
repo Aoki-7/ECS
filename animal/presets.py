@@ -26,6 +26,7 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "growth_partition": 0.4,  # 生长分配比例：能量用于生长的占比
         "speed_factor": 1.0,      # 移动速度系数：1.0 为基准倍率
         "sensing_range": 5.0,     # 感知范围：可探测环境/食物/威胁的半径
+        "diet_type": 0.5,         # 食性基因：0=纯草食, 1=纯肉食, 0.5=杂食
     },
 
     # ---- ⚡ 高速型 ----
@@ -37,6 +38,7 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "growth_partition": 0.3,  # 生长分配降低：更多能量用于活动
         "speed_factor": 2.5,      # 速度倍率显著提升
         "sensing_range": 10.0,    # 广域感知：提前发现威胁或猎物
+        "diet_type": 0.5,         # 高速型可草食可肉食，偏杂食
     },
 
     # ---- 🛡️ 坦克型 ----
@@ -48,5 +50,42 @@ SPECIES_PRESETS: Dict[str, Dict[str, float]] = {
         "growth_partition": 0.6,  # 高生长分配：更快积累体型/防御
         "speed_factor": 0.5,      # 速度减半：机动性差
         "sensing_range": 3.0,     # 感知范围缩小：更依赖近距离反应
+        "diet_type": 0.3,         # 坦克型偏草食（靠防御吃草）
+    },
+
+    # ---- 🐺 捕食者型 ----
+    # 顶级食肉动物，高攻击、高消耗、低繁殖
+    "predator": {
+        "max_hunger_rate": 10.0,  # 极高饥饿速率：肉食获取不稳定
+        "metabolism_rate": 0.05,  # 高代谢：维持捕猎所需的高能量
+        "optimal_temp": 38.0,     # 较高的最佳体温
+        "growth_partition": 0.25, # 低生长分配：更多能量用于捕猎
+        "speed_factor": 2.0,      # 高速度：追击猎物
+        "sensing_range": 15.0,    # 广域感知：发现远处猎物
+        "diet_type": 0.85,        # 捕食者纯肉食
+    },
+
+    # ---- 🦌 食草动物型 ----
+    # 温和食草，中等速度，适合群居
+    "herbivore": {
+        "max_hunger_rate": 6.0,   # 中等饥饿速率
+        "metabolism_rate": 0.025, # 中等代谢
+        "optimal_temp": 37.0,     # 标准体温
+        "growth_partition": 0.5,  # 均衡生长分配
+        "speed_factor": 1.5,      # 中等偏快速度：逃避捕食者
+        "sensing_range": 8.0,     # 中等感知：发现捕食者
+        "diet_type": 0.15,        # 食草动物纯草食
+    },
+
+    # ---- 🐇 小型食草动物型 ----
+    # 小型啮齿类，高繁殖、高警觉、寿命短
+    "grass_eater": {
+        "max_hunger_rate": 4.0,   # 低饥饿速率：体型小消耗少
+        "metabolism_rate": 0.035, # 高代谢率（相对体重）
+        "optimal_temp": 37.5,     # 略高体温
+        "growth_partition": 0.55, # 较高生长分配：快速成熟
+        "speed_factor": 1.8,      # 较快：逃避天敌
+        "sensing_range": 6.0,     # 警觉范围
+        "diet_type": 0.1,         # 小型食草动物偏草食
     },
 }

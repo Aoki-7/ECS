@@ -92,7 +92,7 @@ class SpaceSystem():
 
     # -----------------------------------------------------
 
-    def update(self, world=None, dt=None):
+    def update(self, world=None, dt: float = None):
         """
         同步所有dirty实体
         """

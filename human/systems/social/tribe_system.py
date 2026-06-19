@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 from human.components.social.tribe_component import TribeComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
 from human.components.basic.identity_component import IdentityComponent
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
-from core.systems.event_log_system import EventLog
+from identity.event_log_system import EventLog
 
 
 class TribeSystem(System):
@@ -75,7 +75,8 @@ class TribeSystem(System):
 
         # 创建部落实体
         tribe_entity = world.create_entity()
-        tribe = TribeComponent(name="初始部落")
+        tribe = TribeComponent()
+        tribe.tribe_name = "初始部落"
         world.add_component(tribe_entity, tribe)
 
         # 计算初始领地中心
@@ -87,7 +88,11 @@ class TribeSystem(System):
                 total_y += space.y
 
         tribe.home_territory = (total_x / len(humans), total_y / len(humans))
-        tribe.formed_time = world.get_time().total_hours
+        # 防御：TribeComponent 可能没有 formed_time 字段
+        if hasattr(tribe, 'formed_time'):
+            tribe.formed_time = world.get_time().total_hours
+        else:
+            tribe.founded_tick = getattr(world, 'current_tick', 0)
 
         # 选择最年长者为领袖
         oldest = None
@@ -104,10 +109,18 @@ class TribeSystem(System):
             if membership:
                 tribe.add_member(entity.id)
                 membership.tribe_id = tribe_entity.id
-                membership.joined_time = world.get_time().total_hours
+                # 防御：TribeMembershipComponent 可能没有 joined_time 字段
+                if hasattr(membership, 'joined_time'):
+                    membership.joined_time = world.get_time().total_hours
+                else:
+                    membership.joined_tick = getattr(world, 'current_tick', 0)
                 if entity == oldest:
                     membership.role = "leader"
-                    tribe.set_leader(entity.id)
+                    # 防御：TribeComponent 可能没有 set_leader 方法
+                    if hasattr(tribe, 'set_leader'):
+                        tribe.set_leader(entity.id)
+                    else:
+                        tribe.leader_id = entity.id
                 else:
                     membership.role = "member"
                 membership.loyalty = 60.0 + random.uniform(-10, 10)
@@ -162,7 +175,11 @@ class TribeSystem(System):
         tribe.add_member(child_entity.id)
         child_membership.tribe_id = tribe_entity.id
         child_membership.role = "member"
-        child_membership.joined_time = current_time
+        # 防御：TribeMembershipComponent 可能没有 joined_time 字段
+        if hasattr(child_membership, 'joined_time'):
+            child_membership.joined_time = current_time
+        else:
+            child_membership.joined_tick = getattr(world, 'current_tick', 0)
         child_membership.loyalty = 50.0 + parent_membership.loyalty * 0.3
 
         # 父母贡献值增加

@@ -12,7 +12,7 @@ from core.system import System
 from core.world import World
 
 from human.components.social.dialogue_component import DialogueComponent
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.memory_component import MemoryComponent
 
 
@@ -63,11 +63,11 @@ class DialogueTurn:
     @classmethod
     def generate(cls, context: DialogueContext, speaker: int) -> "DialogueTurn":
         """生成对话回合"""
-        if not hasattr(cls, '_all_turns'):
-            cls._all_turns = []
-        cls._all_turns.append(None)  # 占位，实际对象在构造后由调用方管理
+        if not hasattr(cls, '_turn_counter'):
+            cls._turn_counter = 0
+        cls._turn_counter += 1
         return cls(
-            turn序号=len(cls._all_turns),
+            turn序号=cls._turn_counter,
             speakers=list(context.participants),
             topics=[context.topic] if context.topic else [],
             sentiment=context.sentiment,
@@ -90,7 +90,7 @@ class DialogueSystem(System):
     
     def __init__(self):
         super().__init__()
-        self.active_dialogue: Optional[DialogueContext] = None
+        self.active_dialogues: Dict[int, DialogueContext] = {}
         self.turn_history: List[DialogueTurn] = []
     
     def start_conversation(self, topic: str, participants: Optional[List[int]] = None) -> DialogueContext:
@@ -103,13 +103,18 @@ class DialogueSystem(System):
         if participants:
             for p in participants:
                 context.add_participant(p)
-        self.active_dialogue = context
+                self.active_dialogues[p] = context
         return context
     
     def add_speaker(self, entity_id: int):
         """添加对话参与者"""
-        if self.active_dialogue:
-            self.active_dialogue.add_participant(entity_id)
+        dialogue = self.active_dialogues.get(entity_id)
+        if dialogue is None:
+            if not self.active_dialogues:
+                return
+            dialogue = next(iter(self.active_dialogues.values()))
+        dialogue.add_participant(entity_id)
+        self.active_dialogues[entity_id] = dialogue
     
     def respond_to_message(self, message: str, from_entity: int) -> str:
         """
@@ -121,7 +126,8 @@ class DialogueSystem(System):
         Returns:
             合适的回应文本
         """
-        if not self.active_dialogue:
+        dialogue = self.active_dialogues.get(from_entity)
+        if not dialogue:
             return "请先开始对话"
         
         # 简单关键词匹配来生成回应
@@ -163,8 +169,10 @@ class DialogueSystem(System):
         }
         
         response_list = responses.get(category, [""])
+        dialogue = self.active_dialogues.get(speaker)
         if response_list:
-            self.active_dialogue.sentiment += random.uniform(-0.2, 0.3)
+            if dialogue:
+                dialogue.sentiment += random.uniform(-0.2, 0.3)
             return random.choice(response_list)
         return ""
     
@@ -187,16 +195,17 @@ class DialogueSystem(System):
             ]
             return random.choice(generic_responses)
     
-    def update_context(self, message: str, sentiment: float = None):
+    def update_context(self, message: str, sentiment: float = None, entity_id: int = None):
         """更新对话上下文"""
-        if self.active_dialogue and sentiment:
-            self.active_dialogue.sentiment = max(-1, min(1, 
-                self.active_dialogue.sentiment + sentiment * 0.1))
+        dialogue = self.active_dialogues.get(entity_id) if entity_id is not None else None
+        if dialogue and sentiment:
+            dialogue.sentiment = max(-1, min(1, 
+                dialogue.sentiment + sentiment * 0.1))
     
     def save_turn(self, context: DialogueContext, speakers: List[int], topics: List[str]):
         """保存对话轮次记录"""
         if not self.turn_history:
-           DialogueTurn._all_turns = []
+            DialogueTurn._turn_counter = 0
         
         turn = DialogueTurn(
             turn序号=len(self.turn_history) + 1,
@@ -213,40 +222,101 @@ class DialogueSystem(System):
         for entity, (action, dialogue) in world.get_components(
             ActionComponent, DialogueComponent
         ):
-            action: ActionComponent
-            dialogue: DialogueComponent
-
             if action.current_action not in (ActionType.TALK, ActionType.INTERACT):
                 continue
+            self._process_dialogue(world, entity, action, dialogue, dt)
 
-            if not dialogue.is_talking:
-                dialogue.is_talking = True
-                dialogue.turn_count = 0
+    def _process_dialogue(self, world, entity, action, dialogue, dt) -> None:
+        """处理单个实体的对话"""
+        if not dialogue.is_talking:
+            dialogue.is_talking = True
+            dialogue.turn_count = 0
 
-            # 对话进度推进
-            action.progress += dt * 0.2
-            dialogue.turn_count += 1
+        action.progress += dt * 0.2
+        dialogue.turn_count += 1
 
-            if action.progress >= 1.0:
-                # 对话完成
-                action.progress = 1.0
-                action.status = ActionStatus.SUCCESS
-                dialogue.is_talking = False
+        if action.progress >= 1.0:
+            self._finish_dialogue(world, entity, action, dialogue)
 
-                # 记录到记忆
-                memory = world.get_component(entity, MemoryComponent)
-                if memory and dialogue.target_entity_id is not None:
-                    current_time = world.get_time().total_hours
-                    memory.add_event(
-                        current_time, "dialogue",
-                        f"与 {dialogue.target_entity_id} 进行了对话",
-                        impact=dialogue.sentiment * 0.3,
-                    )
+    def _finish_dialogue(self, world, entity, action, dialogue) -> None:
+        """完成对话处理"""
+        action.progress = 1.0
+        action.status = ActionStatus.SUCCESS
+        dialogue.is_talking = False
 
-                # 清理对话状态
-                dialogue.target_entity_id = None
-                dialogue.topic = ""
-                dialogue.sentiment = 0.0
+        self._record_dialogue_memory(world, entity, dialogue)
+        self._propagate_narrative(world, entity, dialogue)
+        self._clear_dialogue_state(dialogue)
+
+    def _record_dialogue_memory(self, world, entity, dialogue) -> None:
+        """记录对话记忆"""
+        memory = world.get_component(entity, MemoryComponent)
+        if memory and dialogue.target_entity_id is not None:
+            current_time = world.get_time().total_hours
+            memory.add_event(
+                current_time, "dialogue",
+                f"与 {dialogue.target_entity_id} 进行了对话",
+                impact=dialogue.sentiment * 0.3,
+            )
+
+    def _propagate_narrative(self, world, entity, dialogue) -> None:
+        """统一记忆层叙述传播"""
+        memory_layer = world.get_memory_layer()
+        if memory_layer is None or dialogue.target_entity_id is None:
+            return
+
+        from memory_layer import SubjectType
+        target_concept_id = memory_layer.get_concept_by_entity(dialogue.target_entity_id)
+        if not target_concept_id:
+            return
+
+        concept_id = target_concept_id.concept_id if hasattr(target_concept_id, 'concept_id') else str(target_concept_id)
+
+        # 记录接触
+        memory_layer.record_contact(
+            subject_id=entity.id,
+            subject_type=SubjectType.HUMAN,
+            entity_id=dialogue.target_entity_id,
+            contact_type="social",
+            intensity=abs(dialogue.sentiment) + 0.5,
+            context=f"对话: {dialogue.topic}",
+        )
+
+        # 叙述传播给旁观者
+        if abs(dialogue.sentiment) <= 0.3 or not dialogue.topic:
+            return
+
+        self._share_with_bystanders(world, entity, dialogue, memory_layer, concept_id)
+
+    def _share_with_bystanders(self, world, entity, dialogue, memory_layer, concept_id) -> None:
+        """将对话内容传播给附近旁观者"""
+        from space.space_system import SpaceSystem
+        from space.space_component import SpaceComponent
+        from memory_layer import SubjectType
+
+        space_system = world.get_system(SpaceSystem)
+        entity_space = world.get_component(entity, SpaceComponent)
+        if not space_system or not entity_space:
+            return
+
+        nearby = space_system.query_radius(entity_space.x, entity_space.y, 5.0)
+        for nearby_id in nearby:
+            if nearby_id in (entity.id, dialogue.target_entity_id):
+                continue
+            nearby_entity = world.query_entity(nearby_id)
+            if nearby_entity and world.get_component(nearby_entity, DialogueComponent):
+                memory_layer.narrate_memory(
+                    from_subject=entity.id,
+                    to_subject=nearby_id,
+                    to_subject_type=SubjectType.HUMAN,
+                    concept_id=concept_id,
+                )
+
+    def _clear_dialogue_state(self, dialogue) -> None:
+        """清理对话状态"""
+        dialogue.target_entity_id = None
+        dialogue.topic = ""
+        dialogue.sentiment = 0.0
 
 if __name__ == "__main__":
     import logging

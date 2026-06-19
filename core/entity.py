@@ -29,11 +29,20 @@ class Entity:
     # ==
 
     @classmethod
-    def create(cls):
+    def create(cls, pool=None):
         """
         创建新 Entity
         自动复用已释放 ID
+        
+        Args:
+            pool: 可选的 EntityPool，如果提供且启用，优先从池中获取
         """
+        # 尝试从实体池获取
+        if pool is not None and pool.is_enabled():
+            pooled = pool.acquire()
+            if pooled is not None:
+                return pooled
+        
         if cls._free_ids:
             entity_id = cls._free_ids.pop()
         else:

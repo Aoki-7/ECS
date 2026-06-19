@@ -2,66 +2,44 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:brain_component.py
-@说明:思维组件 v2.0
-@时间:2026/03/13
-@作者:Sherry
-@版本:2.0
-
-增强版思维系统：
-- 当前思维/内心独白
-- 专注目标
-- 心理状态（正常/压力/困惑/兴奋/抑郁）
-- 决策信心
-- 思维队列（最近的想法）
+@说明:大脑组件 v2.0 - 纯数据版
 '''
 
-from dataclasses import dataclass, field
-
 from core.component import Component
+from dataclasses import dataclass
 
-@dataclass
+@dataclass(slots=True)
 class BrainComponent(Component):
     """
-        思维组件
-        整合情绪、记忆、目标，生成当前思维状态
+    大脑组件 - 纯数据版
+    存储思维状态和心理健康。
     """
-    # 当前思维/内心独白
-    current_thought: str = ""
-    
-    # 专注目标实体ID
-    focus_target: int = None
-    
+    # 思维状态
+    thought: str = ""
+    mental_state: str = "stable"
+
+    # 认知能力
+    memory_capacity: float = 1.0
+    learning_rate: float = 0.5
+    attention_span: float = 0.5
+    creativity: float = 0.5
+    logic_ability: float = 0.5
+    intuition: float = 0.5
+
     # 心理状态
-    mental_state: str = "normal"  # normal/stressed/confused/excited/depressed/calm
-    
-    # 决策信心 (0-1)
-    decision_confidence: float = 1.0
-    
-    # 思维队列（最近的想法，用于调试和叙事）
-    thought_history: list = field(default_factory=list)
-    
-    # 当前行为模式
-    behavior_mode: str = "idle"  # idle/survival/social/explore/work/escape/rest
-    
-    def set_thought(self, thought: str):
-        """设置当前思维，并记录到历史"""
-        self.current_thought = thought
-        self.thought_history.append(thought)
-        # 只保留最近20条
-        if len(self.thought_history) > 20:
-            self.thought_history.pop(0)
-    
-    def update_mental_state(self, emotion_score: float, stress_level: float):
-        """根据情绪评分和压力更新心理状态"""
-        if stress_level > 0.7:
-            self.mental_state = "stressed"
-        elif emotion_score > 0.5:
-            self.mental_state = "excited"
-        elif emotion_score < -0.5:
-            self.mental_state = "depressed"
-        elif stress_level > 0.4:
-            self.mental_state = "confused"
-        elif emotion_score > 0.1:
-            self.mental_state = "calm"
-        else:
-            self.mental_state = "normal"
+    anxiety: float = 0.0
+    depression: float = 0.0
+    paranoia: float = 0.0
+    confidence: float = 0.5
+    curiosity: float = 0.5
+    motivation: float = 0.5
+
+    # 意识状态
+    consciousness_level: float = 1.0
+    is_conscious: bool = True
+    is_sleeping: bool = False
+    is_dreaming: bool = False
+
+    # 思维记录
+    last_thought: str = ""
+    thought_count: int = 0

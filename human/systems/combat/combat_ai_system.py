@@ -14,18 +14,18 @@ import random
 from core.system import System
 from core.world import World
 
-from core.components.action_component import (
+from human.components.action.action_component import (
     ActionComponent, ActionType, ActionStatus
 )
 from human.components.combat.combat_stats_component import CombatStatsComponent
 from human.components.cognitive.emotion_component import EmotionComponent
 from human.components.cognitive.personality_component import PersonalityComponent
-from core.components.vision_component import VisionComponent
+from human.components.perception.vision_component import VisionComponent
 from human.components.social.relationship_component import RelationshipComponent
 
 
 class CombatAISystem(System):
-    tick_interval = 1  # 每1帧执行一次
+    tick_interval = 3  # 每3帧执行一次（战斗AI决策不需要每帧）
     """
     战斗 AI 系统
     根据情绪状态和性格特征自动决策是否攻击或逃跑

@@ -34,7 +34,7 @@ class WeatherLifetimeSystem(System):
     def update(self, world: World, delta_hours: float):
         expired = []
 
-        for entity, (anomaly,) in world.get_components(PhysicalAnomalyComponent):
+        for entity, (anomaly,) in list(world.get_components(PhysicalAnomalyComponent)):
             anomaly: PhysicalAnomalyComponent
 
             # 持续时间检查
@@ -47,5 +47,7 @@ class WeatherLifetimeSystem(System):
                 expired.append(entity)
 
         for entity in expired:
-            if world.has_entity(entity):
-                world.remove_entity(entity)
+            # 防御：entity 可能是 int 或 Entity 对象
+            entity_id = entity.id if hasattr(entity, 'id') else entity
+            if world.has_entity(entity_id):
+                world.remove_entity(entity_id)

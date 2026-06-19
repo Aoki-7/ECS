@@ -14,9 +14,9 @@ from core.system import System
 from core.world import World
 
 from space.space_component import SpaceComponent
-from core.components.action_component import ActionComponent, ActionType
+from human.components.action.action_component import ActionComponent, ActionType
 from human.components.economic.inventory.inventory_component import InventoryComponent
-from core.components.vision_component import VisionComponent
+from human.components.perception.vision_component import VisionComponent
 
 
 from resource.food.components.food_component import FoodComponent
@@ -30,7 +30,7 @@ class SeekFoodSystem(System):
     1. 必须行为是搜寻食物才会执行
     2. 确定搜到了食物，执行移动行为，和食物的坐标
     """
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
 
         entities = list(world.get_components(
             SpaceComponent, 

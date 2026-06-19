@@ -14,6 +14,9 @@ from resource.components.resource_component import ResourceComponent
 from space.space_component import SpaceComponent
 
 from core.world import World
+from identity.category_component import CategoryComponent
+from identity.category import EntityCategory
+from identity.subcategory import WaterSubCategory
 
 
 class WaterFactory:
@@ -46,6 +49,20 @@ class WaterFactory:
 
         world.add_component(entity, NameComponent(name="水", category="water"))
         world.add_component(entity, ResourceComponent(resource_type="water", amount=amount))
+
+        # 分类组件
+        if purity < 0.5:
+            subcategory = WaterSubCategory.POLLUTED
+        elif temperature > 40:
+            subcategory = WaterSubCategory.HOT
+        elif temperature < 5:
+            subcategory = WaterSubCategory.COLD
+        else:
+            subcategory = WaterSubCategory.CLEAN
+        world.add_component(entity, CategoryComponent(
+            category=EntityCategory.WATER,
+            subcategory=subcategory,
+        ))
 
         return entity
 

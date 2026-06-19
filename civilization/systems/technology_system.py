@@ -172,10 +172,14 @@ class TechnologySystem(System):
         self.discovered_technologies.add(tech_name)
         self.global_tech_progress[tech_name] = 1.0
 
-        # 通知所有人类
+        # 通知所有人类（限制上限避免内存泄漏）
+        count = 0
         for entity, knowledge in world.get_components(KnowledgeComponent):
             if knowledge:
                 knowledge.known_technologies.add(tech_name)
+                count += 1
+                if count >= 10000:  # 限制上限
+                    break
 
         logger.info(f"[TechnologySystem] Technology unlocked: {technology.name}")
 
@@ -210,11 +214,13 @@ class TechnologySystem(System):
             if not social or not knowledge:
                 continue
 
-            # 查找子女
+            # 查找子女（限制上限避免内存泄漏）
             children = []
-            for child_id, relation_type in social.relationships.items():
+            for child_id, relation_type in list(social.relationships.items()):
                 if relation_type == "parent":
                     children.append(child_id)
+                    if len(children) >= 100:  # 限制上限
+                        break
 
             # 向子女传承知识
             for child_id in children:

@@ -11,7 +11,7 @@
 from core.system import System
 from core.world import World
 
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 
 
@@ -32,7 +32,7 @@ class ActionSystem(System):
     # 能量过低强制睡眠阈值
     ENERGY_CRITICAL_THRESHOLD = 15
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         for _, (action, needs) in world.get_components(ActionComponent, PhysiologyNeedsComponent):
             
             if action is None or needs is None:

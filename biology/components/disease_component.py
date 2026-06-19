@@ -2,13 +2,11 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:disease_component.py
-@说明:疾病组件
+@说明:疾病组件 - 纯数据版
 @时间:2026/05/29
-@版本:1.0
+@版本:2.0
 '''
 
-# 已从 human/components/health/disease_component.py 迁移至此
-# 向后兼容导入: from human.components.health.disease_component import DiseaseComponent, DiseaseType
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from enum import Enum, auto
@@ -24,7 +22,7 @@ class DiseaseType(Enum):
     ENVIRONMENTAL = auto()    # 环境相关疾病
 
 
-@dataclass
+@dataclass(slots=True)
 class DiseaseRecord:
     """单条疾病记录（类型化替代 Dict）"""
     name: str
@@ -59,28 +57,12 @@ class DiseaseRecord:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class DiseaseComponent(Component):
     """
-    疾病组件
+    疾病组件 - 纯数据
     存储实体当前患有的疾病列表和免疫状态
     """
     diseases: List[DiseaseRecord] = field(default_factory=list)
     immunity: Dict[str, float] = field(default_factory=dict)
     # 疾病名 -> 免疫强度 0-1
-
-    def has_disease(self, name: str) -> bool:
-        return any(d.name == name for d in self.diseases)
-
-    def add_disease(self, disease: DiseaseRecord):
-        if not self.has_disease(disease.name):
-            self.diseases.append(disease)
-
-    def remove_disease(self, name: str):
-        self.diseases = [d for d in self.diseases if d.name != name]
-
-    def get_disease(self, name: str) -> Optional[DiseaseRecord]:
-        for d in self.diseases:
-            if d.name == name:
-                return d
-        return None

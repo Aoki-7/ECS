@@ -2,14 +2,32 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:inventory_component.py
-@说明:物品栏组件（兼容代理）
-@时间:2026/03/13
-@版本:2.0
-
-已迁移至 core/components/inventory_component.py
-此文件保留用于向后兼容，将在下一版本中删除。
+@说明:库存组件 v2.0 - 纯数据版
 '''
 
-from core.components.inventory_component import InventoryComponent
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
 
-__all__ = ["InventoryComponent"]
+from core.component import Component
+
+@dataclass(slots=True)
+class InventoryComponent(Component):
+    """
+    库存组件 - 纯数据版
+    存储物品库存。
+    """
+    # 物品 {item_id: quantity}
+    items: Dict[int, float] = field(default_factory=dict)
+    
+    # 容量限制
+    max_capacity: float = 100.0
+    current_weight: float = 0.0
+    
+    # 装备槽位
+    equipped_items: Dict[str, int] = field(default_factory=dict)
+    
+    # 货币
+    currency: float = 0.0
+    
+    # 交易记录
+    trade_history: List[Dict] = field(default_factory=list)

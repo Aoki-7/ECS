@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECS 世界模拟 — 实时推演</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #050508;
+    --bg-secondary: #0c0c14;
+    --bg-card: #12121c;
+    --border: #252538;
+    --text-primary: #e8e8f0;
+    --text-secondary: #6b6b8a;
+    --accent-human: #ff4757;
+    --accent-animal: #ffa502;
+    --accent-plant: #2ed573;
+    --accent-building: #1e90ff;
+    --accent-farm: #ffc107;
+    --accent-soil: #8b6914;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s;
+  }
+  .glass-card:hover {
+    background: #1a1a28;
+    transform: translateY(-2px);
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .pulse-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2ed573;
+    animation: pulse 2s infinite;
+  }
+  .world-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 25px 25px;
+  }
+  .event-item {
+    padding: 6px 10px;
+    border-left: 2px solid transparent;
+    margin-bottom: 3px;
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+  }
+  .event-human { border-left-color: var(--accent-human); }
+  .event-animal { border-left-color: var(--accent-animal); }
+  .event-plant { border-left-color: var(--accent-plant); }
+  .event-building { border-left-color: var(--accent-building); }
+  .event-farm { border-left-color: var(--accent-farm); }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header class="border-b border-[#252538] bg-[#050508]/90 backdrop-blur-md sticky top-0 z-50">
+  <div class="max-w-[1800px] mx-auto px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="pulse-dot" id="connection-status"></div>
+      <h1 class="text-lg font-semibold tracking-tight">
+        ECS 世界模拟 <span class="text-[#6b6b8a] font-normal">实时推演</span>
+      </h1>
+    </div>
+    <div class="flex items-center gap-5 text-sm">
+      <div class="flex items-center gap-2">
+        <i data-lucide="clock" class="w-4 h-4 text-[#6b6b8a]"></i>
+        <span class="font-mono text-[#2ed573]" id="tick-display">Tick 0</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="activity" class="w-4 h-4 text-[#6b6b8a]"></i>
+        <span class="font-mono text-[#1e90ff]" id="latency-display">-- ms</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="globe" class="w-4 h-4 text-[#6b6b8a]"></i>
+        <span class="font-mono" id="entity-count">0 实体</span>
+      </div>
+      <button id="pause-btn" class="px-3 py-1.5 bg-[#12121c] hover:bg-[#1a1a28] border border-[#252538] rounded-lg text-xs transition-colors flex items-center gap-1.5">
+        <i data-lucide="pause" class="w-3.5 h-3.5"></i>
+        <span>暂停</span>
+      </button>
+      <select id="speed-select" class="bg-[#12121c] border border-[#252538] rounded-lg text-xs px-2 py-1.5">
+        <option value="0.5">0.5x</option>
+        <option value="1.0" selected>1.0x</option>
+        <option value="2.0">2.0x</option>
+        <option value="5.0">5.0x</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1800px] mx-auto px-6 py-5">
+
+  <!-- Connection Warning -->
+  <div id="connection-warning" class="hidden mb-4 p-4 bg-red-900/20 border border-red-900/50 rounded-lg text-sm text-red-400">
+    <div class="flex items-center gap-2">
+      <i data-lucide="alert-circle" class="w-4 h-4"></i>
+      <span>未连接到模拟服务器。请运行: <code class="bg-red-900/30 px-2 py-0.5 rounded">python world_server.py</code></span>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-5">
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="users" class="w-3.5 h-3.5 text-[#ff4757]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">人类</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-humans">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="paw-print" class="w-3.5 h-3.5 text-[#ffa502]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">动物</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-animals">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="leaf" class="w-3.5 h-3.5 text-[#2ed573]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">植物</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-plants">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="home" class="w-3.5 h-3.5 text-[#1e90ff]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">建筑</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-buildings">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="wheat" class="w-3.5 h-3.5 text-[#ffc107]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">农田</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-farms">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="mountain" class="w-3.5 h-3.5 text-[#8b6914]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">土壤</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-soil">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="flame" class="w-3.5 h-3.5 text-[#a29bfe]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">知识</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-knowledge">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-[#ff3838]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">灾害</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-disasters">0</div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+    <!-- Left: World Map (8 cols) -->
+    <div class="lg:col-span-8 space-y-5">
+      <div class="glass-card">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-semibold flex items-center gap-2">
+            <i data-lucide="map" class="w-4 h-4 text-[#1e90ff]"></i>
+            世界地图
+            <span class="text-[10px] text-[#6b6b8a] font-normal">实时</span>
+          </h2>
+          <div class="flex gap-2">
+            <button class="tab-btn active" data-layer="all">全部</button>
+            <button class="tab-btn" data-layer="human">人类</button>
+            <button class="tab-btn" data-layer="animal">动物</button>
+            <button class="tab-btn" data-layer="plant">植物</button>
+            <button class="tab-btn" data-layer="building">建筑</button>
+          </div>
+        </div>
+        <div class="canvas-container world-grid" style="height: 500px;">
+          <canvas id="world-canvas"></canvas>
+        </div>
+        <div class="flex gap-4 mt-3 text-[11px] text-[#6b6b8a]">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ff4757]"></span>人类</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ffa502]"></span>动物</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#2ed573]"></span>植物</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[#1e90ff]"></span>建筑</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ffc107]"></span>农田</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#8b6914]"></span>土壤</span>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3">生态种群趋势</h3>
+          <canvas id="ecosystem-chart" height="180"></canvas>
+        </div>
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3">文明发展指标</h3>
+          <canvas id="civilization-chart" height="180"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar (4 cols) -->
+    <div class="lg:col-span-4 space-y-5">
+      <!-- Environment -->
+      <div class="glass-card">
+        <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+          <i data-lucide="cloud-sun" class="w-3.5 h-3.5"></i>
+          环境指标
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-[#6b6b8a]">温度</span>
+              <span class="font-mono" id="env-temp">20°C</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#ffa502] rounded-full transition-all" id="temp-bar" style="width: 40%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-[#6b6b8a]">湿度</span>
+              <span class="font-mono" id="env-humidity">50%</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#1e90ff] rounded-full transition-all" id="humidity-bar" style="width: 50%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-[#6b6b8a]">降雨</span>
+              <span class="font-mono" id="env-rain">0mm</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#a29bfe] rounded-full transition-all" id="rain-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-[#6b6b8a]">风速</span>
+              <span class="font-mono" id="env-wind">0m/s</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#2ed573] rounded-full transition-all" id="wind-bar" style="width: 10%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Knowledge -->
+      <div class="glass-card">
+        <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+          <i data-lucide="brain" class="w-3.5 h-3.5"></i>
+          知识积累
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>制作技术</span>
+              <span class="font-mono text-[#a29bfe]" id="crafting-pct">0%</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#a29bfe] rounded-full transition-all" id="crafting-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>农业技术</span>
+              <span class="font-mono text-[#2ed573]" id="farming-pct">0%</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#2ed573] rounded-full transition-all" id="farming-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-[#252538]">
+            <div class="flex justify-between text-xs">
+              <span class="text-[#6b6b8a]">已知技术</span>
+              <span class="font-mono" id="tech-count">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Log -->
+      <div class="glass-card">
+        <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+          <i data-lucide="list" class="w-3.5 h-3.5"></i>
+          事件日志
+          <span class="ml-auto text-[10px] bg-[#252538] px-2 py-0.5 rounded-full" id="event-counter">0</span>
+        </h3>
+        <div class="max-h-[300px] overflow-y-auto space-y-1" id="event-log">
+          <div class="text-xs text-[#6b6b8a] text-center py-6">等待服务器数据...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ============================================
+// ECS Realtime Dashboard — WebSocket Client
+// ============================================
+
+lucide.createIcons();
+
+// State
+let ws = null;
+let isPaused = false;
+let currentLayer = 'all';
+let history = [];
+let lastPing = 0;
+
+// Charts
+let ecosystemChart, civilizationChart;
+
+function initCharts() {
+  const opts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#6b6b8a', font: { size: 10 } } } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#6b6b8a', font: { size: 9 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#6b6b8a', font: { size: 9 } } }
+    },
+    elements: { line: { tension: 0.4 }, point: { radius: 0 } }
+  };
+
+  ecosystemChart = new Chart(document.getElementById('ecosystem-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: '人类', data: [], borderColor: '#ff4757', backgroundColor: 'rgba(255,71,87,0.1)', fill: true, borderWidth: 1.5 },
+        { label: '动物', data: [], borderColor: '#ffa502', backgroundColor: 'rgba(255,165,2,0.1)', fill: true, borderWidth: 1.5 },
+        { label: '植物', data: [], borderColor: '#2ed573', backgroundColor: 'rgba(46,213,115,0.1)', fill: true, borderWidth: 1.5 }
+      ]
+    },
+    options: opts
+  });
+
+  civilizationChart = new Chart(document.getElementById('civilization-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: '建筑', data: [], borderColor: '#1e90ff', backgroundColor: 'rgba(30,144,255,0.1)', fill: true, borderWidth: 1.5 },
+        { label: '农田', data: [], borderColor: '#ffc107', backgroundColor: 'rgba(255,193,7,0.1)', fill: true, borderWidth: 1.5 }
+      ]
+    },
+    options: opts
+  });
+}
+
+// World Map
+function initWorldMap() {
+  const canvas = document.getElementById('world-canvas');
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+  return canvas.getContext('2d');
+}
+
+function drawWorldMap(ctx, canvas, entities) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < canvas.width; x += 25) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 25) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  if (!entities) return;
+
+  // Draw entities
+  entities.forEach(e => {
+    if (currentLayer !== 'all' && e.type !== currentLayer) return;
+
+    const x = (e.x / 250) * canvas.width;
+    const y = (e.y / 250) * canvas.height;
+
+    const colors = {
+      human: '#ff4757', animal: '#ffa502', plant: '#2ed573',
+      building: '#1e90ff', farm: '#ffc107', soil: '#8b6914'
+    };
+    const sizes = { human: 5, animal: 4, plant: 2.5, building: 7, farm: 3.5, soil: 2 };
+
+    const color = colors[e.type] || '#888';
+    const size = sizes[e.type] || 3;
+
+    ctx.beginPath();
+    if (e.type === 'building') {
+      ctx.rect(x - size/2, y - size/2, size, size);
+    } else {
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    if (e.type === 'human' || e.type === 'building') {
+      ctx.beginPath();
+      ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+      ctx.fillStyle = color + '20';
+      ctx.fill();
+    }
+  });
+}
+
+// Update UI from server data
+function updateUI(data) {
+  // Stats
+  const stats = data.statistics || {};
+  document.getElementById('stat-humans').textContent = stats.humans || 0;
+  document.getElementById('stat-animals').textContent = stats.animals || 0;
+  document.getElementById('stat-plants').textContent = stats.plants || 0;
+  document.getElementById('stat-buildings').textContent = stats.buildings || 0;
+  document.getElementById('stat-farms').textContent = stats.farms || 0;
+  document.getElementById('stat-soil').textContent = stats.soil_patches || 0;
+
+  const knowledge = data.knowledge || {};
+  document.getElementById('stat-knowledge').textContent = (knowledge.crafting || 0) + (knowledge.farming || 0);
+  document.getElementById('stat-disasters').textContent = data.active_disasters || 0;
+
+  // Tick
+  document.getElementById('tick-display').textContent = `Tick ${data.tick || 0}`;
+  document.getElementById('entity-count').textContent = `${stats.total_entities || 0} 实体`;
+
+  // Environment
+  const env = data.environment || {};
+  document.getElementById('env-temp').textContent = (env.temperature || 20).toFixed(1) + '°C';
+  document.getElementById('env-humidity').textContent = ((env.humidity || 0.5) * 100).toFixed(0) + '%';
+  document.getElementById('env-rain').textContent = (env.rainfall || 0).toFixed(1) + 'mm';
+  document.getElementById('env-wind').textContent = (env.wind_speed || 0).toFixed(1) + 'm/s';
+
+  document.getElementById('temp-bar').style.width = Math.min(100, ((env.temperature || 20) / 50) * 100) + '%';
+  document.getElementById('humidity-bar').style.width = ((env.humidity || 0.5) * 100) + '%';
+  document.getElementById('rain-bar').style.width = Math.min(100, ((env.rainfall || 0) / 100) * 100) + '%';
+  document.getElementById('wind-bar').style.width = Math.min(100, ((env.wind_speed || 0) / 20) * 100) + '%';
+
+  // Knowledge
+  const maxCraft = 1000, maxFarm = 200;
+  document.getElementById('crafting-bar').style.width = Math.min(100, ((knowledge.crafting || 0) / maxCraft) * 100) + '%';
+  document.getElementById('crafting-pct').textContent = Math.round(((knowledge.crafting || 0) / maxCraft) * 100) + '%';
+  document.getElementById('farming-bar').style.width = Math.min(100, ((knowledge.farming || 0) / maxFarm) * 100) + '%';
+  document.getElementById('farming-pct').textContent = Math.round(((knowledge.farming || 0) / maxFarm) * 100) + '%';
+  document.getElementById('tech-count').textContent = knowledge.technologies || 0;
+
+  // History charts
+  if (data.history && data.history.length > 0) {
+    const hist = data.history;
+    const labels = hist.map(h => h.tick);
+    ecosystemChart.data.labels = labels;
+    ecosystemChart.data.datasets[0].data = hist.map(h => h.humans);
+    ecosystemChart.data.datasets[1].data = hist.map(h => h.animals);
+    ecosystemChart.data.datasets[2].data = hist.map(h => h.plants);
+    ecosystemChart.update('none');
+
+    civilizationChart.data.labels = labels;
+    civilizationChart.data.datasets[0].data = hist.map(h => h.buildings);
+    civilizationChart.data.datasets[1].data = hist.map(h => h.farms);
+    civilizationChart.update('none');
+  }
+
+  // World map
+  const canvas = document.getElementById('world-canvas');
+  drawWorldMap(canvas.getContext('2d'), canvas, data.entities);
+
+  // Latency
+  if (lastPing > 0) {
+    const latency = Date.now() - lastPing;
+    document.getElementById('latency-display').textContent = latency + ' ms';
+  }
+  lastPing = Date.now();
+}
+
+// WebSocket Connection
+function connect() {
+  const wsUrl = 'ws://localhost:8765';
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    console.log('Connected to simulation server');
+    document.getElementById('connection-status').style.background = '#2ed573';
+    document.getElementById('connection-warning').classList.add('hidden');
+    document.getElementById('event-log').innerHTML = '<div class="text-xs text-[#2ed573] text-center py-4">已连接服务器</div>';
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      updateUI(data);
+    } catch (e) {
+      console.error('Parse error:', e);
+    }
+  };
+
+  ws.onclose = () => {
+    console.log('Disconnected from server');
+    document.getElementById('connection-status').style.background = '#ff3838';
+    document.getElementById('connection-warning').classList.remove('hidden');
+    // Reconnect after 3s
+    setTimeout(connect, 3000);
+  };
+
+  ws.onerror = (err) => {
+    console.error('WebSocket error:', err);
+  };
+}
+
+// Controls
+document.getElementById('pause-btn').addEventListener('click', () => {
+  isPaused = !isPaused;
+  const btn = document.getElementById('pause-btn');
+  btn.innerHTML = isPaused
+    ? '<i data-lucide="play" class="w-3.5 h-3.5"></i><span>继续</span>'
+    : '<i data-lucide="pause" class="w-3.5 h-3.5"></i><span>暂停</span>';
+  lucide.createIcons();
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ command: isPaused ? 'pause' : 'resume' }));
+  }
+});
+
+document.getElementById('speed-select').addEventListener('change', (e) => {
+  const speed = parseFloat(e.target.value);
+  const interval = 0.1 / speed;
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ command: 'speed', interval: interval }));
+  }
+});
+
+// Layer tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLayer = btn.dataset.layer;
+  });
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  const canvas = document.getElementById('world-canvas');
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+});
+
+// Demo mode: simulate data for presentation
+function startDemo() {
+    document.getElementById('connection-warning').classList.add('hidden');
+    document.getElementById('connection-status').style.background = '#2ed573';
+    document.getElementById('event-log').innerHTML = '<div class="text-xs text-[#2ed573] text-center py-4">演示模式运行中</div>';
+    
+    var demoTick = 0;
+    var demoData = {
+        humans: 5, animals: 5, plants: 10, buildings: 2, farms: 3, soil: 5,
+        crafting: 0, farming: 0, tech: 0, temp: 22, disasters: 0
+    };
+    var demoHistory = [];
+    var cachedEntities = [];
+    
+    // 预生成实体位置，只更新数量不重新生成位置
+    function initEntityPositions() {
+        cachedEntities = [];
+        var types = ['human', 'animal', 'plant', 'building', 'farm', 'soil'];
+        var maxCounts = [20, 20, 50, 10, 15, 20]; // 最大数量上限
+        
+        types.forEach(function(type, idx) {
+            for (var i = 0; i < maxCounts[idx]; i++) {
+                cachedEntities.push({
+                    id: type + '_' + i,
+                    type: type,
+                    x: Math.random() * 240 + 5,
+                    y: Math.random() * 240 + 5,
+                    active: false
+                });
+            }
+        });
+    }
+    
+    function getActiveEntities() {
+        var result = [];
+        var counts = {
+            human: demoData.humans,
+            animal: demoData.animals,
+            plant: demoData.plants,
+            building: demoData.buildings,
+            farm: demoData.farms,
+            soil: demoData.soil
+        };
+        
+        cachedEntities.forEach(function(e) {
+            var typeCount = counts[e.type] || 0;
+            var typeIndex = parseInt(e.id.split('_')[1]);
+            e.active = typeIndex < typeCount;
+            if (e.active) {
+                result.push(e);
+            }
+        });
+        return result;
+    }
+    
+    initEntityPositions();
+    
+    function demoTickFn() {
+        demoTick++;
+        
+        // 缓慢增长
+        if (demoTick % 30 === 0) {
+            if (Math.random() < 0.3 && demoData.plants < 30) demoData.plants++;
+            if (Math.random() < 0.2 && demoData.humans < 15) demoData.humans++;
+            if (Math.random() < 0.15 && demoData.buildings < 8) demoData.buildings++;
+            if (Math.random() < 0.25 && demoData.farms < 10) demoData.farms++;
+        }
+        
+        // 知识积累
+        if (demoTick % 10 === 0) {
+            demoData.crafting += Math.floor(Math.random() * 2);
+            demoData.farming += Math.floor(Math.random() * 1);
+        }
+        
+        // 温度变化
+        if (demoTick % 5 === 0) {
+            demoData.temp += (Math.random() - 0.5) * 0.3;
+            demoData.temp = Math.max(10, Math.min(35, demoData.temp));
+        }
+        
+        var state = {
+            tick: demoTick,
+            statistics: {
+                total_entities: demoData.humans + demoData.animals + demoData.plants + demoData.buildings + demoData.farms + demoData.soil,
+                humans: demoData.humans,
+                animals: demoData.animals,
+                plants: demoData.plants,
+                buildings: demoData.buildings,
+                farms: demoData.farms,
+                soil_patches: demoData.soil
+            },
+            entities: getActiveEntities(),
+            environment: {
+                temperature: demoData.temp,
+                humidity: 0.5,
+                rainfall: demoData.temp > 30 ? 5 : 0,
+                wind_speed: 2
+            },
+            knowledge: {
+                crafting: demoData.crafting,
+                farming: demoData.farming,
+                technologies: demoData.tech
+            }
+        };
+        
+        if (demoTick % 20 === 0) {
+            demoHistory.push({
+                tick: demoTick,
+                humans: demoData.humans,
+                animals: demoData.animals,
+                plants: demoData.plants,
+                buildings: demoData.buildings,
+                farms: demoData.farms
+            });
+            if (demoHistory.length > 50) demoHistory.shift();
+        }
+        state.history = demoHistory;
+        
+        updateUI(state);
+        
+        if (demoTick % 50 === 0) {
+            var events = ['human', 'plant', 'building', 'farm'];
+            var messages = ['新人类诞生', '植物生长', '新建建筑', '开垦农田'];
+            var idx = Math.floor(Math.random() * 4);
+            addEvent(demoTick, events[idx], messages[idx]);
+        }
+    }
+    
+    setInterval(demoTickFn, 200); // 降低到 200ms 减少 CPU 占用
+}
+
+// Init
+initCharts();
+initWorldMap();
+
+// Try WebSocket first, fallback to demo
+if (window.location.protocol === 'file:') {
+    startDemo();
+} else {
+    connect();
+}
+</script>
+
+</body>
+</html>

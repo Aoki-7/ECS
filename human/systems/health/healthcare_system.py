@@ -16,14 +16,8 @@ from enum import Enum, auto
 from core.system import System
 from core.world import World
 
-
-# 疾病类型定义
-class DiseaseType(Enum):
-    INFECTIOUS = auto()       # 传染性疾病
-    CHRONIC = auto()          # 慢性疾病
-    ACUTE = auto()            # 急性病
-    DEFICIENCY = auto()        # 营养缺乏症
-    ENVIRONMENTAL = auto()    # 环境相关疾病
+# 统一从 biology 层导入疾病类型定义
+from biology.components.disease_component import DiseaseType
 
 
 # 症状枚举
@@ -54,13 +48,20 @@ class Disease:
 
 
 class HealthcareSystem(System):
-    tick_interval = 10  # 每10帧执行一次
+    tick_interval = 10  # 每10帧执行一次（治疗不需要每帧）
+    _MAX_HISTORY_SIZE = 100
+
     def __init__(self):
         super().__init__()
         self.current_disease = None
         self.treatment_plan = None
         self.medication_log = []
         self.health_history = []
+
+    def _add_health_history(self, entry: dict) -> None:
+        self.health_history.append(entry)
+        if len(self.health_history) > self._MAX_HISTORY_SIZE:
+            self.health_history.pop(0)
 
     def update(self, world: World, dt: float = 0.0):
         """系统更新：扫描疾病并尝试治疗"""
@@ -90,7 +91,7 @@ class HealthcareSystem(System):
                     disease_comp.remove_disease(disease.name)
 
                 # 记录治疗历史
-                self.health_history.append({
+                self._add_health_history({
                     "entity_id": entity.id,
                     "disease": disease.name,
                     "severity": disease.severity,
@@ -124,7 +125,7 @@ class HealthcareSystem(System):
                 treatments=[{"name": "antibiotics", "dosage": "按医嘱"}]
             ))
         
-        self.health_history.append({
+        self._add_health_history({
             "diagnosis_time": "now",
             "symptoms": dict(symptoms),
             "diagnosed_diseases": [d.name for d in possible_diseases]

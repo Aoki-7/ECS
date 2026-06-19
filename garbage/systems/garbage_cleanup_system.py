@@ -28,12 +28,12 @@ class GarbageCleanupSystem(System):
 
     def update(self, world: World, dt: float):
         garbage_entities = []
-        for entity, [garbage] in world.get_components(GarbageComponent):
+        for entity, [garbage] in list(world.get_components(GarbageComponent)):
             garbage_entities.append(entity)
 
         excess = len(garbage_entities) - self.max_garbage
         if excess > 0:
             # 简单策略：删除 ID 最小的（通常是最早创建的）
             garbage_entities.sort(key=lambda e: e.id)
-            for entity in garbage_entities[:excess]:
+            for entity in list(garbage_entities[:excess]):
                 world.remove_entity(entity)

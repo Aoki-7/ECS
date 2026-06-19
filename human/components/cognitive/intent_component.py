@@ -70,7 +70,7 @@ from typing import Any
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class IntentComponent(Component):
     """
     高层意图组件

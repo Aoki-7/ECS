@@ -17,7 +17,7 @@ from core.system import System
 from core.world import World
 
 from biology.components.health_status_component import HealthStatusComponent
-from biology.components.energy_component import EnergyComponent
+from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.traits.trait import Trait
 
@@ -72,7 +72,7 @@ class DamageRepairSystem(System):
                 damage.total_damage = max(0.0, damage.total_damage - heal_amount)
 
                 # 更新伤口
-                for wound in damage.wounds:
+                for wound in list(damage.wounds):
                     wound.age += dt
                     # 按严重程度比例分配修复量
                     ratio = wound.severity / max(
@@ -96,10 +96,10 @@ class DamageRepairSystem(System):
                 photo_penalty = min(
                     0.8, (damage.total_damage - 30) / 100
                 )
-                current_photo = pheno.get(
+                current_photo = PhenotypeSystem.get(pheno, 
                     "max_photosynthesis_rate", 20.0
                 )
-                pheno.set_trait(
+                PhenotypeSystem.set_trait(pheno, 
                     Trait(
                         name="max_photosynthesis_rate",
                         value=current_photo * (1.0 - photo_penalty),

@@ -14,11 +14,20 @@ from core.world import World
 
 from biology.components.genome_component import GenomeComponent
 from biology.components.phenotype_component import PhenotypeComponent
-from biology.components.energy_component import EnergyComponent
-from biology.components.morphology_component import MorphologyComponent
+from biology.lifecycle.components.energy_component import EnergyComponent
+from biology.lifecycle.components.morphology_component import MorphologyComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from biology.components.immune_component import ImmuneComponent
 from biology.components.health_status_component import HealthStatusComponent
 from biology.genetics.gene import Gene
+from space.space_component import SpaceComponent
+
+from biology.ecology.components.food_chain_component import FoodChainComponent
+from biology.ecology.components.population_component import PopulationComponent
+from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
+from identity.category_component import CategoryComponent
+from identity.category import EntityCategory
+from identity.subcategory import AnimalSubCategory
 
 from .presets import SPECIES_PRESETS
 
@@ -53,6 +62,8 @@ class AnimalFactory:
         species: str = "basic",
         variation: float = 0.1,
         seed: Optional[int] = None,
+        x: int = 0,
+        y: int = 0,
     ) -> Entity:
         """
         创建完整动物 Entity，并自动注册到 world
@@ -62,6 +73,8 @@ class AnimalFactory:
             species: 物种标识名，必须是 SPECIES_PRESETS 的键之一。
             variation: 变异系数 [0, +∞)。0 表示无个体差异，越大差异越明显。
             seed: 可选的随机数种子，用于可复现的个体生成。
+            x: 空间 X 坐标。
+            y: 空间 Y 坐标。
 
         Returns:
             创建并挂载好组件的 Entity 对象。
@@ -95,8 +108,19 @@ class AnimalFactory:
         # ---- Step 2: 根据模板构建带变异的基因组 ----
         genome = cls._build_genome(preset, species, variation, rng)
 
-        # ---- Step 3: 挂载动物生存必需的基础组件 ----
-        cls._attach_base_components(world, entity, genome)
+        # ---- Step 3: 初始化生命周期 ----
+        lifecycle = cls._init_lifecycle(preset)
+
+        # ---- Step 4: 挂载动物生存必需的基础组件 ----
+        cls._attach_base_components(world, entity, genome, lifecycle, preset, species, x, y)
+
+        # ---- Step 5: 挂载物种形成追踪组件 ----
+        world.add_component(entity, SpeciationTrackerComponent(
+            species_id=species,
+            original_species=species,
+            generation=0,
+            lineage_id=f"{species}_{entity.id}",
+        ))
 
         return entity
 
@@ -150,6 +174,10 @@ class AnimalFactory:
         world: World,
         parent_genome: GenomeComponent,
         variation: float = 0.15,
+        x: int = 0,
+        y: int = 0,
+        parent_species: str = "basic",
+        parent_generation: int = 0,
     ) -> Entity:
         """
         基于亲本 Genome 创建子代（遗传 + 变异）
@@ -163,6 +191,8 @@ class AnimalFactory:
             world: World 实例。
             parent_genome: 亲代的 GenomeComponent，提供完整的基因蓝本。
             variation: 突变率，作为 mutation_rate 传入 GenomeComponent.mutate()。
+            x: 子代空间 X 坐标。
+            y: 子代空间 Y 坐标。
 
         Returns:
             携带遗传与变异基因的新 Entity。
@@ -174,8 +204,25 @@ class AnimalFactory:
         child_genome = parent_genome.copy()
         child_genome.mutate(mutation_rate=variation)
 
-        # 挂载基础组件
-        cls._attach_base_components(world, entity, child_genome)
+        # 子代以幼体阶段开始
+        lifecycle = LifeCycleComponent(
+            stage=LifeCycleComponent.SEED,
+            stage_durations=[48.0, 168.0, 720.0, 4320.0, 720.0],
+            max_age=8760.0,
+        )
+
+        # 挂载基础组件（子代使用 basic 物种预设）
+        cls._attach_base_components(
+            world, entity, child_genome, lifecycle, cls.SPECIES_PRESETS["basic"], parent_species, x, y
+        )
+
+        # 挂载物种形成追踪组件（继承父母）
+        world.add_component(entity, SpeciationTrackerComponent(
+            species_id=parent_species,
+            original_species=parent_species,
+            generation=parent_generation + 1,
+            lineage_id=f"{parent_species}_{entity.id}",
+        ))
 
         return entity
 
@@ -224,7 +271,7 @@ class AnimalFactory:
             )
 
             # 构建基因：name 用于调试和日志，expression_target 用于表型映射
-            genome.add_gene(
+            genome.genes.append(
                 Gene(
                     name=f"{species.upper()}_{trait_name.upper()}",
                     expression_target=trait_name,
@@ -235,11 +282,70 @@ class AnimalFactory:
         return genome
 
     @classmethod
+    def _init_lifecycle(cls, preset: Dict[str, float]) -> LifeCycleComponent:
+        """
+        根据基因预设初始化动物生命周期
+
+        动物生命周期阶段（复用植物阶段常量）：
+            SEED        = 0  → 幼体期
+            SPROUT      = 1  → 成长期
+            VEGETATIVE  = 2  → 青年期
+            MATURE      = 3  → 成年期（可繁殖）
+            SENESCENCE  = 4  → 衰老期
+
+        阶段时长由代谢速率和生长分配推导。
+        """
+        metabolism_rate = preset.get("metabolism_rate", 0.02)
+        growth_partition = preset.get("growth_partition", 0.4)
+
+        # 综合生长速率
+        growth_rate = metabolism_rate * growth_partition
+        scale = growth_rate * 100.0 + 0.5
+
+        # 阶段时长（小时）：幼体 → 成长 → 青年 → 成年 → 衰老
+        base_juvenile = 48.0 / scale
+        base_growth = 168.0 / scale
+        base_youth = 720.0 / scale
+        base_mature = 4320.0 / scale
+        base_senescence = 720.0 / scale
+
+        stage_durations = [
+            base_juvenile,
+            base_growth,
+            base_youth,
+            base_mature,
+            base_senescence,
+        ]
+
+        # GDD 需求（动物使用温度累积替代）
+        optimal_temp = preset.get("optimal_temp", 37.0)
+        gdd_juvenile = 10.0 * (25.0 / max(optimal_temp, 5.0))
+
+        gdd_requirements = {
+            0: gdd_juvenile,
+            1: gdd_juvenile * 3.0,
+            2: gdd_juvenile * 8.0,
+            3: 0,  # 成熟期无 GDD 门槛
+        }
+
+        return LifeCycleComponent(
+            stage=LifeCycleComponent.SEED,
+            stage_durations=stage_durations,
+            gdd_requirements=gdd_requirements,
+            max_age=8760.0,  # 默认 1 年寿命
+        )
+
+    @classmethod
     def _attach_base_components(
         cls,
         world: World,
         entity: Entity,
         genome: GenomeComponent,
+        lifecycle: LifeCycleComponent,
+        preset: Dict[str, float],
+        species: str,
+        x: int,
+        y: int,
     ) -> None:
         """
         为实体挂载动物生存必需的基础生物学组件
@@ -248,13 +354,24 @@ class AnimalFactory:
             1. GenomeComponent      — 基因型（可遗传信息）
             2. PhenotypeComponent   — 表型容器（运行时特征计算结果）
             3. EnergyComponent      — 能量储备（max_energy=100.0）
-            4. MorphologyComponent  — 形态外观（渲染与物理碰撞相关）
+            4. MorphologyComponent  — 形态外观
+            5. LifeCycleComponent   — 生命周期（阶段推进与衰老管理）
+            6. SpaceComponent       — 空间坐标
+            7. AnimalComponent      — 动物标识与生态属性
+            8. ImmuneComponent      — 免疫系统
+            9. HealthStatusComponent — 健康状态
 
         Args:
             world: World 实例。
             entity: 目标实体。
             genome: 已构建好的基因组组件。
+            lifecycle: 已初始化的生命周期组件。
+            species: 物种标识名。
+            x: 空间 X 坐标。
+            y: 空间 Y 坐标。
         """
+        from animal.components.animal_component import AnimalComponent
+
         # 基因型：决定个体的可遗传特征
         world.add_component(entity, genome)
 
@@ -262,11 +379,69 @@ class AnimalFactory:
         world.add_component(entity, PhenotypeComponent())
 
         # 能量：基础最大能量池，value 默认从 0 开始，由外部系统初始化
-        world.add_component(entity, EnergyComponent(max_energy=100.0))
+        energy = EnergyComponent(max_energy=100.0)
+        energy.value = 50.0  # 初始能量设为 50%，避免立即饿死
+        world.add_component(entity, energy)
 
         # 形态：默认参数由 MorphologyComponent 的 dataclass 提供
         world.add_component(entity, MorphologyComponent())
 
-        # 扩展生物学组件：免疫、损伤
+        # 生命周期：管理从出生到死亡的各阶段推进
+        world.add_component(entity, lifecycle)
+
+        # 空间：固定在指定二维坐标，layer=0 表示地面层
+        world.add_component(entity, SpaceComponent(x=x, y=y, layer=0))
+
+        # 动物标识组件：食性由基因 preset 中的 diet_type 推导
+        diet_type = preset.get("diet_type", 0.5)
+        if diet_type > 0.7:
+            diet = "carnivore"
+        elif diet_type < 0.3:
+            diet = "herbivore"
+        else:
+            diet = "omnivore"
+        world.add_component(entity, AnimalComponent(species=species, diet=diet))
+
+        # 食物链组件：标记营养级和生态角色（由 diet 推导）
+        trophic_level = 3 if diet == "carnivore" else (2 if diet == "herbivore" else 2.5)
+        niche = diet
+        world.add_component(entity, FoodChainComponent(
+            trophic_level=trophic_level,
+            niche=niche,
+        ))
+
+        # 种群动态组件
+        world.add_component(entity, PopulationComponent(
+            growth_rate=preset.get("metabolism_rate", 0.02) * 2.0,
+            carrying_capacity=50.0,
+        ))
+
+        # 分类组件：标记为动物
+        subcategory = AnimalSubCategory.CARNIVORE if species == "predator" else AnimalSubCategory.HERBIVORE
+        world.add_component(entity, CategoryComponent(
+            category=EntityCategory.ANIMAL,
+            subcategory=subcategory,
+        ))
+
+        # 扩展生物学组件：免疫、健康
         world.add_component(entity, ImmuneComponent())
         world.add_component(entity, HealthStatusComponent())
+
+        # 新增动物生态组件
+        from animal.components.animal_needs_component import AnimalNeedsComponent
+        from animal.components.animal_social_component import AnimalSocialComponent
+        from animal.components.animal_memory_component import AnimalMemoryComponent
+        from animal.components.animal_territory_component import AnimalTerritoryComponent
+        from animal.components.animal_reproduction_component import AnimalReproductionComponent
+        from animal.components.animal_perception_component import AnimalPerceptionComponent
+        from animal.components.animal_learning_component import AnimalLearningComponent
+
+        world.add_component(entity, AnimalNeedsComponent())
+        world.add_component(entity, AnimalSocialComponent())
+        world.add_component(entity, AnimalMemoryComponent())
+        world.add_component(entity, AnimalTerritoryComponent(
+            center_x=float(x), center_y=float(y)
+        ))
+        world.add_component(entity, AnimalReproductionComponent())
+        world.add_component(entity, AnimalPerceptionComponent())
+        world.add_component(entity, AnimalLearningComponent())

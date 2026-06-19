@@ -41,73 +41,79 @@ class LightAtmosphereCouplingSystem(System):
     _DRY_AIR_GAS_CONSTANT = 287.05  # J/(kg·K)
 
     def update(self, world: World, delta_hour: float):
-        atmosphere, weather, scatter, solar = world.get_world_entity().get_components(
-            AtmosphereComponent,
-            PhysicalWeatherComponent,
-            LightScatterComponent,
-            SolarPositionComponent,
-        )
+        # 防御：使用 world.get_world_component 替代 entity.get_components
+        atmosphere = world.get_world_component(AtmosphereComponent)
+        weather = world.get_world_component(PhysicalWeatherComponent)
+        scatter = world.get_world_component(LightScatterComponent)
+        solar = world.get_world_component(SolarPositionComponent)
 
         if scatter is None:
             return
 
-        # ── 1. 提取/推导大气物理量 ──
-        if atmosphere is not None:
-            pressure = atmosphere.pressure               # hPa
-            temperature = atmosphere.temperature         # °C
-            air_density = atmosphere.air_density         # kg/m³
-            aerosol = max(0.0, atmosphere.aerosol)       # 0-1
-            humidity_ratio = max(0.0, min(1.0, atmosphere.humidity / 100.0))
-            cloud_cover = max(0.0, min(1.0, atmosphere.cloud_cover))
-            cloud_density = max(0.0, atmosphere.cloud_density)
-            precipitation = (
-                weather.precipitation_rate if weather is not None else 0.0
-            )
-        elif weather is not None:
-            # 无 AtmosphereComponent 时，从 PhysicalWeatherComponent 推导全部
-            pressure = weather.pressure
-            temperature = weather.temperature
-            t_kelvin = max(temperature + 273.15, 80.0)
-            # 理想气体状态方程：ρ = P / (R·T)  （P 从 hPa 转 Pa）
-            air_density = pressure * 100.0 / (self._DRY_AIR_GAS_CONSTANT * t_kelvin)
-            aerosol = 0.0          # 无气溶胶数据 → 清洁大气假设（而非硬编码 0.05）
-            humidity_ratio = max(0.0, min(1.0, weather.relative_humidity))
-            cloud_cover = max(0.0, min(1.0, weather.cloud_cover))
-            # 云量→云厚推导：云量 100% 时假设厚度 0.8（中等云系）
-            cloud_density = cloud_cover * 0.8
-            precipitation = weather.precipitation_rate
-        else:
-            # 极端 fallback：无任何大气数据时，推导出标准海平面清洁大气
-            pressure = 1013.25
-            temperature = 15.0
-            air_density = 1.225
-            aerosol = 0.0
-            humidity_ratio = 0.5
-            cloud_cover = 0.0
-            cloud_density = 0.0
-            precipitation = 0.0
+        params = self._extract_atmosphere_params(atmosphere, weather)
 
-        # ── 2. 光学路径长度（相对大气质量 air mass）──
         elevation = solar.elevation if solar is not None else 45.0
         if elevation <= 0.0:
-            # 夜间：无光，散射参数归零，云衰减满值
             scatter.rayleigh_factor = 0.0
             scatter.mie_factor = 0.0
             scatter.cloud_attenuation = 1.0
             return
 
         air_mass = self._compute_air_mass(elevation)
+        self._compute_rayleigh(scatter, params, air_mass)
+        self._compute_mie(scatter, params, air_mass)
+        self._compute_cloud_attenuation(scatter, params)
 
-        # ── 3. Rayleigh 散射因子 ──
-        # 与气压（正比）、air_mass（正比）、温度（反比）相关
-        pressure_norm = pressure / 1013.25
-        temp_norm = 288.15 / (temperature + 273.15)
+    def _extract_atmosphere_params(self, atmosphere, weather) -> dict:
+        """提取/推导大气物理量，统一返回字典"""
+        if atmosphere is not None:
+            return {
+                "pressure": atmosphere.pressure,
+                "temperature": atmosphere.temperature,
+                "air_density": atmosphere.air_density,
+                "aerosol": max(0.0, atmosphere.aerosol),
+                "humidity_ratio": max(0.0, min(1.0, atmosphere.humidity / 100.0)),
+                "cloud_cover": max(0.0, min(1.0, atmosphere.cloud_cover)),
+                "cloud_density": max(0.0, atmosphere.cloud_density),
+                "precipitation": weather.precipitation_rate if weather is not None else 0.0,
+            }
+        elif weather is not None:
+            pressure = weather.pressure
+            temperature = weather.temperature
+            t_kelvin = max(temperature + 273.15, 80.0)
+            air_density = pressure * 100.0 / (self._DRY_AIR_GAS_CONSTANT * t_kelvin)
+            return {
+                "pressure": pressure,
+                "temperature": temperature,
+                "air_density": air_density,
+                "aerosol": 0.0,
+                "humidity_ratio": max(0.0, min(1.0, weather.relative_humidity)),
+                "cloud_cover": max(0.0, min(1.0, weather.cloud_cover)),
+                "cloud_density": max(0.0, min(1.0, weather.cloud_cover)) * 0.8,
+                "precipitation": weather.precipitation_rate,
+            }
+        else:
+            return {
+                "pressure": 1013.25,
+                "temperature": 15.0,
+                "air_density": 1.225,
+                "aerosol": 0.0,
+                "humidity_ratio": 0.5,
+                "cloud_cover": 0.0,
+                "cloud_density": 0.0,
+                "precipitation": 0.0,
+            }
+
+    def _compute_rayleigh(self, scatter, params: dict, air_mass: float):
+        """计算 Rayleigh 散射因子"""
+        pressure_norm = params["pressure"] / 1013.25
+        temp_norm = 288.15 / (params["temperature"] + 273.15)
         tau_rayleigh = self._RAYLEIGH_BASE * pressure_norm * temp_norm * air_mass
-        # 用指数衰减转等效能量损失比例，上限 0.5
         scatter.rayleigh_factor = min(0.5, 1.0 - math.exp(-tau_rayleigh))
 
-        # ── 4. Mie 散射因子（气溶胶 + 湿度吸湿增长）──
-        # 相对湿度 > 70% 时，气溶胶粒径非线性增长，散射效率急剧上升
+    def _compute_mie(self, scatter, params: dict, air_mass: float):
+        """计算 Mie 散射因子（气溶胶 + 湿度吸湿增长）"""
+        humidity_ratio = params["humidity_ratio"]
         if humidity_ratio > self._HUMIDITY_GROWTH_THRESHOLD:
             humidity_growth = 1.0 + 4.0 * math.pow(
                 (humidity_ratio - self._HUMIDITY_GROWTH_THRESHOLD) / 0.3, 2
@@ -115,16 +121,15 @@ class LightAtmosphereCouplingSystem(System):
         else:
             humidity_growth = 1.0
 
-        tau_mie = self._MIE_BASE * aerosol * humidity_growth * air_mass
+        tau_mie = self._MIE_BASE * params["aerosol"] * humidity_growth * air_mass
         scatter.mie_factor = min(0.5, 1.0 - math.exp(-tau_mie))
 
-        # ── 5. 云衰减 ──
-        # 云光学深度 = 云厚度×消光效率×云量覆盖 + 降水附加消光
+    def _compute_cloud_attenuation(self, scatter, params: dict):
+        """计算云衰减"""
         tau_cloud = (
-            cloud_density * self._CLOUD_EXTINCTION_EFF * cloud_cover
-            + precipitation * self._PRECIP_EXTINCTION_EFF
+            params["cloud_density"] * self._CLOUD_EXTINCTION_EFF * params["cloud_cover"]
+            + params["precipitation"] * self._PRECIP_EXTINCTION_EFF
         )
-        # 输出衰减比例（1 - 透射率），上限 0.98（保留极微弱光照）
         scatter.cloud_attenuation = min(0.98, 1.0 - math.exp(-tau_cloud))
 
     @staticmethod

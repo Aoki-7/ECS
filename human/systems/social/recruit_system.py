@@ -21,7 +21,7 @@ from human.components.social.tribe_membership_component import TribeMembershipCo
 from human.components.social.social_component import SocialComponent
 from human.components.basic.identity_component import IdentityComponent
 from space.space_component import SpaceComponent
-from core.systems.event_log_system import EventLog
+from identity.event_log_system import EventLog
 
 logger = logging.getLogger(__name__)
 

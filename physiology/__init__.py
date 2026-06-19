@@ -1,29 +1,32 @@
-#!/usr/bin/env python
-# -*- encoding: utf-8 -*-
-'''
-@文件:__init__.py
-@说明:生理学相关
-@时间:2026/03/21 21:47:38
-@作者:Sherry
-@版本:1.0
-'''
+"""
+physiology 模块
 
-# Physiology（核心）
-# ├── Metabolism（代谢）
-# ├── Hydration（体液）
-# ├── Thermoregulation（体温）
-# ├── Health（健康/损伤）
-# ├── Fatigue（疲劳/恢复）
-# ├── Toxicity（毒素）
-# ├── Disease（疾病）
-# └── Recovery（恢复机制）
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+生理系统模块 — 生物体内部机能的组件与系统
 
+职责：
+    - 提供描述生理状态的组件（代谢、体液、体温、疲劳、毒素、疾病等）
+    - 提供更新生理状态的系统（按固定优先级顺序执行）
 
-# system顺序
-# 1. Metabolism
-# 2. Hydration
-# 3. Temperature
-# 4. Toxicity
-# 5. Disease
-# 6. Fatigue
-# 7. Health（最后）
+系统执行顺序：
+    1. MetabolismSystem      — 代谢：能量消耗、营养转化
+    2. HydrationSystem       — 体液：水分平衡、脱水判定
+    3. ThermoregulationSystem — 体温：环境温度耦合、失温/过热判定
+    4. ToxicitySystem        — 毒素：毒物积累与衰减
+    5. DiseaseSystem         — 疾病：感染传播与病程推进
+    6. FatigueSystem         — 疲劳：活动消耗与休息恢复
+    7. HealthSystem          — 健康：综合损伤计算与恢复（最后执行）
+
+与 human/ 的关系：
+    - human/ 负责"行为决策"（去找水、去休息）
+    - physiology/ 负责"身体变化"（口渴加剧、体力恢复）
+    - 两者通过组件数据耦合：生理系统更新数值，人类系统读取数值并决策
+
+与 biology/ 的关系：
+    - biology/ 关注物种级别的生命周期与遗传
+    - physiology/ 关注个体级别的实时机能运转
+"""
+

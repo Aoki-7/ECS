@@ -18,8 +18,8 @@ from core.world import World
 
 from biology.components.nutrient_component import NutrientComponent
 from biology.components.phenotype_component import PhenotypeComponent
-from biology.components.energy_component import EnergyComponent
-from biology.components.morphology_component import MorphologyComponent
+from biology.lifecycle.components.energy_component import EnergyComponent
+from biology.lifecycle.components.morphology_component import MorphologyComponent
 from biology.traits.trait import Trait
 from space.space_component import SpaceComponent
 from environment.environment_component import EnvironmentComponent
@@ -80,17 +80,16 @@ class NutrientSystem(System):
         for _, (env, space) in world.get_components(
             EnvironmentComponent, SpaceComponent
         ):
-            self._env_cache[(space.x, space.y)] = env
+            # 使用 10x10 网格索引对齐
+            gx = int(space.x) // 10
+            gy = int(space.y) // 10
+            self._env_cache[(gx, gy)] = env
 
     def _get_env_at(self, space: SpaceComponent):
         """获取指定坐标的环境组件"""
-        env_x = space.x // 10
-        env_y = space.y // 10
-        env = self._env_cache.get((env_x, env_y))
-        if env is not None:
-            return env
-        # 回退到全局环境
-        return self._world_env_cache
+        env_x = int(space.x) // 10
+        env_y = int(space.y) // 10
+        return self._env_cache.get((env_x, env_y))
 
     # -------------------------------------------------
     # 吸收
@@ -182,8 +181,8 @@ class NutrientSystem(System):
         )
 
         if stress > 0:
-            current_photo = pheno.get("max_photosynthesis_rate", 20.0)
-            pheno.set_trait(
+            current_photo = PhenotypeSystem.get(pheno, "max_photosynthesis_rate", 20.0)
+            PhenotypeSystem.set_trait(pheno, 
                 Trait(
                     name="max_photosynthesis_rate",
                     value=current_photo * (1.0 - stress * 0.5),

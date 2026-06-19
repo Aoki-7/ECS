@@ -14,7 +14,7 @@ from core.world import World
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from equipment.components.ownership_component import OwnershipComponent
 
@@ -44,89 +44,80 @@ class PickupSystem(System):
     # 拾取所需时间（秒）
     PICKUP_DURATION = 0.5
     
-    def update(self, world: World, dt):
-        for picker_entity, (action, space, inventory) in world.get_components(ActionComponent, SpaceComponent, InventoryComponent):
+    def update(self, world: World, dt: float):
+        for picker_entity, (action, space, inventory) in list(world.get_components(ActionComponent, SpaceComponent, InventoryComponent)):
             action: ActionComponent
             space: SpaceComponent
             inventory: InventoryComponent
-            
-            # 检查当前动作是否为拾取
+
             if action.current_action != ActionType.PICKUP:
                 continue
-            
-            # ===== 获取目标 =====
-            target_entity_id = action.target_entity
-            
-            if target_entity_id is None:
-                action.current_action = ActionType.IDLE
-                action.status = ActionStatus.FAILED
-                action.progress = 0.0
-                continue
-            
-            # 检查目标是否还存在
-            target_entity = world.query_entity(target_entity_id)
+
+            target_entity = self._validate_target(world, action, space)
             if target_entity is None:
-                action.current_action = ActionType.IDLE
-                action.status = ActionStatus.FAILED
-                action.progress = 0.0
-                action.target_entity = None
                 continue
-            
-            # ===== 检查距离 =====
-            target_space = world.get_component(target_entity, SpaceComponent)
-            if target_space is None:
-                action.current_action = ActionType.IDLE
-                action.status = ActionStatus.FAILED
-                action.progress = 0.0
-                action.target_entity = None
-                continue
-            
-            distance = self._calculate_distance(space, target_space)
-            
-            if distance > self.PICKUP_DISTANCE:
-                action.current_action = ActionType.IDLE
-                action.status = ActionStatus.FAILED
-                action.progress = 0.0
-                continue
-            
-            # ===== 检查库存空间 =====
+
             if len(inventory.items) >= inventory.capacity:
-                action.current_action = ActionType.IDLE
-                action.status = ActionStatus.FAILED
-                action.progress = 0.0
+                self._fail_pickup(action)
                 continue
-            
-            # ===== 处理拾取进度 =====
+
             action.progress += dt / self.PICKUP_DURATION
-            
             if action.progress < 1.0:
                 action.status = ActionStatus.RUNNING
                 continue
-            
-            # ===== 拾取完成 =====
-            if inventory.add(target_entity):
-                # 为物品添加OwnershipComponent（如果没有的话）
-                ownership = world.get_component(target_entity, OwnershipComponent)
-                if ownership is None:
-                    ownership = OwnershipComponent()
-                    world.add_component(target_entity, ownership)
-                
-                # 设置物品所有者为拾取者
-                ownership.set_owner(picker_entity)
-                
-                # 从空间索引中移除，防止被重复拾取
-                space_system = world.get_system(SpaceSystem)
-                if space_system is not None:
-                    space_system.remove_entity(target_entity.id)
-                
-                # 标记完成，由 ActionSystem 处理
-                action.progress = 1.0
-                action.target_entity = None
-            else:
-                # 库存已满，拾取失败
-                action.status = ActionStatus.FAILED
-                action.progress = 0.0
-                action.target_entity = None
+
+            self._complete_pickup(world, picker_entity, action, inventory, target_entity)
+
+    def _validate_target(self, world, action: ActionComponent, space: SpaceComponent):
+        """验证拾取目标：存在性、距离"""
+        target_entity_id = action.target_entity
+        if target_entity_id is None:
+            self._fail_pickup(action)
+            return None
+
+        target_entity = world.query_entity(target_entity_id)
+        if target_entity is None:
+            self._fail_pickup(action, clear_target=True)
+            return None
+
+        target_space = world.get_component(target_entity, SpaceComponent)
+        if target_space is None:
+            self._fail_pickup(action, clear_target=True)
+            return None
+
+        if self._calculate_distance(space, target_space) > self.PICKUP_DISTANCE:
+            self._fail_pickup(action)
+            return None
+
+        return target_entity
+
+    def _fail_pickup(self, action: ActionComponent, clear_target: bool = False):
+        """标记拾取失败"""
+        action.current_action = ActionType.IDLE
+        action.status = ActionStatus.FAILED
+        action.progress = 0.0
+        if clear_target:
+            action.target_entity = None
+
+    def _complete_pickup(self, world, picker_entity, action: ActionComponent, inventory, target_entity):
+        """完成拾取：添加所有权、从空间索引移除"""
+        if inventory.add(target_entity):
+            ownership = world.get_component(target_entity, OwnershipComponent)
+            if ownership is None:
+                ownership = OwnershipComponent()
+                world.add_component(target_entity, ownership)
+            ownership.set_owner(picker_entity)
+
+            space_system = world.get_system(SpaceSystem)
+            if space_system is not None:
+                space_system.remove_entity(target_entity.id)
+
+            action.progress = 1.0
+            action.target_entity = None
+        else:
+            action.status = ActionStatus.FAILED
+            action.progress = 0.0
+            action.target_entity = None
     
     # ===== 辅助方法 =====
     

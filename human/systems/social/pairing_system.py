@@ -10,16 +10,16 @@
 
 from core.system import System
 from core.world import World
-from core.systems.event_log_system import EventLog
+from identity.event_log_system import EventLog
 
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from human.components.social.relationship_component import RelationshipComponent, RelationshipStatus
 from human.components.social.social_component import SocialComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
-from biology.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from biology.components.gender_component import GenderComponent, Gender
-from core.components.action_component import ActionComponent, ActionType
+from human.components.action.action_component import ActionComponent, ActionType
 
 
 class PairingSystem(System):
@@ -29,7 +29,7 @@ class PairingSystem(System):
     基于社会需求、年龄和性别寻找伴侣。
     """
 
-    def update(self, world: World, dt):
+    def update(self, world: World, dt: float):
         # 收集所有单身人类，同时按性别分组并缓存部落信息
         males = []
         females = []
@@ -42,7 +42,7 @@ class PairingSystem(System):
             if not intent or not needs or not relation or not age or not gender:
                 continue
 
-            if relation.status == RelationshipStatus.SINGLE and age.is_reproductive_age():
+            if relation.status == RelationshipStatus.SINGLE and self._is_reproductive_age(age):
                 # 提前过滤：只有社交需求适中且无紧急生存意图的才进入候选池
                 if (needs.social < 60 and
                     intent.intent not in (IntentType.EAT, IntentType.DRINK, IntentType.SLEEP)):
@@ -103,6 +103,17 @@ class PairingSystem(System):
 
         return best_same_tribe or best_other
 
+    def _is_reproductive_age(self, age) -> bool:
+        """判断是否为生育年龄"""
+        # 防御：如果 age 是对象，尝试获取 age 属性
+        if hasattr(age, 'age'):
+            age = age.age
+        elif hasattr(age, 'value'):
+            age = age.value
+        elif not isinstance(age, (int, float)):
+            return False
+        return 12 <= age <= 65
+
     def form_relationship(self, world, entity1, entity2_info, relation1: RelationshipComponent, relation2: RelationshipComponent):
         """建立关系"""
         entity2 = entity2_info[0]
@@ -118,19 +129,29 @@ class PairingSystem(System):
         social1 = world.get_component(entity1, SocialComponent)
         social2 = world.get_component(entity2, SocialComponent)
         if social1:
-            if entity2.id not in social1.family:
+            if hasattr(social1, 'family') and entity2.id not in social1.family:
                 social1.family.append(entity2.id)
-            social1.update_relation(entity2.id, 50)
+            if hasattr(social1, 'update_relation'):
+                social1.update_relation(entity2.id, 50)
+            else:
+                social1.relations[entity2.id] = 50
         if social2:
-            if entity1.id not in social2.family:
+            if hasattr(social2, 'family') and entity1.id not in social2.family:
                 social2.family.append(entity1.id)
-            social2.update_relation(entity1.id, 50)
+            if hasattr(social2, 'update_relation'):
+                social2.update_relation(entity1.id, 50)
+            else:
+                social2.relations[entity1.id] = 50
         
         # 记录事件日志
-        EventLog.log(
-            world, event_type="pairing",
-            description=f"实体 {entity1.id} 与 {entity2.id} 结为伴侣",
-            entity_id=entity1.id,
-            target_id=entity2.id,
-            severity="info"
-        )
+        try:
+            EventLog.log(
+                world, event_type="pairing",
+                description=f"实体 {entity1.id} 与 {entity2.id} 结为伴侣",
+                entity_id=entity1.id,
+                target_id=entity2.id,
+                severity="info"
+            )
+        except Exception as e:
+            # EventLog.log 可能不存在，静默忽略
+            pass

@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECS 文明演化实时监控</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: #1a1a25;
+    --bg-card-hover: #222230;
+    --border: #2a2a3a;
+    --text-primary: #e8e8f0;
+    --text-secondary: #8b8ba0;
+    --accent-human: #e94560;
+    --accent-building: #4ecca3;
+    --accent-farm: #f4d03f;
+    --accent-tech: #5dade2;
+    --accent-event: #a569bd;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Glass card */
+  .glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-card:hover {
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  /* Stat value animation */
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .stat-value { animation: countUp 0.5s ease-out; }
+
+  /* Pulse dot */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .pulse-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #4ecca3;
+    animation: pulse 2s infinite;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a50; }
+
+  /* Canvas container */
+  .canvas-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+  }
+
+  /* Event log */
+  .event-item {
+    padding: 8px 12px;
+    border-left: 3px solid transparent;
+    margin-bottom: 4px;
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .event-item:hover { background: rgba(255,255,255,0.03); }
+  .event-human { border-left-color: var(--accent-human); }
+  .event-building { border-left-color: var(--accent-building); }
+  .event-farm { border-left-color: var(--accent-farm); }
+  .event-tech { border-left-color: var(--accent-tech); }
+  .event-disaster { border-left-color: #e74c3c; }
+
+  /* Grid background for world map */
+  .world-map {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Entity dot on map */
+  .entity-dot {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  .entity-dot:hover {
+    transform: scale(1.5);
+    z-index: 10;
+  }
+  .entity-human { background: var(--accent-human); box-shadow: 0 0 8px var(--accent-human); }
+  .entity-building { background: var(--accent-building); width: 14px; height: 14px; border-radius: 2px; }
+  .entity-farm { background: var(--accent-farm); width: 8px; height: 8px; }
+  .entity-plant { background: #58d68d; width: 6px; height: 6px; }
+  .entity-animal { background: #f39c12; width: 8px; height: 8px; }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="border-b border-[#2a2a3a] bg-[#0a0a0f]/80 backdrop-blur-md sticky top-0 z-50">
+  <div class="max-w-[1600px] mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="pulse-dot"></div>
+      <h1 class="text-xl font-semibold tracking-tight">ECS 文明演化 <span class="text-[#8b8ba0] font-normal">实时监控</span></h1>
+    </div>
+    <div class="flex items-center gap-6 text-sm">
+      <div class="flex items-center gap-2">
+        <i data-lucide="clock" class="w-4 h-4 text-[#8b8ba0]"></i>
+        <span class="font-mono text-[#4ecca3]" id="tick-counter">Tick 0</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="activity" class="w-4 h-4 text-[#8b8ba0]"></i>
+        <span class="font-mono text-[#5dade2]" id="fps-counter">60 FPS</span>
+      </div>
+      <button id="pause-btn" class="px-4 py-1.5 bg-[#1a1a25] hover:bg-[#222230] border border-[#2a2a3a] rounded-lg text-sm transition-colors flex items-center gap-2">
+        <i data-lucide="pause" class="w-4 h-4"></i>
+        <span>暂停</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1600px] mx-auto px-6 py-6">
+
+  <!-- Stats Row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+    <div class="glass-card">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="users" class="w-4 h-4 text-[#e94560]"></i>
+        <span class="text-xs text-[#8b8ba0] uppercase tracking-wider">人口</span>
+      </div>
+      <div class="text-2xl font-bold font-mono stat-value" id="stat-humans">0</div>
+      <div class="text-xs text-[#4ecca3] mt-1" id="stat-humans-delta">+0</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="home" class="w-4 h-4 text-[#4ecca3]"></i>
+        <span class="text-xs text-[#8b8ba0] uppercase tracking-wider">建筑</span>
+      </div>
+      <div class="text-2xl font-bold font-mono stat-value" id="stat-buildings">0</div>
+      <div class="text-xs text-[#4ecca3] mt-1" id="stat-buildings-delta">+0</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="wheat" class="w-4 h-4 text-[#f4d03f]"></i>
+        <span class="text-xs text-[#8b8ba0] uppercase tracking-wider">农田</span>
+      </div>
+      <div class="text-2xl font-bold font-mono stat-value" id="stat-farms">0</div>
+      <div class="text-xs text-[#4ecca3] mt-1" id="stat-farms-delta">+0</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="flame" class="w-4 h-4 text-[#5dade2]"></i>
+        <span class="text-xs text-[#8b8ba0] uppercase tracking-wider">制作经验</span>
+      </div>
+      <div class="text-2xl font-bold font-mono stat-value" id="stat-crafting">0</div>
+      <div class="text-xs text-[#5dade2] mt-1" id="stat-crafting-delta">+0</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="sprout" class="w-4 h-4 text-[#58d68d]"></i>
+        <span class="text-xs text-[#8b8ba0] uppercase tracking-wider">农业经验</span>
+      </div>
+      <div class="text-2xl font-bold font-mono stat-value" id="stat-farming">0</div>
+      <div class="text-xs text-[#58d68d] mt-1" id="stat-farming-delta">+0</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="zap" class="w-4 h-4 text-[#a569bd]"></i>
+        <span class="text-xs text-[#8b8ba0] uppercase tracking-wider">技术</span>
+      </div>
+      <div class="text-2xl font-bold font-mono stat-value" id="stat-tech">0</div>
+      <div class="text-xs text-[#a569bd] mt-1" id="stat-tech-delta">+0</div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Left: World Map -->
+    <div class="lg:col-span-2">
+      <div class="glass-card">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold flex items-center gap-2">
+            <i data-lucide="map" class="w-5 h-5 text-[#5dade2]"></i>
+            世界地图
+          </h2>
+          <div class="flex gap-3 text-xs">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#e94560]"></span>人类</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[#4ecca3]"></span>建筑</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#f4d03f]"></span>农田</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#58d68d]"></span>植物</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#f39c12]"></span>动物</span>
+          </div>
+        </div>
+        <div class="canvas-container world-map" id="world-map">
+          <canvas id="map-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div class="glass-card">
+          <h3 class="text-sm font-medium text-[#8b8ba0] mb-4 flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+            人口增长趋势
+          </h3>
+          <canvas id="population-chart" height="200"></canvas>
+        </div>
+        <div class="glass-card">
+          <h3 class="text-sm font-medium text-[#8b8ba0] mb-4 flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+            基础设施发展
+          </h3>
+          <canvas id="infrastructure-chart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Sidebar -->
+    <div class="space-y-6">
+      <!-- Knowledge Progress -->
+      <div class="glass-card">
+        <h3 class="text-sm font-medium text-[#8b8ba0] mb-4 flex items-center gap-2">
+          <i data-lucide="brain" class="w-4 h-4"></i>
+          知识积累
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>制作技术</span>
+              <span class="font-mono text-[#5dade2]" id="crafting-progress">0%</span>
+            </div>
+            <div class="h-2 bg-[#2a2a3a] rounded-full overflow-hidden">
+              <div class="h-full bg-[#5dade2] rounded-full transition-all duration-500" id="crafting-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>农业技术</span>
+              <span class="font-mono text-[#58d68d]" id="farming-progress">0%</span>
+            </div>
+            <div class="h-2 bg-[#2a2a3a] rounded-full overflow-hidden">
+              <div class="h-full bg-[#58d68d] rounded-full transition-all duration-500" id="farming-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>建筑技术</span>
+              <span class="font-mono text-[#4ecca3]" id="building-progress">0%</span>
+            </div>
+            <div class="h-2 bg-[#2a2a3a] rounded-full overflow-hidden">
+              <div class="h-full bg-[#4ecca3] rounded-full transition-all duration-500" id="building-bar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Log -->
+      <div class="glass-card">
+        <h3 class="text-sm font-medium text-[#8b8ba0] mb-4 flex items-center gap-2">
+          <i data-lucide="list" class="w-4 h-4"></i>
+          事件日志
+          <span class="ml-auto text-xs bg-[#2a2a3a] px-2 py-0.5 rounded-full" id="event-count">0</span>
+        </h3>
+        <div class="max-h-[400px] overflow-y-auto space-y-1" id="event-log">
+          <div class="text-xs text-[#8b8ba0] text-center py-8">等待事件...</div>
+        </div>
+      </div>
+
+      <!-- System Status -->
+      <div class="glass-card">
+        <h3 class="text-sm font-medium text-[#8b8ba0] mb-4 flex items-center gap-2">
+          <i data-lucide="cpu" class="w-4 h-4"></i>
+          系统状态
+        </h3>
+        <div class="space-y-2 text-xs" id="system-status">
+          <div class="flex justify-between">
+            <span class="text-[#8b8ba0]">碰撞检测</span>
+            <span class="text-[#4ecca3]">运行中</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[#8b8ba0]">农场系统</span>
+            <span class="text-[#4ecca3]">运行中</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[#8b8ba0]">制作系统</span>
+            <span class="text-[#4ecca3]">运行中</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[#8b8ba0]">灾害系统</span>
+            <span class="text-[#4ecca3]">运行中</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ============================================
+// ECS Civilization Dashboard - Frontend
+// ============================================
+
+// Initialize Lucide icons
+lucide.createIcons();
+
+// State
+let isPaused = false;
+let tick = 0;
+let entities = [];
+let history = [];
+let events = [];
+
+// Chart instances
+let populationChart, infrastructureChart;
+
+// Initialize charts
+function initCharts() {
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        grid: { color: 'rgba(255,255,255,0.03)' },
+        ticks: { color: '#8b8ba0', font: { size: 10 } }
+      },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.03)' },
+        ticks: { color: '#8b8ba0', font: { size: 10 } }
+      }
+    },
+    elements: {
+      line: { tension: 0.4 },
+      point: { radius: 0, hitRadius: 6 }
+    }
+  };
+
+  populationChart = new Chart(document.getElementById('population-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: '人口',
+        data: [],
+        borderColor: '#e94560',
+        backgroundColor: 'rgba(233, 69, 96, 0.1)',
+        fill: true,
+        borderWidth: 2
+      }]
+    },
+    options: commonOptions
+  });
+
+  infrastructureChart = new Chart(document.getElementById('infrastructure-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: '建筑',
+          data: [],
+          borderColor: '#4ecca3',
+          backgroundColor: 'rgba(78, 204, 163, 0.1)',
+          fill: true,
+          borderWidth: 2
+        },
+        {
+          label: '农田',
+          data: [],
+          borderColor: '#f4d03f',
+          backgroundColor: 'rgba(244, 208, 63, 0.1)',
+          fill: true,
+          borderWidth: 2
+        }
+      ]
+    },
+    options: commonOptions
+  });
+}
+
+// World Map Canvas
+function initWorldMap() {
+  const canvas = document.getElementById('map-canvas');
+  const container = document.getElementById('world-map');
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+  return canvas.getContext('2d');
+}
+
+function drawWorldMap(ctx, canvas) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw entities
+  entities.forEach(e => {
+    const x = (e.x / 200) * canvas.width;
+    const y = (e.y / 200) * canvas.height;
+
+    ctx.beginPath();
+    ctx.arc(x, y, e.type === 'building' ? 6 : e.type === 'human' ? 4 : 3, 0, Math.PI * 2);
+    ctx.fillStyle = {
+      human: '#e94560',
+      building: '#4ecca3',
+      farm: '#f4d03f',
+      plant: '#58d68d',
+      animal: '#f39c12'
+    }[e.type] || '#888';
+    ctx.fill();
+
+    // Glow effect for humans
+    if (e.type === 'human') {
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(233, 69, 96, 0.2)';
+      ctx.fill();
+    }
+  });
+}
+
+// Update stats
+function updateStats(data) {
+  const stats = ['humans', 'buildings', 'farms', 'crafting', 'farming', 'tech'];
+  stats.forEach(stat => {
+    const el = document.getElementById(`stat-${stat}`);
+    const deltaEl = document.getElementById(`stat-${stat}-delta`);
+    const oldVal = parseInt(el.textContent) || 0;
+    const newVal = data[stat] || 0;
+    const delta = newVal - oldVal;
+
+    el.textContent = newVal;
+    if (delta !== 0) {
+      deltaEl.textContent = (delta > 0 ? '+' : '') + delta;
+      deltaEl.className = `text-xs mt-1 ${delta > 0 ? 'text-[#4ecca3]' : 'text-[#e94560]'}`;
+    }
+  });
+
+  // Update progress bars
+  const maxCrafting = 1000;
+  const maxFarming = 200;
+  const maxBuilding = 50;
+
+  document.getElementById('crafting-bar').style.width = Math.min(100, (data.crafting / maxCrafting) * 100) + '%';
+  document.getElementById('crafting-progress').textContent = Math.round((data.crafting / maxCrafting) * 100) + '%';
+
+  document.getElementById('farming-bar').style.width = Math.min(100, (data.farming / maxFarming) * 100) + '%';
+  document.getElementById('farming-progress').textContent = Math.round((data.farming / maxFarming) * 100) + '%';
+
+  document.getElementById('building-bar').style.width = Math.min(100, (data.buildings / maxBuilding) * 100) + '%';
+  document.getElementById('building-progress').textContent = Math.round((data.buildings / maxBuilding) * 100) + '%';
+}
+
+// Add event to log
+function addEvent(tick, type, message) {
+  const eventLog = document.getElementById('event-log');
+  const eventClass = {
+    human: 'event-human',
+    building: 'event-building',
+    farm: 'event-farm',
+    tech: 'event-tech',
+    disaster: 'event-disaster'
+  }[type] || 'event-human';
+
+  const item = document.createElement('div');
+  item.className = `event-item ${eventClass}`;
+  item.innerHTML = `<span class="font-mono text-[#8b8ba0] text-xs">[${tick}]</span> ${message}`;
+
+  // Remove placeholder if exists
+  if (eventLog.children.length === 1 && eventLog.children[0].classList.contains('text-center')) {
+    eventLog.innerHTML = '';
+  }
+
+  eventLog.insertBefore(item, eventLog.firstChild);
+
+  // Keep only last 50 events
+  while (eventLog.children.length > 50) {
+    eventLog.removeChild(eventLog.lastChild);
+  }
+
+  document.getElementById('event-count').textContent = events.length;
+}
+
+// Update charts
+function updateCharts() {
+  const labels = history.map(h => h.tick);
+
+  populationChart.data.labels = labels;
+  populationChart.data.datasets[0].data = history.map(h => h.humans);
+  populationChart.update('none');
+
+  infrastructureChart.data.labels = labels;
+  infrastructureChart.data.datasets[0].data = history.map(h => h.buildings);
+  infrastructureChart.data.datasets[1].data = history.map(h => h.farms);
+  infrastructureChart.update('none');
+}
+
+// ============================================
+// Simulation Data (Mock for now - will connect to Python backend)
+// ============================================
+
+// Initial data
+let simData = {
+  humans: 10,
+  buildings: 2,
+  farms: 5,
+  crafting: 0,
+  farming: 0,
+  tech: 0,
+  entities: []
+};
+
+// Generate mock entities
+function generateEntities() {
+  const newEntities = [];
+
+  // Humans
+  for (let i = 0; i < simData.humans; i++) {
+    newEntities.push({
+      id: `human_${i}`,
+      type: 'human',
+      x: Math.random() * 150 + 25,
+      y: Math.random() * 150 + 25
+    });
+  }
+
+  // Buildings
+  for (let i = 0; i < simData.buildings; i++) {
+    newEntities.push({
+      id: `building_${i}`,
+      type: 'building',
+      x: Math.random() * 150 + 25,
+      y: Math.random() * 150 + 25
+    });
+  }
+
+  // Farms
+  for (let i = 0; i < simData.farms; i++) {
+    newEntities.push({
+      id: `farm_${i}`,
+      type: 'farm',
+      x: Math.random() * 180 + 10,
+      y: Math.random() * 180 + 10
+    });
+  }
+
+  // Plants
+  for (let i = 0; i < 20; i++) {
+    newEntities.push({
+      id: `plant_${i}`,
+      type: 'plant',
+      x: Math.random() * 200,
+      y: Math.random() * 200
+    });
+  }
+
+  // Animals
+  for (let i = 0; i < 10; i++) {
+    newEntities.push({
+      id: `animal_${i}`,
+      type: 'animal',
+      x: Math.random() * 180 + 10,
+      y: Math.random() * 180 + 10
+    });
+  }
+
+  return newEntities;
+}
+
+// Simulate one tick
+function simulateTick() {
+  tick++;
+
+  // Random events
+  if (Math.random() < 0.1) {
+    simData.humans++;
+    events.push({ tick, type: 'human', message: '新移民加入部落' });
+  }
+
+  if (Math.random() < 0.05) {
+    simData.buildings++;
+    events.push({ tick, type: 'building', message: '新建 hut' });
+  }
+
+  if (Math.random() < 0.08) {
+    simData.farms++;
+    events.push({ tick, type: 'farm', message: '开垦新农田' });
+  }
+
+  if (Math.random() < 0.15) {
+    simData.crafting += Math.floor(Math.random() * 5) + 1;
+  }
+
+  if (Math.random() < 0.1) {
+    simData.farming += Math.floor(Math.random() * 3) + 1;
+  }
+
+  // Regenerate entities
+  entities = generateEntities();
+
+  // Record history
+  if (tick % 10 === 0) {
+    history.push({
+      tick,
+      humans: simData.humans,
+      buildings: simData.buildings,
+      farms: simData.farms,
+      crafting: simData.crafting,
+      farming: simData.farming
+    });
+
+    // Keep last 100 points
+    if (history.length > 100) history.shift();
+  }
+}
+
+// Main loop
+function mainLoop() {
+  if (!isPaused) {
+    simulateTick();
+
+    // Update UI
+    document.getElementById('tick-counter').textContent = `Tick ${tick}`;
+    updateStats(simData);
+
+    // Process events
+    events.forEach(e => addEvent(e.tick, e.type, e.message));
+    events = [];
+
+    // Update charts every 10 ticks
+    if (tick % 10 === 0) {
+      updateCharts();
+    }
+
+    // Draw map
+    const canvas = document.getElementById('map-canvas');
+    const ctx = canvas.getContext('2d');
+    drawWorldMap(ctx, canvas);
+  }
+
+  requestAnimationFrame(mainLoop);
+}
+
+// Pause button
+document.getElementById('pause-btn').addEventListener('click', () => {
+  isPaused = !isPaused;
+  const btn = document.getElementById('pause-btn');
+  btn.innerHTML = isPaused
+    ? '<i data-lucide="play" class="w-4 h-4"></i><span>继续</span>'
+    : '<i data-lucide="pause" class="w-4 h-4"></i><span>暂停</span>';
+  lucide.createIcons();
+});
+
+// Handle resize
+window.addEventListener('resize', () => {
+  const canvas = document.getElementById('map-canvas');
+  const container = document.getElementById('world-map');
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+});
+
+// Initialize
+initCharts();
+initWorldMap();
+entities = generateEntities();
+mainLoop();
+</script>
+
+</body>
+</html>

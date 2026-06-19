@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-'''
-@文件:death_component.py
-@说明:死亡状态组件（兼容代理）
-@时间:2026/05/29
-@版本:2.0
+"""
+死亡状态组件
 
-已迁移至 core/components/death_component.py
-此文件保留用于向后兼容，将在下一版本中删除。
-'''
+v3.9 迁移：从 core/components/ 移回 human/components/physiological/
+保持 core 层纯粹性。
+"""
 
-from core.components.death_component import DeathComponent
+from dataclasses import dataclass
+from core.component import Component
 
-__all__ = ["DeathComponent"]
+
+@dataclass(slots=True)
+class DeathComponent(Component):
+    """死亡状态组件 — 标记实体的死亡状态"""
+    is_dead: bool = False

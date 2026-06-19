@@ -17,7 +17,7 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.economic.economy_component import EconomyComponent
 from human.components.social.social_component import SocialComponent
@@ -83,7 +83,7 @@ class TradeSystem(System):
 
             # 执行交易
             self._perform_trade(entity, trade_partner, action, inventory, economy, social, skill,
-                              partner_data, world, dt)
+                              (partner_inv, partner_eco, partner_soc, partner_space), world, dt)
 
             action.status = ActionStatus.COMPLETED
             task.status = TaskStatus.COMPLETED

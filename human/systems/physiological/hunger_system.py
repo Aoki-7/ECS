@@ -11,7 +11,7 @@ from core.system import System
 from core.world import World
 
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-from core.components.action_component import ActionComponent, ActionType
+from human.components.action.action_component import ActionComponent, ActionType
 
 
 class HungerSystem(System):

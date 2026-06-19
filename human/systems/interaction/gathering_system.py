@@ -11,7 +11,7 @@
 from core.system import System
 from core.world import World
 from human.components.interaction.gathering_component import GatheringComponent
-from core.components.action_component import ActionComponent, ActionType, ActionStatus
+from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from resource.components.resource_component import ResourceComponent
 from space.space_component import SpaceComponent
 import math
@@ -91,7 +91,7 @@ class GatheringSystem(System):
     def _find_nearby_resources(self, world: World, space: SpaceComponent, 
                               resource_type: str, radius: float) -> list:
         """
-        查找附近的指定类型资源
+        查找附近的指定类型资源（使用空间索引替代全局遍历）
         
         Args:
             world: World实例
@@ -103,22 +103,23 @@ class GatheringSystem(System):
             list: [(resource_entity, resource_component, resource_space), ...]
         """
         nearby = []
+        from space.space_system import SpaceSystem
+        space_system = world.get_system(SpaceSystem)
         
-        # 遍历所有资源实体
-        for entity, (resource, res_space) in world.get_components(
-            ResourceComponent, SpaceComponent
-        ):
-            # 检查资源类型是否匹配
-            if resource.resource_type != resource_type:
-                continue
-            
-            # 计算距离
-            dx = res_space.x - space.x
-            dy = res_space.y - space.y
-            distance = math.sqrt(dx * dx + dy * dy)
-            
-            # 如果在范围内，添加到列表
-            if distance <= radius:
-                nearby.append((entity, resource, res_space))
+        if space_system is not None:
+            ids = space_system.query_radius(
+                space.x, space.y, radius, getattr(space, 'layer', 0)
+            )
+            for eid in ids:
+                candidate = world.query_entity(eid)
+                if candidate is None:
+                    continue
+                resource = world.get_component(candidate, ResourceComponent)
+                if resource is None or resource.resource_type != resource_type:
+                    continue
+                res_space = world.get_component(candidate, SpaceComponent)
+                if res_space is None:
+                    continue
+                nearby.append((candidate, resource, res_space))
         
         return nearby

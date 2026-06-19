@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from core.component import Component
 
-@dataclass
+@dataclass(slots=True)
 class PersonalityComponent(Component):
     """
         性格组件，包含勇敢、贪婪、善良、好奇心和守序等属性

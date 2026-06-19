@@ -13,7 +13,7 @@ from typing import List, Optional
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class DialogueComponent(Component):
     """
     对话状态组件

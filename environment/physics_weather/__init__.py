@@ -1,3 +1,12 @@
+"""
+物理天气子模块 — 连续物理量天气系统
+
+依赖:
+    - environment/
+    - core/
+
+版本: v4.0
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -105,3 +114,5 @@ __all__ = [
     "saturation_absolute_humidity",
     "relative_humidity",
 ]
+
+

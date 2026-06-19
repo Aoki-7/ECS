@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECS 世界模拟 — 全生态实时监控</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #050508;
+    --bg-secondary: #0c0c14;
+    --bg-card: #12121c;
+    --bg-card-hover: #1a1a28;
+    --border: #252538;
+    --text-primary: #e8e8f0;
+    --text-secondary: #6b6b8a;
+    --accent-human: #ff4757;
+    --accent-animal: #ffa502;
+    --accent-plant: #2ed573;
+    --accent-building: #1e90ff;
+    --accent-farm: #ffc107;
+    --accent-soil: #8b6914;
+    --accent-disaster: #ff3838;
+    --accent-tech: #a29bfe;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Glass card */
+  .glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-card:hover {
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+
+  /* Pulse dot */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+  .pulse-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2ed573;
+    animation: pulse 2s infinite;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Canvas */
+  .canvas-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+  }
+
+  /* Event log */
+  .event-item {
+    padding: 6px 10px;
+    border-left: 2px solid transparent;
+    margin-bottom: 3px;
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .event-item:hover { background: rgba(255,255,255,0.03); }
+  .event-human { border-left-color: var(--accent-human); }
+  .event-animal { border-left-color: var(--accent-animal); }
+  .event-plant { border-left-color: var(--accent-plant); }
+  .event-building { border-left-color: var(--accent-building); }
+  .event-farm { border-left-color: var(--accent-farm); }
+  .event-disaster { border-left-color: var(--accent-disaster); }
+  .event-tech { border-left-color: var(--accent-tech); }
+
+  /* Mini stat */
+  .mini-stat {
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Tab system */
+  .tab-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+  }
+  .tab-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+  .tab-btn.active { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+
+  /* Grid background */
+  .world-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 25px 25px;
+  }
+</style>
+<script>window.WORLD_DATA = {"snapshot": {"tick": 500, "timestamp": 1780984897.6874425, "total_entities": 96, "humans": 14, "animals": 15, "plants": 33, "buildings": 6, "farms": 11, "soil_patches": 26, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 14, "building_count": 6, "farm_count": 11, "crafting_knowledge": 318, "farming_knowledge": 41, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, "history": [{"tick": 1, "timestamp": 1780984897.5505207, "total_entities": 83, "humans": 10, "animals": 15, "plants": 30, "buildings": 3, "farms": 8, "soil_patches": 23, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 10, "building_count": 3, "farm_count": 8, "crafting_knowledge": 0, "farming_knowledge": 4, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 51, "timestamp": 1780984897.5809965, "total_entities": 83, "humans": 10, "animals": 15, "plants": 30, "buildings": 3, "farms": 8, "soil_patches": 23, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 10, "building_count": 3, "farm_count": 8, "crafting_knowledge": 50, "farming_knowledge": 27, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 101, "timestamp": 1780984897.591986, "total_entities": 84, "humans": 11, "animals": 15, "plants": 30, "buildings": 3, "farms": 8, "soil_patches": 23, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 11, "building_count": 3, "farm_count": 8, "crafting_knowledge": 91, "farming_knowledge": 30, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 151, "timestamp": 1780984897.6014414, "total_entities": 84, "humans": 11, "animals": 15, "plants": 30, "buildings": 3, "farms": 8, "soil_patches": 23, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 11, "building_count": 3, "farm_count": 8, "crafting_knowledge": 125, "farming_knowledge": 32, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 201, "timestamp": 1780984897.6117404, "total_entities": 86, "humans": 12, "animals": 15, "plants": 30, "buildings": 3, "farms": 9, "soil_patches": 24, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 12, "building_count": 3, "farm_count": 9, "crafting_knowledge": 155, "farming_knowledge": 33, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 251, "timestamp": 1780984897.623258, "total_entities": 86, "humans": 12, "animals": 15, "plants": 30, "buildings": 3, "farms": 9, "soil_patches": 24, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 12, "building_count": 3, "farm_count": 9, "crafting_knowledge": 188, "farming_knowledge": 35, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 301, "timestamp": 1780984897.635097, "total_entities": 89, "humans": 12, "animals": 15, "plants": 31, "buildings": 4, "farms": 10, "soil_patches": 25, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 12, "building_count": 4, "farm_count": 10, "crafting_knowledge": 221, "farming_knowledge": 36, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 351, "timestamp": 1780984897.6455963, "total_entities": 91, "humans": 12, "animals": 15, "plants": 32, "buildings": 5, "farms": 10, "soil_patches": 25, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 12, "building_count": 5, "farm_count": 10, "crafting_knowledge": 248, "farming_knowledge": 36, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 401, "timestamp": 1780984897.6593723, "total_entities": 92, "humans": 13, "animals": 15, "plants": 32, "buildings": 5, "farms": 10, "soil_patches": 25, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 13, "building_count": 5, "farm_count": 10, "crafting_knowledge": 262, "farming_knowledge": 36, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 451, "timestamp": 1780984897.6725762, "total_entities": 96, "humans": 14, "animals": 15, "plants": 33, "buildings": 6, "farms": 11, "soil_patches": 26, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 14, "building_count": 6, "farm_count": 11, "crafting_knowledge": 293, "farming_knowledge": 38, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}, {"tick": 500, "timestamp": 1780984897.6874425, "total_entities": 96, "humans": 14, "animals": 15, "plants": 33, "buildings": 6, "farms": 11, "soil_patches": 26, "avg_plant_health": 0.0, "avg_animal_energy": 0.0, "total_biomass": 0.0, "biodiversity_index": 0.0, "total_population": 14, "building_count": 6, "farm_count": 11, "crafting_knowledge": 318, "farming_knowledge": 41, "tech_count": 0, "temperature": 20.0, "humidity": 0.5, "rainfall": 0.0, "wind_speed": 0.0, "active_disasters": 0, "disaster_types": [], "system_count": 10, "avg_tick_time_ms": 0.0}], "entities": [{"id": 46, "type": "human", "x": 4.135676977432579, "y": 15.401463493832102}, {"id": 47, "type": "human", "x": 23.31325029565011, "y": 21.786439543533454}, {"id": 48, "type": "human", "x": 67.474509126009, "y": 81.12481275920462}, {"id": 49, "type": "human", "x": 79.64880851864523, "y": 28.83734855875434}, {"id": 50, "type": "human", "x": 3.8370892419657965, "y": 97.32884296518999}, {"id": 51, "type": "human", "x": 97.46207837269196, "y": 4.731266429201386}, {"id": 52, "type": "human", "x": 27.775181017755312, "y": 50.50762568545787}, {"id": 53, "type": "human", "x": 95.24379743672657, "y": 62.7457343675934}, {"id": 54, "type": "human", "x": 99.42037564970747, "y": 97.16703009827432}, {"id": 55, "type": "human", "x": 57.524626814924474, "y": 50.06863223731701}, {"id": 83, "type": "human", "x": 167.380836309434, "y": 87.21147404202357}, {"id": 84, "type": "human", "x": 115.7230057254298, "y": 156.51794192125067}, {"id": 91, "type": "human", "x": 9.676877670080298, "y": 77.61712328057509}, {"id": 92, "type": "human", "x": 179.0903202254009, "y": 195.85228432679793}, {"id": 32, "type": "animal", "x": 151.8328411603846, "y": 15.036539367315305}, {"id": 33, "type": "animal", "x": 190.4427192093439, "y": 181.78707274504222}, {"id": 34, "type": "animal", "x": 190.89415699560172, "y": 107.59565838259377}, {"id": 35, "type": "animal", "x": 46.76494014159627, "y": 28.039942960646624}, {"id": 36, "type": "animal", "x": 153.7443070437649, "y": 195.67990018573303}, {"id": 37, "type": "animal", "x": 43.2117374062007, "y": 191.37299336840766}, {"id": 38, "type": "animal", "x": 114.02412617794265, "y": 32.449279710924614}, {"id": 39, "type": "animal", "x": 192.86826190271086, "y": 174.16362676845839}, {"id": 40, "type": "animal", "x": 182.07962660027988, "y": 15.237236534363262}, {"id": 41, "type": "animal", "x": 45.08487582523537, "y": 87.6658775276405}, {"id": 42, "type": "animal", "x": 84.8671998063277, "y": 193.04949336888123}, {"id": 43, "type": "animal", "x": 161.03124825236785, "y": 90.76307247361322}, {"id": 44, "type": "animal", "x": 8.292676201961303, "y": 107.51253845331586}, {"id": 45, "type": "animal", "x": 151.0834661804074, "y": 168.924518728361}, {"id": 31, "type": "animal", "x": 137.31918100732454, "y": 132.05664656758535}, {"id": 1, "type": "plant", "x": 76.02145103902356, "y": 113.90073493651367}, {"id": 2, "type": "plant", "x": 112.87206566116706, "y": 93.39377972897587}, {"id": 3, "type": "plant", "x": 186.9114691441699, "y": 129.5407701339925}, {"id": 4, "type": "plant", "x": 26.13484397322978, "y": 135.00515043550865}, {"id": 5, "type": "plant", "x": 56.12170795368772, "y": 160.9390277348958}, {"id": 6, "type": "plant", "x": 2.8930536874056445, "y": 6.489716519405708}, {"id": 7, "type": "plant", "x": 87.04166460245784, "y": 142.06871263726612}, {"id": 8, "type": "plant", "x": 149.0163325317663, "y": 169.66216444687413}, {"id": 9, "type": "plant", "x": 148.70813957768826, "y": 79.91311986795463}, {"id": 10, "type": "plant", "x": 196.4242020525903, "y": 72.68436938288396}, {"id": 11, "type": "plant", "x": 88.33632534257828, "y": 37.155391540036064}, {"id": 12, "type": "plant", "x": 152.19155282430026, "y": 123.73234479348199}, {"id": 13, "type": "plant", "x": 47.02659642918234, "y": 96.09127766320566}, {"id": 14, "type": "plant", "x": 33.95334303684723, "y": 145.08180534742442}, {"id": 15, "type": "plant", "x": 33.36862206563838, "y": 191.16467600154922}, {"id": 16, "type": "plant", "x": 183.75994582237064, "y": 39.49381301654971}, {"id": 17, "type": "plant", "x": 44.335962812229866, "y": 61.16586938621684}, {"id": 18, "type": "plant", "x": 79.7689045706617, "y": 188.1476632240298}, {"id": 19, "type": "plant", "x": 130.1618534018078, "y": 184.5916517776846}, {"id": 20, "type": "plant", "x": 53.36899566634066, "y": 25.692038820138862}, {"id": 21, "type": "plant", "x": 93.26721612500502, "y": 108.82837292368801}, {"id": 22, "type": "plant", "x": 40.21262149790732, "y": 142.93682834093352}, {"id": 23, "type": "plant", "x": 86.61469900687034, "y": 133.74792791777975}, {"id": 24, "type": "plant", "x": 167.54198223311118, "y": 184.13179759641994}, {"id": 25, "type": "plant", "x": 124.04411027350204, "y": 168.6917052535389}, {"id": 26, "type": "plant", "x": 147.231000994496, "y": 120.50236108016996}, {"id": 27, "type": "plant", "x": 105.7424474749884, "y": 24.353567592749847}, {"id": 28, "type": "plant", "x": 71.81404706499157, "y": 61.04450033281408}, {"id": 29, "type": "plant", "x": 144.66435793483535, "y": 123.91404410085518}, {"id": 30, "type": "plant", "x": 4.211154753934032, "y": 25.922520235720214}, {"id": 88, "type": "plant", "x": 16.146851199242306, "y": 158.8752511850312}, {"id": 90, "type": "plant", "x": 38.790943300033454, "y": 80.5629088666177}, {"id": 95, "type": "plant", "x": 151.4584454708097, "y": 131.07597287256863}, {"id": 87, "type": "building", "x": 12.57280172297528, "y": 89.9697978074895}, {"id": 56, "type": "building", "x": 111.67802914985575, "y": 9.154030693928034}, {"id": 89, "type": "building", "x": 148.47910639647188, "y": 138.36874306920458}, {"id": 58, "type": "building", "x": 60.3502959739624, "y": 85.08393149392127}, {"id": 94, "type": "building", "x": 91.52783784755142, "y": 45.30082884905629}, {"id": 57, "type": "building", "x": 94.67690004620837, "y": 94.69145521715312}, {"id": 64, "type": "farm", "x": 145.91119797702945, "y": 162.6486320994354}, {"id": 65, "type": "farm", "x": 41.65770450561429, "y": 61.787072693809854}, {"id": 66, "type": "farm", "x": 131.03792788271576, "y": 32.534089289467104}, {"id": 61, "type": "farm", "x": 0.49652734736384874, "y": 136.1727694863774}, {"id": 85, "type": "farm", "x": 198.82379650443139, "y": 22.298279959811886}, {"id": 86, "type": "farm", "x": 165.54089275814005, "y": 113.39630752342052}, {"id": 59, "type": "farm", "x": 64.27672385117832, "y": 133.90953246542966}, {"id": 60, "type": "farm", "x": 111.59849079792112, "y": 81.15983921305836}, {"id": 93, "type": "farm", "x": 171.80782575168726, "y": 32.33247984116054}, {"id": 62, "type": "farm", "x": 69.58463814203861, "y": 70.28298149719508}, {"id": 63, "type": "farm", "x": 56.40212875260108, "y": 178.71814297023568}]};</script>
+</head>
+<body>
+
+<!-- Header -->
+<header class="border-b border-[#252538] bg-[#050508]/90 backdrop-blur-md sticky top-0 z-50">
+  <div class="max-w-[1800px] mx-auto px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="pulse-dot"></div>
+      <h1 class="text-lg font-semibold tracking-tight">
+        ECS 世界模拟 <span class="text-[#6b6b8a] font-normal">全生态实时监控</span>
+      </h1>
+    </div>
+    <div class="flex items-center gap-5 text-sm">
+      <div class="flex items-center gap-2">
+        <i data-lucide="clock" class="w-4 h-4 text-[#6b6b8a]"></i>
+        <span class="font-mono text-[#2ed573]" id="tick-display">Tick 0</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="activity" class="w-4 h-4 text-[#6b6b8a]"></i>
+        <span class="font-mono text-[#1e90ff]" id="fps-display">60 FPS</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="globe" class="w-4 h-4 text-[#6b6b8a]"></i>
+        <span class="font-mono" id="entity-count">0 实体</span>
+      </div>
+      <button id="pause-btn" class="px-3 py-1.5 bg-[#12121c] hover:bg-[#1a1a28] border border-[#252538] rounded-lg text-xs transition-colors flex items-center gap-1.5">
+        <i data-lucide="pause" class="w-3.5 h-3.5"></i>
+        <span>暂停</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1800px] mx-auto px-6 py-5">
+
+  <!-- Top Stats Row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-5">
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="users" class="w-3.5 h-3.5 text-[#ff4757]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">人类</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-humans">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="paw-print" class="w-3.5 h-3.5 text-[#ffa502]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">动物</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-animals">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="leaf" class="w-3.5 h-3.5 text-[#2ed573]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">植物</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-plants">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="home" class="w-3.5 h-3.5 text-[#1e90ff]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">建筑</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-buildings">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="wheat" class="w-3.5 h-3.5 text-[#ffc107]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">农田</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-farms">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="mountain" class="w-3.5 h-3.5 text-[#8b6914]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">土壤</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-soil">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="flame" class="w-3.5 h-3.5 text-[#a29bfe]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">知识</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-knowledge">0</div>
+    </div>
+    <div class="glass-card py-3 px-4">
+      <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-[#ff3838]"></i>
+        <span class="text-[10px] text-[#6b6b8a] uppercase tracking-wider">灾害</span>
+      </div>
+      <div class="text-xl font-bold font-mono" id="stat-disasters">0</div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+    <!-- Left: World Map (8 cols) -->
+    <div class="lg:col-span-8 space-y-5">
+      <!-- Map -->
+      <div class="glass-card">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-semibold flex items-center gap-2">
+            <i data-lucide="map" class="w-4 h-4 text-[#1e90ff]"></i>
+            世界地图
+          </h2>
+          <div class="flex gap-2">
+            <button class="tab-btn active" data-layer="all">全部</button>
+            <button class="tab-btn" data-layer="human">人类</button>
+            <button class="tab-btn" data-layer="animal">动物</button>
+            <button class="tab-btn" data-layer="plant">植物</button>
+            <button class="tab-btn" data-layer="building">建筑</button>
+          </div>
+        </div>
+        <div class="canvas-container world-grid" style="height: 500px;">
+          <canvas id="world-canvas"></canvas>
+        </div>
+        <div class="flex gap-4 mt-3 text-[11px] text-[#6b6b8a]">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ff4757]"></span>人类</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ffa502]"></span>动物</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#2ed573]"></span>植物</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[#1e90ff]"></span>建筑</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#ffc107]"></span>农田</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#8b6914]"></span>土壤</span>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+            生态种群趋势
+          </h3>
+          <canvas id="ecosystem-chart" height="180"></canvas>
+        </div>
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+            文明发展指标
+          </h3>
+          <canvas id="civilization-chart" height="180"></canvas>
+        </div>
+      </div>
+
+      <!-- Environment & System Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+            <i data-lucide="cloud-sun" class="w-3.5 h-3.5"></i>
+            环境指标
+          </h3>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-[#6b6b8a]">温度</span>
+                <span class="font-mono" id="env-temp">20°C</span>
+              </div>
+              <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+                <div class="h-full bg-[#ffa502] rounded-full transition-all" id="temp-bar" style="width: 40%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-[#6b6b8a]">湿度</span>
+                <span class="font-mono" id="env-humidity">50%</span>
+              </div>
+              <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+                <div class="h-full bg-[#1e90ff] rounded-full transition-all" id="humidity-bar" style="width: 50%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-[#6b6b8a]">降雨</span>
+                <span class="font-mono" id="env-rain">0mm</span>
+              </div>
+              <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+                <div class="h-full bg-[#a29bfe] rounded-full transition-all" id="rain-bar" style="width: 0%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-[#6b6b8a]">风速</span>
+                <span class="font-mono" id="env-wind">0m/s</span>
+              </div>
+              <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+                <div class="h-full bg-[#2ed573] rounded-full transition-all" id="wind-bar" style="width: 10%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card">
+          <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+            <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+            系统性能
+          </h3>
+          <div class="space-y-2" id="system-list">
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">碰撞检测</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">农场系统</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">制作系统</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">灾害系统</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+            <div class="mini-stat">
+              <span class="text-xs text-[#6b6b8a]">衣物系统</span>
+              <span class="text-xs text-[#2ed573]">运行中</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar (4 cols) -->
+    <div class="lg:col-span-4 space-y-5">
+      <!-- Knowledge Panel -->
+      <div class="glass-card">
+        <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+          <i data-lucide="brain" class="w-3.5 h-3.5"></i>
+          知识积累
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>制作技术</span>
+              <span class="font-mono text-[#a29bfe]" id="crafting-pct">0%</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#a29bfe] rounded-full transition-all" id="crafting-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>农业技术</span>
+              <span class="font-mono text-[#2ed573]" id="farming-pct">0%</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#2ed573] rounded-full transition-all" id="farming-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span>建筑技术</span>
+              <span class="font-mono text-[#1e90ff]" id="building-pct">0%</span>
+            </div>
+            <div class="h-1.5 bg-[#252538] rounded-full overflow-hidden">
+              <div class="h-full bg-[#1e90ff] rounded-full transition-all" id="building-bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-[#252538]">
+            <div class="flex justify-between text-xs">
+              <span class="text-[#6b6b8a]">已知技术</span>
+              <span class="font-mono" id="tech-count">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Biodiversity -->
+      <div class="glass-card">
+        <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+          <i data-lucide="dna" class="w-3.5 h-3.5"></i>
+          生物多样性
+        </h3>
+        <div class="space-y-2">
+          <div class="mini-stat">
+            <span class="text-xs text-[#6b6b8a]">物种丰富度</span>
+            <span class="text-xs font-mono" id="biodiversity">0.00</span>
+          </div>
+          <div class="mini-stat">
+            <span class="text-xs text-[#6b6b8a]">总生物量</span>
+            <span class="text-xs font-mono" id="biomass">0 kg</span>
+          </div>
+          <div class="mini-stat">
+            <span class="text-xs text-[#6b6b8a]">平均植物健康</span>
+            <span class="text-xs font-mono text-[#2ed573]" id="plant-health">100%</span>
+          </div>
+          <div class="mini-stat">
+            <span class="text-xs text-[#6b6b8a]">平均动物能量</span>
+            <span class="text-xs font-mono text-[#ffa502]" id="animal-energy">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Log -->
+      <div class="glass-card">
+        <h3 class="text-xs font-medium text-[#6b6b8a] mb-3 flex items-center gap-2">
+          <i data-lucide="list" class="w-3.5 h-3.5"></i>
+          事件日志
+          <span class="ml-auto text-[10px] bg-[#252538] px-2 py-0.5 rounded-full" id="event-counter">0</span>
+        </h3>
+        <div class="max-h-[350px] overflow-y-auto space-y-1" id="event-log">
+          <div class="text-xs text-[#6b6b8a] text-center py-6">等待事件...</div>
+        </div>
+      </div>
+
+      <!-- Disaster Alert -->
+      <div class="glass-card border-red-900/30" id="disaster-panel" style="display: none;">
+        <h3 class="text-xs font-medium text-[#ff3838] mb-2 flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+          活跃灾害
+        </h3>
+        <div id="disaster-list" class="space-y-1"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ============================================
+// ECS World Simulation Dashboard
+// ============================================
+
+lucide.createIcons();
+
+let isPaused = false;
+let tick = 0;
+let entities = [];
+let history = [];
+let events = [];
+let currentLayer = 'all';
+
+// Charts
+let ecosystemChart, civilizationChart;
+
+function initCharts() {
+  const opts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#6b6b8a', font: { size: 10 } } } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#6b6b8a', font: { size: 9 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#6b6b8a', font: { size: 9 } } }
+    },
+    elements: { line: { tension: 0.4 }, point: { radius: 0 } }
+  };
+
+  ecosystemChart = new Chart(document.getElementById('ecosystem-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: '人类', data: [], borderColor: '#ff4757', backgroundColor: 'rgba(255,71,87,0.1)', fill: true, borderWidth: 1.5 },
+        { label: '动物', data: [], borderColor: '#ffa502', backgroundColor: 'rgba(255,165,2,0.1)', fill: true, borderWidth: 1.5 },
+        { label: '植物', data: [], borderColor: '#2ed573', backgroundColor: 'rgba(46,213,115,0.1)', fill: true, borderWidth: 1.5 }
+      ]
+    },
+    options: opts
+  });
+
+  civilizationChart = new Chart(document.getElementById('civilization-chart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: '建筑', data: [], borderColor: '#1e90ff', backgroundColor: 'rgba(30,144,255,0.1)', fill: true, borderWidth: 1.5 },
+        { label: '农田', data: [], borderColor: '#ffc107', backgroundColor: 'rgba(255,193,7,0.1)', fill: true, borderWidth: 1.5 }
+      ]
+    },
+    options: opts
+  });
+}
+
+// World Map
+function initWorldMap() {
+  const canvas = document.getElementById('world-canvas');
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+  return canvas.getContext('2d');
+}
+
+function drawWorldMap(ctx, canvas) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < canvas.width; x += 25) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 25) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  // Draw entities
+  entities.forEach(e => {
+    if (currentLayer !== 'all' && e.type !== currentLayer) return;
+
+    const x = (e.x / 250) * canvas.width;
+    const y = (e.y / 250) * canvas.height;
+
+    const colors = {
+      human: '#ff4757',
+      animal: '#ffa502',
+      plant: '#2ed573',
+      building: '#1e90ff',
+      farm: '#ffc107',
+      soil: '#8b6914'
+    };
+
+    const sizes = {
+      human: 5,
+      animal: 4,
+      plant: 2.5,
+      building: 7,
+      farm: 3.5,
+      soil: 2
+    };
+
+    const color = colors[e.type] || '#888';
+    const size = sizes[e.type] || 3;
+
+    ctx.beginPath();
+    if (e.type === 'building') {
+      ctx.rect(x - size/2, y - size/2, size, size);
+    } else {
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Glow for humans and buildings
+    if (e.type === 'human' || e.type === 'building') {
+      ctx.beginPath();
+      ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+      ctx.fillStyle = color + '20';
+      ctx.fill();
+    }
+  });
+}
+
+// Update UI
+function updateStats(data) {
+  const stats = {
+    humans: data.humans || 0,
+    animals: data.animals || 0,
+    plants: data.plants || 0,
+    buildings: data.buildings || 0,
+    farms: data.farms || 0,
+    soil: data.soil_patches || 0,
+    knowledge: (data.crafting_knowledge || 0) + (data.farming_knowledge || 0),
+    disasters: data.active_disasters || 0
+  };
+
+  Object.entries(stats).forEach(([key, val]) => {
+    const el = document.getElementById('stat-' + key);
+    if (el) el.textContent = val;
+  });
+
+  // Environment
+  document.getElementById('env-temp').textContent = (data.temperature || 20).toFixed(1) + '°C';
+  document.getElementById('env-humidity').textContent = ((data.humidity || 0.5) * 100).toFixed(0) + '%';
+  document.getElementById('env-rain').textContent = (data.rainfall || 0).toFixed(1) + 'mm';
+  document.getElementById('env-wind').textContent = (data.wind_speed || 0).toFixed(1) + 'm/s';
+
+  // Bars
+  document.getElementById('temp-bar').style.width = Math.min(100, ((data.temperature || 20) / 50) * 100) + '%';
+  document.getElementById('humidity-bar').style.width = ((data.humidity || 0.5) * 100) + '%';
+  document.getElementById('rain-bar').style.width = Math.min(100, ((data.rainfall || 0) / 100) * 100) + '%';
+  document.getElementById('wind-bar').style.width = Math.min(100, ((data.wind_speed || 0) / 20) * 100) + '%';
+
+  // Knowledge
+  const maxCraft = 1000, maxFarm = 200, maxBuild = 50;
+  document.getElementById('crafting-bar').style.width = Math.min(100, ((data.crafting_knowledge || 0) / maxCraft) * 100) + '%';
+  document.getElementById('crafting-pct').textContent = Math.round(((data.crafting_knowledge || 0) / maxCraft) * 100) + '%';
+  document.getElementById('farming-bar').style.width = Math.min(100, ((data.farming_knowledge || 0) / maxFarm) * 100) + '%';
+  document.getElementById('farming-pct').textContent = Math.round(((data.farming_knowledge || 0) / maxFarm) * 100) + '%';
+  document.getElementById('tech-count').textContent = data.tech_count || 0;
+
+  // Biodiversity
+  document.getElementById('biodiversity').textContent = (data.biodiversity_index || 0).toFixed(2);
+  document.getElementById('biomass').textContent = (data.total_biomass || 0).toFixed(0) + ' kg';
+}
+
+function addEvent(tick, type, message) {
+  const log = document.getElementById('event-log');
+  const classes = {
+    human: 'event-human', animal: 'event-animal', plant: 'event-plant',
+    building: 'event-building', farm: 'event-farm', disaster: 'event-disaster', tech: 'event-tech'
+  };
+
+  const item = document.createElement('div');
+  item.className = 'event-item ' + (classes[type] || 'event-human');
+  item.innerHTML = `<span class="font-mono text-[#6b6b8a] text-[10px]">[${tick}]</span> ${message}`;
+
+  if (log.children.length === 1 && log.children[0].classList.contains('text-center')) {
+    log.innerHTML = '';
+  }
+  log.insertBefore(item, log.firstChild);
+  while (log.children.length > 50) log.removeChild(log.lastChild);
+
+  document.getElementById('event-counter').textContent = log.children.length;
+}
+
+function updateCharts() {
+  const labels = history.map(h => h.tick);
+  ecosystemChart.data.labels = labels;
+  ecosystemChart.data.datasets[0].data = history.map(h => h.humans);
+  ecosystemChart.data.datasets[1].data = history.map(h => h.animals);
+  ecosystemChart.data.datasets[2].data = history.map(h => h.plants);
+  ecosystemChart.update('none');
+
+  civilizationChart.data.labels = labels;
+  civilizationChart.data.datasets[0].data = history.map(h => h.buildings);
+  civilizationChart.data.datasets[1].data = history.map(h => h.farms);
+  civilizationChart.update('none');
+}
+
+// Simulation
+function generateEntities() {
+  const e = [];
+  // Humans
+  for (let i = 0; i < simData.humans; i++) e.push({ id: 'h'+i, type: 'human', x: Math.random()*200+25, y: Math.random()*200+25 });
+  // Animals
+  for (let i = 0; i < simData.animals; i++) e.push({ id: 'a'+i, type: 'animal', x: Math.random()*220+15, y: Math.random()*220+15 });
+  // Plants
+  for (let i = 0; i < simData.plants; i++) e.push({ id: 'p'+i, type: 'plant', x: Math.random()*240+5, y: Math.random()*240+5 });
+  // Buildings
+  for (let i = 0; i < simData.buildings; i++) e.push({ id: 'b'+i, type: 'building', x: Math.random()*200+25, y: Math.random()*200+25 });
+  // Farms
+  for (let i = 0; i < simData.farms; i++) e.push({ id: 'f'+i, type: 'farm', x: Math.random()*220+15, y: Math.random()*220+15 });
+  // Soil
+  for (let i = 0; i < simData.soil; i++) e.push({ id: 's'+i, type: 'soil', x: Math.random()*240+5, y: Math.random()*240+5 });
+  return e;
+}
+
+let simData = { humans: 10, animals: 15, plants: 30, buildings: 2, farms: 5, soil: 10, crafting: 0, farming: 0, tech: 0, temp: 22, disasters: 0 };
+
+function simulateTick() {
+  tick++;
+
+  // Random ecosystem events
+  if (Math.random() < 0.05) { simData.plants++; events.push({tick, type: 'plant', message: '新植物生长'}); }
+  if (Math.random() < 0.03) { simData.animals = Math.max(0, simData.animals + (Math.random() < 0.6 ? 1 : -1)); }
+  if (Math.random() < 0.08) { simData.humans++; events.push({tick, type: 'human', message: '新人类诞生'}); }
+  if (Math.random() < 0.04) { simData.buildings++; events.push({tick, type: 'building', message: '新建建筑'}); }
+  if (Math.random() < 0.06) { simData.farms++; events.push({tick, type: 'farm', message: '开垦农田'}); }
+  if (Math.random() < 0.15) { simData.crafting += Math.floor(Math.random()*3)+1; }
+  if (Math.random() < 0.10) { simData.farming += Math.floor(Math.random()*2)+1; }
+
+  // Environment changes
+  simData.temp += (Math.random() - 0.5) * 0.5;
+  simData.temp = Math.max(-10, Math.min(45, simData.temp));
+
+  // Disasters
+  if (Math.random() < 0.01) {
+    simData.disasters++;
+    events.push({tick, type: 'disaster', message: ['火灾爆发', '洪水泛滥', '干旱来袭'][Math.floor(Math.random()*3)]});
+  }
+
+  entities = generateEntities();
+
+  if (tick % 10 === 0) {
+    history.push({
+      tick, humans: simData.humans, animals: simData.animals, plants: simData.plants,
+      buildings: simData.buildings, farms: simData.farms, crafting_knowledge: simData.crafting,
+      farming_knowledge: simData.farming, temperature: simData.temp, active_disasters: simData.disasters
+    });
+    if (history.length > 100) history.shift();
+  }
+}
+
+function mainLoop() {
+  if (!isPaused) {
+    simulateTick();
+    document.getElementById('tick-display').textContent = `Tick ${tick}`;
+    document.getElementById('entity-count').textContent = `${entities.length} 实体`;
+
+    updateStats({
+      humans: simData.humans, animals: simData.animals, plants: simData.plants,
+      buildings: simData.buildings, farms: simData.farms, soil_patches: simData.soil,
+      crafting_knowledge: simData.crafting, farming_knowledge: simData.farming,
+      tech_count: simData.tech, temperature: simData.temp, humidity: 0.5,
+      rainfall: simData.temp > 30 ? 5 : 0, wind_speed: 2, active_disasters: simData.disasters,
+      biodiversity_index: (simData.humans + simData.animals + simData.plants) / 100,
+      total_biomass: simData.plants * 10 + simData.animals * 50
+    });
+
+    events.forEach(e => addEvent(e.tick, e.type, e.message));
+    events = [];
+
+    if (tick % 10 === 0) updateCharts();
+
+    const canvas = document.getElementById('world-canvas');
+    drawWorldMap(canvas.getContext('2d'), canvas);
+  }
+  requestAnimationFrame(mainLoop);
+}
+
+// Controls
+document.getElementById('pause-btn').addEventListener('click', () => {
+  isPaused = !isPaused;
+  const btn = document.getElementById('pause-btn');
+  btn.innerHTML = isPaused ? '<i data-lucide="play" class="w-3.5 h-3.5"></i><span>继续</span>' : '<i data-lucide="pause" class="w-3.5 h-3.5"></i><span>暂停</span>';
+  lucide.createIcons();
+});
+
+// Layer tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLayer = btn.dataset.layer;
+  });
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  const canvas = document.getElementById('world-canvas');
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+});
+
+// Init
+initCharts();
+initWorldMap();
+entities = generateEntities();
+mainLoop();
+</script>
+</body>
+</html>

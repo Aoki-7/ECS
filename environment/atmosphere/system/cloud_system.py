@@ -88,8 +88,9 @@ class CloudSystem(System):
 
         数据流：PhysicalWeatherComponent → AtmosphereComponent
         """
-        atm = world.get_world_entity().get_component(AtmosphereComponent)
-        weather = world.get_world_entity().get_component(PhysicalWeatherComponent)
+        # 防御：使用 world.get_world_component 替代 entity.get_component
+        atm = world.get_world_component(AtmosphereComponent)
+        weather = world.get_world_component(PhysicalWeatherComponent)
 
         if atm is None or weather is None:
             return

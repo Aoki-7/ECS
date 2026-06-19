@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 from core.component import Component
 
-@dataclass
+@dataclass(slots=True)
 class SkillComponent(Component):
     skills: dict = field(default_factory=lambda: {
         "farming": 1,

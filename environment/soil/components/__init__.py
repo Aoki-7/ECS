@@ -1,3 +1,13 @@
+"""
+土壤组件包 — 土壤水分、温度、养分
+
+依赖:
+    - environment/soil/
+    - environment/
+    - core/
+
+版本: v4.0
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -20,3 +30,4 @@ __all__ = [
     "SoilQualityComponent",
     "SoilTemperatureComponent",
 ]
+

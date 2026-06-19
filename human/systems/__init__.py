@@ -1,3 +1,16 @@
+"""
+人类系统包 — 生理/认知/社交/行动/经济
+
+依赖:
+    - human/
+    - core/
+    - biology/
+    - space/
+    - environment/
+    - memory_layer/
+
+版本: v4.0
+"""
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -67,7 +80,7 @@ human/systems/
 │   ├── physiology_needs_system.py # 生理需求系统
 │   └── health_system.py     # 健康系统
 ├── cognitive/               # 认知系统
-│   └── preception_system.py # 感知系统
+│   └── perception_system.py # 感知系统
 ├── social/                  # 社交系统
 │   ├── social_system.py     # 社交系统
 │   ├── pairing_system.py    # 配对系统
@@ -101,7 +114,7 @@ from .physiological.health_system import HealthSystem
 # 认知系统
 # from .cognitive.decision_system import DecisionSystem  # 空文件，暂不导入
 # from .cognitive.goal_system import GoalSystem  # 空文件，暂不导入
-from .cognitive.preception_system import PerceptionSystem
+from .cognitive.perception_system import PerceptionSystem
 
 # 社交系统
 from .social.social_system import SocialSystem
@@ -125,7 +138,7 @@ from .action.pickup_system import PickupSystem
 from .action.search_system import SearchSystem
 from .action.socialize_system import SocializeSystem
 
-# 死亡系统（已迁移至 biology/systems/death_system.py 统一版）
-# from .death.death_system import DeathSystem
-# 死亡系统
-from .death.death_system import DeathSystem
+# 死亡系统已迁移至 biology/lifecycle/death/ 生命周期子领域
+# from .death.death_system import DeathSystem  # 旧版已删除
+
+
