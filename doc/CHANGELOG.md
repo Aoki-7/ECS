@@ -1,5 +1,23 @@
 # Changelog
 
+## v4.1 (2026-06-18)
+
+### ClimateSystem V2 重构
+
+- **标准 OU 过程**：移除 `_temp_velocity` / `_humidity_velocity` / `_rainfall_velocity`，
+  改为标准离散 Ornstein-Uhlenbeck 更新 `x += θ * (μ - x) * dt + noise`。
+- **目标均值（Target Mean）**：新增 `_compute_target_temperature()` / `_compute_target_humidity()` / `_compute_target_rainfall()`，
+  先计算目标均值，再执行均值回归。
+- **洋流解耦**：暖流/寒流只影响温度目标均值，不再直接修改 `climate.temp_trend`，
+  消除长期累积和硬限制触发问题。
+- **气候变量耦合**：
+  - 温度 → 湿度：`target_humidity += temp_trend * 0.05`
+  - 湿度 → 降雨：`target_rainfall += humidity_trend * 0.4`
+- **外部驱动扩展接口**：新增 `_get_external_temperature_forcing()`，
+  为未来火山、太阳活动、冰期等系统预留接入点。
+- **参数更新**：按 V2 建议调整 `THETA_*` 与 `SIGMA_*`。
+- **天气系统修复**：`PhysicalWeatherSystem` 正确读取 `temp_trend` / `humidity_trend` / `rainfall_trend`。
+
 ## v4.0 (2026-06-12)
 
 ### 架构重构 — P0/P1/P2 问题解决

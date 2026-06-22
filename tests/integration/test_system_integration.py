@@ -83,8 +83,8 @@ class TestHydrologyPlantIntegration:
 class TestOceanClimateIntegration:
     """测试海洋-气候联动"""
 
-    def test_warm_current_increases_temperature(self):
-        """测试暖流增加温度趋势"""
+    def test_warm_current_increases_target_temperature(self):
+        """测试暖流提高目标温度均值，经 OU 过程使气候变暖"""
         world = World()
 
         # 创建暖流
@@ -101,15 +101,20 @@ class TestOceanClimateIntegration:
         we.add_component(climate)
         world.set_world_entity(we)
 
-        initial_temp = climate.temp_trend
-
-        # 应用洋流影响
+        # 洋流应提高目标温度均值
         from environment.climate.climate_system import ClimateSystem
         system = ClimateSystem()
-        system._apply_ocean_current_effects(world, climate)
+        ocean_effect = system._get_ocean_temperature_effect(world)
+        assert ocean_effect > 0.0
 
-        # 温度趋势应该增加
-        assert climate.temp_trend > initial_temp
+        # 长期更新后，温度趋势应向暖偏移
+        temps = []
+        for _ in range(200):
+            system.update(world, 24.0)
+            temps.append(climate.temp_trend)
+
+        avg_temp = sum(temps) / len(temps)
+        assert avg_temp > 0.0, f"暖流存在时平均温度趋势应为正，实际={avg_temp:.4f}"
 
 
 class TestAstronomySeasonIntegration:

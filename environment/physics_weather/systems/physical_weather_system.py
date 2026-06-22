@@ -98,9 +98,9 @@ class PhysicalWeatherSystem(System):
             rainfall_factor = 1.0 + 0.3 * math.sin(2.0 * math.pi * year_fraction)
 
         if climate is not None:
-            seasonal_temp_offset += getattr(climate, 'temperature_offset', 0.0)
-            rainfall_factor *= getattr(climate, 'rainfall_multiplier', 1.0)
-            climate_humidity_bias = getattr(climate, 'humidity_bias', 0.0)
+            seasonal_temp_offset += getattr(climate, 'temp_trend', 0.0)
+            rainfall_factor *= getattr(climate, 'rainfall_trend', 1.0)
+            climate_humidity_bias = getattr(climate, 'humidity_trend', 0.0)
 
         # 遍历所有天气组件
         for entity, (weather,) in world.get_components(PhysicalWeatherComponent):
