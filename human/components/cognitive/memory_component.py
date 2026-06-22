@@ -51,6 +51,29 @@ class MemoryComponent(Component):
     MAX_EVENTS: int = 100
     MAX_PEOPLE: int = 50
 
+    # 兼容旧系统：record_place 方法
+    def record_place(self, place_id, place_type: str, location=None, time=None) -> None:
+        """记录地点到记忆"""
+        if not isinstance(self.places, dict):
+            self.places = {}
+        self.places[place_id] = {
+            'type': place_type,
+            'location': location,
+            'time': time,
+        }
+
+    # 兼容旧系统：record_person 方法
+    def record_person(self, entity_id: int, name: str, relationship: str = "seen", location=None, time=None) -> None:
+        """记录人物到记忆"""
+        if not isinstance(self.people, dict):
+            self.people = {}
+        self.people[entity_id] = {
+            'name': name,
+            'relationship': relationship,
+            'location': location,
+            'time': time,
+        }
+
     def to_dict(self) -> dict:
         return {
             "events": self.events,

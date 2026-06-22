@@ -17,7 +17,7 @@ from core.component import Component
 @dataclass(slots=True)
 class SpaceComponent(Component):
     """
-    x, y -> 坐标
+    x, y, z -> 坐标
     layer -> 空间层
         0 地面
         1 空中
@@ -26,10 +26,18 @@ class SpaceComponent(Component):
         0 实体层
         1 建筑层
         2 逻辑层
+    
+    velocity_x, velocity_y, velocity_z -> 速度向量
     """
-    x: int
-    y: int
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
 
     layer: int = 0
     # 用于检测位置是否变化
     dirty: bool = True
+    
+    # 速度向量（用于重力系统）
+    velocity_x: float = 0.0
+    velocity_y: float = 0.0
+    velocity_z: float = 0.0

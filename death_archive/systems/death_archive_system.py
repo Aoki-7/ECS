@@ -48,6 +48,14 @@ class DeathArchiveSystem(System):
         if world.get_world_component(DeathArchiveComponent) is None:
             world.get_world_entity().add_component(DeathArchiveComponent())
 
+    def on_remove(self, world: World):
+        """系统移除时清理 DeathArchiveComponent"""
+        we = world.get_world_entity()
+        if we:
+            comp = world.get_component(we, DeathArchiveComponent)
+            if comp:
+                we.remove_component(DeathArchiveComponent)
+
     def update(self, world: World, dt: float = 1.0) -> None:
         """主更新入口：归档新死亡 + 同步腐烂进度"""
         super().update(world, dt)

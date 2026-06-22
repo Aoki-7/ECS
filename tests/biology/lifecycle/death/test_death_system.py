@@ -37,8 +37,8 @@ class TestDeathSystem:
 
     def _make_world(self):
         world = World()
-        we = WorldEntity()
-        we.add_component(DummyTimeComponent(total_hours=42.0))
+        we = world.create_entity()
+        world.add_component(we, DummyTimeComponent(total_hours=42.0))
         world.set_world_entity(we)
         return world
 
@@ -109,8 +109,8 @@ class TestDeathArchiveSystem:
 
     def _make_world(self):
         world = World()
-        we = WorldEntity()
-        we.add_component(DummyTimeComponent(total_hours=100.0))
+        we = world.create_entity()
+        world.add_component(we, DummyTimeComponent(total_hours=100.0))
         world.set_world_entity(we)
         return world
 

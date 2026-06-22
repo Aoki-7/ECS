@@ -23,6 +23,7 @@ from core.world import World
 from biology.components.genome_component import GenomeComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.traits.trait import Trait
+from biology.systems.phenotype_system import PhenotypeSystem
 
 
 class GeneExpressionSystem(System):

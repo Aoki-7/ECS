@@ -76,14 +76,13 @@ class TestWorldConfigSystem:
     def test_get_world_config_from_entity(self):
         """测试从世界实体获取配置"""
         world = World()
-        we = Entity.create()
+        we = world.create_entity()  # 使用 world.create_entity() 而非 Entity.create()
         world.set_world_entity(we)
-        # 需要 WorldEntity 支持 add_component
-        if hasattr(we, 'add_component'):
-            we.add_component(WorldConfigComponent(map_width=200, map_height=150))
-            config = WorldConfigSystem.get_world_config(world)
-            assert config.map_width == 200
-            assert config.map_height == 150
+        world.add_component(we, WorldConfigComponent(map_width=200, map_height=150))
+        # 强制刷新缓存
+        config = world.get_world_component(WorldConfigComponent)
+        assert config.map_width == 200
+        assert config.map_height == 150
 
 
 if __name__ == "__main__":

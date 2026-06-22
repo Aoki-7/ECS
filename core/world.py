@@ -72,6 +72,18 @@ class World:
         # === v3.9 兼容：保留旧属性（存档系统依赖）===
         self._component_entities: dict = _ComponentEntitiesCompatView(self._component_store)
 
+    def init(self) -> None:
+        """初始化世界（创建世界实体和配置）"""
+        from core.components.world_config_component import WorldConfigComponent
+        
+        world_config = self.get_world_component(WorldConfigComponent)
+        if world_config is None:
+            world_config = WorldConfigComponent()
+            world_entity = self.create_entity()
+            self.add_component(world_entity, world_config)
+            self.set_world_entity(world_entity)
+            logger.info(f"[Init] 世界配置已创建: {world_config.map_width}x{world_config.map_height}")
+
     # ====================
     # Entity API（v3.9 兼容）
     # ====================
@@ -246,9 +258,14 @@ class World:
         """从世界实体获取组件"""
         if self._world_entity is None:
             return None
+        # 优先使用 ArchetypeStore 查询
+        result = self.get_component(self._world_entity, component_type)
+        if result is not None:
+            return result
+        # 回退到 Entity 的 get_component 方法
         if hasattr(self._world_entity, 'get_component'):
             return self._world_entity.get_component(component_type)
-        return self.get_component(self._world_entity, component_type)
+        return None
 
     # ====================
     # 辅助方法

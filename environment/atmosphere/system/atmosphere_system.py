@@ -85,6 +85,14 @@ class AtmosphereSystem(System):
                 world.add_component(world_entity, atm)
                 world.set_world_entity(world_entity)
 
+    def on_remove(self, world: World):
+        """系统移除时清理 AtmosphereComponent"""
+        we = world.get_world_entity()
+        if we:
+            comp = world.get_component(we, AtmosphereComponent)
+            if comp:
+                we.remove_component(AtmosphereComponent)
+
     def update(self, world: World, delta_hours: float):
         """
         大气系统更新（协调器）

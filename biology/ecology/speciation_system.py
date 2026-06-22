@@ -36,6 +36,10 @@ from biology.ecology.components.speciation_tracker_component import SpeciationTr
 from animal.components.animal_component import AnimalComponent
 from plant.components.plant_component import PlantComponent
 
+from biology.ecology.speciation_analyzer import SpeciationAnalyzer
+from biology.ecology.speciation_registry import SpeciationRegistry
+from biology.ecology.speciation_migrator import SpeciationMigrator
+
 logger = logging.getLogger(__name__)
 
 
@@ -61,6 +65,15 @@ class SpeciationSystem(System):
 
     # 物种分裂冷却：物种标识 -> 上次分裂时的 tick_count
     _species_cooldown: Dict[str, int] = {}
+
+    def __init__(self):
+        super().__init__()
+        self._analyzer = SpeciationAnalyzer(
+            threshold=self.SPECIATION_DISTANCE_THRESHOLD,
+            min_group_size=self.MIN_GROUP_SIZE,
+        )
+        self._registry = SpeciationRegistry()
+        self._migrator = SpeciationMigrator()
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """执行物种形成扫描"""
@@ -103,25 +116,28 @@ class SpeciationSystem(System):
         if not id_vectors:
             return None
 
-        vectors = [v for _, v in id_vectors]
-        centroid = self._compute_centroid(vectors)
-        outliers = self._find_outlier_cluster(id_vectors, centroid)
+        outliers = self._analyzer.find_outlier_cluster(id_vectors)
         if not outliers:
             return None
 
-        outlier_centroid = self._compute_centroid([v for _, v in outliers])
-        distance = self._euclidean_distance(centroid, outlier_centroid)
+        outlier_centroid = self._analyzer.compute_centroid([v for _, v in outliers])
+        centroid = self._analyzer.compute_centroid([v for _, v in id_vectors])
+        distance = self._analyzer.euclidean_distance(centroid, outlier_centroid)
 
         if distance < self.SPECIATION_DISTANCE_THRESHOLD:
             return None
 
-        new_species_id = self._register_new_species(species_id, outlier_centroid, entities, world)
+        new_species_id = self._registry.register_new_species(
+            species_id, outlier_centroid, entities, world,
+            counter=self._global_species_counter,
+        )
         if new_species_id:
+            self._global_species_counter += 1
             logger.info(
-                f"[Speciation] 新物种形成: '{species_id}' → '{new_species_id}' "
+                f"[Speciation] 新物种形成: '{species_id}' -> '{new_species_id}' "
                 f"(距离={distance:.2f}, 群体={len(outliers)} 个体)"
             )
-            self._migrate_entities_to_species(world, outliers, new_species_id)
+            self._migrator.migrate_entities_to_species(world, outliers, new_species_id)
             self._species_cooldown[species_id] = current_tick
             self._species_cooldown[new_species_id] = current_tick
 
@@ -183,193 +199,3 @@ class SpeciationSystem(System):
             vectors.append((eid, vector))
 
         return vectors
-
-    # -------------------------------------------------
-    # 聚类分析
-    # -------------------------------------------------
-
-    def _compute_centroid(self, vectors: List[List[float]]) -> List[float]:
-        """计算一组向量的中心点（各维度平均值）"""
-        if not vectors:
-            return []
-        dim = len(vectors[0])
-        centroid = []
-        for i in range(dim):
-            values = [v[i] for v in vectors]
-            centroid.append(sum(values) / len(values))
-        return centroid
-
-    def _euclidean_distance(self, a: List[float], b: List[float]) -> float:
-        """计算两个向量的欧氏距离"""
-        return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
-
-    def _find_outlier_cluster(
-        self,
-        vectors: List[Tuple[int, List[float]]],
-        centroid: List[float],
-    ) -> List[Tuple[int, List[float]]]:
-        """
-        寻找离群子集（简化 K-Means，K=2）
-
-        策略：
-            1. 取距离中心最远的个体作为种子 A
-            2. 取距离种子 A 最远的个体作为种子 B
-            3. 将所有个体按最近邻分配到 A 或 B 聚类
-            4. 若两聚类中心距离 > 阈值，且小聚类 >= MIN_GROUP_SIZE，
-               返回小聚类作为离群子集
-        """
-        if len(vectors) < self.MIN_GROUP_SIZE * 2:
-            return []
-
-        # 找距离中心最远的个体作为种子 A
-        seed_a = max(vectors, key=lambda x: self._euclidean_distance(x[1], centroid))
-
-        # 找距离种子 A 最远的个体作为种子 B
-        seed_b = max(vectors, key=lambda x: self._euclidean_distance(x[1], seed_a[1]))
-
-        # 分配个体到两个聚类
-        cluster_a = []
-        cluster_b = []
-
-        for item in vectors:
-            eid, vector = item
-            dist_a = self._euclidean_distance(vector, seed_a[1])
-            dist_b = self._euclidean_distance(vector, seed_b[1])
-            if dist_a <= dist_b:
-                cluster_a.append(item)
-            else:
-                cluster_b.append(item)
-
-        # 确保 cluster_b 是较小的那个
-        if len(cluster_a) < len(cluster_b):
-            cluster_a, cluster_b = cluster_b, cluster_a
-
-        # 小聚类必须满足最小群体大小
-        if len(cluster_b) < self.MIN_GROUP_SIZE:
-            return []
-
-        # 计算两聚类中心距离
-        centroid_a = self._compute_centroid([v for _, v in cluster_a])
-        centroid_b = self._compute_centroid([v for _, v in cluster_b])
-        inter_distance = self._euclidean_distance(centroid_a, centroid_b)
-
-        if inter_distance < self.SPECIATION_DISTANCE_THRESHOLD:
-            return []
-
-        return cluster_b
-
-    # -------------------------------------------------
-    # 新物种注册
-    # -------------------------------------------------
-
-    def _register_new_species(
-        self,
-        parent_species: str,
-        centroid: List[float],
-        all_entity_ids: List[int],
-        world: World,
-    ) -> str | None:
-        """
-        注册新物种到工厂预设表
-
-        返回新物种的标识名，失败返回 None
-        """
-        # 生成扁平命名的新物种名（避免嵌套如 herbivore_v1_v1）
-        self._global_species_counter += 1
-        # 从 parent_species 中提取基础名（去掉已有的 _sN 后缀）
-        base_name = parent_species
-        if "_s" in base_name:
-            # 找到最后一个 _s 后面的数字，去掉它
-            idx = base_name.rfind("_s")
-            if idx > 0 and base_name[idx + 2:].isdigit():
-                base_name = base_name[:idx]
-        new_species_id = f"{base_name}_s{self._global_species_counter}"
-
-        # 从任意一个原物种实体提取 expression_target 列表和基因模板
-        # 用 centroid 的各维度值作为新物种的基因预设
-        targets = self._get_expression_targets(world, all_entity_ids)
-        if not targets:
-            return None
-
-        # 构建新物种的基因预设字典
-        preset = {}
-        for i, target in enumerate(targets):
-            preset[target] = centroid[i]
-
-        # 注册到动物工厂（如果原始物种是动物）
-        from animal.animal_factory import AnimalFactory
-        if parent_species in AnimalFactory.SPECIES_PRESETS:
-            AnimalFactory.SPECIES_PRESETS[new_species_id] = preset
-            logger.debug(f"[Speciation] 已注册动物新物种 '{new_species_id}' 到 AnimalFactory")
-            return new_species_id
-
-        # 注册到植物工厂（如果原始物种是植物）
-        from plant.plant_factory import PlantFactory
-        if parent_species in PlantFactory.SPECIES_PRESETS:
-            # 植物需要同时更新 SPECIES_PRESETS 和 SPECIES_LIFECYCLE
-            PlantFactory.SPECIES_PRESETS[new_species_id] = preset
-            # 继承原始物种的寿命预设
-            parent_lifecycle = PlantFactory.SPECIES_LIFECYCLE.get(
-                parent_species, PlantFactory.SPECIES_LIFECYCLE.get("basic")
-            )
-            PlantFactory.SPECIES_LIFECYCLE[new_species_id] = parent_lifecycle
-            logger.debug(f"[Speciation] 已注册植物新物种 '{new_species_id}' 到 PlantFactory")
-            return new_species_id
-
-        # 如果原始物种不在任何工厂中（可能是之前已经形成的新物种），
-        # 尝试在两个工厂中都注册
-        if parent_species not in AnimalFactory.SPECIES_PRESETS and \
-           parent_species not in PlantFactory.SPECIES_PRESETS:
-            # 从原始物种名推断类型（简单启发式）
-            # 检查 entities 中是否有 AnimalComponent
-            sample_entity = world.query_entity(all_entity_ids[0])
-            if sample_entity and world.get_component(sample_entity, AnimalComponent):
-                AnimalFactory.SPECIES_PRESETS[new_species_id] = preset
-            elif sample_entity and world.get_component(sample_entity, PlantComponent):
-                PlantFactory.SPECIES_PRESETS[new_species_id] = preset
-                PlantFactory.SPECIES_LIFECYCLE[new_species_id] = \
-                    PlantFactory.SPECIES_LIFECYCLE.get("basic")
-            return new_species_id
-
-        return None
-
-    def _get_expression_targets(
-        self, world: World, entity_ids: List[int]
-    ) -> List[str]:
-        """从实体组中提取统一的 expression_target 列表"""
-        targets = set()
-        for eid in entity_ids:
-            entity = world.query_entity(eid)
-            if entity is None:
-                continue
-            genome = world.get_component(entity, GenomeComponent)
-            if genome:
-                for gene in genome.genes:
-                    targets.add(gene.expression_target)
-        return sorted(targets)
-
-    def _migrate_entities_to_species(
-        self,
-        world: World,
-        outlier_vectors: List[Tuple[int, List[float]]],
-        new_species_id: str,
-    ) -> None:
-        """将离群个体的物种标识更新为新物种"""
-        for eid, _ in outlier_vectors:
-            entity = world.query_entity(eid)
-            if entity is None:
-                continue
-            tracker = world.get_component(entity, SpeciationTrackerComponent)
-            if tracker is not None:
-                tracker.species_id = new_species_id
-                tracker.generation = 0  # 新物种从第 0 代开始计数
-
-            # 同步更新 AnimalComponent / PlantComponent 中的 species 字段
-            animal = world.get_component(entity, AnimalComponent)
-            if animal is not None:
-                animal.species = new_species_id
-
-            plant = world.get_component(entity, PlantComponent)
-            if plant is not None:
-                # PlantComponent 没有 species 字段，暂不处理
-                pass

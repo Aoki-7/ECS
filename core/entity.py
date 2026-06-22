@@ -98,6 +98,41 @@ class Entity:
         return f"<Entity id={self.id} gen={self.generation}>"
 
     # ==
+    # 兼容方法（v3.9 API）
+    # ==
+
+    def add_component(self, component_type, component=None):
+        """兼容 v3.9 API：添加组件到实体
+        
+        注意：实际组件存储由 World 管理，此方法仅用于兼容旧代码。
+        新代码应使用 world.add_component(entity, component)。
+        """
+        # 如果传入的是组件实例，存储在 metadata 中
+        if component is not None:
+            if 'components' not in self.metadata:
+                self.metadata['components'] = {}
+            self.metadata['components'][component_type] = component
+        return self
+
+    def get_component(self, component_type):
+        """兼容 v3.9 API：获取组件"""
+        if 'components' in self.metadata:
+            return self.metadata['components'].get(component_type)
+        return None
+
+    def has_component(self, component_type):
+        """兼容 v3.9 API：检查是否有组件"""
+        if 'components' in self.metadata:
+            return component_type in self.metadata['components']
+        return False
+
+    def remove_component(self, component_type):
+        """兼容 v3.9 API：移除组件"""
+        if 'components' in self.metadata:
+            self.metadata['components'].pop(component_type, None)
+        return self
+
+    # ==
     # 序列化
     # ==
 

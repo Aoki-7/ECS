@@ -73,17 +73,35 @@ class EnvironmentPipeline(System):
         """
         super().__init__()
         self._entries = entries
+        # 缓存：按 tick_interval 分组，避免每帧全量遍历
+        self._grouped_entries: Dict[int, List[PipelineEntry]] = {}
+        self._rebuild_groups()
+
+    def _rebuild_groups(self) -> None:
+        """按 tick_interval 分组缓存"""
+        self._grouped_entries.clear()
+        for entry in self._entries:
+            system = entry[0]
+            interval = getattr(system, 'tick_interval', 1)
+            self._grouped_entries.setdefault(interval, []).append(entry)
 
     def update(self, world: World, delta_hours: float):
-        """按管线顺序执行所有系统，带异常捕获"""
-        for system, name, _ in self._entries:
-            try:
-                system.update(world, delta_hours)
-            except Exception as e:
-                # 防御：捕获子系统异常，避免一个系统失败导致整个管线中断
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"[EnvironmentPipeline] 系统 {name} 执行失败: {e}")
+        """按管线顺序执行所有系统，带异常捕获和缓存优化"""
+        tick = world.tick_count if hasattr(world, 'tick_count') else 0
+        
+        for interval, entries in self._grouped_entries.items():
+            # 只有满足 tick_interval 的系统才执行
+            if tick % interval != 0:
+                continue
+            
+            for system, name, _ in entries:
+                try:
+                    system.update(world, delta_hours)
+                except Exception as e:
+                    # 防御：捕获子系统异常，避免一个系统失败导致整个管线中断
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"[EnvironmentPipeline] 系统 {name} 执行失败: {e}")
 
     def __len__(self) -> int:
         return len(self._entries)

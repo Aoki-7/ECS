@@ -13,6 +13,10 @@ import math
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
+from space.collision_detector import CollisionDetector
+from space.collision_resolver import CollisionResolver
+from space.collision_querier import CollisionQuerier
+
 from core.component import Component
 from core.system import System
 from core.world import World
@@ -59,6 +63,9 @@ class CollisionSystem(System):
     def __init__(self, auto_resolve: bool = True):
         super().__init__()
         self.auto_resolve = auto_resolve  # 是否自动分离重叠实体
+        self._detector = CollisionDetector()
+        self._resolver = CollisionResolver()
+        self._querier = CollisionQuerier()
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """执行碰撞检测和响应"""
@@ -68,7 +75,7 @@ class CollisionSystem(System):
             return
 
         # 检测碰撞对
-        collisions = self._detect_collisions(colliders)
+        collisions = self._detector.detect_collisions(world, colliders)
 
         # 处理碰撞
         for entity_a, entity_b in collisions:
@@ -97,36 +104,6 @@ class CollisionSystem(System):
             ))
         return result
 
-    def _detect_collisions(
-        self,
-        colliders: List[Tuple[int, float, float, float, int, int]]
-    ) -> List[Tuple[int, int]]:
-        """
-        检测所有碰撞对
-
-        使用简单 O(n²) 检测，适合实体数 < 1000。
-        大规模场景可改用空间索引加速。
-        """
-        collisions = []
-        n = len(colliders)
-        for i in range(n):
-            eid_a, x_a, y_a, r_a, layer_a, mask_a = colliders[i]
-            for j in range(i + 1, n):
-                eid_b, x_b, y_b, r_b, layer_b, mask_b = colliders[j]
-
-                # 层掩码检查
-                if not (mask_a & (1 << layer_b)):
-                    continue
-                if not (mask_b & (1 << layer_a)):
-                    continue
-
-                # 距离检查
-                dist = math.hypot(x_a - x_b, y_a - y_b)
-                if dist < r_a + r_b:
-                    collisions.append((eid_a, eid_b))
-
-        return collisions
-
     def _handle_collision(self, world: World, entity_a: int, entity_b: int) -> None:
         """处理单个碰撞"""
         from space.space_component import SpaceComponent
@@ -140,7 +117,7 @@ class CollisionSystem(System):
             return
 
         if self.auto_resolve:
-            self._resolve_overlap(world, entity_a, space_a, entity_b, space_b)
+            self._resolver.resolve_overlap(world, entity_a, space_a, entity_b, space_b)
 
         # 触发碰撞事件（如果 EventBus 可用）
         try:
@@ -155,77 +132,8 @@ class CollisionSystem(System):
         except Exception:
             pass
 
-    def _resolve_overlap(
-        self,
-        world: World,
-        eid_a: int,
-        space_a,
-        eid_b: int,
-        space_b,
-    ) -> None:
-        """分离重叠的实体"""
-        from space.space_system import SpaceSystem
-
-        dx = space_b.x - space_a.x
-        dy = space_b.y - space_a.y
-        dist = math.hypot(dx, dy)
-
-        if dist < 0.001:
-            # 完全重叠，随机推开
-            dx, dy = 1.0, 0.0
-            dist = 1.0
-
-        # 计算分离向量
-        entity_a_obj = world.query_entity(eid_a)
-        entity_b_obj = world.query_entity(eid_b)
-        collider_a = world.get_component(entity_a_obj, ColliderComponent) if entity_a_obj else None
-        collider_b = world.get_component(entity_b_obj, ColliderComponent) if entity_b_obj else None
-        r_a = collider_a.radius if collider_a else 0.5
-        r_b = collider_b.radius if collider_b else 0.5
-
-        overlap = r_a + r_b - dist
-        if overlap <= 0:
-            return
-
-        # 各移动一半距离
-        nx = dx / dist
-        ny = dy / dist
-        move_a = overlap * 0.5
-        move_b = overlap * 0.5
-
-        # 检查哪个实体可以移动（非静态障碍物）
-        entity_a_obj = world.query_entity(eid_a)
-        entity_b_obj = world.query_entity(eid_b)
-        obs_a = world.get_component(entity_a_obj, ObstacleComponent) if entity_a_obj else None
-        obs_b = world.get_component(entity_b_obj, ObstacleComponent) if entity_b_obj else None
-
-        can_move_a = not (obs_a and obs_a.blocks_movement)
-        can_move_b = not (obs_b and obs_b.blocks_movement)
-
-        space_system = world.get_system(SpaceSystem)
-
-        if can_move_a and can_move_b:
-            space_a.x = int(round(space_a.x - nx * move_a))
-            space_a.y = int(round(space_a.y - ny * move_a))
-            space_b.x = int(round(space_b.x + nx * move_b))
-            space_b.y = int(round(space_b.y + ny * move_b))
-        elif can_move_a:
-            space_a.x = int(round(space_a.x - nx * overlap))
-            space_a.y = int(round(space_a.y - ny * overlap))
-        elif can_move_b:
-            space_b.x = int(round(space_b.x + nx * overlap))
-            space_b.y = int(round(space_b.y + ny * overlap))
-
-        # 标记 dirty
-        space_a.dirty = True
-        space_b.dirty = True
-
-        if space_system:
-            space_system._dirty_entities.add(eid_a)
-            space_system._dirty_entities.add(eid_b)
-
     # -------------------------------------------------
-    # 公共查询接口
+    # 公共查询接口（委托给 CollisionQuerier）
     # -------------------------------------------------
 
     def check_collision_at(
@@ -238,31 +146,8 @@ class CollisionSystem(System):
         mask: int = 0xFFFFFFFF,
         exclude_entity: Optional[int] = None,
     ) -> bool:
-        """
-        检查指定位置是否有碰撞
-
-        Returns:
-            True 如果该位置与其他实体碰撞
-        """
-        from space.space_component import SpaceComponent
-
-        for entity, (space, collider) in world.get_components(
-            SpaceComponent, ColliderComponent
-        ):
-            if exclude_entity is not None and entity.id == exclude_entity:
-                continue
-
-            # 层检查
-            if not (mask & (1 << collider.layer)):
-                continue
-            if not (collider.mask & (1 << layer)):
-                continue
-
-            dist = math.hypot(space.x - x, space.y - y)
-            if dist < radius + collider.radius:
-                return True
-
-        return False
+        """检查指定位置是否有碰撞"""
+        return self._querier.check_collision_at(world, x, y, radius, layer, mask, exclude_entity)
 
     def get_collisions_at(
         self,
@@ -274,27 +159,8 @@ class CollisionSystem(System):
         mask: int = 0xFFFFFFFF,
         exclude_entity: Optional[int] = None,
     ) -> List[int]:
-        """
-        获取与指定位置碰撞的所有实体 ID
-        """
-        from space.space_component import SpaceComponent
-
-        result = []
-        for entity, (space, collider) in world.get_components(
-            SpaceComponent, ColliderComponent
-        ):
-            if exclude_entity is not None and entity.id == exclude_entity:
-                continue
-            if not (mask & (1 << collider.layer)):
-                continue
-            if not (collider.mask & (1 << layer)):
-                continue
-
-            dist = math.hypot(space.x - x, space.y - y)
-            if dist < radius + collider.radius:
-                result.append(entity.id)
-
-        return result
+        """获取与指定位置碰撞的所有实体 ID"""
+        return self._querier.get_collisions_at(world, x, y, radius, layer, mask, exclude_entity)
 
     def is_walkable(
         self,
@@ -304,33 +170,5 @@ class CollisionSystem(System):
         mover_entity: Optional[int] = None,
         mover_radius: float = 0.5,
     ) -> bool:
-        """
-        检查坐标是否可通行（无障碍物且无其他实体阻挡）
-
-        这是 PathfindingService 的 is_walkable 回调的标准实现。
-        """
-        from space.space_component import SpaceComponent
-
-        # 检查障碍物
-        for entity, (space, obs) in world.get_components(
-            SpaceComponent, ObstacleComponent
-        ):
-            if not obs.blocks_movement:
-                continue
-            if space.x == x and space.y == y:
-                return False
-
-        # 检查其他实体碰撞体
-        for entity, (space, collider) in world.get_components(
-            SpaceComponent, ColliderComponent
-        ):
-            if mover_entity is not None and entity.id == mover_entity:
-                continue
-            if not collider.is_solid:
-                continue
-
-            dist = math.hypot(space.x - x, space.y - y)
-            if dist < mover_radius + collider.radius:
-                return False
-
-        return True
+        """检查坐标是否可通行"""
+        return self._querier.is_walkable(world, x, y, mover_entity, mover_radius)

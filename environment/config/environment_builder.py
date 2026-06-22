@@ -123,6 +123,11 @@ class EnvironmentBuilder:
         if world.get_world_component(EnvironmentComponent) is None:
             world.add_component(we, EnvironmentComponent())
 
+        # 重力组件（环境属性）
+        from environment.components.gravity_component import GravityComponent
+        if world.get_world_component(GravityComponent) is None:
+            world.add_component(we, GravityComponent(acceleration=9.8))
+
         # ════════════════════════════════════════════
         # 2. 创建所有系统并构建管线
         # ════════════════════════════════════════════

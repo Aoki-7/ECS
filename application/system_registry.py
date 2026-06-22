@@ -128,6 +128,10 @@ class SystemRegistry:
         self.register('human_coupling', HumanCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
         self.register('agriculture_coupling', AgricultureCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
 
+        # 新增：重力系统
+        from environment.systems.gravity_system import GravitySystem
+        self.register('gravity', GravitySystem(), 'environment', SystemPriority.ENVIRONMENT)
+
         self.register('pathfinding', PathfindingSystem(), 'environment', SystemPriority.PATHFINDING)
         self.register('collision', CollisionSystem(auto_resolve=True), 'environment', SystemPriority.COLLISION)
 

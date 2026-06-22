@@ -50,6 +50,14 @@ class HumanObservationSystem(System):
         if world.get_world_component(HumanObservationComponent) is None:
             world.get_world_entity().add_component(HumanObservationComponent())
 
+    def on_remove(self, world: World):
+        """系统移除时清理 HumanObservationComponent"""
+        we = world.get_world_entity()
+        if we:
+            comp = world.get_component(we, HumanObservationComponent)
+            if comp:
+                we.remove_component(HumanObservationComponent)
+
     def update(self, world: World, dt: float = 1.0) -> None:
         snapshot = self._collect_snapshot(world)
         comp = world.get_world_component(HumanObservationComponent)

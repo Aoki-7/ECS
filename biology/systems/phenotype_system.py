@@ -26,17 +26,23 @@ class PhenotypeSystem(System):
     @staticmethod
     def set_trait(phenotype: PhenotypeComponent, trait: Trait) -> None:
         """设置或覆盖指定性状"""
+        if phenotype.traits is None:
+            phenotype.traits = {}
         phenotype.traits[trait.name] = trait
 
     @staticmethod
     def get(phenotype: PhenotypeComponent, name: str, default: float = 0.0) -> float:
         """获取指定性状的表达值"""
+        if phenotype.traits is None:
+            return default
         t = phenotype.traits.get(name)
         return t.value if t else default
 
     @staticmethod
     def remove_by_source(phenotype: PhenotypeComponent, source: str) -> None:
         """按来源移除性状"""
+        if phenotype.traits is None:
+            return
         phenotype.traits = {
             k: v for k, v in phenotype.traits.items()
             if v.source != source

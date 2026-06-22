@@ -66,10 +66,9 @@ T = TestResult()
 def build_test_world() -> World:
     """创建一个干净的测试用 World"""
     world = World()
-    from world.world_entity import WorldEntity
     from time_module.time_component import TimeComponent
-    we = WorldEntity()
-    we.add_component(TimeComponent())
+    we = world.create_entity()  # 使用 world.create_entity() 而非 WorldEntity()
+    world.add_component(we, TimeComponent())
     world.set_world_entity(we)
     return world
 
@@ -81,9 +80,9 @@ def setup_weather_world(world: World) -> World:
     )
     from environment.season.season_component import SeasonComponent
     from environment.climate.climate_component import ClimateComponent
-    world._world_entity.add_component(PhysicalWeatherComponent())
-    world._world_entity.add_component(SeasonComponent())
-    world._world_entity.add_component(ClimateComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
+    world.add_component(world._world_entity, SeasonComponent())
+    world.add_component(world._world_entity, ClimateComponent())
     return world
 
 
@@ -104,11 +103,11 @@ def setup_light_world(world: World) -> World:
     from environment.physics_weather.components.physical_weather_component import (
         PhysicalWeatherComponent,
     )
-    world._world_entity.add_component(SolarPositionComponent())
-    world._world_entity.add_component(SolarRadiationComponent())
-    world._world_entity.add_component(LightScatterComponent())
-    world._world_entity.add_component(SurfaceLightComponent())
-    world._world_entity.add_component(PhysicalWeatherComponent())
+    world.add_component(world._world_entity, SolarPositionComponent())
+    world.add_component(world._world_entity, SolarRadiationComponent())
+    world.add_component(world._world_entity, LightScatterComponent())
+    world.add_component(world._world_entity, SurfaceLightComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
     return world
 
 
@@ -121,7 +120,7 @@ def setup_soil_world(world: World) -> World:
     from environment.soil.components.soil_temperature_component import (
         SoilTemperatureComponent,
     )
-    world._world_entity.add_component(PhysicalWeatherComponent())
-    world._world_entity.add_component(SoilMoistureComponent())
-    world._world_entity.add_component(SoilTemperatureComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
+    world.add_component(world._world_entity, SoilMoistureComponent())
+    world.add_component(world._world_entity, SoilTemperatureComponent())
     return world

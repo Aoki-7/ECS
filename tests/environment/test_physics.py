@@ -195,7 +195,7 @@ def test_extreme_temperature():
 
     for extreme_temp in [-30.0, 50.0]:
         world = setup_weather_world(build_test_world())
-        weather = world._world_entity.get_component(PhysicalWeatherComponent)
+        weather = world.get_world_component(PhysicalWeatherComponent)
         weather.temperature = extreme_temp
 
         pws = PhysicalWeatherSystem(latitude=35.0)
@@ -226,11 +226,11 @@ def test_no_precipitation_drought():
     from environment.soil.systems.soil_water_balance_system import SoilWaterBalanceSystem
 
     world = build_test_world()
-    world._world_entity.add_component(PhysicalWeatherComponent())
-    world._world_entity.add_component(SoilMoistureComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
+    world.add_component(world._world_entity, SoilMoistureComponent())
 
-    weather = world._world_entity.get_component(PhysicalWeatherComponent)
-    soil = world._world_entity.get_component(SoilMoistureComponent)
+    weather = world.get_world_component(PhysicalWeatherComponent)
+    soil = world.get_world_component(SoilMoistureComponent)
 
     weather.precipitation_rate = 0.0
     weather.temperature = 35.0
@@ -266,11 +266,11 @@ def test_heavy_precipitation_flood():
     from environment.soil.systems.soil_water_balance_system import SoilWaterBalanceSystem
 
     world = build_test_world()
-    world._world_entity.add_component(PhysicalWeatherComponent())
-    world._world_entity.add_component(SoilMoistureComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
+    world.add_component(world._world_entity, SoilMoistureComponent())
 
-    weather = world._world_entity.get_component(PhysicalWeatherComponent)
-    soil = world._world_entity.get_component(SoilMoistureComponent)
+    weather = world.get_world_component(PhysicalWeatherComponent)
+    soil = world.get_world_component(SoilMoistureComponent)
 
     weather.precipitation_rate = 50.0
     weather.temperature = 20.0
@@ -304,7 +304,7 @@ def test_nighttime_inversion():
     for h in range(12):
         time_comp.hour = (20 + h) % 24
         pws.update(world, 1.0)
-        weather = world._world_entity.get_component(PhysicalWeatherComponent)
+        weather = world.get_world_component(PhysicalWeatherComponent)
         temps.append(weather.temperature)
 
     night_temps = temps[:8]

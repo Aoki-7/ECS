@@ -62,6 +62,14 @@ class SaveLoadSystem(System):
                 world.add_component(world_entity, slot)
                 world.set_world_entity(world_entity)
 
+    def on_remove(self, world: World):
+        """系统移除时清理 SaveSlotComponent"""
+        we = world.get_world_entity()
+        if we:
+            comp = world.get_component(we, SaveSlotComponent)
+            if comp:
+                we.remove_component(SaveSlotComponent)
+
     def update(self, world: World, dt: float = 1.0) -> None:
         """检查是否需要自动存档"""
         try:

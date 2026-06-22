@@ -24,9 +24,10 @@ class SoilFertilitySystem(System):
         - 肥力变化
     """
     def update(self, world: World, delta_hours: float):
-
-        soil = world.get_world_entity().get_component(SoilFertilityComponent)
-        soil: SoilFertilityComponent
+        # 防御：使用 world.get_world_component 替代 entity.get_component
+        soil = world.get_world_component(SoilFertilityComponent)
+        if soil is None:
+            return
 
         # 自然恢复（非常缓慢）
         soil.fertility += 0.00001 * delta_hours

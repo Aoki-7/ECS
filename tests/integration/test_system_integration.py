@@ -97,8 +97,8 @@ class TestOceanClimateIntegration:
         # 创建气候
         from world.world_entity import WorldEntity
         climate = ClimateComponent(temp_trend=0.0)
-        we = WorldEntity()
-        we.add_component(climate)
+        we = world.create_entity()
+        world.add_component(we, climate)
         world.set_world_entity(we)
 
         # 洋流应提高目标温度均值

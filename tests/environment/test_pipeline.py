@@ -37,14 +37,14 @@ def test_pipeline_data_flow():
     from time_module.time_component import TimeComponent
 
     world = build_test_world()
-    world._world_entity.add_component(SolarPositionComponent())
-    world._world_entity.add_component(SolarRadiationComponent())
-    world._world_entity.add_component(LightScatterComponent())
-    world._world_entity.add_component(SurfaceLightComponent())
-    world._world_entity.add_component(PhysicalWeatherComponent())
-    world._world_entity.add_component(SeasonComponent())
-    world._world_entity.add_component(ClimateComponent())
-    world._world_entity.add_component(EnvironmentComponent())
+    world.add_component(world._world_entity, SolarPositionComponent())
+    world.add_component(world._world_entity, SolarRadiationComponent())
+    world.add_component(world._world_entity, LightScatterComponent())
+    world.add_component(world._world_entity, SurfaceLightComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
+    world.add_component(world._world_entity, SeasonComponent())
+    world.add_component(world._world_entity, ClimateComponent())
+    world.add_component(world._world_entity, EnvironmentComponent())
 
     systems = [
         SolarPositionSystem(),
@@ -56,19 +56,22 @@ def test_pipeline_data_flow():
         world.add_system(sys_inst)
 
     time_comp = world.get_world_component(TimeComponent)
+    if time_comp is None:
+        time_comp = TimeComponent()
+        world.add_component(world._world_entity, time_comp)
     time_comp.day_of_year = 80
     time_comp.hour = 12.0
 
     for sys_inst in systems:
         sys_inst.update(world, 1.0)
 
-    sp = world._world_entity.get_component(SolarPositionComponent)
+    sp = world.get_world_component(SolarPositionComponent)
     T.ok(f"SolarPosition: elevation={sp.elevation:.1f}°") if sp.elevation > 0 else T.fail("太阳高度角应为正")
 
-    sr = world._world_entity.get_component(SolarRadiationComponent)
+    sr = world.get_world_component(SolarRadiationComponent)
     T.ok(f"SolarRadiation: TOA={sr.toa_radiation:.1f} W/m²") if sr.toa_radiation > 0 else T.fail("TOA 应为正")
 
-    sl = world._world_entity.get_component(SurfaceLightComponent)
+    sl = world.get_world_component(SurfaceLightComponent)
     T.ok(f"SurfaceLight: direct={sl.direct_light:.1f}, diffuse={sl.diffuse_light:.1f} W/m²")
     total = sl.direct_light + sl.diffuse_light
     T.ok(f"总地表辐射 {total:.1f} W/m² < TOA {sr.toa_radiation:.1f}") \
@@ -92,13 +95,13 @@ def test_pipeline_weather_to_environment():
     from environment.environment_factory import EnvironmentFactory
 
     world = build_test_world()
-    world._world_entity.add_component(EnvironmentComponent())
-    world._world_entity.add_component(PhysicalWeatherComponent())
+    world.add_component(world._world_entity, EnvironmentComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
 
     factory = EnvironmentFactory(world)
     factory.create_environment_grid(3, 3)
 
-    weather = world._world_entity.get_component(PhysicalWeatherComponent)
+    weather = world.get_world_component(PhysicalWeatherComponent)
     weather.temperature = 30.0
     weather.relative_humidity = 0.8
     weather.precipitation_rate = 2.0

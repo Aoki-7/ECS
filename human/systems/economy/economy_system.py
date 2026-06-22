@@ -57,11 +57,18 @@ class EconomySystem(System):
         self._price_volatility = 0.02  # 每 tick 价格波动幅度
 
     def on_add(self, world: World):
-        """自动挂载 MarketPricesComponent 到 world_entity"""
+        """自动挂载 EconomyComponent 到 world_entity"""
         we = world.get_world_entity()
-        # 使用 EconomyComponent 作为市场价格载体（已存在）
         if world.get_world_component(EconomyComponent) is None:
             world.get_world_entity().add_component(EconomyComponent())
+
+    def on_remove(self, world: World):
+        """系统移除时清理 EconomyComponent"""
+        we = world.get_world_entity()
+        if we:
+            comp = world.get_component(we, EconomyComponent)
+            if comp:
+                we.remove_component(EconomyComponent)
 
     def update(self, world: World, dt: float = 1.0):
         """

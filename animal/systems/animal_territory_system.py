@@ -140,7 +140,8 @@ class AnimalTerritorySystem(System):
         if needs:
             needs.fear = max(needs.fear, 0.3)  # 防御时产生一定恐惧
 
-        for intruder_id in territory.intruders[:3]:  # 最多处理 3 个
+        # 使用 list() 避免迭代时修改
+        for intruder_id in list(territory.intruders)[:3]:  # 最多处理 3 个
             intruder = world.query_entity(intruder_id)
             if intruder is None:
                 continue

@@ -5,10 +5,13 @@
 @说明:步骤规划系统
 @时间:2026/04/01 15:35:35
 @作者:Sherry
-@版本:2.0
-'''
+@版本:3.0
 
-"""Intent -> ActionQueue"""
+v3.0 拆分：
+- 规划决策 -> PlanningDecisionMaker
+- 行为规划 -> ActionPlanner
+- 资源查找 -> ResourceFinder
+'''
 
 import random
 
@@ -18,15 +21,11 @@ from core.world import World
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
-from human.components.economic.inventory.inventory_component import InventoryComponent
-from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-from human.components.cognitive.memory_component import MemoryComponent
 from space.space_component import SpaceComponent
-from resource.food.components.food_component import FoodComponent
-from resource.water.components.water_component import WaterComponent
-from resource.components.resource_component import ResourceComponent
-from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
-from human.components.perception.vision_component import VisionComponent
+
+from human.systems.core.planning_decision_maker import PlanningDecisionMaker
+from human.systems.core.action_planner import ActionPlanner
+from human.systems.core.resource_finder import ResourceFinder
 
 
 class PlanningSystem(System):
@@ -39,6 +38,9 @@ class PlanningSystem(System):
 
     def __init__(self):
         super().__init__()
+        self._decision_maker = PlanningDecisionMaker()
+        self._action_planner = ActionPlanner()
+        self._resource_finder = ResourceFinder()
 
     def update(self, world: World, dt: float):
         from core.components.world_config_component import WorldConfigComponent
@@ -52,202 +54,53 @@ class PlanningSystem(System):
                 continue
             if action.action_queue:
                 continue
-            
+
             self._process_planning(entity, intent, task, action, space, world, world_config, planned_this_tick)
 
     def _process_planning(self, entity, intent, task, action, space, world, world_config, planned_this_tick):
         """处理单个实体的规划逻辑"""
+        from biology.components.physiology_needs_component import PhysiologyNeedsComponent
         needs = world.get_component(entity, PhysiologyNeedsComponent)
         is_critical = needs and (needs.hunger > 90 or needs.thirst > 90)
-        
+
         # 检查是否允许规划
-        if not self._should_plan(action, is_critical, needs):
+        if not self._decision_maker.should_plan(action, is_critical, needs):
             return
-        
+
         # 执行意图规划
-        self._plan_by_intent(entity, intent, task, action, space, world, world_config)
+        self._action_planner.plan_by_intent(entity, intent, task, action, space, world, world_config, self._resource_finder)
         planned_this_tick.add(entity.id)
 
+    # 向后兼容的委托方法
     def _should_plan(self, action, is_critical, needs) -> bool:
-        """判断当前状态是否允许规划"""
-        # 非危险状态下，执行具体动作时不规划
-        if not is_critical and action.current_action not in (
-            ActionType.IDLE, ActionType.MOVE_TO, ActionType.SLEEP, ActionType.EAT, ActionType.DRINK
-        ):
-            return False
-        
-        # 危险状态下中断移动/进食/饮水
-        if is_critical and action.current_action in (ActionType.MOVE_TO, ActionType.EAT, ActionType.DRINK):
-            self._interrupt_action(action)
-            return True
-        
-        # 中断移动以便新规划
-        if action.current_action == ActionType.MOVE_TO:
-            self._interrupt_action(action)
-            return True
-        
-        # 睡眠中检查是否需中断
-        if action.current_action == ActionType.SLEEP:
-            if needs and (needs.hunger > 85 or needs.thirst > 85):
-                self._interrupt_action(action)
-                return True
-            return False
-        
-        return True
+        return self._decision_maker.should_plan(action, is_critical, needs)
 
     def _interrupt_action(self, action) -> None:
-        """中断当前动作"""
-        action.current_action = ActionType.IDLE
-        action.status = ActionStatus.IDLE
-        action.progress = 0.0
+        self._decision_maker.interrupt_action(action)
 
     def _plan_by_intent(self, entity, intent, task, action, space, world, world_config):
-        """根据意图规划行为队列"""
-        if intent.intent == IntentType.EAT:
-            self._plan_eat(entity, task, action, world)
-        elif intent.intent == IntentType.DRINK:
-            self._plan_drink(entity, task, action, world)
-        elif intent.intent == IntentType.SLEEP:
-            self._plan_sleep(task, action)
-        elif intent.intent == IntentType.EXPLORE:
-            self._plan_explore(entity, task, action, space, world, world_config)
-        elif intent.intent == IntentType.PAIR:
-            self._plan_pair(task, action)
+        self._action_planner.plan_by_intent(entity, intent, task, action, space, world, world_config, self._resource_finder)
 
     def _plan_eat(self, entity, task, action, world) -> None:
-        """规划进食行为"""
-        task.task = TaskType.FIND_FOOD
-        task.status = TaskStatus.RUNNING
-
-        inventory = world.get_component(entity, InventoryComponent)
-        # 防御：InventoryComponent 可能没有 find 方法
-        if inventory is not None and hasattr(inventory, 'find'):
-            has_food = inventory.find(FoodComponent, world) is not None
-        else:
-            # 简单检查：items 字典中是否有 FoodComponent 类型的实体
-            has_food = False
-            if inventory and hasattr(inventory, 'items'):
-                for item_id in inventory.items:
-                    if world.get_component(item_id, FoodComponent) is not None:
-                        has_food = True
-                        break
-        if has_food:
-            action.action_queue = [ActionType.EAT]
-            return
-
-        nearby_plant = self._find_harvestable_plant(entity, world)
-        if nearby_plant is not None:
-            action.target_entity = nearby_plant.id
-            action.action_queue = [ActionType.MOVE_TO, ActionType.HARVEST, ActionType.EAT]
-        else:
-            action.action_queue = [ActionType.SEARCH, ActionType.MOVE_TO, ActionType.PICKUP, ActionType.EAT]
+        self._action_planner.plan_eat(entity, task, action, world, self._resource_finder)
 
     def _plan_drink(self, entity, task, action, world) -> None:
-        """规划饮水行为"""
-        task.task = TaskType.DRINK_WATER
-        task.status = TaskStatus.RUNNING
-
-        inventory = world.get_component(entity, InventoryComponent)
-        # 防御：InventoryComponent 可能没有 find 方法
-        if inventory is not None and hasattr(inventory, 'find'):
-            has_water = inventory.find(WaterComponent, world) is not None
-        else:
-            # 简单检查：items 字典中是否有 WaterComponent 类型的实体
-            has_water = False
-            if inventory and hasattr(inventory, 'items'):
-                for item_id in inventory.items:
-                    if world.get_component(item_id, WaterComponent) is not None:
-                        has_water = True
-                        break
-        if has_water:
-            action.action_queue = [ActionType.DRINK]
-        else:
-            action.action_queue = [ActionType.SEARCH, ActionType.MOVE_TO, ActionType.DRINK]
-            # SEARCH 会设置 target_pos，然后 MOVE_TO 使用它
+        self._action_planner.plan_drink(entity, task, action, world, self._resource_finder)
 
     def _plan_sleep(self, task, action) -> None:
-        """规划睡眠行为"""
-        task.task = TaskType.SLEEP
-        task.status = TaskStatus.RUNNING
-        action.action_queue = [ActionType.SLEEP]
+        self._action_planner.plan_sleep(task, action)
 
     def _plan_explore(self, entity, task, action, space, world, world_config) -> None:
-        """规划探索行为"""
-        task.task = TaskType.EXPLORE
-        task.status = TaskStatus.RUNNING
-
-        memory = world.get_component(entity, MemoryComponent)
-        explore_target = self._find_explore_target(memory)
-        
-        if explore_target:
-            action.target_pos = explore_target
-        else:
-            target_x = space.x + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
-            target_y = space.y + random.randint(-self.EXPLORE_RADIUS, self.EXPLORE_RADIUS)
-            # 防御：world_config 可能为 None 或没有 clamp_position 方法
-            if world_config is not None and hasattr(world_config, 'clamp_position'):
-                target_x, target_y = world_config.clamp_position(target_x, target_y)
-            else:
-                target_x = max(0, min(target_x, 99))
-                target_y = max(0, min(target_y, 99))
-            action.target_pos = (target_x, target_y)
-
-        action.action_queue = [ActionType.MOVE_TO]
-
-    def _find_explore_target(self, memory):
-        """从记忆中查找探索目标"""
-        if not memory or not memory.places:
-            return None
-        
-        positive_places = [
-            (pos, info) for pos, info in memory.places.items()
-            if info.get("sentiment", 0) > 0.2
-        ]
-        if not positive_places:
-            return None
-        
-        positive_places.sort(key=lambda x: x[1]["sentiment"], reverse=True)
-        best = random.choice(positive_places[:3])
-        return best[0]
+        self._action_planner.plan_explore(entity, task, action, space, world, world_config)
 
     def _plan_pair(self, task, action) -> None:
-        """规划配对行为"""
-        task.task = TaskType.FIND_PARTNER
-        task.status = TaskStatus.RUNNING
-        action.action_queue = [ActionType.SEARCH, ActionType.MOVE_TO, ActionType.SOCIALIZE]
+        self._action_planner.plan_pair(task, action)
 
-    def _find_harvestable_plant(self, entity, world: World):
-        """在视野内查找可收获的植物实体"""
-        from plant.components.plant_component import PlantComponent
-        
-        space = world.get_component(entity, SpaceComponent)
-        vision = world.get_component(entity, VisionComponent)
-        if space is None or vision is None:
-            return None
-        
-        radius = getattr(vision, 'radius', 15)
-        
-        # 通过空间索引查询附近的实体
-        space_system = getattr(world, 'space_system', None)
-        if space_system is not None:
-            for candidate_id in space_system.neighbors(space.x, space.y, radius, space.layer):
-                candidate = world.get_entity(candidate_id)
-                if candidate is None:
-                    continue
-                plant_comp = world.get_component(candidate, PlantComponent)
-                lifecycle = world.get_component(candidate, LifeCycleComponent)
-                if plant_comp is None or lifecycle is None:
-                    continue
-                # 检查是否成熟
-                if lifecycle.stage >= plant_comp.harvest_stage:
-                    return candidate
-        
-        # 兜底：遍历所有植物
-        for candidate, (plant_comp, lifecycle, c_space) in world.get_components(PlantComponent, LifeCycleComponent, SpaceComponent):
-            dx = abs(c_space.x - space.x)
-            dy = abs(c_space.y - space.y)
-            if dx <= radius and dy <= radius:
-                if lifecycle.stage >= plant_comp.harvest_stage:
-                    return candidate
-        
-        return None
+    def _find_harvestable_plant(self, entity, world):
+        return self._resource_finder.find_harvestable_plant(entity, world)
+
+    def _find_resource_in_memory(self, entity, world, resource_type):
+        return self._resource_finder.find_resource_in_memory(entity, world, resource_type)
+
+    def _find_nearest_resource(self, entity, world, resource_type):
+        return self._resource_finder.find_nearest_resource(entity, world, resource_type)

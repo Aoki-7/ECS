@@ -19,10 +19,10 @@ def test_season_system():
     from environment.season.season_component import SeasonComponent
 
     world = build_test_world()
-    world._world_entity.add_component(SeasonComponent())
+    world.add_component(world._world_entity, SeasonComponent())
     ss = SeasonSystem()
 
-    season = world._world_entity.get_component(SeasonComponent)
+    season = world.get_world_component(SeasonComponent)
     before = season.year_progress
     ss.update(world, 24.0)
 
@@ -42,11 +42,11 @@ def test_climate_system():
     from environment.climate.climate_system import ClimateSystem
     from environment.climate.climate_component import ClimateComponent
 
-    cs = ClimateSystem()
     world = setup_weather_world(build_test_world())
+    cs = ClimateSystem()
     cs.update(world, 24 * 100)
 
-    climate = world._world_entity.get_component(ClimateComponent)
+    climate = world.get_world_component(ClimateComponent)
     T.ok(f"temp_trend={climate.temp_trend:+.2f}°C, humidity_trend={climate.humidity_trend:+.3f}, "
          f"rainfall_trend={climate.rainfall_trend:.3f}")
     T.ok("温度趋势在 [-3, 3]") if -3 <= climate.temp_trend <= 3 else T.fail("温度趋势越界")
@@ -66,14 +66,17 @@ def test_solar_position_system():
     from time_module.time_component import TimeComponent
 
     world = build_test_world()
-    world._world_entity.add_component(SolarPositionComponent())
+    world.add_component(world._world_entity, SolarPositionComponent())
     sps = SolarPositionSystem()
     time_comp = world.get_world_component(TimeComponent)
+    if time_comp is None:
+        time_comp = TimeComponent()
+        world.add_component(world._world_entity, time_comp)
 
     time_comp.day_of_year = 172
     time_comp.hour = 12.0
     sps.update(world, 0)
-    sp = world._world_entity.get_component(SolarPositionComponent)
+    sp = world.get_world_component(SolarPositionComponent)
 
     T.ok(f"夏至正午: elevation={sp.elevation:.1f}°, day_length={sp.day_length:.1f}h")
     T.ok(f"昼长 > 12h (夏季)") if sp.day_length > 12.0 else T.fail("夏至昼长异常")
@@ -97,18 +100,21 @@ def test_solar_radiation_system():
     from time_module.time_component import TimeComponent
 
     world = build_test_world()
-    world._world_entity.add_component(SolarPositionComponent())
-    world._world_entity.add_component(SolarRadiationComponent())
+    world.add_component(world._world_entity, SolarPositionComponent())
+    world.add_component(world._world_entity, SolarRadiationComponent())
 
     sps = SolarPositionSystem()
     srs = SolarRadiationSystem()
     time_comp = world.get_world_component(TimeComponent)
+    if time_comp is None:
+        time_comp = TimeComponent()
+        world.add_component(world._world_entity, time_comp)
 
     time_comp.day_of_year = 80
     time_comp.hour = 12.0
     sps.update(world, 0)
     srs.update(world, 0)
-    sr = world._world_entity.get_component(SolarRadiationComponent)
+    sr = world.get_world_component(SolarRadiationComponent)
     T.ok(f"正午 TOA 辐射 = {sr.toa_radiation:.1f} W/m²")
     T.ok(f"TOA > 0") if sr.toa_radiation > 0 else T.fail("正午 TOA 应为正")
 
@@ -130,13 +136,13 @@ def test_light_atmosphere_coupling_system():
     from environment.light_field.components.light_scatter_component import LightScatterComponent
 
     world = build_test_world()
-    world._world_entity.add_component(PhysicalWeatherComponent())
-    world._world_entity.add_component(LightScatterComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
+    world.add_component(world._world_entity, LightScatterComponent())
 
     lacs = LightAtmosphereCouplingSystem()
     lacs.update(world, 1.0)
 
-    scatter = world._world_entity.get_component(LightScatterComponent)
+    scatter = world.get_world_component(LightScatterComponent)
     T.ok(f"Rayleigh={scatter.rayleigh_factor:.4f}, Mie={scatter.mie_factor:.4f}, "
          f"cloud_attn={scatter.cloud_attenuation:.4f}")
     T.ok(f"散射因子在合理范围") if 0 <= scatter.rayleigh_factor <= 0.5 else T.fail("Rayleigh 异常")
@@ -151,12 +157,12 @@ def test_light_field_system():
     from environment.light_field.components.surface_light_component import SurfaceLightComponent
 
     world = build_test_world()
-    world._world_entity.add_component(SolarRadiationComponent())
-    world._world_entity.add_component(LightScatterComponent())
-    world._world_entity.add_component(SurfaceLightComponent())
+    world.add_component(world._world_entity, SolarRadiationComponent())
+    world.add_component(world._world_entity, LightScatterComponent())
+    world.add_component(world._world_entity, SurfaceLightComponent())
 
-    sr = world._world_entity.get_component(SolarRadiationComponent)
-    ls = world._world_entity.get_component(LightScatterComponent)
+    sr = world.get_world_component(SolarRadiationComponent)
+    ls = world.get_world_component(LightScatterComponent)
     sr.toa_radiation = 1000.0
     ls.rayleigh_factor = 0.1
     ls.mie_factor = 0.05
@@ -165,7 +171,7 @@ def test_light_field_system():
     lfs = LightFieldSystem()
     lfs.update(world)
 
-    sl = world._world_entity.get_component(SurfaceLightComponent)
+    sl = world.get_world_component(SurfaceLightComponent)
     T.ok(f"direct={sl.direct_light:.1f}, diffuse={sl.diffuse_light:.1f} W/m²")
     T.ok(f"直射光 > 0") if sl.direct_light > 0 else T.fail("强辐射时直射光应为正")
 
@@ -196,11 +202,14 @@ def test_physical_weather_system():
     world = setup_weather_world(build_test_world())
     pws = PhysicalWeatherSystem(latitude=35.0)
 
-    weather = world._world_entity.get_component(PhysicalWeatherComponent)
+    weather = world.get_world_component(PhysicalWeatherComponent)
     before = weather.temperature, weather.pressure, weather.relative_humidity
     T.ok(f"初始: T={before[0]:.1f}°C, P={before[1]:.0f}hPa, RH={before[2]:.1%}")
 
     time_comp = world.get_world_component(TimeComponent)
+    if time_comp is None:
+        time_comp = TimeComponent()
+        world.add_component(world._world_entity, time_comp)
     time_comp.hour = 12.0
     time_comp.day_of_year = 80
     pws.update(world, 1.0)
@@ -257,11 +266,11 @@ def test_soil_water_balance_system():
     from environment.soil.components.soil_moisture_component import SoilMoistureComponent
 
     world = build_test_world()
-    world._world_entity.add_component(PhysicalWeatherComponent())
-    world._world_entity.add_component(SoilMoistureComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
+    world.add_component(world._world_entity, SoilMoistureComponent())
 
-    weather = world._world_entity.get_component(PhysicalWeatherComponent)
-    soil = world._world_entity.get_component(SoilMoistureComponent)
+    weather = world.get_world_component(PhysicalWeatherComponent)
+    soil = world.get_world_component(SoilMoistureComponent)
 
     weather.precipitation_rate = 5.0
     weather.temperature = 25.0
@@ -285,11 +294,11 @@ def test_soil_temperature_system():
     from environment.soil.components.soil_temperature_component import SoilTemperatureComponent
 
     world = build_test_world()
-    world._world_entity.add_component(PhysicalWeatherComponent())
-    world._world_entity.add_component(SoilTemperatureComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
+    world.add_component(world._world_entity, SoilTemperatureComponent())
 
-    weather = world._world_entity.get_component(PhysicalWeatherComponent)
-    soil = world._world_entity.get_component(SoilTemperatureComponent)
+    weather = world.get_world_component(PhysicalWeatherComponent)
+    soil = world.get_world_component(SoilTemperatureComponent)
 
     weather.temperature = 35.0
     soil.temperature = 15.0

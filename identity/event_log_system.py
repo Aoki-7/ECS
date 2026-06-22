@@ -55,6 +55,14 @@ class EventLogSystem(System):
         if world.get_world_component(EventLogComponent) is None:
             world.get_world_entity().add_component(EventLogComponent())
 
+    def on_remove(self, world: World):
+        """系统移除时清理 EventLogComponent"""
+        we = world.get_world_entity()
+        if we:
+            comp = world.get_component(we, EventLogComponent)
+            if comp:
+                we.remove_component(EventLogComponent)
+
     def update(self, world: World, dt: float = 1.0) -> None:
         super().update(world, dt)
         log_comp = world.get_world_component(EventLogComponent)

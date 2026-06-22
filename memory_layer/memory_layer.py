@@ -59,6 +59,15 @@ class MemoryLayer:
         self.default_max_memories_per_subject = 100
         self.default_decay_rate = 0.01
         self.default_forget_threshold = 0.8
+        
+        # 容量上限配置
+        self.max_concepts = 10000  # 最大概念数量
+        self.max_contacts = 50000  # 最大接触记录数量
+        self.max_total_memories = 100000  # 最大总记忆数量
+        
+        # 自动清理计数器
+        self._cleanup_counter = 0
+        self._cleanup_interval = 100  # 每 100 次操作执行一次清理
 
     # ========== 单例访问 ==========
 
@@ -97,6 +106,9 @@ class MemoryLayer:
         Returns:
             注册的 Concept
         """
+        # 检查容量上限
+        self._check_capacity()
+        
         concept_id = f"entity_{entity_id}_{entity_type}"
         concept_name = name or f"{entity_type}_{entity_id}"
 
@@ -582,6 +594,48 @@ class MemoryLayer:
         """获取当前时间（简化版，实际应从 World 获取）"""
         import time
         return time.time()
+
+    def _check_capacity(self) -> None:
+        """检查容量上限，必要时执行清理"""
+        self._cleanup_counter += 1
+        if self._cleanup_counter % self._cleanup_interval != 0:
+            return
+
+        # 清理概念
+        if len(self._concepts) > self.max_concepts:
+            # 移除非活跃概念
+            to_remove = []
+            for cid, concept in self._concepts.items():
+                if not getattr(concept, 'is_active', True):
+                    to_remove.append(cid)
+            
+            # 如果还不够，移除最旧的概念
+            if len(self._concepts) - len(to_remove) > self.max_concepts:
+                sorted_concepts = sorted(
+                    self._concepts.items(),
+                    key=lambda x: getattr(x[1], 'last_accessed', 0)
+                )
+                excess = len(self._concepts) - self.max_concepts
+                to_remove.extend([cid for cid, _ in sorted_concepts[:excess]])
+            
+            for cid in to_remove:
+                self._concepts.pop(cid, None)
+
+        # 清理接触记录
+        if len(self._contacts) > self.max_contacts:
+            # 保留最近的接触记录
+            self._contacts = self._contacts[-self.max_contacts:]
+
+        # 清理总记忆
+        if len(self._memories) > self.max_total_memories:
+            # 按重要性排序，移除最不重要的
+            sorted_memories = sorted(
+                self._memories.items(),
+                key=lambda x: x[1].calculate_importance() if hasattr(x[1], 'calculate_importance') else 0
+            )
+            excess = len(self._memories) - self.max_total_memories
+            for key, _ in sorted_memories[:excess]:
+                self._memories.pop(key, None)
 
     def _filter_by_attention(
         self,

@@ -68,16 +68,16 @@ def test_diurnal_cycle():
     from time_module.time_component import TimeComponent
 
     world = setup_weather_world(build_test_world())
-    world._world_entity.add_component(
+    world.add_component(world._world_entity,
         __import__("environment.light_field.components.solar_position_component", fromlist=["SolarPositionComponent"]).SolarPositionComponent()
     )
-    world._world_entity.add_component(
+    world.add_component(world._world_entity,
         __import__("environment.light_field.components.solar_radiation_component", fromlist=["SolarRadiationComponent"]).SolarRadiationComponent()
     )
-    world._world_entity.add_component(
+    world.add_component(world._world_entity,
         __import__("environment.light_field.components.light_scatter_component", fromlist=["LightScatterComponent"]).LightScatterComponent()
     )
-    world._world_entity.add_component(
+    world.add_component(world._world_entity,
         __import__("environment.light_field.components.surface_light_component", fromlist=["SurfaceLightComponent"]).SurfaceLightComponent()
     )
 
@@ -86,6 +86,9 @@ def test_diurnal_cycle():
     srs = SolarRadiationSystem()
     lfs = LightFieldSystem()
     time_comp = world.get_world_component(TimeComponent)
+    if time_comp is None:
+        time_comp = TimeComponent()
+        world.add_component(world._world_entity, time_comp)
     time_comp.day_of_year = 80
     time_comp.hour = 0.0
 
@@ -97,13 +100,13 @@ def test_diurnal_cycle():
         pws.update(world, 1.0)
         lfs.update(world)
 
-        weather = world._world_entity.get_component(
+        weather = world.get_world_component(
             __import__("environment.physics_weather.components.physical_weather_component", fromlist=["PhysicalWeatherComponent"]).PhysicalWeatherComponent
         )
-        surface = world._world_entity.get_component(
+        surface = world.get_world_component(
             __import__("environment.light_field.components.surface_light_component", fromlist=["SurfaceLightComponent"]).SurfaceLightComponent
         )
-        solar_pos = world._world_entity.get_component(
+        solar_pos = world.get_world_component(
             __import__("environment.light_field.components.solar_position_component", fromlist=["SolarPositionComponent"]).SolarPositionComponent
         )
 
@@ -163,7 +166,7 @@ def test_seasonal_evolution():
     time_comp.day_of_year = 1
     time_comp.hour = 12.0
 
-    season = world._world_entity.get_component(SeasonComponent)
+    season = world.get_world_component(SeasonComponent)
     progress_trace = []
     for _ in range(4):
         ss.update(world, 24 * 90)  # 推进90天
@@ -190,16 +193,16 @@ def test_multi_day_simulation():
     from time_module.time_component import TimeComponent
 
     world = setup_weather_world(build_test_world())
-    world._world_entity.add_component(
+    world.add_component(world._world_entity,
         __import__("environment.light_field.components.solar_position_component", fromlist=["SolarPositionComponent"]).SolarPositionComponent()
     )
-    world._world_entity.add_component(
+    world.add_component(world._world_entity,
         __import__("environment.light_field.components.solar_radiation_component", fromlist=["SolarRadiationComponent"]).SolarRadiationComponent()
     )
-    world._world_entity.add_component(
+    world.add_component(world._world_entity,
         __import__("environment.light_field.components.light_scatter_component", fromlist=["LightScatterComponent"]).LightScatterComponent()
     )
-    world._world_entity.add_component(
+    world.add_component(world._world_entity,
         __import__("environment.light_field.components.surface_light_component", fromlist=["SurfaceLightComponent"]).SurfaceLightComponent()
     )
 
@@ -236,7 +239,7 @@ def test_multi_day_simulation():
         lfs.update(world)
         ss.update(world, 6.0)
 
-        weather = world._world_entity.get_component(
+        weather = world.get_world_component(
             __import__("environment.physics_weather.components.physical_weather_component", fromlist=["PhysicalWeatherComponent"]).PhysicalWeatherComponent
         )
         stats["temp_min"] = min(stats["temp_min"], weather.temperature)
@@ -313,7 +316,7 @@ def test_annual_cycle_stability():
         pws.update(world, 6.0)
         ss.update(world, 6.0)
 
-        weather = world._world_entity.get_component(
+        weather = world.get_world_component(
             __import__("environment.physics_weather.components.physical_weather_component", fromlist=["PhysicalWeatherComponent"]).PhysicalWeatherComponent
         )
         min_t = min(min_t, weather.temperature)
@@ -343,7 +346,7 @@ def test_precipitation_self_inhibition():
 
     world = setup_weather_world(build_test_world())
     pws = PhysicalWeatherSystem(latitude=35.0)
-    weather = world._world_entity.get_component(
+    weather = world.get_world_component(
         __import__("environment.physics_weather.components.physical_weather_component", fromlist=["PhysicalWeatherComponent"]).PhysicalWeatherComponent
     )
     time_comp = world.get_world_component(TimeComponent)
@@ -391,10 +394,13 @@ def test_cloud_rh_hysteresis():
 
     world = setup_weather_world(build_test_world())
     pws = PhysicalWeatherSystem(latitude=35.0)
-    weather = world._world_entity.get_component(
+    weather = world.get_world_component(
         __import__("environment.physics_weather.components.physical_weather_component", fromlist=["PhysicalWeatherComponent"]).PhysicalWeatherComponent
     )
     time_comp = world.get_world_component(TimeComponent)
+    if time_comp is None:
+        time_comp = TimeComponent()
+        world.add_component(world._world_entity, time_comp)
     time_comp.hour = 12.0
     time_comp.day_of_year = 80
 
@@ -438,13 +444,13 @@ def test_sync_system_vpd():
     from environment.environment_factory import EnvironmentFactory
 
     world = build_test_world()
-    world._world_entity.add_component(EnvironmentComponent())
-    world._world_entity.add_component(PhysicalWeatherComponent())
+    world.add_component(world._world_entity, EnvironmentComponent())
+    world.add_component(world._world_entity, PhysicalWeatherComponent())
 
     factory = EnvironmentFactory(world)
     factory.create_environment_grid(2, 2)
 
-    weather = world._world_entity.get_component(PhysicalWeatherComponent)
+    weather = world.get_world_component(PhysicalWeatherComponent)
     weather.temperature = 30.0
     weather.relative_humidity = 0.5
     weather.cloud_cover = 0.3
@@ -503,7 +509,7 @@ def test_diurnal_curve_profile():
     for h in range(24):
         time_comp.hour = float(h)
         pws.update(world, 1.0)
-        weather = world._world_entity.get_component(
+        weather = world.get_world_component(
             __import__("environment.physics_weather.components.physical_weather_component", fromlist=["PhysicalWeatherComponent"]).PhysicalWeatherComponent
         )
         curve.append({"h": h, "T": weather.temperature})

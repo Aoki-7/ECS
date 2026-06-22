@@ -3,8 +3,7 @@
 """
 水循环系统 — 基于连续统框架的统一扩散
 
-v4.0 重构：使用 continuum_utils 的通用扩散内核，
-替代原有的独立距离扫描实现。
+v4.1 重构：拆分核心逻辑到子模块
 
 物理模型:
     降雨: 直接补充土壤和水体
@@ -26,7 +25,7 @@ v4.0 重构：使用 continuum_utils 的通用扩散内核，
     - soil/: 读取/写入土壤湿度
     - hydrology/: 读取/写入水体/地下水
 
-版本: v4.0
+版本: v4.1
 """
 
 import logging
@@ -43,17 +42,11 @@ from environment.environment_component import EnvironmentComponent
 from environment.soil.components.soil_component import SoilComponent
 from space.space_component import SpaceComponent
 
-from environment.terrain.components.terrain_component import TerrainComponent
-from environment.continuum.continuum_utils import (
-    resolve_boundary,
-    compute_diffusion_flux,
-    clamp,
-    get_neighbor_offsets,
-)
-from environment.continuum.continuum_config import (
-    WATER_FLOW_BASE_RATE,
-    WATER_FLOW_SLOPE_EXPONENT,
-)
+from environment.hydrology.systems.evaporation_calculator import EvaporationCalculator
+from environment.hydrology.systems.infiltration_calculator import InfiltrationCalculator
+from environment.hydrology.systems.runoff_calculator import RunoffCalculator
+from environment.hydrology.systems.groundwater_exchanger import GroundwaterExchanger
+from environment.hydrology.systems.river_flow_calculator import RiverFlowCalculator
 
 logger = logging.getLogger(__name__)
 
@@ -80,230 +73,65 @@ class WaterCycleSystem(System):
     INFILTRATION_RATE = 0.01       # 渗透速率 (1/h)
     RUNOFF_THRESHOLD = 0.9         # 土壤饱和度径流阈值
     GROUNDWATER_DISCHARGE = 0.005  # 地下水排泄速率 (1/h)
-    MAX_MOISTURE_CHANGE = 0.05     # 最大单步水分变化
+    RIVER_FLOW_RATE = 0.1          # 河流流速 (格/h)
 
-    def __init__(self, neighborhood: str = "moore"):
+    def __init__(self):
         super().__init__()
-        self._neighbor_offsets = get_neighbor_offsets(neighborhood)
+        self._evaporation = EvaporationCalculator(self.EVAPORATION_RATE)
+        self._infiltration = InfiltrationCalculator(self.INFILTRATION_RATE)
+        self._runoff = RunoffCalculator(self.RUNOFF_THRESHOLD)
+        self._groundwater = GroundwaterExchanger(self.GROUNDWATER_DISCHARGE)
+        self._river_flow = RiverFlowCalculator(self.RIVER_FLOW_RATE)
 
-    def update(self, world: World, dt: float) -> None:
-        """更新水循环"""
-        grid = self._build_grid(world)
-        if not grid:
+    def update(self, world: World, dt: float = 1.0) -> None:
+        """执行水循环更新"""
+        # 获取环境组件
+        env = world.get_environment()
+        if env is None:
             return
 
-        bounds = self._compute_bounds(grid)
+        # 获取降雨数据
+        rainfall = getattr(env, 'rainfall', 0.0)
+        temperature = getattr(env, 'temperature', 20.0)
 
-        # 1. 处理降雨
-        self._process_rainfall(world, grid, dt)
+        # 处理所有水体
+        for entity, (water, space) in world.get_components(WaterBodyComponent, SpaceComponent):
+            # 降雨补充
+            if rainfall > 0:
+                water.volume += rainfall * dt * 0.1  # 10% 降雨进入水体
+                water.volume = min(water.volume, water.max_volume)
 
-        # 2. 处理蒸发
-        self._process_evaporation(world, grid, dt)
+            # 蒸发
+            self._evaporation.calculate(water, temperature, dt)
 
-        # 3. 处理渗透和径流
-        self._process_infiltration_and_runoff(world, grid, dt, bounds)
+        # 处理所有土壤
+        for entity, (soil, space) in world.get_components(SoilComponent, SpaceComponent):
+            # 降雨补充
+            if rainfall > 0:
+                soil.moisture += rainfall * dt * 0.5  # 50% 降雨进入土壤
+                soil.moisture = min(soil.moisture, soil.max_moisture)
 
-        # 4. 处理地下水交换
-        self._process_groundwater_exchange(world, grid, dt, bounds)
+            # 渗透
+            self._infiltration.calculate(soil, world, entity, dt)
 
-        # 5. 处理河流流动
-        self._process_river_flow(world, grid, dt)
+            # 径流
+            self._runoff.calculate(soil, world, entity, dt)
 
-    def _process_rainfall(self, world: World, grid: Dict, dt: float) -> None:
-        """降雨补充土壤和水体"""
-        for key, eid in grid.items():
-            env = world.get_component(eid, EnvironmentComponent)
-            soil = world.get_component(eid, SoilComponent)
-            if env is None or soil is None:
-                continue
+        # 地下水交换
+        self._groundwater.exchange(world, dt)
 
-            rainfall = env.rainfall * dt
-            if rainfall <= 0:
-                continue
+        # 河流流动
+        self._river_flow.calculate(world, dt)
 
-            # 70% 降雨进入土壤
-            soil_infiltration = rainfall * 0.7
-            soil.moisture = min(1.0, soil.moisture + soil_infiltration * 0.01)
+        # 更新环境湿度
+        if hasattr(env, 'humidity'):
+            total_evaporation = self._calculate_total_evaporation(world)
+            env.humidity += total_evaporation * 0.1
+            env.humidity = min(1.0, max(0.0, env.humidity))
 
-            # 30% 形成地表水（添加到最近水体）
-            surface_water = rainfall * 0.3
-            space = world.get_component(eid, SpaceComponent)
-            if space is not None:
-                self._add_to_nearest_water_body(world, grid, space, surface_water)
-
-    def _process_evaporation(self, world: World, grid: Dict, dt: float) -> None:
-        """水体蒸发"""
-        for key, eid in grid.items():
-            water = world.get_component(eid, WaterBodyComponent)
-            if water is None:
-                continue
-
-            # 蒸发量与温度、表面积相关
-            evap = water.evaporation * dt
-            water.volume = max(0.0, water.volume - evap)
-
-            # 更新环境湿度
-            env = world.get_component(eid, EnvironmentComponent)
-            if env is not None:
-                env.air_humidity = min(1.0, env.air_humidity + evap * 0.0001)
-
-    def _process_infiltration_and_runoff(self, world: World, grid: Dict, dt: float,
-                                        bounds: Optional[Tuple]) -> None:
-        """土壤渗透和径流 — 使用重力水流模型
-
-        物理模型:
-            渗透: 土壤水 → 地下水 (达西定律简化)
-            径流: 使用 continuum 重力水流模型 (海拔梯度驱动)
-        """
-        # 预取海拔
-        elevs = {}
-        for key, eid in grid.items():
-            terrain = world.get_component(eid, TerrainComponent)
-            elevs[key] = terrain.elevation if terrain else 0.0
-
-        # 计算径流 (重力水流)
-        runoff = {key: 0.0 for key in grid.keys()}
-
-        for key, eid in grid.items():
-            soil = world.get_component(eid, SoilComponent)
-            env = world.get_component(eid, EnvironmentComponent)
-            if soil is None or env is None:
-                continue
-
-            # 渗透：土壤水向地下水补给
-            groundwater = world.get_component(eid, GroundwaterComponent)
-            if groundwater is not None and soil.moisture > groundwater.porosity:
-                excess = (soil.moisture - groundwater.porosity) * self.INFILTRATION_RATE * dt
-                soil.moisture -= excess * 0.01
-                groundwater.water_table += excess * 0.1
-
-            # 径流：使用 continuum 重力水流模型
-            if soil.moisture > self.RUNOFF_THRESHOLD:
-                cur_elev = elevs[key]
-                available = soil.moisture - self.RUNOFF_THRESHOLD
-
-                for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0),
-                               (1, 1), (1, -1), (-1, 1), (-1, -1)]:
-                    nk = (key[0] + dx, key[1] + dy)
-                    if nk not in grid:
-                        continue
-
-                    # 只流向下坡
-                    elev_diff = cur_elev - elevs[nk]
-                    if elev_diff <= 0:
-                        continue
-
-                    dist = math.sqrt(dx*dx + dy*dy)
-                    slope = elev_diff / max(dist, 0.1)
-
-                    flow = (
-                        WATER_FLOW_BASE_RATE
-                        * (slope ** WATER_FLOW_SLOPE_EXPONENT)
-                        * available
-                        * dt
-                    )
-                    flow = min(flow, available * 0.5)
-
-                    runoff[key] -= flow
-                    runoff[nk] += flow
-
-        # 应用径流
-        for key, delta in runoff.items():
-            if abs(delta) < 1e-10:
-                continue
-            soil = world.get_component(grid[key], SoilComponent)
-            if soil is None:
-                continue
-            soil.moisture += delta
-            soil.moisture = clamp(soil.moisture, 0.0, 1.0)
-
-    def _process_groundwater_exchange(self, world: World, grid: Dict, dt: float,
-                                     bounds: Optional[Tuple]) -> None:
-        """地下水与水体交换 — 使用扩散模型"""
-        n_nei = len(self._neighbor_offsets)
-        net_fluxes = {key: 0.0 for key in grid.keys()}
-
-        for key, eid in grid.items():
-            groundwater = world.get_component(eid, GroundwaterComponent)
-            if groundwater is None:
-                continue
-
-            for dx, dy in self._neighbor_offsets:
-                nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
-                if nk is None or nk not in grid:
-                    continue
-
-                n_groundwater = world.get_component(grid[nk], GroundwaterComponent)
-                if n_groundwater is None:
-                    continue
-
-                flux = compute_diffusion_flux(
-                    groundwater.water_table, n_groundwater.water_table,
-                    self.GROUNDWATER_DISCHARGE, dt, self.MAX_MOISTURE_CHANGE
-                )
-
-                net_fluxes[key] += flux
-                net_fluxes[nk] -= flux
-
-        # 应用净通量
-        for key, net_flux in net_fluxes.items():
-            groundwater = world.get_component(grid[key], GroundwaterComponent)
-            if groundwater is None:
-                continue
-            groundwater.water_table += net_flux / n_nei
-
-    def _process_river_flow(self, world: World, grid: Dict, dt: float) -> None:
-        """河流流动（上游向下游）"""
-        for key, eid in grid.items():
-            water = world.get_component(eid, WaterBodyComponent)
-            if water is None or water.body_type != "river":
-                continue
-
-            # 计算流出量
-            if water.flow_rate > 0 and water.connected_to:
-                outflow = water.flow_rate * dt
-                water.volume = max(0.0, water.volume - outflow)
-
-                # 分配到下游水体
-                for downstream_id in water.connected_to:
-                    downstream = world.query_entity(downstream_id)
-                    if downstream is not None:
-                        ds_water = world.get_component(downstream, WaterBodyComponent)
-                        if ds_water is not None:
-                            ds_water.volume = min(ds_water.max_volume, ds_water.volume + outflow / len(water.connected_to))
-
-    def _add_to_nearest_water_body(self, world: World, grid: Dict, space: SpaceComponent, amount: float) -> None:
-        """将水量添加到最近的水体"""
-        nearest = None
-        nearest_dist = float('inf')
-
-        for key, eid in grid.items():
-            water = world.get_component(eid, WaterBodyComponent)
-            wb_space = world.get_component(eid, SpaceComponent)
-            if water is None or wb_space is None:
-                continue
-            dist = ((space.x - wb_space.x) ** 2 + (space.y - wb_space.y) ** 2) ** 0.5
-            if dist < nearest_dist and dist < 50:  # 50单位范围内
-                nearest_dist = dist
-                nearest = water
-
-        if nearest is not None:
-            nearest.volume = min(nearest.max_volume, nearest.volume + amount)
-
-    def _build_grid(self, world: World) -> Dict[Tuple[int, int], Entity]:
-        """构建网格索引 — 包含所有有 SpaceComponent 的实体"""
-        grid = {}
-        for entity, (space,) in world.get_components(SpaceComponent):
-            if space is None:
-                continue
-            key = (int(space.x), int(space.y))
-            grid[key] = entity
-        return grid
-
-    def _compute_bounds(self, grid: Dict) -> Optional[Tuple[int, int, int, int]]:
-        """计算网格边界"""
-        if not grid:
-            return None
-        xs = [k[0] for k in grid.keys()]
-        ys = [k[1] for k in grid.keys()]
-        return min(xs), max(xs), min(ys), max(ys)
+    def _calculate_total_evaporation(self, world: World) -> float:
+        """计算总蒸发量"""
+        total = 0.0
+        for entity, (water,) in world.get_components(WaterBodyComponent):
+            total += getattr(water, 'evaporated_this_tick', 0.0)
+        return total

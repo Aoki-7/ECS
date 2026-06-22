@@ -233,9 +233,9 @@ class TestWorldEntity:
     def test_world_component(self):
         from world.world_entity import WorldEntity
         world = World()
-        we = WorldEntity()
+        we = world.create_entity()  # 使用 world.create_entity() 而非 WorldEntity()
         world.set_world_entity(we)
-        we.add_component(HealthComponent(hp=999))
+        world.add_component(we, HealthComponent(hp=999))
         assert world.get_world_component(HealthComponent).hp == 999
 
 

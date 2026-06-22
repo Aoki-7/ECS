@@ -1,31 +1,28 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
-环境同步系统 — PhysicalWeatherComponent + SurfaceLightComponent → EnvironmentComponent
+环境同步系统 — 将 world-level 环境状态同步到单元格 EnvironmentComponent
 
 【作用】
-    将世界级的物理天气状态和光场计算结果同步到每个空间单元格的
-    EnvironmentComponent，使所有单元格的环境参数反映当前真实天气。
+    将世界级的物理天气、光场、季节、时间状态同步到每个空间单元格的
+    EnvironmentComponent，使所有单元格的环境参数反映当前真实环境。
 
-【职责】
-    - 温度同步：weather.temperature → env.air_temperature
-    - 湿度同步：weather.relative_humidity → env.air_humidity
-    - 降水同步：weather.precipitation_rate (mm/h) → env.rainfall (mm/day)
-    - 风速同步：weather.wind_speed → env.wind_speed
-    - 光照同步：SurfaceLightComponent → env.par（W/m² → μmol/m²/s）
-    - 光周期同步：SolarPositionComponent.day_length → env.photoperiod
-    - VPD 计算：从温度+相对湿度推导 env.vpd
-    - 昼夜温差：从云量阻尼后的日较差推导
+【同步字段】
+    时间：time_of_day, is_daytime, year_progress, season
+    天气：temperature, air_temperature, humidity, air_humidity,
+          precipitation, rainfall, wind_speed, wind_direction
+    光照：light_level, par, photoperiod, dli
+    土壤/派生：soil_temperature, vpd, day_night_temp_diff, water_stress_index
 
 【设计原则】
-    - 零硬编码天气假设：光照参数从 LightFieldSystem 输出推导，不独立计算。
-    - 所有默认值从物理状态推导。
+    - 零硬编码天气假设：光照参数从 LightFieldSystem 输出推导。
+    - 不重复实现物理过程：详细大气/土壤/污染参数由各自子模块维护。
+    - 仅同步其他系统高频读取的聚合字段。
 
 【运行顺序】
-    应在所有物理天气更新系统和 LightFieldSystem 之后运行。
+    应在 SolarPositionSystem、PhysicalWeatherSystem、LightFieldSystem、
+    SeasonSystem 及土壤相关系统之后运行。
 """
-
-import math
 
 from core.world import World
 from core.system import System
@@ -45,6 +42,7 @@ from environment.light_field.components.surface_light_component import (
 from environment.light_field.components.solar_position_component import (
     SolarPositionComponent,
 )
+from environment.season.season_component import SeasonComponent
 
 
 # 太阳光谱 W/m² → PAR (μmol/m²/s) 转换系数
@@ -55,13 +53,17 @@ _WATTS_TO_PAR: float = 4.57
 # 夜间 PAR 基底（月光/星光，约 0.1-0.2 μmol/m²/s）
 _NIGHT_PAR_FLOOR: float = 0.1
 
+# PAR → light_level 的归一化系数（约 1200 μmol/m²/s 视为满光照）
+_PAR_TO_LIGHT_LEVEL: float = 1.0 / 1200.0
+
 
 class EnvironmentSyncSystem(System):
     tick_interval = 2  # 每2帧执行一次
     """
     环境同步系统
 
-    将天气系统和光场系统的物理状态同步到每个单元格的 EnvironmentComponent。
+    将天气系统、光场系统、季节系统、时间系统的状态同步到每个单元格的
+    EnvironmentComponent。
     """
 
     def update(self, world: World, delta_hours: float):
@@ -72,8 +74,11 @@ class EnvironmentSyncSystem(System):
 
         surface_light = world.get_world_component(SurfaceLightComponent)
         solar_pos = world.get_world_component(SolarPositionComponent)
+        season = world.get_world_component(SeasonComponent)
 
         time = world.get_time()
+        if time is None:
+            return
         hour = time.hour
 
         # ── 计算全局派生值 ──
@@ -91,13 +96,22 @@ class EnvironmentSyncSystem(System):
             par = 500.0 * (1.0 - 0.8 * weather.cloud_cover)
 
         # 夜间保护：当太阳在地平线以下时，PAR 降到夜间基底
-        if solar_pos is not None and solar_pos.elevation <= 0.0:
-            par = _NIGHT_PAR_FLOOR
+        is_daytime = False
+        photoperiod = 12.0
+        if solar_pos is not None:
+            is_daytime = solar_pos.elevation > 0.0
+            photoperiod = solar_pos.day_length
+            if not is_daytime:
+                par = _NIGHT_PAR_FLOOR
+
+        # 光照水平 0-1
+        light_level = min(1.0, par * _PAR_TO_LIGHT_LEVEL)
 
         # 光周期：从太阳位置系统获取实际昼长
-        photoperiod = solar_pos.day_length if solar_pos is not None else 12.0
+        if photoperiod is None:
+            photoperiod = 12.0
 
-        # 昼夜温度差（云量阻尼后）
+        # 昼夜温差（云量阻尼后）
         effective_diurnal_range = DEFAULT_DIURNAL_RANGE * (
             1.0 - CLOUD_DAMPING_FACTOR * weather.cloud_cover
         )
@@ -105,11 +119,19 @@ class EnvironmentSyncSystem(System):
         # 降水速率 mm/h → mm/day (24小时累加)
         rainfall_mm_day = weather.precipitation_rate * 24.0
 
+        # 季节与年份进度
+        year_progress = 0.0
+        season_name = "spring"
+        if season is not None:
+            year_progress = season.year_progress / season.year_length_hours if season.year_length_hours else 0.0
+            season_name = self._year_progress_to_season(year_progress)
+
         # ── 同步 world_entity 的环境组件（供人类/生物系统读取） ──
         world_env = world.get_environment()
         if world_env is not None:
             self._sync_env(
-                world_env, weather, vpd_kpa, par, photoperiod,
+                world_env, weather, vpd_kpa, par, light_level, photoperiod,
+                is_daytime, hour, year_progress, season_name,
                 effective_diurnal_range, rainfall_mm_day, delta_hours
             )
 
@@ -117,7 +139,8 @@ class EnvironmentSyncSystem(System):
         for entity, (env,) in world.get_components(EnvironmentComponent):
             env: EnvironmentComponent
             self._sync_env(
-                env, weather, vpd_kpa, par, photoperiod,
+                env, weather, vpd_kpa, par, light_level, photoperiod,
+                is_daytime, hour, year_progress, season_name,
                 effective_diurnal_range, rainfall_mm_day, delta_hours
             )
 
@@ -127,35 +150,64 @@ class EnvironmentSyncSystem(System):
         weather: PhysicalWeatherComponent,
         vpd_kpa: float,
         par: float,
+        light_level: float,
         photoperiod: float,
+        is_daytime: bool,
+        hour: float,
+        year_progress: float,
+        season_name: str,
         effective_diurnal_range: float,
         rainfall_mm_day: float,
         delta_hours: float,
     ):
         """将天气数据同步到单个 EnvironmentComponent"""
-        # 温度
+        # 时间
+        env.time_of_day = hour
+        env.is_daytime = is_daytime
+        env.year_progress = year_progress
+        env.season = season_name
+
+        # 天气（同时维护 temperature/air_temperature、humidity/air_humidity 两组命名）
+        env.temperature = weather.temperature
         env.air_temperature = weather.temperature
-
-        # 土壤温度（一阶滞后，缓慢跟随气温）
-        env.soil_temperature = env.soil_temperature * 0.95 + weather.temperature * 0.05
-
-        # 昼夜温差
-        env.day_night_temp_diff = effective_diurnal_range
-
-        # 湿度
+        env.humidity = weather.relative_humidity
         env.air_humidity = weather.relative_humidity
-        env.vpd = vpd_kpa
 
-        # 光照与光周期
+        # 降水
+        env.precipitation = rainfall_mm_day
+        env.rainfall = rainfall_mm_day
+
+        # 风场
+        env.wind_speed = weather.wind_speed
+        # wind_direction 暂无权威来源，保留原值
+
+        # 光照
         env.par = par
+        env.light_level = light_level
         env.photoperiod = photoperiod
 
         # 日累计光量（增量累加）
         # μmol/m²/s * h → mol/m²/day（除以 1,000,000 再乘以 3600 s/h = 0.0036）
         env.dli += env.par * delta_hours * 0.0036
 
-        # 风速
-        env.wind_speed = weather.wind_speed
+        # 派生指数
+        env.vpd = vpd_kpa
+        env.day_night_temp_diff = effective_diurnal_range
 
-        # 降水 (mm/day)
-        env.rainfall = rainfall_mm_day
+        # 土壤温度（一阶滞后，缓慢跟随气温）
+        env.soil_temperature = env.soil_temperature * 0.95 + weather.temperature * 0.05
+
+        # 水分胁迫指数（基于当前土壤湿度重新计算）
+        env._recalc_water_stress()
+
+    @staticmethod
+    def _year_progress_to_season(year_progress: float) -> str:
+        """将年进度 0-1 转换为季节名称"""
+        y = year_progress % 1.0
+        if y < 0.25:
+            return "spring"
+        elif y < 0.50:
+            return "summer"
+        elif y < 0.75:
+            return "autumn"
+        return "winter"

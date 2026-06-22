@@ -12,10 +12,11 @@ from dataclasses import dataclass, field
 from typing import Dict
 
 from core.component import Component
+from resource.components.base_resource_component import BaseResourceComponent
 
 
 @dataclass
-class FoodComponent(Component):
+class FoodComponent(BaseResourceComponent):
     """
     食物组件（可被消费的资源）
 
@@ -27,7 +28,6 @@ class FoodComponent(Component):
     """
 
     # ===== 基础消耗 =====
-    amount: float = 1.0          # 剩余份数（被吃完后销毁）
     bite_size: float = 0.25      # 每次吃掉多少
 
     # ===== 营养属性 =====

@@ -12,10 +12,11 @@ from dataclasses import dataclass, field
 from typing import Dict
 
 from core.component import Component
+from resource.components.base_resource_component import BaseResourceComponent
 
 
 @dataclass
-class StoneComponent(Component):
+class StoneComponent(BaseResourceComponent):
     """
     石头组件（可被采集的资源）
 
@@ -27,7 +28,6 @@ class StoneComponent(Component):
     """
 
     # ===== 基础消耗 =====
-    amount: float = 1.0          # 剩余份数（被采集完后销毁）
     harvest_size: float = 0.2    # 每次采集多少
 
     # ===== 材料属性 =====

@@ -198,6 +198,7 @@ class PathfindingService:
         x1: int,
         y1: int,
         is_walkable: Callable[[int, int], bool],
+        max_steps: int = 10000,
     ) -> bool:
         """
         检查两点之间是否有直线视线（无遮挡）
@@ -214,7 +215,9 @@ class PathfindingService:
         err = dx - dy
 
         x, y = x0, y0
-        while True:
+        steps = 0
+        while steps < max_steps:
+            steps += 1
             if not is_walkable(x, y):
                 return False
             if x == x1 and y == y1:
@@ -226,6 +229,9 @@ class PathfindingService:
             if e2 < dx:
                 err += dx
                 y += sy
+        else:
+            # 超过最大步数，视为不可见（防止无限循环）
+            return False
 
         return True
 

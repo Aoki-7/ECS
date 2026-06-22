@@ -37,16 +37,3 @@ class ImmuneComponent(Component):
     immune_memory: Dict[str, float] = field(default_factory=dict)
     symptom_severity: float = 0.0
     infection_count: int = 0
-
-    # 兼容旧系统：属性别名
-    @property
-    def is_healthy(self) -> bool:
-        return self.infection_status == "healthy"
-
-    @property
-    def is_contagious(self) -> bool:
-        return self.infection_status in ("infected", "incubating")
-
-    @property
-    def is_infected(self) -> bool:
-        return self.infection_status == "infected"

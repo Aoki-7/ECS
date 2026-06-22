@@ -98,6 +98,11 @@ class EventBus:
             "dropped": 0,
         }
 
+        # 自动清理配置
+        self._auto_cleanup_enabled = True
+        self._max_subscriptions_per_type = 100  # 每种事件类型最大订阅数
+        self._inactive_threshold = 3600  # 订阅者 inactive 阈值（秒）
+
     @classmethod
     def get_instance(cls) -> "EventBus":
         """获取全局单例"""
@@ -222,6 +227,28 @@ class EventBus:
             self._subscriptions[event.event_type] = [
                 s for s in subs if s not in to_remove
             ]
+
+        # 自动清理：检查订阅数量是否超过阈值
+        if self._auto_cleanup_enabled:
+            self._auto_cleanup(event.event_type)
+
+    def _auto_cleanup(self, event_type: str) -> None:
+        """自动清理过期订阅"""
+        subs = self._subscriptions.get(event_type, [])
+        if len(subs) > self._max_subscriptions_per_type:
+            # 移除低优先级订阅（保留高优先级）
+            subs.sort(key=lambda s: -s.priority)
+            self._subscriptions[event_type] = subs[:self._max_subscriptions_per_type]
+            logger.warning(f"[EventBus] {event_type} 订阅数超过阈值，已清理至 {self._max_subscriptions_per_type}")
+
+    def enable_auto_cleanup(self, max_subscriptions: int = 100) -> None:
+        """启用自动清理"""
+        self._auto_cleanup_enabled = True
+        self._max_subscriptions_per_type = max_subscriptions
+
+    def disable_auto_cleanup(self) -> None:
+        """禁用自动清理"""
+        self._auto_cleanup_enabled = False
 
     def get_history(self, event_type: Optional[str] = None,
                     limit: int = 100) -> List[Event]:

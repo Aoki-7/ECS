@@ -298,9 +298,9 @@ def test_soil_quality_and_fertility():
     T.ok(f"默认肥力: {sf.fertility:.2f}") if 0 < sf.fertility <= 1 else T.fail("肥力应在 (0,1]")
 
     world = build_test_world()
-    world._world_entity.add_component(SoilFertilityComponent())
+    world.add_component(world._world_entity, SoilFertilityComponent())
     fsystem = SoilFertilitySystem()
-    sf_comp = world._world_entity.get_component(SoilFertilityComponent)
+    sf_comp = world.get_world_component(SoilFertilityComponent)
     before = sf_comp.fertility
     for _ in range(100):
         fsystem.update(world, 24.0)

@@ -32,27 +32,6 @@ class NutrientComponent(Component):
     max_phosphorus: float = 100.0
     max_potassium: float = 100.0
 
-    @property
-    def nitrogen_stress(self) -> float:
-        """氮胁迫程度（0-1）"""
-        if self.max_nitrogen <= 0:
-            return 0.0
-        return 1.0 - (self.nitrogen / self.max_nitrogen)
-
-    @property
-    def phosphorus_stress(self) -> float:
-        """磷胁迫程度（0-1）"""
-        if self.max_phosphorus <= 0:
-            return 0.0
-        return 1.0 - (self.phosphorus / self.max_phosphorus)
-
-    @property
-    def potassium_stress(self) -> float:
-        """钾胁迫程度（0-1）"""
-        if self.max_potassium <= 0:
-            return 0.0
-        return 1.0 - (self.potassium / self.max_potassium)
-
     # 兼容旧系统： nutrient_n / nutrient_p / nutrient_k 别名
     @property
     def nutrient_n(self) -> float:
@@ -77,4 +56,3 @@ class NutrientComponent(Component):
     @nutrient_k.setter
     def nutrient_k(self, value: float) -> None:
         self.potassium = value
-

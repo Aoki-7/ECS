@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@文件:constants.py
+@说明:全局常量定义
+
+集中管理所有硬编码数值，避免魔法值散布在代码中。
+"""
+
+# ===== 时间常量 =====
+HOURS_PER_DAY = 24.0
+DAYS_PER_YEAR = 365.0
+HOURS_PER_YEAR = HOURS_PER_DAY * DAYS_PER_YEAR  # 8760.0
+TICKS_PER_HOUR = 1  # 每 tick 代表 1 小时
+
+# ===== 空间常量 =====
+DEFAULT_CELL_SIZE = 50.0  # 空间索引网格大小
+DEFAULT_WORLD_SIZE = 1000.0  # 默认世界尺寸
+SPATIAL_INDEX_THRESHOLD = 50  # 使用空间索引的实体数阈值
+
+# ===== 物理常量 =====
+GRAVITY_EARTH = 9.8  # 地球重力加速度 m/s²
+GRAVITY_MOON = 1.6  # 月球重力加速度 m/s²
+MAX_FALL_SPEED = 50.0  # 最大下落速度 m/s
+GROUND_LEVEL = 0.0  # 地面高度
+
+# ===== 生物常量 =====
+DEFAULT_MAX_ENERGY = 100.0
+DEFAULT_MAX_HEALTH = 100.0
+DEFAULT_MAX_HUNGER = 100.0
+DEFAULT_MAX_THIRST = 100.0
+DEFAULT_MAX_FATIGUE = 100.0
+
+# 人生阶段
+CHILDHOOD_END = 12.0
+ADOLESCENCE_END = 18.0
+ADULTHOOD_END = 65.0
+
+# ===== 资源常量 =====
+DEFAULT_MAX_AMOUNT = 100.0
+DEFAULT_QUALITY = 1.0
+DEFAULT_HARVEST_SIZE = 0.25
+
+# ===== 环境常量 =====
+DEFAULT_TEMPERATURE = 20.0  # °C
+DEFAULT_HUMIDITY = 0.5
+DEFAULT_RAINFALL = 0.0
+
+# 水循环参数
+EVAPORATION_RATE = 0.001  # 基础蒸发速率 (1/h)
+INFILTRATION_RATE = 0.01  # 渗透速率 (1/h)
+RUNOFF_THRESHOLD = 0.9  # 土壤饱和度径流阈值
+GROUNDWATER_DISCHARGE = 0.005  # 地下水排泄速率 (1/h)
+RIVER_FLOW_RATE = 0.1  # 河流流速 (格/h)
+
+# ===== 制作常量 =====
+DEFAULT_CRAFT_SUCCESS_RATE = 0.3
+DEFAULT_CRAFT_SKILL_BONUS = 0.3
+DEFAULT_CRAFT_KNOWLEDGE_BONUS = 0.2
+
+# ===== 感知常量 =====
+DEFAULT_VISION_RADIUS = 10.0
+DEFAULT_VISION_ANGLE = 120.0
+DEFAULT_ATTENTION_CAPACITY = 5
+
+# ===== 社交常量 =====
+DEFAULT_RELATIONSHIP_LIMIT = 100.0
+DEFAULT_TRUST_LIMIT = 100.0
+
+# ===== 经济常量 =====
+DEFAULT_CURRENCY = 0.0
+DEFAULT_CREDIT_SCORE = 0.5
+
+# ===== 性能常量 =====
+DEFAULT_POOL_SIZE = 100
+MAX_POOL_SIZE = 1000
+EVENT_BUS_HISTORY_SIZE = 1000
+
+# ===== 路径规划常量 =====
+DEFAULT_MAX_STEPS = 1000
+LINE_OF_SIGHT_MAX_STEPS = 10000
+DEFAULT_EXPLORE_RADIUS = 20.0
+
+# ===== 情绪常量 =====
+EMOTION_MIN = -1.0
+EMOTION_MAX = 1.0
+EMOTION_INTENSITY_MAX = 1.0
+
+# ===== 疾病常量 =====
+DISEASE_SEVERITY_MAX = 1.0
+DISEASE_CONTAGIOUSNESS_MAX = 1.0

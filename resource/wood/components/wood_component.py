@@ -12,10 +12,11 @@ from dataclasses import dataclass, field
 from typing import Dict
 
 from core.component import Component
+from resource.components.base_resource_component import BaseResourceComponent
 
 
 @dataclass
-class WoodComponent(Component):
+class WoodComponent(BaseResourceComponent):
     """
     木材组件（可被采集的资源）
 
@@ -27,11 +28,9 @@ class WoodComponent(Component):
     """
 
     # ===== 基础消耗 =====
-    amount: float = 1.0          # 剩余份数（被采集完后销毁）
     harvest_size: float = 0.25   # 每次采集多少
 
     # ===== 材料属性 =====
-    quality: float = 1.0         # 质量 [0,1]，影响用途
     density: float = 0.5         # 密度（影响重量和强度）
     hardness: float = 0.7        # 硬度（影响加工难度）
 

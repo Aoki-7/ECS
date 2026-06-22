@@ -127,10 +127,51 @@ class EntityPool:
 
         # 重置实体状态（只重置 metadata，保留 id 和 generation）
         entity.metadata.clear()
+        
+        # 使用 metadata 标记失效状态（避免修改 immutable 实体）
+        entity.metadata["_is_active"] = False
+        
         self._pool.append(entity)
         self._total_released += 1
         self._peak_pool_size = max(self._peak_pool_size, len(self._pool))
         return True
+
+    def cleanup_expired(self, max_age: int = 100) -> int:
+        """
+        清理失效实体
+
+        移除池中超过 max_age 代的实体，防止内存泄漏。
+
+        Args:
+            max_age: 最大允许的代数差
+
+        Returns:
+            清理的实体数量
+        """
+        if not self._enabled or not self._pool:
+            return 0
+
+        # 获取当前全局代
+        current_gen = Entity._global_generation if hasattr(Entity, '_global_generation') else 0
+        
+        cleaned = 0
+        new_pool = []
+        
+        for entity in self._pool:
+            entity_gen = getattr(entity, '_generation', 0)
+            # 如果实体代数差距过大，说明已经过期
+            if current_gen - entity_gen > max_age:
+                cleaned += 1
+                # 不添加到新池，让 GC 回收
+            else:
+                new_pool.append(entity)
+        
+        self._pool = new_pool
+        
+        if cleaned > 0:
+            logger.debug(f"[EntityPool] 清理 {cleaned} 个失效实体")
+        
+        return cleaned
 
     def get_stats(self) -> dict:
         """获取池统计信息"""
