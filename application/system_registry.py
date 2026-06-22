@@ -108,6 +108,26 @@ class SystemRegistry:
             name = cls.__name__.replace('EffectSystem', '').lower()
             self.register(f'weather_{name}', cls(), 'environment', SystemPriority.WEATHER_EFFECT)
 
+        # 新增：灾害检测系统
+        from environment.systems.fire_detection_system import FireDetectionSystem
+        from environment.systems.flood_detection_system import FloodDetectionSystem
+        from environment.systems.drought_detection_system import DroughtDetectionSystem
+        from environment.systems.disaster_impact_system import DisasterImpactSystem
+        self.register('fire_detection', FireDetectionSystem(), 'environment', SystemPriority.WEATHER_EFFECT)
+        self.register('flood_detection', FloodDetectionSystem(), 'environment', SystemPriority.WEATHER_EFFECT)
+        self.register('drought_detection', DroughtDetectionSystem(), 'environment', SystemPriority.WEATHER_EFFECT)
+        self.register('disaster_impact', DisasterImpactSystem(), 'environment', SystemPriority.WEATHER_EFFECT)
+
+        # 新增：生物-环境耦合系统
+        from environment.continuum.systems.vegetation_coupling_system import VegetationCouplingSystem
+        from environment.continuum.systems.animal_coupling_system import AnimalCouplingSystem
+        from environment.continuum.systems.human_coupling_system import HumanCouplingSystem
+        from environment.continuum.systems.agriculture_coupling_system import AgricultureCouplingSystem
+        self.register('vegetation_coupling', VegetationCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
+        self.register('animal_coupling', AnimalCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
+        self.register('human_coupling', HumanCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
+        self.register('agriculture_coupling', AgricultureCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
+
         self.register('pathfinding', PathfindingSystem(), 'environment', SystemPriority.PATHFINDING)
         self.register('collision', CollisionSystem(auto_resolve=True), 'environment', SystemPriority.COLLISION)
 
