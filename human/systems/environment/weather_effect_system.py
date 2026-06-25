@@ -15,6 +15,11 @@
 
 from core.system import System
 from core.world import World
+from core.constants import (
+    DEFAULT_TEMPERATURE,
+    DEFAULT_HUMIDITY,
+    DEFAULT_RAINFALL,
+)
 
 from environment.environment_component import EnvironmentComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
@@ -28,6 +33,32 @@ class WeatherEffectSystem(System):
     天气效果系统
     根据环境参数直接影响人类实体的生理状态
     """
+
+    # 高温阈值
+    TEMP_HIGH_MILD = 30.0
+    TEMP_HIGH_SEVERE = 35.0
+    # 低温阈值
+    TEMP_LOW_MILD = 10.0
+    TEMP_LOW_SEVERE = 0.0
+    # 降雨阈值
+    RAIN_THRESHOLD = 10.0
+    # 强风阈值
+    WIND_THRESHOLD = 10.0
+    # 低湿度阈值
+    HUMIDITY_LOW = 0.3
+    # 高湿度阈值
+    HUMIDITY_HIGH = 0.9
+
+    # 效果系数
+    THIRST_RATE_HIGH_TEMP = 1.0
+    FATIGUE_RATE_HIGH_TEMP = 0.3
+    HEAT_DAMAGE_RATE = 0.1
+    ENERGY_DRAIN_LOW_TEMP = 0.5
+    COLD_DAMAGE_RATE = 0.05
+    COMFORT_PENALTY_RAIN = 0.5
+    FATIGUE_RATE_WIND = 0.3
+    THIRST_RATE_LOW_HUMIDITY = 0.5
+    COMFORT_PENALTY_HIGH_HUMIDITY = 0.3
 
     def __init__(self):
         super().__init__()
@@ -51,40 +82,40 @@ class WeatherEffectSystem(System):
             space: SpaceComponent
 
             # ---------- 高温影响 ----------
-            if temp > 30.0:
+            if temp > self.TEMP_HIGH_MILD:
                 # 口渴加剧
-                needs.thirst += 1.0 * (temp - 30.0) * dt
+                needs.thirst += self.THIRST_RATE_HIGH_TEMP * (temp - self.TEMP_HIGH_MILD) * dt
                 # 疲劳增加
-                needs.fatigue += 0.3 * (temp - 30.0) * dt
+                needs.fatigue += self.FATIGUE_RATE_HIGH_TEMP * (temp - self.TEMP_HIGH_MILD) * dt
 
-            if temp > 35.0:
+            if temp > self.TEMP_HIGH_SEVERE:
                 # 热伤害
-                heat_damage = 0.1 * (temp - 35.0) * dt
+                heat_damage = self.HEAT_DAMAGE_RATE * (temp - self.TEMP_HIGH_SEVERE) * dt
                 health.hp = max(0.0, min(health.max_hp, health.hp - heat_damage))
 
             # ---------- 低温影响 ----------
-            if temp < 10.0:
+            if temp < self.TEMP_LOW_MILD:
                 # 精力消耗
-                needs.energy -= 0.5 * (10.0 - temp) * dt
+                needs.energy -= self.ENERGY_DRAIN_LOW_TEMP * (self.TEMP_LOW_MILD - temp) * dt
 
-            if temp < 0.0:
+            if temp < self.TEMP_LOW_SEVERE:
                 # 冻伤伤害
-                cold_damage = 0.05 * abs(temp) * dt
+                cold_damage = self.COLD_DAMAGE_RATE * abs(temp) * dt
                 health.hp = max(0.0, min(health.max_hp, health.hp - cold_damage))
 
             # ---------- 降雨影响 ----------
-            if rainfall > 10.0:
-                needs.comfort -= 0.5 * dt
+            if rainfall > self.RAIN_THRESHOLD:
+                needs.comfort -= self.COMFORT_PENALTY_RAIN * dt
 
             # ---------- 强风影响 ----------
-            if wind > 10.0:
-                needs.fatigue += 0.3 * dt
+            if wind > self.WIND_THRESHOLD:
+                needs.fatigue += self.FATIGUE_RATE_WIND * dt
 
             # ---------- 湿度影响 ----------
-            if humidity < 0.3:
-                needs.thirst += 0.5 * dt
-            elif humidity > 0.9:
-                needs.comfort -= 0.3 * dt
+            if humidity < self.HUMIDITY_LOW:
+                needs.thirst += self.THIRST_RATE_LOW_HUMIDITY * dt
+            elif humidity > self.HUMIDITY_HIGH:
+                needs.comfort -= self.COMFORT_PENALTY_HIGH_HUMIDITY * dt
 
             # ---------- 数值安全 ----------
             needs.hunger = max(0.0, min(needs.max_hunger, needs.hunger))

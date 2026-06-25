@@ -22,14 +22,14 @@ class System:
 
     @property
     def enabled(self) -> bool:
-        """启用/禁用系统"""
+        """系统是否启用（只读属性）"""
         return self._enabled
 
     def set_enabled(self, value: bool):
         """启用/禁用系统"""
         self._enabled = value
 
-    #     # 生命周期
+    # 生命周期
     def on_add(self, world: World):
         """系统被添加到 world 时调用"""
         pass
@@ -38,16 +38,24 @@ class System:
         """系统从 world 移除时调用"""
         pass
 
-    # 主执行入口
+    # 主执行入口（子类必须重写）
+    def _update(self, world: World, dt: float = 1.0) -> None:
+        """
+        子类应重写此方法实现具体的系统逻辑。
+        不要直接重写 update()，否则 enabled 检查将失效。
+        """
+        pass
+
     def update(self, world: World, dt: float = 1.0) -> None:
         """
         系统主更新入口。
         
-        子类应直接重写此方法，实现具体的系统逻辑。
-        基类保留 enabled 检查作为统一前置条件。
+        统一前置条件检查（enabled 状态、性能监控等）。
+        子类应重写 _update() 方法而非此方法。
         """
-        if not self.enabled:
+        if not self._enabled:
             return
+        self._update(world, dt)
 
     # 调试信息
     @property

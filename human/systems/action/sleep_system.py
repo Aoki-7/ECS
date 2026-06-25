@@ -70,7 +70,8 @@ class SleepSystem(System):
                 # 记录到记忆
                 memory = world.get_component(entity, MemoryComponent)
                 space = world.get_component(entity, SpaceComponent)
-                current_time = world.get_time().total_hours
+                time_obj = world.get_time()
+                current_time = time_obj.total_hours if time_obj else 0.0
                 if memory:
                     memory.add_event(
                         current_time, "slept",

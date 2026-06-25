@@ -16,7 +16,7 @@ class Entity:
     _generations: list[int] = []
 
     # ==
-    # 限制不可变对象
+    # 限制不可变对象（仅限制属性重新赋值，不限制可变对象内部修改）
     # ==
 
     def __setattr__(self, key, value):
@@ -100,6 +100,13 @@ class Entity:
     # ==
     # 兼容方法（v3.9 API）
     # ==
+
+    @property
+    def _components(self):
+        """兼容 v3.9 API：返回 metadata 中的组件字典"""
+        if 'components' not in self.metadata:
+            self.metadata['components'] = {}
+        return self.metadata['components']
 
     def add_component(self, component_type, component=None):
         """兼容 v3.9 API：添加组件到实体

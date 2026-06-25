@@ -26,6 +26,7 @@ class TaskType(Enum):
     EXPLORE = auto()
     FIGHT = auto()
     FIND_PARTNER = auto()
+    FIND_MATE = auto()
     MOVE_TO_TARGET = auto()
     EAT_FOOD = auto()
 

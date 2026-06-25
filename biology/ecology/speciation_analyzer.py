@@ -24,7 +24,7 @@ class SpeciationAnalyzer:
         self, id_vectors: List[Tuple[int, List[float]]]
     ) -> List[Tuple[int, List[float]]]:
         """
-        在群体中寻找离群子群（使用 k-means 启发式）
+        在群体中寻找离群子群（使用 k-means 启发式）— 优化版：缓存距离计算
 
         Returns:
             离群子群的 (entity_id, vector) 列表，无则返回空列表
@@ -41,14 +41,18 @@ class SpeciationAnalyzer:
         # 找距离种子 A 最远的个体作为种子 B
         seed_b = max(id_vectors, key=lambda x: self.euclidean_distance(x[1], seed_a[1]))
 
-        # 分配个体到两个聚类
+        # 分配个体到两个聚类 — 缓存距离避免重复计算
         cluster_a = []
         cluster_b = []
 
+        # 预计算种子 A 和 B 的距离
+        dist_a_cache = {item[0]: self.euclidean_distance(item[1], seed_a[1]) for item in id_vectors}
+        dist_b_cache = {item[0]: self.euclidean_distance(item[1], seed_b[1]) for item in id_vectors}
+
         for item in id_vectors:
             eid, vector = item
-            dist_a = self.euclidean_distance(vector, seed_a[1])
-            dist_b = self.euclidean_distance(vector, seed_b[1])
+            dist_a = dist_a_cache[eid]
+            dist_b = dist_b_cache[eid]
             if dist_a <= dist_b:
                 cluster_a.append(item)
             else:

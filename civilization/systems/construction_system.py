@@ -242,11 +242,17 @@ class ConstructionSystem(System):
 
         # 创建建筑实体
         building_entity = world.create_entity()
-
-        # 添加建筑组件（这里需要扩展建筑组件）
-        # NOTE: 建筑组件系统待后续扩展
-
-        logger.info(f"[ConstructionSystem] Built {building_type.value} at position {space.position}")
+        
+        # 添加空间组件（建筑位置）
+        from space.space_component import SpaceComponent
+        world.add_component(building_entity, SpaceComponent(x=space.x, y=space.y))
+        
+        # 添加建筑标识组件
+        from identity.name_component import NameComponent
+        world.add_component(building_entity, NameComponent(name=building_type.value, category="building"))
+        
+        # 添加到建筑索引（如有）
+        logger.info(f"[ConstructionSystem] Built {building_type.value} at position ({space.x}, {space.y})")
 
     def _complete_crafting(self, entity, tool_type: ToolType, recipe: Dict[str, float],
                           inventory: InventoryComponent, world: World):

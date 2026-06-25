@@ -86,7 +86,8 @@ class AnimalSocialSystem(System):
             if nearest_group:
                 social.group_id = nearest_group
                 social.group_role = "member"
-                logger.debug(f"[Social] E{entity.id} 加入群体 {nearest_group}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[Social] E{entity.id} 加入群体 {nearest_group}")
 
     def _find_nearest_group(
         self, world: World, space_system: SpaceSystem,
@@ -137,7 +138,8 @@ class AnimalSocialSystem(System):
                 mate_social = world.get_component(mate, AnimalSocialComponent)
                 if mate_social:
                     mate_social.mate_id = entity.id
-                logger.debug(f"[Social] E{entity.id} 与 E{mate.id} 配对")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[Social] E{entity.id} 与 E{mate.id} 配对")
 
     def _find_mate(
         self, world: World, space_system: SpaceSystem,

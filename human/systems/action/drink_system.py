@@ -133,7 +133,8 @@ class DrinkSystem(System):
             world.remove_entity(water_entity)
 
         memory = world.get_component(entity, MemoryComponent)
-        current_time = world.get_time().total_hours
+        time_obj = world.get_time()
+        current_time = time_obj.total_hours if time_obj else 0.0
         if memory:
             memory.add_event(
                 current_time, "found_water",

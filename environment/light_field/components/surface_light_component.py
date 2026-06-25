@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class SurfaceLightComponent(Component):
     """
     地表光照组件

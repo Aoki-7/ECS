@@ -102,6 +102,10 @@ class EntityManager:
         """根据 ID 获取实体"""
         return self._entities.get(entity_id)
 
+    def get(self, entity_id: int) -> Optional[Entity]:
+        """get_entity alias for v3.x compatibility"""
+        return self.get_entity(entity_id)
+
     def get_all_entities(self) -> Dict[int, Entity]:
         """获取所有活跃实体"""
         return self._entities.copy()

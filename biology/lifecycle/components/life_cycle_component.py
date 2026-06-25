@@ -116,10 +116,8 @@ class LifeCycleComponent(Component):
         """兼容旧系统：age 属性映射到 current_age"""
         self.current_age = value
 
-    def is_reproductive_age(self) -> bool:
-        """判断是否为生育年龄"""
-        return self.min_reproductive_age <= self.current_age <= self.max_reproductive_age
-
+    # 注意：以下属性是数据查询而非业务逻辑，保留以兼容旧代码
+    # 业务逻辑（如阶段转换判断）已迁移到 LifeCycleSystem
     @property
     def is_mature(self) -> bool:
         """是否为成熟期"""

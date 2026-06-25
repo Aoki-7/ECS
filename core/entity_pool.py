@@ -151,14 +151,14 @@ class EntityPool:
         if not self._enabled or not self._pool:
             return 0
 
-        # 获取当前全局代
-        current_gen = Entity._global_generation if hasattr(Entity, '_global_generation') else 0
+        # Entity 使用 _generations 列表（类变量）跟踪全局代数
+        current_gen = max(Entity._generations) if Entity._generations else 0
         
         cleaned = 0
         new_pool = []
         
         for entity in self._pool:
-            entity_gen = getattr(entity, '_generation', 0)
+            entity_gen = getattr(entity, 'generation', 0)
             # 如果实体代数差距过大，说明已经过期
             if current_gen - entity_gen > max_age:
                 cleaned += 1

@@ -81,27 +81,46 @@ class TechnologyEvolutionSystem(System):
                     )
 
     def _spread_technologies(self, world: World) -> None:
-        """技术在社会中传播"""
+        """技术在社会中传播 — 优化版：使用空间索引避免O(n²)"""
         from space.space_component import SpaceComponent
+        from space.space_system import SpaceSystem
 
+        # 获取空间系统
+        space_system = world.get_system(SpaceSystem)
+        
         # 获取所有有知识的个体
         knowledgeable = []
         for entity, (knowledge, space) in world.get_components(
             CraftingKnowledgeComponent, SpaceComponent
         ):
-            recipes = knowledge.get_known_recipes(min_confidence=0.5)
+            recipes = CraftingKnowledgeSystem.get_known_recipes(knowledge, min_confidence=0.5)
             if recipes:
                 knowledgeable.append((entity, space, recipes))
 
-        # 在近距离个体间传播
-        for i, (teacher, t_space, t_recipes) in enumerate(knowledgeable):
-            for learner, l_space, _ in knowledgeable[i+1:]:
-                dist = math.hypot(t_space.x - l_space.x, t_space.y - l_space.y)
-                if dist > 5.0:  # 传播距离限制
-                    continue
-
-                # 尝试传播知识
-                self._attempt_teach(world, teacher, learner, t_recipes)
+        # 使用空间索引避免O(n²)比较
+        if space_system and hasattr(space_system, 'query_radius'):
+            for teacher, t_space, t_recipes in knowledgeable:
+                nearby_entities = space_system.query_radius(t_space.x, t_space.y, 5.0)
+                for learner_id in nearby_entities:
+                    if learner_id == teacher.id:
+                        continue
+                    learner = world.query_entity(learner_id)
+                    if learner is None:
+                        continue
+                    learner_knowledge = world.get_component(learner, CraftingKnowledgeComponent)
+                    if learner_knowledge is None:
+                        continue
+                    # 尝试传播知识
+                    self._attempt_teach(world, teacher, learner, t_recipes)
+        else:
+            # 回退到O(n²)比较（空间索引不可用时）
+            for i, (teacher, t_space, t_recipes) in enumerate(knowledgeable):
+                for learner, l_space, _ in knowledgeable[i+1:]:
+                    dist = math.hypot(t_space.x - l_space.x, t_space.y - l_space.y)
+                    if dist > 5.0:  # 传播距离限制
+                        continue
+                    # 尝试传播知识
+                    self._attempt_teach(world, teacher, learner, t_recipes)
 
     def _attempt_teach(
         self, world: World, teacher, learner, recipes: List[Dict]

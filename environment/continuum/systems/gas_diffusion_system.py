@@ -96,35 +96,35 @@ class GasDiffusionSystem(System):
 
     def _diffuse_co2(self, world: World, grid: Dict, dt: float,
                      bounds: Optional[Tuple]) -> None:
-        """CO₂ 扩散 — 使用通用扩散内核"""
+        """CO₂ 扩散 — 优化版：先缓存环境数据"""
         n_nei = len(self._neighbor_offsets)
-        net_fluxes = {key: 0.0 for key in grid.keys()}
-
+        
+        # 缓存环境数据，避免循环内重复get_component
+        env_cache = {}
         for key, eid in grid.items():
             env = world.get_component(eid, EnvironmentComponent)
-            if env is None:
-                continue
+            if env is not None:
+                env_cache[key] = env.co2
 
+        # 计算净通量
+        net_fluxes = {key: 0.0 for key in env_cache.keys()}
+        
+        for key in env_cache:
+            c_self = env_cache[key]
             for dx, dy in self._neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
-                if nk is None or nk not in grid:
+                if nk is None or nk not in env_cache:
                     continue
 
-                n_env = world.get_component(grid[nk], EnvironmentComponent)
-                if n_env is None:
-                    continue
-
-                flux = compute_diffusion_flux(
-                    env.co2, n_env.co2,
-                    self.CO2_DIFFUSION_RATE, dt, 50.0
-                )
-
+                c_neighbor = env_cache[nk]
+                flux = compute_diffusion_flux(c_self, c_neighbor, self.CO2_DIFFUSION_RATE, dt, 50.0)
                 net_fluxes[key] += flux
                 net_fluxes[nk] -= flux
 
         # 应用净通量
         for key, net_flux in net_fluxes.items():
-            env = world.get_component(grid[key], EnvironmentComponent)
+            eid = grid[key]
+            env = world.get_component(eid, EnvironmentComponent)
             if env is None:
                 continue
             env.co2 += net_flux / n_nei
@@ -132,35 +132,35 @@ class GasDiffusionSystem(System):
 
     def _diffuse_o2(self, world: World, grid: Dict, dt: float,
                     bounds: Optional[Tuple]) -> None:
-        """O₂ 扩散 — 使用通用扩散内核"""
+        """O₂ 扩散 — 优化版：先缓存环境数据"""
         n_nei = len(self._neighbor_offsets)
-        net_fluxes = {key: 0.0 for key in grid.keys()}
-
+        
+        # 缓存环境数据
+        env_cache = {}
         for key, eid in grid.items():
             env = world.get_component(eid, EnvironmentComponent)
-            if env is None:
-                continue
+            if env is not None:
+                env_cache[key] = env.o2
 
+        # 计算净通量
+        net_fluxes = {key: 0.0 for key in env_cache.keys()}
+        
+        for key in env_cache:
+            c_self = env_cache[key]
             for dx, dy in self._neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
-                if nk is None or nk not in grid:
+                if nk is None or nk not in env_cache:
                     continue
 
-                n_env = world.get_component(grid[nk], EnvironmentComponent)
-                if n_env is None:
-                    continue
-
-                flux = compute_diffusion_flux(
-                    env.o2, n_env.o2,
-                    self.O2_DIFFUSION_RATE, dt, 1.0
-                )
-
+                c_neighbor = env_cache[nk]
+                flux = compute_diffusion_flux(c_self, c_neighbor, self.O2_DIFFUSION_RATE, dt, 1.0)
                 net_fluxes[key] += flux
                 net_fluxes[nk] -= flux
 
         # 应用净通量
         for key, net_flux in net_fluxes.items():
-            env = world.get_component(grid[key], EnvironmentComponent)
+            eid = grid[key]
+            env = world.get_component(eid, EnvironmentComponent)
             if env is None:
                 continue
             env.o2 += net_flux / n_nei

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class SeasonComponent(Component):
     """
     季节组件

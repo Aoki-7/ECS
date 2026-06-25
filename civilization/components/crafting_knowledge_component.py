@@ -68,18 +68,5 @@ class CulturalTechPoolComponent(Component):
     # 技术多样性指数（越高说明该文明技术路线越独特）
     diversity_index: float = 0.0
 
-    def integrate_individual_knowledge(self, knowledge: CraftingKnowledgeComponent) -> None:
-        """将个体知识整合到文明技术池"""
-        from civilization.systems.crafting_knowledge_system import CraftingKnowledgeSystem
-        recipes = CraftingKnowledgeSystem.get_known_recipes(knowledge, min_confidence=0.6)
-        for recipe in recipes:
-            key = recipe["materials"] + "->" + recipe["output"]
-            if key not in self.shared_recipes:
-                self.shared_recipes[key] = recipe
-                self.shared_recipes[key]["contributors"] = 1
-            else:
-                self.shared_recipes[key]["contributors"] += 1
-
-        # 更新多样性指数
-        if self.shared_recipes:
-            self.diversity_index = len(self.shared_recipes) / 100.0
+    # 注意：integrate_individual_knowledge 已迁移到 CraftingKnowledgeSystem
+    # 保留方法作为向后兼容的委托，实际逻辑在 System 中

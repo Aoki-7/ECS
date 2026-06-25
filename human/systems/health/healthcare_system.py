@@ -74,30 +74,31 @@ class HealthcareSystem(System):
             disease_comp: DiseaseComponent
             health: HealthStatusComponent
 
-            for disease in list(disease_comp.diseases):
-                # 治疗：降低严重度
-                if disease.severity > 0:
-                    disease.severity = max(0, disease.severity - 0.5 * dt)
+            # 治疗：降低严重度
+            if disease_comp.severity > 0:
+                disease_comp.severity = max(0.0, disease_comp.severity - 0.5 * dt)
 
-                # 增加免疫
-                disease_comp.immunity[disease.name] = min(
+            # 增加免疫（使用组件的 immunity 字段，如果不存在则跳过）
+            if hasattr(disease_comp, 'immunity'):
+                disease_comp.immunity[disease_comp.disease_name] = min(
                     1.0,
-                    disease_comp.immunity.get(disease.name, 0) + 0.01 * dt
+                    disease_comp.immunity.get(disease_comp.disease_name, 0) + 0.01 * dt
                 )
 
-                # 如果严重度降为 0 且免疫足够，治愈
-                if (disease.severity <= 0
-                        and disease_comp.immunity.get(disease.name, 0) > 0.5):
-                    disease_comp.remove_disease(disease.name)
+                # 如果严重度降为 0 且免疫足够，重置疾病
+                if (disease_comp.severity <= 0
+                        and disease_comp.immunity.get(disease_comp.disease_name, 0) > 0.5):
+                    disease_comp.severity = 0.0
+                    disease_comp.stage = "recovery"
 
-                # 记录治疗历史
-                self._add_health_history({
-                    "entity_id": entity.id,
-                    "disease": disease.name,
-                    "severity": disease.severity,
-                    "action": "treatment",
-                    "timestamp": "now",
-                })
+            # 记录治疗历史
+            self._add_health_history({
+                "entity_id": entity.id,
+                "disease": disease_comp.disease_name,
+                "severity": disease_comp.severity,
+                "action": "treatment",
+                "timestamp": "now",
+            })
 
     def diagnose(self, symptoms: Dict[str, float], patient_data: Dict) -> List[Disease]:
         """根据症状和患者数据诊断疾病"""

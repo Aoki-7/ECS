@@ -148,7 +148,8 @@ class AnimalTerritorySystem(System):
             intruder_needs = world.get_component(intruder, AnimalNeedsComponent)
             if intruder_needs:
                 intruder_needs.fear = min(1.0, intruder_needs.fear + 0.5)
-                logger.debug(f"[Territory] E{entity.id} 驱逐入侵者 E{intruder_id}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[Territory] E{entity.id} 驱逐入侵者 E{intruder_id}")
 
     def _patrol_and_mark(
         self, world: World, entity,
@@ -175,4 +176,5 @@ class AnimalTerritorySystem(System):
 
         # 刷新气味
         territory.refresh_scent()
-        logger.debug(f"[Territory] E{entity.id} 巡逻领地并刷新气味")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"[Territory] E{entity.id} 巡逻领地并刷新气味")

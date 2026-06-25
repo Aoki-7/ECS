@@ -152,4 +152,5 @@ class CraftingSystem(System):
         action.status = ActionStatus.FAILED
         task.status = TaskStatus.FAILED
         action.progress = 0.0
-        logger.debug(f"[Crafting] 失败: {reason}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"[Crafting] 失败: {reason}")

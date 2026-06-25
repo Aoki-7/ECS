@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Tuple
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class WaterBodyComponent(Component):
     """
     水体组件

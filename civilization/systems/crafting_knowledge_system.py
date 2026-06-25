@@ -120,6 +120,26 @@ class CraftingKnowledgeSystem:
         return max(candidates, key=lambda x: x["confidence"] * x["avg_quality"])
 
     @staticmethod
+    def integrate_individual_knowledge(pool, knowledge: CraftingKnowledgeComponent, min_confidence: float = 0.6) -> None:
+        """将个体知识整合到文明技术池"""
+        recipes = CraftingKnowledgeSystem.get_known_recipes(knowledge, min_confidence=min_confidence)
+        for recipe in recipes:
+            key = recipe["materials"] + "->" + recipe["output"]
+            if key not in pool.shared_recipes:
+                # 复制配方并添加 contributors 字段
+                recipe_copy = dict(recipe)
+                recipe_copy["contributors"] = 1
+                pool.shared_recipes[key] = recipe_copy
+            else:
+                # 确保 contributors 字段存在并递增
+                existing = pool.shared_recipes[key]
+                existing["contributors"] = existing.get("contributors", 1) + 1
+
+        # 更新多样性指数
+        if pool.shared_recipes:
+            pool.diversity_index = len(pool.shared_recipes) / 100.0
+
+    @staticmethod
     def suggest_exploration(knowledge: CraftingKnowledgeComponent, available: Optional[Dict[str, float]] = None) -> Optional[Dict[str, float]]:
         """
         建议一次探索性尝试

@@ -18,12 +18,7 @@ from biology.genetics.gene import Gene
 class GenomeComponent(Component):
     """基因组组件 — 纯数据"""
     genes: list = field(default_factory=list)
-
-    def __len__(self):
-        return len(self.genes)
-
-    def __getitem__(self, index):
-        return self.genes[index]
+    parent_id: Optional[int] = None  # 亲代实体ID
 
     def __repr__(self):
         return f"GenomeComponent(genes={len(self.genes)})"

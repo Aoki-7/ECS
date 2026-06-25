@@ -132,7 +132,7 @@ class MemoryDecaySystem(System):
         if excess > 0:
             items = [
                 (pos, p.get("last_visit", 0), p.get("sentiment", 0))
-                for pos, p in memory.places.items()
+                for pos, p in list(memory.places.items())
             ]
             items.sort(key=lambda x: (x[1], x[2]))
             for pos, _, _ in items[:excess]:
@@ -148,7 +148,7 @@ class MemoryDecaySystem(System):
 
         to_remove = []
 
-        for entity_id, person in memory.people.items():
+        for entity_id, person in list(memory.people.items()):
             trust = person.get("trust", 0.0)
             if trust < self.people_trust_threshold:
                 to_remove.append(entity_id)
@@ -161,7 +161,7 @@ class MemoryDecaySystem(System):
         if excess > 0:
             items = [
                 (eid, p.get("trust", 0.0))
-                for eid, p in memory.people.items()
+                for eid, p in list(memory.people.items())
             ]
             items.sort(key=lambda x: x[1])
             for eid, _ in items[:excess]:

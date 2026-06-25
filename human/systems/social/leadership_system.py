@@ -39,7 +39,7 @@ class LeadershipSystem(System):
     NEW_LEADER_LOYALTY_BONUS = 20.0
 
     def update(self, world: World, dt: float):
-        current_time = world.get_time().total_hours
+        current_time = (world.get_time().total_hours if world.get_time() else 0.0)
         for entity, (tribe,) in world.get_components(TribeComponent):
             self._check_leader_succession(world, tribe, current_time)
 

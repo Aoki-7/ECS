@@ -33,6 +33,7 @@ class NutrientComponent(Component):
     max_potassium: float = 100.0
 
     # 兼容旧系统： nutrient_n / nutrient_p / nutrient_k 别名
+    # 注意：property是数据访问而非业务逻辑，保留以兼容旧代码
     @property
     def nutrient_n(self) -> float:
         return self.nitrogen

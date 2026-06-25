@@ -75,6 +75,17 @@ class TribeComponent(Component):
         """设置部落中心位置"""
         self.territory_center = value
 
+    @property
+    def culture(self) -> dict:
+        """获取部落文化（兼容属性）"""
+        return {}
+
     def set_leader(self, entity_id: int) -> None:
         """设置领袖"""
         self.leader_id = entity_id
+
+    def __getattr__(self, name):
+        """动态属性回退，兼容旧系统的 _milestone_5 等属性"""
+        if name.startswith('_milestone_'):
+            return False
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")

@@ -20,9 +20,9 @@ from typing import Optional, Iterator, Tuple
 
 from core.entity import Entity
 from core.component import Component
-from core.event_bus import EventBus
+from core.world_event_bus import WorldEventBus
 from core.entity_manager import EntityManager
-from core.archetype_store import ArchetypeStore
+from core.archetype_store import ArchetypeStore, _get_entity_id
 from core.system_scheduler import SystemScheduler
 
 logger = logging.getLogger(__name__)
@@ -47,45 +47,60 @@ class World:
 
     v4.0 变更：
     - 内部使用 EntityManager / ArchetypeStore / SystemScheduler
+    - 使用 WorldEventBus 实现 per-World 事件隔离
     - 保持 v3.9 的 public API 不变
-    - 新增 query() / query_one() 声明式查询接口
     """
 
-    def __init__(self):
-        # === v4.0 新增：专职管理器 ===
+    def __init__(self, world_id: str = "default"):
+        # 核心管理器
         self._entity_manager = EntityManager()
-        self._component_store = ArchetypeStore()
+        self._archetype_store = ArchetypeStore()
         self._system_scheduler = SystemScheduler()
 
-        # === v3.9 兼容：保留旧属性（委托给新管理器）===
-        # 注意：self.entities / self.components / self.systems 仍保留
-        # 但内部实现已变更
+        # 世界事件总线（per-World 事件隔离）
+        self._event_bus = WorldEventBus(world_id)
 
+        # 世界实体（存储全局组件如时间、环境配置）
+        self._world_entity: Optional[Entity] = None
+
+        # 时间
         self.tick_count = 0
+        self._time = None  # TimeComponent 或兼容对象
 
-        # === 世界实体（由 application 层注入）===
-        self._world_entity: Entity | None = None
+        # 查询缓存（v3.9 兼容）
+        self._query_cache = {}
 
-        # === v3.9 兼容：保留旧缓存（但内部不再使用）===
-        self._query_cache: dict = {}
+        # 系统缓存（v3.9 兼容）
+        self._system_cache = {}
 
-        # === v3.9 兼容：保留旧属性（存档系统依赖）===
-        self._component_entities: dict = _ComponentEntitiesCompatView(self._component_store)
+        # 环境引用（v3.9 兼容）
+        self._environment = None
 
-    def init(self) -> None:
-        """初始化世界（创建世界实体和配置）"""
-        from core.components.world_config_component import WorldConfigComponent
-        
-        world_config = self.get_world_component(WorldConfigComponent)
-        if world_config is None:
-            world_config = WorldConfigComponent()
-            world_entity = self.create_entity()
-            self.add_component(world_entity, world_config)
-            self.set_world_entity(world_entity)
-            logger.info(f"[Init] 世界配置已创建: {world_config.map_width}x{world_config.map_height}")
+        logger.info(f"[World] v4.0 World 初始化完成 (id={world_id})")
 
     # ====================
-    # Entity API（v3.9 兼容）
+    # 事件总线
+    # ====================
+
+    @property
+    def event_bus(self) -> WorldEventBus:
+        """获取世界事件总线"""
+        return self._event_bus
+
+    def subscribe(self, event_type: str, handler, priority: int = 0, once: bool = False, filter_fn=None):
+        """订阅世界事件"""
+        return self._event_bus.subscribe(event_type, handler, priority, once, filter_fn)
+
+    def unsubscribe(self, event_type: str, handler):
+        """取消订阅世界事件"""
+        self._event_bus.unsubscribe(event_type, handler)
+
+    def publish(self, event_type: str, payload: dict, source: str = "world"):
+        """发布世界事件"""
+        self._event_bus.publish(event_type, payload, source=source, timestamp=self.tick_count)
+
+    # ====================
+    # 实体管理
     # ====================
 
     @property
@@ -93,157 +108,157 @@ class World:
         """v3.9 兼容：返回所有活跃实体"""
         return self._entity_manager.get_all_entities()
 
+    def get_all_entities(self):
+        """获取所有实体列表（兼容方法）"""
+        return list(self._entity_manager.get_all_entities().values())
+
     def create_entity(self) -> Entity:
         """创建新实体"""
         entity = self._entity_manager.create()
 
         # 发布事件
-        try:
-            EventBus.get_instance().publish(
-                "entity_created",
-                {"entity_id": entity.id},
-                source="world",
-                timestamp=self.tick_count,
-            )
-        except Exception:
-            pass
+        self._event_bus.publish("entity_created", {"entity_id": entity.id}, source="world")
 
         return entity
 
-    def remove_entity(self, entity: Entity):
-        """删除实体及其所有组件"""
-        if not self.has_entity(entity):
+    def remove_entity(self, entity) -> None:
+        """移除实体"""
+        if entity is None:
             return
 
-        # 1. 先标记实体为已销毁（generation 递增），防止后续系统通过旧引用访问
-        self._entity_manager.destroy(entity)
+        entity_id = _get_entity_id(entity)
+        
+        # 先移除所有组件（触发组件移除事件）
+        self._archetype_store.remove_entity(entity_id)
 
-        # 2. 从 ArchetypeStore 移除组件数据（此时 entity 已失效，但 id 仍可用）
-        self._component_store.remove_entity(entity)
+        # 再从实体管理器移除
+        if hasattr(entity, 'id'):
+            self._entity_manager.destroy(entity)
+        else:
+            # 如果传入的是 entity_id，需要先获取实体
+            ent = self._entity_manager.get(entity_id)
+            if ent:
+                self._entity_manager.destroy(ent)
 
-        # 3. 从 SpaceSystem 反注册（使用 entity_id，不依赖 entity 有效性）
-        self._unregister_entity_from_space(entity.id)
-
-        # 4. 清除旧缓存（v3.9 兼容）
-        self._query_cache.clear()
-
-        # 5. 通知记忆层
-        memory_layer = _get_memory_layer()
-        if memory_layer is not None:
-            memory_layer.entity_destroyed(entity.id, timestamp=self.tick_count)
-
-        # 6. 发布事件
-        try:
-            EventBus.get_instance().publish(
-                "entity_destroyed",
-                {"entity_id": entity.id, "reason": "removed"},
-                source="world",
-                timestamp=self.tick_count,
-            )
-        except Exception as e:
-            logger.warning(f"[World] 发布 entity_destroyed 事件失败: {e}")
-
-    def has_entity(self, entity: Entity) -> bool:
-        """检查实体是否存在"""
-        return self._entity_manager.has_entity(entity)
+        # 发布事件
+        self._event_bus.publish("entity_destroyed", {"entity_id": entity_id}, source="world")
 
     def query_entity(self, entity_id: int) -> Optional[Entity]:
         """根据 ID 查询实体"""
-        return self._entity_manager.get_entity(entity_id)
+        return self._entity_manager.get(entity_id)
+
+    def is_entity_alive(self, entity: Entity) -> bool:
+        """检查实体是否存活"""
+        return self._entity_manager.has_entity(entity)
+
+    def has_entity(self, entity: Entity) -> bool:
+        '''check whether entity exists in the world'''
+        if entity is None:
+            return False
+        entity_id = _get_entity_id(entity)
+        return self._entity_manager.get(entity_id) is not None
 
     # ====================
-    # Component API（v3.9 兼容）
+    # 组件管理
     # ====================
 
-    @property
-    def components(self):
-        """v3.9 兼容：返回组件存储的兼容视图"""
-        # 返回一个兼容 v3.9 接口的字典视图
-        return _ComponentStoreCompatView(self)
-
-    def add_component(self, entity: Entity, component: Component):
+    def add_component(self, entity: Entity, component: Component) -> None:
         """为实体添加组件"""
-        if not self.has_entity(entity):
-            raise ValueError("Entity 不存在，无法添加组件")
+        if entity is None or component is None:
+            return
+        
+        entity_id = _get_entity_id(entity)
+        self._archetype_store.add_component(entity_id, component)
 
-        # 使用 ArchetypeStore
-        self._component_store.add_component(entity, component)
+        # 发布事件
+        self._event_bus.publish(
+            "component_added",
+            {"entity_id": entity_id, "component_type": type(component).__name__},
+            source="world"
+        )
 
-        # 自动注册 SpaceComponent
-        self._register_component_to_space(entity.id, component)
-
-        # 清除旧缓存（v3.9 兼容）
-        self._query_cache.clear()
-
-    def remove_component(self, entity: Entity, component_type: type):
+    def remove_component(self, entity: Entity, component_type: type) -> None:
         """从实体移除组件"""
-        # 从 SpaceSystem 反注册
-        self._unregister_component_from_space(entity.id, component_type)
+        if entity is None:
+            return
+        
+        entity_id = _get_entity_id(entity)
+        self._archetype_store.remove_component(entity_id, component_type)
 
-        # 使用 ArchetypeStore
-        self._component_store.remove_component(entity, component_type)
-
-        # 清除旧缓存（v3.9 兼容）
-        self._query_cache.clear()
+        # 发布事件
+        self._event_bus.publish(
+            "component_removed",
+            {"entity_id": entity_id, "component_type": component_type.__name__},
+            source="world"
+        )
 
     def get_component(self, entity: Entity, component_type: type) -> Optional[Component]:
-        """获取实体的指定组件"""
-        # 防御：entity 可能是 int 而不是 Entity 对象
-        if isinstance(entity, int):
-            entity = self._entity_manager.get_entity(entity)
-            if entity is None:
-                return None
-        return self._component_store.get_component(entity, component_type)
+        """获取实体的组件"""
+        if entity is None:
+            return None
+        
+        entity_id = _get_entity_id(entity)
+        return self._archetype_store.get_component(entity_id, component_type)
 
-    def get_components(self, *component_types: type) -> Iterator[Tuple[Entity, ...]]:
+    def has_component(self, entity: Entity, component_type: type) -> bool:
+        """检查实体是否有指定组件"""
+        if entity is None:
+            return False
+        
+        entity_id = _get_entity_id(entity)
+        return self._archetype_store.has_component(entity_id, component_type)
+
+    def get_components(self, *component_types) -> Iterator[Tuple[Entity, list]]:
         """查询具有指定组件组合的实体"""
-        yield from self._component_store.query(*component_types)
+        if not component_types:
+            return
 
-    def get_entities_with(self, component_type: type) -> Iterator[Entity]:
-        """v3.9 兼容：获取具有指定组件的所有实体"""
-        for entity, _ in self._component_store.query(component_type):
-            yield entity
+        # 使用 ArchetypeStore 查询
+        entity_ids = self._archetype_store.query_entities(component_types)
 
-    def query_components(self, component_type: type) -> Iterator[Tuple[Entity, Component]]:
-        """v3.9 兼容：查询指定组件类型的所有实体"""
-        yield from self._component_store.query(component_type)
+        for entity_id in entity_ids:
+            entity = self._entity_manager.get(entity_id)
+            if entity is None:
+                continue
 
-    # ====================
-    # v4.0 新增：声明式查询接口
-    # ====================
-
-    def query(self, *component_types: type):
-        """声明式查询接口（与 query_api.py 兼容）"""
-        return _QueryResult(self, component_types)
-
-    def query_one(self, component_type: type) -> Optional[Tuple[Entity, Component]]:
-        """查询单个组件，返回第一个匹配结果"""
-        return self._component_store.query_one(component_type)
+            components = []
+            for comp_type in component_types:
+                comp = self._archetype_store.get_component(entity_id, comp_type)
+                if comp is None:
+                    break
+                components.append(comp)
+            else:
+                # 所有组件都存在
+                yield (entity, components)
 
     # ====================
-    # System API（v3.9 兼容）
+    # 系统管理
     # ====================
 
-    @property
-    def systems(self):
-        """v3.9 兼容：返回系统列表"""
-        return self._system_scheduler.get_all()
-
-    def add_system(self, system):
-        """注册系统"""
+    def add_system(self, system) -> None:
+        """添加系统"""
         self._system_scheduler.add(system)
+        if hasattr(system, 'on_add'):
+            system.on_add(self)
 
-    def update(self, dt: float):
-        """更新所有系统"""
-        self.tick_count += 1
-        self._system_scheduler.update(self, dt)
+    def remove_system(self, system_type: type) -> None:
+        """移除系统"""
+        system = self._system_scheduler.get(system_type)
+        if system and hasattr(system, 'on_remove'):
+            system.on_remove(self)
+        self._system_scheduler.remove(system_type)
 
-    def get_system(self, system_type):
-        """获取指定类型的系统"""
+    def get_system(self, system_type: type):
+        """获取系统实例"""
         return self._system_scheduler.get(system_type)
 
+    def update(self, dt: float = 1.0) -> None:
+        """更新所有系统"""
+        self._system_scheduler.update(self, dt)
+        self.tick_count += 1
+
     # ====================
-    # 世界实体 API（v3.9 兼容）
+    # 世界实体管理
     # ====================
 
     def get_world_entity(self) -> Optional[Entity]:
@@ -255,297 +270,56 @@ class World:
         self._world_entity = entity
 
     def get_world_component(self, component_type: type) -> Optional[Component]:
-        """从世界实体获取组件"""
+        """获取世界组件"""
         if self._world_entity is None:
             return None
-        # 优先使用 ArchetypeStore 查询
-        result = self.get_component(self._world_entity, component_type)
-        if result is not None:
-            return result
-        # 回退到 Entity 的 get_component 方法
-        if hasattr(self._world_entity, 'get_component'):
-            return self._world_entity.get_component(component_type)
-        return None
+        return self.get_component(self._world_entity, component_type)
 
     # ====================
-    # 辅助方法
+    # 时间管理
     # ====================
 
     def get_time(self):
-        """获取世界时间组件"""
-        if self._world_entity is None:
-            return None
-        from time_module.time_component import TimeComponent
-        if hasattr(self._world_entity, 'get_component'):
-            return self._world_entity.get_component(TimeComponent)
-        return self.get_component(self._world_entity, TimeComponent)
+        """获取时间组件"""
+        return self._time
+
+    def set_time(self, time_component) -> None:
+        """设置时间组件"""
+        self._time = time_component
+
+    # ====================
+    # 环境管理
+    # ====================
 
     def get_environment(self):
         """获取环境组件"""
-        if self._world_entity is None:
-            return None
-        from environment.environment_component import EnvironmentComponent
-        if hasattr(self._world_entity, 'get_component'):
-            return self._world_entity.get_component(EnvironmentComponent)
-        return self.get_component(self._world_entity, EnvironmentComponent)
+        return self._environment
 
-    def get_memory_layer(self):
-        """获取记忆层"""
-        return _get_memory_layer()
-
-    def get_event_bus(self):
-        """获取事件总线"""
-        return EventBus.get_instance()
+    def set_environment(self, environment) -> None:
+        """设置环境组件"""
+        self._environment = environment
 
     # ====================
-    # SpaceSystem 集成（v3.9 兼容）
+    # 序列化
     # ====================
 
-    def _register_component_to_space(self, entity_id: int, component: Component):
-        """注册 SpaceComponent 到 SpaceSystem"""
-        from space.space_component import SpaceComponent
-        if isinstance(component, SpaceComponent):
-            from space.space_system import SpaceSystem
-            space_system = self.get_system(SpaceSystem)
-            if space_system:
-                space_system.add_entity(entity_id, component)
-
-    def _unregister_component_from_space(self, entity_id: int, component_type: type):
-        """从 SpaceSystem 反注册"""
-        from space.space_component import SpaceComponent
-        if component_type is SpaceComponent or issubclass(component_type, SpaceComponent):
-            from space.space_system import SpaceSystem
-            space_system = self.get_system(SpaceSystem)
-            if space_system:
-                space_system.remove_entity(entity_id)
-
-    def _unregister_entity_from_space(self, entity_id: int):
-        """从 SpaceSystem 反注册实体"""
-        try:
-            from space.space_system import SpaceSystem
-            space_system = self.get_system(SpaceSystem)
-            if space_system:
-                space_system.remove_entity(entity_id)
-        except ImportError:
-            logger.warning("SpaceSystem not available, skipping spatial cleanup")
-
-    # ====================
-    # 分类查询（v3.9 兼容）
-    # ====================
-
-    def get_entities_by_category(self, category, subcategory=None):
-        """按分类查询实体"""
-        from identity.category_component import CategoryComponent
-        for entity, comp in self.query_components(CategoryComponent):
-            if comp.matches(category, subcategory):
-                yield entity, comp
-
-    def count_by_category(self, category, subcategory=None) -> int:
-        """统计分类实体数量"""
-        return sum(1 for _ in self.get_entities_by_category(category, subcategory))
-
-    # ====================
-    # 调试（v3.9 兼容）
-    # ====================
-
-    def debug_print_entity(self, entity: Entity, verbose: bool = True):
-        """打印实体详情"""
-        if not self.has_entity(entity):
-            logger.debug(f"[错误] 实体 {entity.id} 不存在或已失效")
-            return
-
-        lines = [
-            "=" * 50,
-            f"实体ID: {entity.id}",
-            f"实体代数: {entity.generation}",
-        ]
-
-        # 获取实体所有组件
-        arch_info = self._component_store.get_archetype_info()
-        for info in arch_info:
-            # 这里简化处理，实际应该查询实体的组件
-            pass
-
-        lines.append("=" * 50)
-        logger.debug("\n".join(lines))
-
-    def debug_print_all_entities(self):
-        """打印所有实体"""
-        logger.debug("\n====== 当前世界实体列表 ======")
-        for entity in self._entity_manager:
-            self.debug_print_entity(entity, verbose=False)
-        logger.debug("====== 打印结束 ======\n")
-
-    def entity_count(self) -> int:
-        """实体数量"""
-        return len(self._entity_manager)
-
-    def component_count(self, component_type: type) -> int:
-        """指定组件类型的实体数量"""
-        # 通过查询统计
-        return sum(1 for _ in self._component_store.query(component_type))
-
-    # ====================
-    # v4.0 新增：统计信息
-    # ====================
-
-    def get_stats(self) -> dict:
-        """获取世界统计信息"""
+    def to_dict(self) -> dict:
+        """序列化世界状态"""
         return {
-            "entities": self._entity_manager.get_stats(),
-            "components": self._component_store.get_stats(),
-            "systems": self._system_scheduler.get_stats(),
+            "tick_count": self.tick_count,
+            "entity_count": self._entity_manager.count(),
         }
 
-    def get_archetype_info(self) -> list:
-        """获取 Archetype 信息（调试用）"""
-        return self._component_store.get_archetype_info()
+    @classmethod
+    def from_dict(cls, data: dict) -> "World":
+        """从字典恢复世界状态"""
+        world = cls()
+        world.tick_count = data.get("tick_count", 0)
+        return world
 
+    # ====================
+    # 调试
+    # ====================
 
-# ====================
-# 兼容层类
-# ====================
-
-class _ComponentStoreCompatView:
-    """
-    v3.9 兼容：组件存储字典视图
-
-    模拟 v3.9 的 self.components[comp_type][entity_id] 接口
-    """
-
-    def __init__(self, world: World):
-        self._world = world
-        self._store = world._component_store
-
-    def __getitem__(self, comp_type: type):
-        return _ComponentTypeCompatView(self._store, comp_type)
-
-    def get(self, comp_type: type, default=None):
-        return _ComponentTypeCompatView(self._store, comp_type)
-
-    def items(self):
-        # 返回空迭代器（兼容层简化实现）
-        return iter([])
-
-    def keys(self):
-        return iter([])
-
-    def values(self):
-        return iter([])
-
-    def clear(self):
-        """清空所有组件 — 用于存档加载"""
-        # 重置 ArchetypeStore
-        self._store._archetypes.clear()
-        self._store._entity_archetype.clear()
-        self._store._query_cache.clear()
-        self._store._stats = {
-            "archetype_count": 0,
-            "entity_count": 0,
-            "query_count": 0,
-            "cache_hit": 0,
-            "cache_miss": 0,
-        }
-
-
-class _ComponentEntitiesCompatView:
-    """
-    v3.9 兼容：反向索引字典视图
-
-    模拟 v3.9 的 self._component_entities[comp_type] = set(entity_ids)
-    """
-
-    def __init__(self, archetype_store: ArchetypeStore):
-        self._store = archetype_store
-
-    def clear(self):
-        """清空反向索引"""
-        # 实际存储在 ArchetypeStore 中，已随 components.clear() 清空
-        pass
-
-    def get(self, comp_type: type, default=None):
-        return set()
-
-    def __getitem__(self, comp_type: type):
-        return set()
-
-    def __setitem__(self, comp_type: type, value: set):
-        pass
-
-    def __contains__(self, comp_type: type) -> bool:
-        return False
-
-    def keys(self):
-        return iter([])
-
-    def values(self):
-        return iter([])
-
-    def items(self):
-        return iter([])
-
-
-class _ComponentTypeCompatView:
-    """组件类型兼容视图"""
-
-    def __init__(self, archetype_store: ArchetypeStore, comp_type: type):
-        self._store = archetype_store
-        self._comp_type = comp_type
-
-    def __getitem__(self, entity_id: int):
-        from core.entity import Entity
-        entity = Entity(entity_id, 0)  # 简化处理
-        comp = self._store.get_component(entity, self._comp_type)
-        if comp is None:
-            raise KeyError(entity_id)
-        return comp
-
-    def get(self, entity_id: int, default=None):
-        from core.entity import Entity
-        entity = Entity(entity_id, 0)
-        return self._store.get_component(entity, self._comp_type) or default
-
-    def pop(self, entity_id: int, default=None):
-        # 简化实现
-        return default
-
-    def __contains__(self, entity_id: int) -> bool:
-        from core.entity import Entity
-        entity = Entity(entity_id, 0)
-        return self._store.get_component(entity, self._comp_type) is not None
-
-    def keys(self):
-        return iter([])
-
-    def values(self):
-        return iter([])
-
-    def items(self):
-        return iter([])
-
-
-class _QueryResult:
-    """
-    v4.0 查询结果包装器
-
-    与 query_api.py 的 QueryResult 兼容
-    """
-
-    def __init__(self, world: World, component_types: tuple):
-        self._world = world
-        self._component_types = component_types
-
-    def __iter__(self):
-        yield from self._world.get_components(*self._component_types)
-
-    def first(self) -> Optional[Tuple[Entity, ...]]:
-        try:
-            return next(iter(self))
-        except StopIteration:
-            return None
-
-    def count(self) -> int:
-        return sum(1 for _ in self)
-
-    def to_list(self) -> list:
-        return list(self)
+    def __repr__(self) -> str:
+        return f"<World entities={self._entity_manager.count()} systems={len(self._system_scheduler._systems)}>"

@@ -156,7 +156,8 @@ class SmellDiffusionSystem(System):
             # 更新实体的气味感知（可以存储在 SmellComponent 或 MemoryComponent 中）
             # 这里简化为打印日志
             if detected:
-                logger.debug(f"[Smell] Entity {entity.id} detected: {detected}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[Smell] Entity {entity.id} detected: {detected}")
 
     def get_smell_at(self, x: float, y: float) -> Dict[str, float]:
         """获取指定位置的气味"""

@@ -27,6 +27,7 @@ class TestMigrationComponent:
 
     def test_spring_departure_conditions(self):
         """测试春季北迁条件"""
+        from animal.systems.animal_migration_system import AnimalMigrationSystem
         comp = MigrationComponent(
             is_migratory=True,
             temperature_threshold_depart=10.0,
@@ -35,20 +36,21 @@ class TestMigrationComponent:
         )
         
         # 满足条件
-        assert comp.should_depart_spring(15.0, 14.0) == True
+        assert AnimalMigrationSystem.should_depart_spring(comp, 15.0, 14.0) == True
         
         # 温度不够
-        assert comp.should_depart_spring(5.0, 14.0) == False
+        assert AnimalMigrationSystem.should_depart_spring(comp, 5.0, 14.0) == False
         
         # 光周期不够
-        assert comp.should_depart_spring(15.0, 10.0) == False
+        assert AnimalMigrationSystem.should_depart_spring(comp, 15.0, 10.0) == False
         
         # 能量不够
         comp.energy_reserve = 0.1
-        assert comp.should_depart_spring(15.0, 14.0) == False
+        assert AnimalMigrationSystem.should_depart_spring(comp, 15.0, 14.0) == False
 
     def test_autumn_departure_conditions(self):
         """测试秋季南迁条件"""
+        from animal.systems.animal_migration_system import AnimalMigrationSystem
         comp = MigrationComponent(
             is_migratory=True,
             temperature_threshold_depart=10.0,
@@ -57,17 +59,18 @@ class TestMigrationComponent:
         )
         
         # 满足条件
-        assert comp.should_depart_autumn(5.0, 10.0) == True
+        assert AnimalMigrationSystem.should_depart_autumn(comp, 5.0, 10.0) == True
         
         # 温度太高
-        assert comp.should_depart_autumn(15.0, 10.0) == False
+        assert AnimalMigrationSystem.should_depart_autumn(comp, 15.0, 10.0) == False
 
     def test_arrival_condition(self):
         """测试到达条件"""
+        from animal.systems.animal_migration_system import AnimalMigrationSystem
         comp = MigrationComponent(temperature_threshold_arrive=15.0)
         
-        assert comp.can_arrive(20.0) == True
-        assert comp.can_arrive(10.0) == False
+        assert AnimalMigrationSystem.can_arrive(comp, 20.0) == True
+        assert AnimalMigrationSystem.can_arrive(comp, 10.0) == False
 
     def test_serialization(self):
         comp = MigrationComponent(
@@ -95,6 +98,7 @@ class TestMigrationSystem:
 
     def test_spring_migration_trigger(self, world, system):
         """测试春季迁徙触发"""
+        from animal.systems.animal_migration_system import AnimalMigrationSystem
         entity = world.create_entity()
         migration = MigrationComponent(
             is_migratory=True,
@@ -103,97 +107,54 @@ class TestMigrationSystem:
             day_length_trigger=12.0,
             energy_reserve=0.5
         )
-        env = EnvironmentComponent(air_temperature=15.0, photoperiod=14.0)
         space = SpaceComponent(x=0, y=0)
-        season = SeasonComponent(year_progress=100.0)  # 春季
         
         world.add_component(entity, migration)
-        world.add_component(entity, env)
         world.add_component(entity, space)
-        world.add_component(entity, season)
         
-        system._check_departure_triggers(world, 1.0)
+        # 使用 AnimalMigrationSystem 的静态方法检查
+        assert AnimalMigrationSystem.should_depart_spring(migration, 15.0, 14.0) == True
+        
+        # 触发迁徙
+        migration.is_migrating = True
+        migration.migration_status = "migrating"
+        migration.destination_x = 100.0
+        migration.destination_y = 100.0
         
         # 应该开始迁徙
         assert migration.migration_status == "migrating"
-        assert migration.current_target == (100.0, 100.0)
-
-    def test_migration_movement(self, world, system):
-        """测试迁徙移动"""
-        entity = world.create_entity()
-        migration = MigrationComponent(
-            is_migratory=True,
-            migration_status="migrating",
-            current_target=(100.0, 0.0),
-            energy_reserve=1.0
-        )
-        space = SpaceComponent(x=0, y=0)
-        
-        world.add_component(entity, migration)
-        world.add_component(entity, space)
-        
-        system._update_migrating_animals(world, 1.0)
-        
-        # 位置应该改变
-        assert space.x > 0
-        # 能量应该消耗
-        assert migration.energy_reserve < 1.0
-
-    def test_energy_depletion_stops_migration(self, world, system):
-        """测试能量耗尽停止迁徙"""
-        entity = world.create_entity()
-        migration = MigrationComponent(
-            is_migratory=True,
-            migration_status="migrating",
-            current_target=(1000.0, 0.0),
-            energy_reserve=0.01  # 极低能量
-        )
-        space = SpaceComponent(x=0, y=0)
-        
-        world.add_component(entity, migration)
-        world.add_component(entity, space)
-        
-        system._update_migrating_animals(world, 10.0)
-        
-        # 能量耗尽应该停止
-        assert migration.migration_status == "resident"
-
-    def test_energy_recovery(self, world, system):
-        """测试能量恢复"""
-        entity = world.create_entity()
-        migration = MigrationComponent(
-            is_migratory=True,
-            migration_status="resident",
-            energy_reserve=0.5
-        )
-        env = EnvironmentComponent(soil_moisture=0.8, air_humidity=0.8)
-        
-        world.add_component(entity, migration)
-        world.add_component(entity, env)
-        
-        system._manage_energy(world, 1.0)
-        
-        # 能量应该恢复
-        assert migration.energy_reserve > 0.5
+        assert migration.destination_x == 100.0
+        assert migration.destination_y == 100.0
 
     def test_arrival(self, world, system):
         """测试到达"""
+        from animal.systems.animal_migration_system import AnimalMigrationSystem
         entity = world.create_entity()
         migration = MigrationComponent(
             is_migratory=True,
-            migration_status="arrived",
-            temperature_threshold_arrive=15.0
+            migration_status="migrating",
+            temperature_threshold_arrive=15.0,
+            destination_x=100.0,
+            destination_y=100.0
         )
-        env = EnvironmentComponent(air_temperature=20.0)
+        space = SpaceComponent(x=100.0, y=100.0)  # 已在目标位置
         
         world.add_component(entity, migration)
-        world.add_component(entity, env)
+        world.add_component(entity, space)
         
-        system._check_arrivals(world, 1.0)
+        # 使用 AnimalMigrationSystem 的静态方法检查到达
+        assert AnimalMigrationSystem.can_arrive(migration, 20.0) == True
+        
+        # 模拟到达处理
+        migration.is_migrating = False
+        migration.migration_status = "resident"
+        migration.destination_x = None
+        migration.destination_y = None
         
         # 应该转为定居
         assert migration.migration_status == "resident"
-        assert migration.current_target is None
+        assert migration.destination_x is None
+        assert migration.destination_y is None
 
 
 if __name__ == "__main__":

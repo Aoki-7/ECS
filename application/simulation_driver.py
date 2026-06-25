@@ -66,27 +66,18 @@ class SimulationDriver:
         from animal.components.animal_component import AnimalComponent
         from plant.components.plant_component import PlantComponent
 
+        # 使用 get_components 批量查询，避免 O(n) 遍历
+        humans = sum(1 for _ in self.world.get_components(HumanComponent))
+        animals = sum(1 for _ in self.world.get_components(AnimalComponent))
+        plants = sum(1 for _ in self.world.get_components(PlantComponent))
+
         stats = {
             'step': self.step_count,
             'entities': len(self.world.entities),
-            'humans': 0,
-            'animals': 0,
-            'plants': 0,
+            'humans': humans,
+            'animals': animals,
+            'plants': plants,
         }
-
-        for entity in self.world.entities:
-            # 防御：entity 可能是 int 而不是 Entity 对象
-            if isinstance(entity, int):
-                entity_id = entity
-            else:
-                entity_id = entity.id
-            
-            if self.world.get_component(entity_id, HumanComponent):
-                stats['humans'] += 1
-            elif self.world.get_component(entity_id, AnimalComponent):
-                stats['animals'] += 1
-            elif self.world.get_component(entity_id, PlantComponent):
-                stats['plants'] += 1
 
         self._stats = stats
         return stats

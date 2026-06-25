@@ -57,26 +57,6 @@ class MigrationComponent(Component):
     current_target: tuple = None
     migration_progress: float = 0.0
     
-    def should_depart_spring(self, temperature: float, day_length: float) -> bool:
-        """春季出发条件"""
-        if not self.is_migratory:
-            return False
-        return (temperature >= self.temperature_threshold_depart and 
-                day_length >= self.day_length_trigger and
-                self.energy_reserve >= 0.3)
-    
-    def should_depart_autumn(self, temperature: float, day_length: float) -> bool:
-        """秋季出发条件"""
-        if not self.is_migratory:
-            return False
-        return (temperature < self.temperature_threshold_depart and 
-                day_length < self.day_length_trigger and
-                self.energy_reserve >= 0.3)
-    
-    def can_arrive(self, temperature: float) -> bool:
-        """到达条件"""
-        return temperature >= self.temperature_threshold_arrive
-    
     def to_dict(self) -> dict:
         """序列化"""
         return {

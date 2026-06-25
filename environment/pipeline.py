@@ -46,7 +46,7 @@
     4. 若需要新的 world-level 组件，在 build() 中 add_component
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any, Optional
 
 from core.system import System
 from core.world import World

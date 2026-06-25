@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class LightReceiverComponent(Component):
 
     # ===

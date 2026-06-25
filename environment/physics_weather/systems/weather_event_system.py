@@ -83,7 +83,7 @@ class WeatherEventSystem(System):
         if weather is None:
             return
 
-        current_time = world.get_time().total_hours
+        current_time = (world.get_time().total_hours if world.get_time() else 0.0)
 
         snapshot = self._take_snapshot(weather)
 

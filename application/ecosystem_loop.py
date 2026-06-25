@@ -244,11 +244,13 @@ class EcosystemLoop:
             # 强制推进到成年期，避免初始种群全是幼体
             from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
             lifecycle = self.world.get_component(entity, LifeCycleComponent)
-            lifecycle.set_stage(LifeCycleComponent.MATURE)
+            if lifecycle is not None:
+                lifecycle.set_stage(LifeCycleComponent.MATURE)
             # 设置足够能量
             from biology.lifecycle.components.energy_component import EnergyComponent
             energy = self.world.get_component(entity, EnergyComponent)
-            energy.value = 80.0
+            if energy is not None:
+                energy.value = 80.0
 
         # 4. 创建食肉动物
         for i in range(carnivore_count):
@@ -261,11 +263,13 @@ class EcosystemLoop:
             # 强制推进到成年期
             from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
             lifecycle = self.world.get_component(entity, LifeCycleComponent)
-            lifecycle.set_stage(LifeCycleComponent.MATURE)
+            if lifecycle is not None:
+                lifecycle.set_stage(LifeCycleComponent.MATURE)
             # 设置足够能量
             from biology.lifecycle.components.energy_component import EnergyComponent
             energy = self.world.get_component(entity, EnergyComponent)
-            energy.value = 80.0
+            if energy is not None:
+                energy.value = 80.0
 
         logger.info("[Init] 初始种群创建完成")
 

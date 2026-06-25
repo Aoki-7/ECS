@@ -20,7 +20,7 @@ from typing import Dict, List
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class GroundwaterComponent(Component):
     """
     地下水组件

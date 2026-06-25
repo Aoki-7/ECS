@@ -223,7 +223,8 @@ class NeedsSystem(System):
             self._trigger_critical_event(world, entity, top_need, top_score)
         # 警告状态
         elif top_score >= self.WARNING_THRESHOLD:
-            logger.debug(f"[NeedsSystem] 实体 {entity.id} {top_need} 警告({top_score:.1f})")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"[NeedsSystem] 实体 {entity.id} {top_need} 警告({top_score:.1f})")
 
     def _trigger_critical_event(self, world: World, entity: Entity, need_type: str, score: float) -> None:
         """触发紧急需求事件"""

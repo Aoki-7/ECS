@@ -46,7 +46,9 @@ class DeathArchiveSystem(System):
     def on_add(self, world: World):
         """系统注册时自动挂载 DeathArchiveComponent 到 world_entity"""
         if world.get_world_component(DeathArchiveComponent) is None:
-            world.get_world_entity().add_component(DeathArchiveComponent())
+            we = world.get_world_entity()
+            if we is not None:
+                world.add_component(we, DeathArchiveComponent())
 
     def on_remove(self, world: World):
         """系统移除时清理 DeathArchiveComponent"""

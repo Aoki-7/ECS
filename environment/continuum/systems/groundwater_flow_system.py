@@ -116,26 +116,28 @@ class GroundwaterFlowSystem(System):
 
     def _process_groundwater_flow(self, world: World, grid: Dict, heads: Dict,
                                   dt: float, bounds: Optional[Tuple]) -> None:
-        """地下水流动 — 达西定律"""
+        """地下水流动 — 达西定律 — 优化版：先缓存渗透系数"""
         n_nei = len(self._neighbor_offsets)
-        net_fluxes = {key: 0.0 for key in grid.keys()}
-
+        
+        # 缓存渗透系数和地下水组件，避免循环内重复get_component
+        k_cache = {}
+        groundwater_cache = {}
         for key, eid in grid.items():
             groundwater = world.get_component(eid, GroundwaterComponent)
             soil = world.get_component(eid, SoilComponent)
-            if groundwater is None:
-                continue
+            if groundwater is not None:
+                k_cache[key] = self._get_hydraulic_conductivity(soil)
+                groundwater_cache[key] = groundwater
 
-            # 渗透系数 (基于土壤质地)
-            k = self._get_hydraulic_conductivity(soil)
-
+        # 计算净通量
+        net_fluxes = {key: 0.0 for key in groundwater_cache.keys()}
+        
+        for key in groundwater_cache:
+            k = k_cache[key]
+            
             for dx, dy in self._neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
-                if nk is None or nk not in grid:
-                    continue
-
-                n_groundwater = world.get_component(grid[nk], GroundwaterComponent)
-                if n_groundwater is None:
+                if nk is None or nk not in groundwater_cache:
                     continue
 
                 # 达西定律: 流速 = K * (H1 - H2) / L
@@ -143,10 +145,8 @@ class GroundwaterFlowSystem(System):
                 dist = math.sqrt(dx*dx + dy*dy)
 
                 # 有效扩散系数
-                n_soil = world.get_component(grid[nk], SoilComponent)
-                n_k = self._get_hydraulic_conductivity(n_soil)
+                n_k = k_cache[nk]
                 avg_k = (k + n_k) / 2.0
-
                 eff_diff = avg_k / max(dist, 0.1)
 
                 flux = compute_diffusion_flux(
@@ -159,9 +159,7 @@ class GroundwaterFlowSystem(System):
 
         # 应用净通量
         for key, net_flux in net_fluxes.items():
-            groundwater = world.get_component(grid[key], GroundwaterComponent)
-            if groundwater is None:
-                continue
+            groundwater = groundwater_cache[key]
             groundwater.water_table += net_flux / n_nei
 
     def _get_hydraulic_conductivity(self, soil: Optional[SoilComponent]) -> float:

@@ -33,6 +33,10 @@ class PlanningDecisionMaker:
             self.interrupt_action(action)
             return True
         
+        # 探索状态下允许规划（避免EXPLORE错误）
+        if action.current_action == ActionType.EXPLORE:
+            return True
+        
         # 睡眠中检查是否需中断
         if action.current_action == ActionType.SLEEP:
             if needs and (needs.hunger > 85 or needs.thirst > 85):

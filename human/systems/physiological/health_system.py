@@ -11,6 +11,12 @@
 
 from core.system import System
 from core.world import World
+from core.constants import (
+    DEFAULT_MAX_HEALTH,
+    DEFAULT_MAX_FATIGUE,
+    DEFAULT_MAX_HUNGER,
+    DEFAULT_MAX_THIRST,
+)
 
 from biology.components.health_status_component import HealthStatusComponent
 

@@ -74,7 +74,10 @@ class MaterialScanner:
 
     def consume_materials(self, inventory: InventoryComponent, recipe: Dict[str, int]) -> None:
         """消耗材料"""
-        for mat_name, amount in recipe.items():
+        to_delete = []
+        for mat_name, amount in list(recipe.items()):
             inventory.items[mat_name] = inventory.items.get(mat_name, 0) - amount
             if inventory.items[mat_name] <= 0:
-                del inventory.items[mat_name]
+                to_delete.append(mat_name)
+        for mat_name in to_delete:
+            del inventory.items[mat_name]

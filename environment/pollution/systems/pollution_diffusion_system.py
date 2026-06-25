@@ -95,47 +95,42 @@ class PollutionDiffusionSystem(System):
                      bounds: Optional[Tuple]) -> None:
         """空气污染物扩散 — 使用通用扩散内核
         
-        注意: 此实现使用通量累加方式，确保守恒:
-        - 源减少 = 目标增加 (总污染量守恒)
+        优化：先缓存所有污染值，避免循环内重复get_component
         """
         n_nei = len(self._neighbor_offsets)
         
-        # 计算每个单元格的净通量 (流出为正，流入为负)
-        net_fluxes = {key: 0.0 for key in grid.keys()}
-        
+        # 缓存污染值和环境数据，避免循环内重复查询
+        pollution_cache = {}
+        env_cache = {}
         for key, eid in grid.items():
             pollution = world.get_component(eid, PollutionComponent)
             env = world.get_component(eid, EnvironmentComponent)
-            if pollution is None:
-                continue
+            if pollution is not None:
+                pollution_cache[key] = pollution.air_pollution
+                env_cache[key] = env.wind_speed if env else 1.0
 
-            wind_factor = env.wind_speed if env else 1.0
+        # 计算每个单元格的净通量
+        net_fluxes = {key: 0.0 for key in pollution_cache.keys()}
+        
+        for key in pollution_cache:
+            c_self = pollution_cache[key]
+            wind_factor = env_cache[key]
             eff_diff = self.AIR_DIFFUSION_RATE * wind_factor
 
             for dx, dy in self._neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
-                if nk is None or nk not in grid:
+                if nk is None or nk not in pollution_cache:
                     continue
 
-                n_pollution = world.get_component(grid[nk], PollutionComponent)
-                if n_pollution is None:
-                    continue
+                c_neighbor = pollution_cache[nk]
+                flux = compute_diffusion_flux(c_self, c_neighbor, eff_diff, dt, self.MAX_CHANGE)
+                net_fluxes[key] += flux
+                net_fluxes[nk] -= flux
 
-                # 计算从 key -> nk 的通量
-                flux = compute_diffusion_flux(
-                    pollution.air_pollution, n_pollution.air_pollution,
-                    eff_diff, dt, self.MAX_CHANGE
-                )
-                
-                # compute_diffusion_flux(self, neighbor) 返回从 neighbor -> self 的通量
-                # flux > 0: neighbor 向 self 流入 (self 增加, neighbor 减少)
-                # flux < 0: self 向 neighbor 流出 (self 减少, neighbor 增加)
-                net_fluxes[key] += flux   # key 获得 flux (flux > 0) 或损失 |flux| (flux < 0)
-                net_fluxes[nk] -= flux    # nk 损失 flux (flux > 0) 或获得 |flux| (flux < 0)
-
-        # 应用净通量 (不再除以 n_nei，因为 net_fluxes 已经累加了所有邻居的通量)
+        # 应用净通量
         for key, net_flux in net_fluxes.items():
-            pollution = world.get_component(grid[key], PollutionComponent)
+            eid = grid[key]
+            pollution = world.get_component(eid, PollutionComponent)
             if pollution is None:
                 continue
             pollution.air_pollution += net_flux
@@ -143,34 +138,35 @@ class PollutionDiffusionSystem(System):
 
     def _diffuse_water(self, world: World, cache: Dict, grid: Dict, dt: float,
                        bounds: Optional[Tuple]) -> None:
-        """水污染物扩散"""
+        """水污染物扩散 — 优化版：先缓存污染值"""
         n_nei = len(self._neighbor_offsets)
-        fluxes = {}
-
+        
+        # 缓存污染值
+        pollution_cache = {}
         for key, eid in grid.items():
             pollution = world.get_component(eid, PollutionComponent)
-            if pollution is None or pollution.water_pollution <= 0:
-                continue
+            if pollution is not None:
+                pollution_cache[key] = pollution.water_pollution
 
-            net_flux = 0.0
+        # 计算净通量
+        net_fluxes = {key: 0.0 for key in pollution_cache.keys()}
+        
+        for key in pollution_cache:
+            c_self = pollution_cache[key]
             for dx, dy in self._neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
-                if nk is None or nk not in grid:
+                if nk is None or nk not in pollution_cache:
                     continue
 
-                n_pollution = world.get_component(grid[nk], PollutionComponent)
-                if n_pollution is None:
-                    continue
+                c_neighbor = pollution_cache[nk]
+                flux = compute_diffusion_flux(c_self, c_neighbor, self.WATER_DIFFUSION_RATE, dt, self.MAX_CHANGE)
+                net_fluxes[key] += flux
+                net_fluxes[nk] -= flux
 
-                net_flux += compute_diffusion_flux(
-                    pollution.water_pollution, n_pollution.water_pollution,
-                    self.WATER_DIFFUSION_RATE, dt, self.MAX_CHANGE
-                )
-
-            fluxes[key] = net_flux
-
-        for key, net_flux in fluxes.items():
-            pollution = world.get_component(grid[key], PollutionComponent)
+        # 应用净通量
+        for key, net_flux in net_fluxes.items():
+            eid = grid[key]
+            pollution = world.get_component(eid, PollutionComponent)
             if pollution is None:
                 continue
             pollution.water_pollution += net_flux / n_nei
@@ -178,58 +174,64 @@ class PollutionDiffusionSystem(System):
 
     def _diffuse_soil(self, world: World, cache: Dict, grid: Dict, dt: float,
                       bounds: Optional[Tuple]) -> None:
-        """土壤污染物扩散"""
+        """土壤污染物扩散 — 优化版：先缓存污染值"""
         n_nei = len(self._neighbor_offsets)
-        fluxes = {}
-
+        
+        # 缓存污染值
+        pollution_cache = {}
         for key, eid in grid.items():
             pollution = world.get_component(eid, PollutionComponent)
-            if pollution is None or pollution.soil_pollution <= 0:
-                continue
+            if pollution is not None and pollution.soil_pollution > 0:
+                pollution_cache[key] = pollution.soil_pollution
 
-            net_flux = 0.0
+        # 计算净通量
+        net_fluxes = {key: 0.0 for key in pollution_cache.keys()}
+        
+        for key in pollution_cache:
+            c_self = pollution_cache[key]
             for dx, dy in self._neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
-                if nk is None or nk not in grid:
+                if nk is None or nk not in pollution_cache:
                     continue
 
-                n_pollution = world.get_component(grid[nk], PollutionComponent)
-                if n_pollution is None:
-                    continue
+                c_neighbor = pollution_cache[nk]
+                flux = compute_diffusion_flux(c_self, c_neighbor, self.SOIL_DIFFUSION_RATE, dt, self.MAX_CHANGE)
+                net_fluxes[key] += flux
+                net_fluxes[nk] -= flux
 
-                net_flux += compute_diffusion_flux(
-                    pollution.soil_pollution, n_pollution.soil_pollution,
-                    self.SOIL_DIFFUSION_RATE, dt, self.MAX_CHANGE
-                )
-
-            fluxes[key] = net_flux
-
-        for key, net_flux in fluxes.items():
-            pollution = world.get_component(grid[key], PollutionComponent)
+        # 应用净通量
+        for key, net_flux in net_fluxes.items():
+            eid = grid[key]
+            pollution = world.get_component(eid, PollutionComponent)
             if pollution is None:
                 continue
             pollution.soil_pollution += net_flux / n_nei
             pollution.soil_pollution = clamp(pollution.soil_pollution, 0.0, 1.0)
 
     def _natural_decay(self, world: World, cache: Dict, dt: float) -> None:
-        """污染自然降解"""
+        """污染自然降解 — 优化版：批量处理"""
+        decay = self.NATURAL_DECAY * dt
+        
         for key, eid in cache.items():
             pollution = world.get_component(eid, PollutionComponent)
             if pollution is None:
                 continue
 
-            decay = self.NATURAL_DECAY * dt
             pollution.air_pollution = max(0.0, pollution.air_pollution - decay)
             pollution.water_pollution = max(0.0, pollution.water_pollution - decay)
             pollution.soil_pollution = max(0.0, pollution.soil_pollution - decay)
 
             # 污染物浓度降解
-            for pollutant_type in list(pollution.pollutants.keys()):
-                pollution.pollutants[pollutant_type] = max(
-                    0.0, pollution.pollutants[pollutant_type] - decay * 10
-                )
-                if pollution.pollutants[pollutant_type] <= 0:
-                    del pollution.pollutants[pollutant_type]
+            to_remove = []
+            for pollutant_type, value in pollution.pollutants.items():
+                new_value = max(0.0, value - decay * 10)
+                if new_value <= 0:
+                    to_remove.append(pollutant_type)
+                else:
+                    pollution.pollutants[pollutant_type] = new_value
+            
+            for pollutant_type in to_remove:
+                del pollution.pollutants[pollutant_type]
 
     def _build_grid(self, world: World) -> Dict[Tuple[int, int], Entity]:
         """构建网格索引"""

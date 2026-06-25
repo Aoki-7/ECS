@@ -68,7 +68,7 @@ class SaveLoadSystem(System):
         if we:
             comp = world.get_component(we, SaveSlotComponent)
             if comp:
-                we.remove_component(SaveSlotComponent)
+                world.remove_component(we, SaveSlotComponent)
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """检查是否需要自动存档"""
@@ -110,7 +110,7 @@ class SaveLoadSystem(System):
         slot.slot_name = slot_name
         slot.save_time = datetime.now().isoformat()
         slot.tick_count = world.tick_count
-        slot.entity_count = len(world.entities)
+        slot.entity_count = len(list(world.get_all_entities()))
 
         # 将元数据也写入存档
         data["_meta"] = {
@@ -153,7 +153,13 @@ class SaveLoadSystem(System):
         slot = world.get_world_component(SaveSlotComponent)
         if slot is None:
             slot = SaveSlotComponent()
-            world.get_world_entity().add_component(slot)
+            world_entity = world.get_world_entity()
+            if world_entity is not None:
+                world.add_component(world_entity, slot)
+            else:
+                world_entity = world.create_entity()
+                world.add_component(world_entity, slot)
+                world.set_world_entity(world_entity)
         slot.slot_name = meta.get("slot_name", slot_name)
         slot.save_time = meta.get("save_time")
         slot.tick_count = meta.get("tick_count", 0)

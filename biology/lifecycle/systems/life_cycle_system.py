@@ -28,6 +28,16 @@ class LifeCycleSystem(System):
         if life.stage != LifeCycleComponent.DEAD:
             life.current_age += dt
 
+    @staticmethod
+    def is_reproductive_age(life: LifeCycleComponent) -> bool:
+        """判断是否为生育年龄"""
+        return life.min_reproductive_age <= life.current_age <= life.max_reproductive_age
+
+    @staticmethod
+    def is_seed(life: LifeCycleComponent) -> bool:
+        """是否为种子阶段"""
+        return life.stage == LifeCycleComponent.SEED
+
     def _check_stage_advance(self, life: LifeCycleComponent):
         """检查阶段推进"""
         if life.stage == LifeCycleComponent.DEAD:

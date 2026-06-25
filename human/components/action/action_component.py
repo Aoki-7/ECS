@@ -44,6 +44,8 @@ class ActionType(Enum):
     PLANT = auto()
 
     # 战斗
+    EXPLORE = auto()
+
     ATTACK = auto()
     DEFEND = auto()
     FLEE = auto()
@@ -53,6 +55,7 @@ class ActionType(Enum):
     INTERACT = auto()
     TALK = auto()
     SOCIALIZE = auto()
+    PAIR = auto()
     TRADE = auto()
 
     # 建造
@@ -88,6 +91,8 @@ class ActionComponent(Component):
     action_queue: list[ActionType] = field(default_factory=list)
     target_entity: int | None = None
     target_pos: tuple[int, int] | None = None
+    target_x: int | None = None
+    target_y: int | None = None
     progress: float = 0.0
     _path: list = field(default_factory=list, repr=False)
     _path_index: int = field(default=0, repr=False)

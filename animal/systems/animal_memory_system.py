@@ -122,5 +122,5 @@ class AnimalMemorySystem(System):
         before = len(memory.memories)
         memory.memories = [m for m in memory.memories if m.strength > 0.05]
         after = len(memory.memories)
-        if before != after:
+        if before != after and logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"[Memory] 清理 {before - after} 条遗忘记忆")

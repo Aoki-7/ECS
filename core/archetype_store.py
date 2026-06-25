@@ -28,6 +28,19 @@ from core.component import Component
 logger = logging.getLogger(__name__)
 
 
+def _get_entity_id(entity) -> int:
+    """
+    统一提取实体 ID，兼容 Entity 对象和 int 类型。
+    
+    Args:
+        entity: Entity 实例或 int 类型的 entity_id
+        
+    Returns:
+        int: 实体 ID
+    """
+    return entity.id if hasattr(entity, 'id') else entity
+
+
 def _hash_types(component_types: Tuple[Type[Component], ...]) -> int:
     """为组件类型组合生成唯一哈希"""
     return hash(tuple(sorted(id(t) for t in component_types)))
@@ -66,11 +79,12 @@ class Archetype:
         }
         self.entity_index: Dict[int, int] = {}  # entity_id -> row_index
 
-    def add_entity(self, entity: Entity, components: Dict[Type[Component], Component]):
+    def add_entity(self, entity, components: Dict[Type[Component], Component]):
         """添加实体及其组件到 Archetype"""
         row_idx = len(self.entities)
         self.entities.append(entity)
-        self.entity_index[entity.id] = row_idx
+        entity_id = _get_entity_id(entity)
+        self.entity_index[entity_id] = row_idx
 
         for comp_type in self.component_types:
             comp = components.get(comp_type)
@@ -94,7 +108,7 @@ class Archetype:
         if row_idx != last_idx:
             last_entity = self.entities[last_idx]
             self.entities[row_idx] = last_entity
-            self.entity_index[last_entity.id] = row_idx
+            self.entity_index[_get_entity_id(last_entity)] = row_idx
 
             for comp_type in self.component_types:
                 self.columns[comp_type][row_idx] = self.columns[comp_type][last_idx]
@@ -150,14 +164,14 @@ class ArchetypeStore:
 
     # === 组件管理 ===
 
-    def add_component(self, entity: Entity, component: Component):
+    def add_component(self, entity, component: Component):
         """
         为实体添加组件
 
         实体会从当前 Archetype 迁移到新的 Archetype。
         """
         comp_type = type(component)
-        entity_id = entity.id
+        entity_id = _get_entity_id(entity)
 
         # 获取当前 Archetype
         old_arch_id = self._entity_archetype.get(entity_id)
@@ -190,13 +204,14 @@ class ArchetypeStore:
         # 使查询缓存失效
         self._invalidate_cache()
 
-    def remove_component(self, entity: Entity, component_type: Type[Component]):
+    def remove_component(self, entity, component_type: Type[Component]):
         """
         从实体移除组件
 
         实体会从当前 Archetype 迁移到新的 Archetype。
         """
-        entity_id = entity.id
+        # 兼容：entity 可能是 int（entity_id）
+        entity_id = _get_entity_id(entity)
         old_arch_id = self._entity_archetype.get(entity_id)
 
         if old_arch_id is None:
@@ -232,10 +247,10 @@ class ArchetypeStore:
         self._migrate_entity(entity, old_arch_id, new_arch_id, None)
         self._invalidate_cache()
 
-    def _migrate_entity(self, entity: Entity, old_arch_id: Optional[int],
+    def _migrate_entity(self, entity, old_arch_id: Optional[int],
                         new_arch_id: int, new_component: Optional[Component]):
         """将实体从旧 Archetype 迁移到新 Archetype"""
-        entity_id = entity.id
+        entity_id = _get_entity_id(entity)
         components: Dict[Type[Component], Component] = {}
 
         # 从旧 Archetype 收集组件
@@ -255,7 +270,7 @@ class ArchetypeStore:
 
         # 添加到新 Archetype
         new_arch = self._archetypes[new_arch_id]
-        new_arch.add_entity(entity, components)
+        new_arch.add_entity(entity_id, components)
         self._entity_archetype[entity_id] = new_arch_id
 
         if old_arch_id is None:
@@ -263,14 +278,25 @@ class ArchetypeStore:
 
     # === 查询 ===
 
-    def get_component(self, entity: Entity, component_type: Type[Component]) -> Optional[Component]:
+    def get_component(self, entity, component_type: Type[Component]) -> Optional[Component]:
         """获取实体的指定组件"""
-        arch_id = self._entity_archetype.get(entity.id)
+        entity_id = _get_entity_id(entity)
+        arch_id = self._entity_archetype.get(entity_id)
         if arch_id is None:
             return None
 
         arch = self._archetypes[arch_id]
-        return arch.get_component(entity.id, component_type)
+        return arch.get_component(entity_id, component_type)
+
+    def query_entities(self, component_types: tuple) -> list:
+        """查询具有指定组件组合的实体ID列表"""
+        result = []
+        for archetype in list(self._archetypes.values()):
+            if _is_subset(component_types, archetype.component_types):
+                for entity in archetype.entities:
+                    entity_id = _get_entity_id(entity)
+                    result.append(entity_id)
+        return result
 
     def query(self, *component_types: Type[Component]) -> Iterator[Tuple[Entity, ...]]:
         """
@@ -313,9 +339,9 @@ class ArchetypeStore:
 
     # === 实体生命周期 ===
 
-    def remove_entity(self, entity: Entity):
+    def remove_entity(self, entity):
         """移除实体及其所有组件"""
-        entity_id = entity.id
+        entity_id = _get_entity_id(entity)
         arch_id = self._entity_archetype.get(entity_id)
 
         if arch_id is None:

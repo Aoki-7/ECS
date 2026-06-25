@@ -14,7 +14,7 @@ from typing import Dict, Callable, Optional
 import random
 
 
-@dataclass
+@dataclass(slots=True)
 class Gene:
     """
     基因原子

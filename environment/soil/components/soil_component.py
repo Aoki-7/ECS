@@ -18,7 +18,7 @@ class SoilType:
     CHALK = "chalk"         # 白垩土
 
 
-@dataclass
+@dataclass(slots=True)
 class SoilComponent(Component):
     """
     土壤组件

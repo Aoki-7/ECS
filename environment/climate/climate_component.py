@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from core.component import Component
 
 
-@dataclass
+@dataclass(slots=True)
 class ClimateComponent(Component):
     """
     长期气候趋势数据

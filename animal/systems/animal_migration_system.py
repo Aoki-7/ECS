@@ -122,7 +122,8 @@ class AnimalMigrationSystem(System):
             self._migration_paths[entity.id] = smoothed
             self._path_index[entity.id] = 0
             self._migration_states[entity.id] = "migrating"
-            logger.debug(f"[Migration] E{entity.id} 路径规划完成，共 {len(smoothed)} 个路径点")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"[Migration] E{entity.id} 路径规划完成，共 {len(smoothed)} 个路径点")
         else:
             # 路径规划失败，尝试最近可达点
             nearest = self._pathfinding.find_nearest_reachable(
@@ -138,7 +139,8 @@ class AnimalMigrationSystem(System):
             else:
                 # 完全无法到达，放弃迁徙
                 self._migration_states[entity.id] = "settled"
-                logger.debug(f"[Migration] E{entity.id} 无法找到可达路径，放弃迁徙")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[Migration] E{entity.id} 无法找到可达路径，放弃迁徙")
 
         # 群体领袖通知成员
         social = world.get_component(entity, AnimalSocialComponent)
@@ -226,23 +228,67 @@ class AnimalMigrationSystem(System):
     def _update_migration_component(self, world: World, entity, migration: MigrationComponent,
                                     animal: AnimalComponent, space: SpaceComponent, dt: float) -> None:
         """更新新迁徙组件状态"""
-        if migration.migration_status == "migrating" and migration.current_target:
-            # 同步动物状态为移动（如果支持）
-            if hasattr(animal, 'current_action'):
-                animal.current_action = "move"
-            
-            # 计算移动方向
-            target_x, target_y = migration.current_target
-            dx = target_x - space.x
-            dy = target_y - space.y
-            distance = (dx ** 2 + dy ** 2) ** 0.5
-            
-            if distance > 0:
-                # 设置动物移动方向（如果支持）
-                if hasattr(animal, 'movement_direction'):
-                    animal.movement_direction = (dx / distance, dy / distance)
-                if hasattr(animal, 'movement_speed'):
-                    animal.movement_speed = migration.migration_speed
+        # 使用静态方法替代组件上的业务方法
+        temperature = 15.0  # 简化版，实际应从环境系统获取
+        day_length = 12.0
+
+        if migration.is_migrating:
+            # 检查是否到达
+            if AnimalMigrationSystem.can_arrive(migration, temperature):
+                migration.is_migrating = False
+                migration.migration_status = "arrived"
+                logger.info(f"[Migration] E{entity.id} 到达迁徙目的地")
+        else:
+            # 检查是否出发
+            if AnimalMigrationSystem.should_depart_spring(migration, temperature, day_length):
+                migration.is_migrating = True
+                migration.migration_status = "migrating"
+                migration.migration_season = "spring"
+                logger.info(f"[Migration] E{entity.id} 春季迁徙开始")
+            elif AnimalMigrationSystem.should_depart_autumn(migration, temperature, day_length):
+                migration.is_migrating = True
+                migration.migration_status = "migrating"
+                migration.migration_season = "autumn"
+                logger.info(f"[Migration] E{entity.id} 秋季迁徙开始")
+
+        # 更新迁徙进度
+        if migration.is_migrating and migration.destination_x is not None:
+            dx = migration.destination_x - space.x
+            dy = migration.destination_y - space.y
+            dist = math.hypot(dx, dy)
+            if dist > 0.1:
+                move_dist = min(migration.migration_speed * dt, dist)
+                space.x += (dx / dist) * move_dist
+                space.y += (dy / dist) * move_dist
+                migration.distance_traveled += move_dist
+            else:
+                # 到达目标
+                migration.is_migrating = False
+                migration.migration_status = "arrived"
+                logger.info(f"[Migration] E{entity.id} 到达目标位置")
+
+    @staticmethod
+    def should_depart_spring(migration: MigrationComponent, temperature: float, day_length: float) -> bool:
+        """春季出发条件"""
+        if not migration.is_migratory:
+            return False
+        return (temperature >= migration.temperature_threshold_depart and
+                day_length >= migration.day_length_trigger and
+                migration.energy_reserve >= 0.3)
+
+    @staticmethod
+    def should_depart_autumn(migration: MigrationComponent, temperature: float, day_length: float) -> bool:
+        """秋季出发条件"""
+        if not migration.is_migratory:
+            return False
+        return (temperature < migration.temperature_threshold_depart and
+                day_length < migration.day_length_trigger and
+                migration.energy_reserve >= 0.3)
+
+    @staticmethod
+    def can_arrive(migration: MigrationComponent, temperature: float) -> bool:
+        """到达条件"""
+        return temperature >= migration.temperature_threshold_arrive
 
     def _notify_group_members(
         self, world: World, leader_entity, group_id: int, target
@@ -251,4 +297,5 @@ class AnimalMigrationSystem(System):
         for entity, social in world.get_components(AnimalSocialComponent):
             if social.group_id == group_id and entity.id != leader_entity.id:
                 self._migration_states[entity.id] = "preparing"
-                logger.debug(f"[Migration] E{entity.id} 响应领袖迁徙号召")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[Migration] E{entity.id} 响应领袖迁徙号召")

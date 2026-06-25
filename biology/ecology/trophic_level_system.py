@@ -81,7 +81,8 @@ class TrophicLevelSystem(System):
             pyramid = " → ".join(
                 f"L{k}:{v:.1f}" for k, v in sorted(trophic_biomass.items())
             )
-            logger.debug(f"[Trophic] 能量金字塔: {pyramid}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"[Trophic] 能量金字塔: {pyramid}")
 
     def _calculate_trophic_biomass(self, world: World) -> dict[int, float]:
         """计算各营养级的总生物量"""
