@@ -14,7 +14,6 @@ from typing import Dict, List
 
 from core.system import System
 from core.world import World
-from core.event_bus import EventBus
 from environment.environment_component import EnvironmentComponent
 
 logger = logging.getLogger(__name__)
@@ -57,6 +56,6 @@ class FloodDetectionSystem(System):
         logger.warning(f"[FloodDetection] 洪水在 ({disaster['x']}, {disaster['y']}) 爆发！")
 
         try:
-            EventBus.get_instance().publish("disaster_flood_start", disaster)
+            world.event_bus.publish("disaster_flood_start", disaster)
         except Exception:
             pass

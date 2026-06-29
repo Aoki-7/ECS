@@ -14,7 +14,6 @@ from typing import Dict, List, Optional
 
 from core.system import System
 from core.world import World
-from core.event_bus import EventBus
 from environment.environment_component import EnvironmentComponent
 from space.space_component import SpaceComponent
 from plant.components.plant_component import PlantComponent
@@ -71,7 +70,7 @@ class FireDetectionSystem(System):
         logger.warning(f"[FireDetection] 火灾在 ({start_x}, {start_y}) 爆发！")
 
         try:
-            EventBus.get_instance().publish("disaster_fire_start", {
+            world.event_bus.publish("disaster_fire_start", {
                 "x": start_x, "y": start_y,
                 "tick": world.tick_count,
             })

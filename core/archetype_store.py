@@ -58,22 +58,14 @@ class Archetype:
     Archetype = 组件类型的唯一组合
 
     内部使用列式存储：
-    - entities: List[Entity]      # 行：实体列表
+    - entities: List[int]         # 行：实体 ID 列表
     - columns: Dict[Type, List]   # 列：组件数组
-
-    示例：
-        Archetype(HealthComponent, PositionComponent)
-        entities = [E1, E2, E3]
-        columns = {
-            HealthComponent: [H1, H2, H3],
-            PositionComponent: [P1, P2, P3],
-        }
     """
 
     def __init__(self, component_types: Tuple[Type[Component], ...]):
         self.id = _hash_types(component_types)
         self.component_types = component_types
-        self.entities: List[Entity] = []
+        self.entities: List[int] = []
         self.columns: Dict[Type[Component], List[Component]] = {
             t: [] for t in component_types
         }
@@ -201,8 +193,8 @@ class ArchetypeStore:
         # 迁移实体数据
         self._migrate_entity(entity, old_arch_id, new_arch_id, component)
 
-        # 使查询缓存失效
-        self._invalidate_cache()
+        # 使查询缓存精确失效（只清除包含新组件类型的查询）
+        self._invalidate_cache([comp_type])
 
     def remove_component(self, entity, component_type: Type[Component]):
         """
@@ -233,7 +225,7 @@ class ArchetypeStore:
             old_arch.remove_entity(entity_id)
             del self._entity_archetype[entity_id]
             self._stats["entity_count"] -= 1
-            self._invalidate_cache()
+            self._invalidate_cache()  # 实体被移除，全量失效
             return
 
         new_arch_id = _hash_types(new_types)
@@ -245,7 +237,7 @@ class ArchetypeStore:
 
         # 迁移实体（不添加新组件）
         self._migrate_entity(entity, old_arch_id, new_arch_id, None)
-        self._invalidate_cache()
+        self._invalidate_cache([component_type])
 
     def _migrate_entity(self, entity, old_arch_id: Optional[int],
                         new_arch_id: int, new_component: Optional[Component]):
@@ -298,11 +290,12 @@ class ArchetypeStore:
                     result.append(entity_id)
         return result
 
-    def query(self, *component_types: Type[Component]) -> Iterator[Tuple[Entity, ...]]:
+    def query(self, *component_types: Type[Component]) -> Iterator[Tuple[int, list]]:
         """
         查询具有指定组件组合的实体
 
         直接遍历匹配的 Archetype，无需集合交集计算。
+        返回 (entity_id, [comp1, comp2, ...]) 元组。
         """
         cache_key = component_types
 
@@ -330,8 +323,8 @@ class ArchetypeStore:
         # 缓存结果
         self._query_cache[cache_key] = result
 
-    def query_one(self, component_type: Type[Component]) -> Optional[Tuple[Entity, Component]]:
-        """查询单个组件，返回第一个匹配结果"""
+    def query_one(self, component_type: Type[Component]) -> Optional[Tuple[int, Component]]:
+        """查询单个组件，返回第一个匹配结果 (entity_id, component)"""
         try:
             return next(self.query(component_type))
         except StopIteration:
@@ -357,13 +350,25 @@ class ArchetypeStore:
             del self._archetypes[arch_id]
             self._stats["archetype_count"] -= 1
 
-        self._invalidate_cache()
+        self._invalidate_cache()  # 实体被移除，全量失效
 
     # === 缓存管理 ===
 
-    def _invalidate_cache(self):
-        """使查询缓存失效"""
-        self._query_cache.clear()
+    def _invalidate_cache(self, affected_component_types=None):
+        """使查询缓存精确失效
+        
+        Args:
+            affected_component_types: 受影响的组件类型列表。为 None 时全量清除。
+        """
+        if affected_component_types is None:
+            self._query_cache.clear()
+            return
+        
+        affected_set = set(affected_component_types)
+        keys_to_remove = [k for k in self._query_cache.keys() 
+                         if any(t in affected_set for t in k)]
+        for k in keys_to_remove:
+            del self._query_cache[k]
 
     def clear_cache(self):
         """手动清空查询缓存"""

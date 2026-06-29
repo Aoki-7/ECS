@@ -116,8 +116,13 @@ class World:
         """创建新实体"""
         entity = self._entity_manager.create()
 
-        # 发布事件
-        self._event_bus.publish("entity_created", {"entity_id": entity.id}, source="world")
+        # 发布事件到世界事件总线
+        self._event_bus.publish(
+            "entity_created",
+            {"entity_id": entity.id},
+            source="world",
+            timestamp=self.tick_count,
+        )
 
         return entity
 
@@ -140,8 +145,16 @@ class World:
             if ent:
                 self._entity_manager.destroy(ent)
 
-        # 发布事件
-        self._event_bus.publish("entity_destroyed", {"entity_id": entity_id}, source="world")
+        # 清除查询缓存（v3.9 兼容）—— 实体被移除，全量失效
+        self._invalidate_query_cache()
+
+        # 发布事件到世界事件总线
+        self._event_bus.publish(
+            "entity_destroyed",
+            {"entity_id": entity_id},
+            source="world",
+            timestamp=self.tick_count,
+        )
 
     def query_entity(self, entity_id: int) -> Optional[Entity]:
         """根据 ID 查询实体"""
@@ -170,6 +183,9 @@ class World:
         entity_id = _get_entity_id(entity)
         self._archetype_store.add_component(entity_id, component)
 
+        # 清除查询缓存（v3.9 兼容）—— 实体被移除，全量失效
+        self._invalidate_query_cache()
+
         # 发布事件
         self._event_bus.publish(
             "component_added",
@@ -184,6 +200,9 @@ class World:
         
         entity_id = _get_entity_id(entity)
         self._archetype_store.remove_component(entity_id, component_type)
+
+        # 清除查询缓存（v3.9 兼容）—— 实体被移除，全量失效
+        self._invalidate_query_cache()
 
         # 发布事件
         self._event_bus.publish(
@@ -213,23 +232,38 @@ class World:
         if not component_types:
             return
 
-        # 使用 ArchetypeStore 查询
-        entity_ids = self._archetype_store.query_entities(component_types)
+        cache_key = component_types
+        if cache_key in self._query_cache:
+            yield from self._query_cache[cache_key]
+            return
 
-        for entity_id in entity_ids:
+        # 使用 ArchetypeStore.query 获取缓存的原始结果，再转换为 Entity 对象
+        result = []
+        for entity_id, comps in self._archetype_store.query(*component_types):
             entity = self._entity_manager.get(entity_id)
             if entity is None:
                 continue
+            item = (entity, comps)
+            result.append(item)
+            yield item
 
-            components = []
-            for comp_type in component_types:
-                comp = self._archetype_store.get_component(entity_id, comp_type)
-                if comp is None:
-                    break
-                components.append(comp)
-            else:
-                # 所有组件都存在
-                yield (entity, components)
+        self._query_cache[cache_key] = result
+
+    def _invalidate_query_cache(self, affected_component_types=None):
+        """使查询缓存精确失效
+        
+        Args:
+            affected_component_types: 受影响的组件类型列表。为 None 时全量清除。
+        """
+        if affected_component_types is None:
+            self._query_cache.clear()
+            return
+        
+        affected_set = set(affected_component_types)
+        keys_to_remove = [k for k in self._query_cache.keys() 
+                         if any(t in affected_set for t in k)]
+        for k in keys_to_remove:
+            del self._query_cache[k]
 
     # ====================
     # 系统管理
@@ -252,10 +286,69 @@ class World:
         """获取系统实例"""
         return self._system_scheduler.get(system_type)
 
+    @property
+    def systems(self):
+        """v3.9 兼容：返回所有注册的系统列表"""
+        return self._system_scheduler.get_all()
+
+    @property
+    def components(self):
+        """v3.9 兼容：返回所有组件，按类型分组 {comp_type: {entity_id: comp}}"""
+        result = {}
+        for archetype in self._archetype_store._archetypes.values():
+            for i, entity in enumerate(archetype.entities):
+                entity_id = _get_entity_id(entity)
+                for comp_type, column in archetype.columns.items():
+                    if comp_type not in result:
+                        result[comp_type] = {}
+                    result[comp_type][entity_id] = column[i]
+        return result
+
+    def get_entities_with(self, component_type: type):
+        """v3.9 兼容：返回具有指定组件的所有实体"""
+        entity_ids = self._archetype_store.query_entities((component_type,))
+        for entity_id in entity_ids:
+            entity = self._entity_manager.get(entity_id)
+            if entity is not None:
+                yield entity
+
+    def get_memory_layer(self):
+        """v3.9 兼容：获取记忆层实例"""
+        return _get_memory_layer()
+
+    def get_event_bus(self):
+        """获取世界事件总线实例"""
+        return self._event_bus
+
+    def get_stats(self) -> dict:
+        """v3.9 兼容：获取 World 统计信息"""
+        arch_stats = self._archetype_store.get_stats()
+        sys_stats = self._system_scheduler.get_stats()
+        return {
+            "tick_count": self.tick_count,
+            "entity_count": len(self._entity_manager),
+            "archetype_count": arch_stats.get("archetype_count", 0),
+            "component_count": arch_stats.get("entity_count", 0),
+            "system_count": sys_stats.get("registered", 0),
+            "systems_executed": sys_stats.get("executed", 0),
+            "systems_skipped": sys_stats.get("skipped", 0),
+            "cache_hit_rate": arch_stats.get("cache_hit_rate", 0.0),
+        }
+
+    def entity_count(self) -> int:
+        """v3.9 兼容：返回活跃实体数量"""
+        return len(self._entity_manager)
+
+    def query_components(self, *component_types):
+        """v3.9 兼容：查询具有指定组件的实体和组件"""
+        return self.get_components(*component_types)
+
     def update(self, dt: float = 1.0) -> None:
         """更新所有系统"""
-        self._system_scheduler.update(self, dt)
         self.tick_count += 1
+        # 每 tick 清除查询缓存（v3.9 兼容）
+        self._query_cache.clear()
+        self._system_scheduler.update(self, dt)
 
     # ====================
     # 世界实体管理
@@ -307,7 +400,7 @@ class World:
         """序列化世界状态"""
         return {
             "tick_count": self.tick_count,
-            "entity_count": self._entity_manager.count(),
+            "entity_count": len(self._entity_manager),
         }
 
     @classmethod
@@ -322,4 +415,4 @@ class World:
     # ====================
 
     def __repr__(self) -> str:
-        return f"<World entities={self._entity_manager.count()} systems={len(self._system_scheduler._systems)}>"
+        return f"<World entities={len(self._entity_manager)} systems={len(self._system_scheduler)}>"

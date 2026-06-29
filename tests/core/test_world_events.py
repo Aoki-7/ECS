@@ -12,19 +12,15 @@ sys.path.insert(0, r"D:\个人助手\workspace\ECS")
 import unittest
 
 from core.world import World
-from core.event_bus import EventBus
+from core.world_event_bus import WorldEventBus
 
 
 class TestWorldEventIntegration(unittest.TestCase):
     """测试 World 与事件总线集成"""
 
     def setUp(self):
-        EventBus.reset_instance()
-        self.bus = EventBus.get_instance()
         self.world = World()
-
-    def tearDown(self):
-        EventBus.reset_instance()
+        self.bus = self.world.event_bus
 
     def test_create_entity_emits_event(self):
         """测试创建实体触发事件"""
@@ -57,7 +53,7 @@ class TestWorldEventIntegration(unittest.TestCase):
         """测试 World 可以访问事件总线"""
         bus = self.world.get_event_bus()
         self.assertIsNotNone(bus)
-        self.assertIsInstance(bus, EventBus)
+        self.assertIsInstance(bus, WorldEventBus)
 
 
 if __name__ == "__main__":

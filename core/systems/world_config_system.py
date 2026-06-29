@@ -26,9 +26,13 @@ class WorldConfigSystem(System):
 
     tick_interval = 1  # 每帧执行（可优化为不执行，纯工具类）
 
-    def update(self, world: World, dt: float):
-        """配置系统无需每帧更新，但保留接口"""
-        pass
+    def update(self, world: World, dt: float = 1.0):
+        super().update(world, dt)
+        # 确保世界实体始终挂载 WorldConfigComponent
+        if world.get_world_component(WorldConfigComponent) is None:
+            world_entity = world.get_world_entity()
+            if world_entity is not None:
+                world.add_component(world_entity, WorldConfigComponent())
 
     @staticmethod
     def clamp_position(config: WorldConfigComponent, x: int, y: int) -> Tuple[int, int]:

@@ -216,10 +216,23 @@ class ReputationSystem(System):
             "origin": standing.family_status,
         }
 
-    # ── System update（预留：声誉自然衰减等） ──
+    # ── System update ──
 
     def update(self, world: World, dt: float = 1.0):
         super().update(world, dt)
-        # 当前无每 tick 必须执行的逻辑
-        # 未来可添加：谣言自然传播、声誉衰减等
-        pass
+        # 声誉自然衰减与谣言传播
+        for entity, rep in world.get_components(ReputationComponent):
+            # 声誉向中性值 50 缓慢回归
+            if rep.reputation > 50:
+                rep.reputation = max(50.0, rep.reputation - 0.2)
+            elif rep.reputation < 50:
+                rep.reputation = min(50.0, rep.reputation + 0.2)
+
+            # 谣言自然传播（扩散度增加，上限 10）
+            for rumor in rep.rumors:
+                rumor["spread_level"] = min(10, rumor.get("spread_level", 0) + 0.1)
+
+            # 同步社会地位标签
+            current_status = self.get_status(world, entity)
+            if rep.social_status != current_status:
+                rep.social_status = current_status

@@ -229,8 +229,7 @@ class NeedsSystem(System):
     def _trigger_critical_event(self, world: World, entity: Entity, need_type: str, score: float) -> None:
         """触发紧急需求事件"""
         try:
-            from core.event_bus import EventBus
-            EventBus.get_instance().publish(
+            world.event_bus.publish(
                 f"critical_{need_type}",
                 {
                     "entity_id": entity.id,

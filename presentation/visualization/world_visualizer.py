@@ -134,8 +134,7 @@ class WorldVisualizer:
     def generate_event_timeline(self, limit: int = 100) -> dict:
         """生成事件时间轴数据"""
         try:
-            from core.event_bus import EventBus
-            events = EventBus.get_instance().get_history(limit=limit)
+            events = self.world.event_bus.get_history(limit=limit)
             timeline_data = [
                 {
                     "time": e.timestamp,

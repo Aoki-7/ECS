@@ -119,11 +119,9 @@ class CollisionSystem(System):
         if self.auto_resolve:
             self._resolver.resolve_overlap(world, entity_a, space_a, entity_b, space_b)
 
-        # 触发碰撞事件（如果 EventBus 可用）
+        # 触发碰撞事件
         try:
-            from core.event_bus import EventBus
-            bus = EventBus.get_instance()
-            bus.publish("collision", {
+            world.event_bus.publish("collision", {
                 "entity_a": entity_a,
                 "entity_b": entity_b,
                 "x": (space_a.x + space_b.x) / 2,

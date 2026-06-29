@@ -6,13 +6,59 @@
 将系统初始化逻辑从 SimulationLoop 中剥离。
 """
 
+import os
+import re
+import importlib
+import inspect
 import logging
 from typing import List, Dict, Any
 
+from core.system import System
 from core.world import World
 from config.system_priorities import SystemPriority
 
 logger = logging.getLogger(__name__)
+
+# 自动扫描规则：(relative_dir, group, default_priority)
+# 按此顺序注册，确保同优先级内顺序可预测
+_SCAN_PACKAGES = [
+    # 环境层（不含手动注册的 env_pipeline / pathfinding）
+    ("environment/systems", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/astronomy", "environment", SystemPriority.ATMOSPHERE),
+    ("environment/atmosphere", "environment", SystemPriority.ATMOSPHERE),
+    ("environment/hydrology", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/geology", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/pollution", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/ocean", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/extreme_weather", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/phenology", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/light_field", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/continuum/systems", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/soil/systems", "ecology", SystemPriority.BIOLOGY),
+    ("human/systems/environment", "environment", SystemPriority.WEATHER_EFFECT),
+    ("space", "environment", SystemPriority.COLLISION),
+    # 人类层
+    ("human/systems/cognitive", "human", SystemPriority.HUMAN_COGNITIVE),
+    ("human/systems/action", "human", SystemPriority.HUMAN_COGNITIVE),
+    ("human/systems/social", "human", SystemPriority.HUMAN_COGNITIVE),
+    ("human/systems/core", "human", SystemPriority.HUMAN_COGNITIVE),
+    ("human/systems/combat", "human", SystemPriority.HUMAN_COGNITIVE),
+    ("human/systems/interaction", "human", SystemPriority.HUMAN_COGNITIVE),
+    ("human/systems/physiological", "human", SystemPriority.PHYSIOLOGY),
+    # 动物层
+    ("animal/systems", "animal", SystemPriority.ANIMAL_NEEDS),
+    ("animal/migration/systems", "animal", SystemPriority.ANIMAL_MIGRATION),
+    # 植物层
+    ("plant/systems", "plant", SystemPriority.PLANT_GROWTH),
+    # 生物层
+    ("biology/systems", "biology", SystemPriority.BIOLOGY),
+    ("biology/lifecycle", "biology", SystemPriority.BIOLOGY),
+    ("biology/ecology", "ecology", SystemPriority.COMPETITION),
+    # 分解者
+    ("decomposer/systems", "ecology", SystemPriority.BIOLOGY),
+    # 文明层
+    ("civilization/systems", "civilization", SystemPriority.CIVILIZATION),
+]
 
 
 class SystemRegistry:
@@ -41,6 +87,8 @@ class SystemRegistry:
             'v35_v36': [],
         }
 
+    # === 注册 ===
+
     def register(self, name: str, system: Any, group: str = 'default', priority: int = None) -> None:
         """注册单个系统"""
         if priority is not None:
@@ -59,26 +107,18 @@ class SystemRegistry:
         """获取某组的所有系统"""
         return self._groups.get(group, [])
 
+    # === 批量初始化 ===
+
     def init_all(self) -> None:
         """初始化所有系统（按优先级排序）"""
-        # 基础设施层
+        # 基础设施层（手动注册，特殊系统）
         self._init_infrastructure()
-        # 环境层
+        # 环境层（手动 + 自动扫描）
         self._init_environment()
-        # 人类层
-        self._init_human()
-        # 动物层
-        self._init_animal()
-        # 植物层
-        self._init_plant()
-        # 生物层
-        self._init_biology()
-        # 生态层
-        self._init_ecology()
-        # 文明层
-        self._init_civilization()
-        # v3.5-v3.6 新系统
-        self._init_v35_v36()
+        # 其余层级通过自动扫描注册
+        self._auto_scan_all()
+
+    # === 手动注册层（特殊系统） ===
 
     def _init_infrastructure(self) -> None:
         """基础设施：存档、时间、事件日志"""
@@ -93,240 +133,73 @@ class SystemRegistry:
     def _init_environment(self) -> None:
         """环境层：环境管线、天气效果、碰撞检测、路径规划"""
         from environment.config.environment_builder import EnvironmentBuilder
+        from human.systems.navigation.pathfinding_system import PathfindingSystem
+        from space.collision_system import CollisionSystem
+
+        # 环境管线（特殊构造参数）
+        env_pipeline = EnvironmentBuilder.build(self.world)
+        self.register('env_pipeline', env_pipeline, 'environment', SystemPriority.ENVIRONMENT)
+
+        # 路径规划
+        self.register('pathfinding', PathfindingSystem(), 'environment', SystemPriority.PATHFINDING)
+        # 碰撞检测
+        self.register('collision', CollisionSystem(auto_resolve=True), 'environment', SystemPriority.COLLISION)
+
+        # 天气效果系统（特殊命名前缀）
         from human.systems.environment.heat_effect_system import HeatEffectSystem
         from human.systems.environment.cold_effect_system import ColdEffectSystem
         from human.systems.environment.rain_effect_system import RainEffectSystem
         from human.systems.environment.wind_effect_system import WindEffectSystem
         from human.systems.environment.humidity_effect_system import HumidityEffectSystem
-        from human.systems.navigation.pathfinding_system import PathfindingSystem
-        from space.collision_system import CollisionSystem
-
-        env_pipeline = EnvironmentBuilder.build(self.world)
-        self.register('env_pipeline', env_pipeline, 'environment', SystemPriority.ENVIRONMENT)
 
         for cls in [HeatEffectSystem, ColdEffectSystem, RainEffectSystem, WindEffectSystem, HumidityEffectSystem]:
             name = cls.__name__.replace('EffectSystem', '').lower()
             self.register(f'weather_{name}', cls(), 'environment', SystemPriority.WEATHER_EFFECT)
 
-        # 新增：灾害检测系统
-        from environment.systems.fire_detection_system import FireDetectionSystem
-        from environment.systems.flood_detection_system import FloodDetectionSystem
-        from environment.systems.drought_detection_system import DroughtDetectionSystem
-        from environment.systems.disaster_impact_system import DisasterImpactSystem
-        self.register('fire_detection', FireDetectionSystem(), 'environment', SystemPriority.WEATHER_EFFECT)
-        self.register('flood_detection', FloodDetectionSystem(), 'environment', SystemPriority.WEATHER_EFFECT)
-        self.register('drought_detection', DroughtDetectionSystem(), 'environment', SystemPriority.WEATHER_EFFECT)
-        self.register('disaster_impact', DisasterImpactSystem(), 'environment', SystemPriority.WEATHER_EFFECT)
+    # === 自动扫描层 ===
 
-        # 新增：生物-环境耦合系统
-        from environment.continuum.systems.vegetation_coupling_system import VegetationCouplingSystem
-        from environment.continuum.systems.animal_coupling_system import AnimalCouplingSystem
-        from environment.continuum.systems.human_coupling_system import HumanCouplingSystem
-        from environment.continuum.systems.agriculture_coupling_system import AgricultureCouplingSystem
-        self.register('vegetation_coupling', VegetationCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
-        self.register('animal_coupling', AnimalCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
-        self.register('human_coupling', HumanCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
-        self.register('agriculture_coupling', AgricultureCouplingSystem(), 'environment', SystemPriority.ENVIRONMENT)
+    def _auto_scan_all(self) -> None:
+        """按规则自动扫描并注册所有系统"""
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        for relative_dir, group, default_priority in _SCAN_PACKAGES:
+            self._scan_dir(project_root, relative_dir, group, default_priority)
 
-        # 新增：重力系统
-        from environment.systems.gravity_system import GravitySystem
-        self.register('gravity', GravitySystem(), 'environment', SystemPriority.ENVIRONMENT)
+    def _scan_dir(self, project_root: str, relative_dir: str, group: str, default_priority: int) -> None:
+        """扫描目录下的 *_system.py 模块并注册"""
+        target_dir = os.path.join(project_root, relative_dir)
+        if not os.path.isdir(target_dir):
+            return
 
-        self.register('pathfinding', PathfindingSystem(), 'environment', SystemPriority.PATHFINDING)
-        self.register('collision', CollisionSystem(auto_resolve=True), 'environment', SystemPriority.COLLISION)
+        for root, _, files in os.walk(target_dir):
+            for fname in sorted(files):
+                if not fname.endswith('_system.py') or fname.startswith('test'):
+                    continue
 
-    def _init_human(self) -> None:
-        """人类层：社交、认知、生理、行动、战斗等"""
-        from human.systems.social.social_system import SocialSystem
-        from human.systems.social.pairing_system import PairingSystem
-        from human.systems.social.reproduction_system import ReproductionSystem
-        from human.systems.social.birth_system import BirthSystem
-        from human.systems.social.tribe_system import TribeSystem
-        from human.systems.social.territory_system import TerritorySystem
-        from human.systems.social.leadership_system import LeadershipSystem
-        from human.systems.social.loyalty_system import LoyaltySystem
-        from human.systems.social.recruit_system import RecruitSystem
-        from human.systems.cognitive.decision_system import DecisionSystem
-        from human.systems.cognitive.perception_system import PerceptionSystem
-        from human.systems.cognitive.emotion_system import EmotionSystem
-        from human.systems.cognitive.thought_system import ThoughtSystem
-        from human.systems.cognitive.goal_system import GoalSystem
-        from human.systems.core.intent_system import IntentSystem
-        from human.systems.core.planning_system import PlanningSystem
-        from human.systems.core.action_system import ActionSystem
-        from human.systems.action.movement_system import MovementSystem
-        from human.systems.action.eat_system import EatSystem
-        from human.systems.action.drink_system import DrinkSystem
-        from human.systems.action.sleep_system import SleepSystem
-        from human.systems.action.pickup_system import PickupSystem
-        from human.systems.action.search_system import SearchSystem
-        from human.systems.action.socialize_system import SocializeSystem
-        from human.systems.action.harvest_system import HarvestSystem
-        from human.systems.action.planting_system import PlantingSystem
-        from human.systems.combat.combat_system import CombatSystem
-        from human.systems.combat.combat_ai_system import CombatAISystem
-        from human.systems.interaction.dialogue_system import DialogueSystem
-        from human.systems.physiological.health_system import HealthSystem
-        from human.systems.physiological.hunger_system import HungerSystem
-        from human.systems.physiological.thirst_system import ThirstSystem
-        from human.systems.physiological.energy_system import EnergySystem
-        from human.systems.physiological.comfort_system import ComfortSystem
-        from human.systems.physiological.social_need_system import SocialNeedSystem
-        from human.systems.physiological.physiology_needs_system import PhysiologyNeedsSystem
+                rel_path = os.path.relpath(os.path.join(root, fname), project_root)
+                module_name = rel_path.replace(os.sep, '.')[:-3]  # remove .py
 
-        # 社交系统
-        for cls in [SocialSystem, PairingSystem, ReproductionSystem, BirthSystem,
-                    TribeSystem, TerritorySystem, LeadershipSystem, LoyaltySystem, RecruitSystem]:
-            name = cls.__name__.replace('System', '').lower()
-            self.register(f'social_{name}', cls(), 'human', SystemPriority.HUMAN_COGNITIVE)
+                try:
+                    module = importlib.import_module(module_name)
+                except Exception as e:
+                    logger.warning(f"[SystemRegistry] 无法导入 {module_name}: {e}")
+                    continue
 
-        # 认知系统
-        for cls in [DecisionSystem, PerceptionSystem, EmotionSystem, ThoughtSystem, GoalSystem]:
-            name = cls.__name__.replace('System', '').lower()
-            self.register(f'cognitive_{name}', cls(), 'human', SystemPriority.HUMAN_COGNITIVE)
+                for name, cls in inspect.getmembers(module, inspect.isclass):
+                    if not issubclass(cls, System) or cls is System:
+                        continue
 
-        # 核心系统
-        for cls in [IntentSystem, PlanningSystem, ActionSystem]:
-            name = cls.__name__.replace('System', '').lower()
-            self.register(f'core_{name}', cls(), 'human', SystemPriority.HUMAN_COGNITIVE)
+                    reg_name = self._to_snake_case(name).replace('_system', '')
+                    if not reg_name:
+                        reg_name = fname.replace('_system.py', '')
 
-        # 行动系统
-        for cls in [MovementSystem, EatSystem, DrinkSystem, SleepSystem, PickupSystem,
-                    SearchSystem, SocializeSystem, HarvestSystem, PlantingSystem]:
-            name = cls.__name__.replace('System', '').lower()
-            self.register(f'action_{name}', cls(), 'human', SystemPriority.HUMAN_OBSERVATION)
+                    priority = getattr(cls, 'priority', None)
+                    if priority is None:
+                        priority = getattr(module, '__priority__', default_priority)
 
-        # 战斗系统
-        self.register('combat', CombatSystem(), 'human', SystemPriority.COMBAT_AI)
-        self.register('combat_ai', CombatAISystem(), 'human', SystemPriority.COMBAT_AI)
-        self.register('dialogue', DialogueSystem(), 'human', SystemPriority.CONFLICT_DETECTION)
+                    self.register(reg_name, cls(), group, priority)
 
-        # 生理系统
-        for cls in [HealthSystem, HungerSystem, ThirstSystem, EnergySystem,
-                    ComfortSystem, SocialNeedSystem, PhysiologyNeedsSystem]:
-            name = cls.__name__.replace('System', '').lower()
-            self.register(f'physiology_{name}', cls(), 'human', SystemPriority.PHYSIOLOGY)
-
-        # self.register('human_observation', HumanObservationSystem(), 'human', SystemPriority.HUMAN_OBSERVATION)
-
-    def _init_animal(self) -> None:
-        """动物层：需求、社交、记忆、领地、迁徙、感知、学习、繁殖、捕食、觅食"""
-        from animal.systems.animal_needs_system import AnimalNeedsSystem
-        from animal.systems.animal_social_system import AnimalSocialSystem
-        from animal.systems.animal_memory_system import AnimalMemorySystem
-        from animal.systems.animal_territory_system import AnimalTerritorySystem
-        from animal.systems.animal_migration_system import AnimalMigrationSystem
-        from animal.systems.animal_perception_system import AnimalPerceptionSystem
-        from animal.systems.animal_learning_system import AnimalLearningSystem
-        from animal.systems.animal_reproduction_system import AnimalReproductionSystem
-        from animal.systems.predation_system import PredationSystem
-        from animal.systems.grazing_system import GrazingSystem
-
-        for cls in [AnimalNeedsSystem, AnimalSocialSystem, AnimalMemorySystem,
-                    AnimalTerritorySystem, AnimalMigrationSystem, AnimalPerceptionSystem,
-                    AnimalLearningSystem, AnimalReproductionSystem, PredationSystem, GrazingSystem]:
-            name = cls.__name__.replace('System', '').lower().replace('animal_', '')
-            self.register(f'animal_{name}', cls(), 'animal', SystemPriority.ANIMAL_NEEDS)
-
-    def _init_plant(self) -> None:
-        """植物层：光合作用、吸水、种子传播、地形适应"""
-        from plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
-        from plant.systems.water_uptake_system import PlantWaterUptakeSystem
-        from plant.systems.seed_dispersal_system import SeedDispersalSystem
-        from plant.systems.terrain_adaptation_system import TerrainAdaptationSystem
-
-        self.register('plant_photosynthesis', PlantPhotosynthesisSystem(), 'plant', SystemPriority.PLANT_GROWTH)
-        self.register('plant_water', PlantWaterUptakeSystem(), 'plant', SystemPriority.PLANT_GROWTH)
-        self.register('plant_seed', SeedDispersalSystem(), 'plant', SystemPriority.PLANT_GROWTH)
-        self.register('plant_terrain', TerrainAdaptationSystem(), 'plant', SystemPriority.PLANT_GROWTH)
-
-    def _init_biology(self) -> None:
-        """生物层：基因表达、生长、死亡、生命周期、免疫、营养"""
-        from biology.systems.gene_expression_system import GeneExpressionSystem
-        from biology.lifecycle.growth.systems.growth_system import GrowthSystem
-        from biology.lifecycle.growth.systems.morphology_system import MorphologySystem
-        from biology.lifecycle.death.systems.creature_death_trigger_system import CreatureDeathTriggerSystem
-        from biology.lifecycle.death.systems.death_system import DeathSystem
-        from biology.lifecycle.death.systems.death_event_system import DeathEventSystem
-        from biology.lifecycle.corpse.systems.corpse_system import CorpseSystem
-        from biology.lifecycle.systems.life_cycle_system import LifeCycleSystem
-        from biology.lifecycle.aging.systems.senescence_system import SenescenceSystem
-        from biology.systems.mutation_system import MutationSystem
-        from biology.lifecycle.birth.systems.reproduction_system import BiologyReproductionSystem
-        from biology.systems.immune_system import ImmuneSystem
-        from biology.systems.damage_repair_system import DamageRepairSystem
-        from biology.systems.nutrient_system import NutrientSystem
-        from biology.systems.competition_system import CompetitionSystem
-
-        self.register('gene_expression', GeneExpressionSystem(), 'biology', SystemPriority.GENE_EXPRESSION)
-        self.register('growth', GrowthSystem(), 'biology', SystemPriority.GROWTH)
-        self.register('morphology', MorphologySystem(), 'biology', SystemPriority.MORPHOLOGY)
-        self.register('death_trigger', CreatureDeathTriggerSystem(), 'biology', SystemPriority.CREATURE_DEATH_TRIGGER)
-        self.register('death', DeathSystem(), 'biology', SystemPriority.DEATH_EXECUTION)
-        self.register('death_event', DeathEventSystem(), 'biology', SystemPriority.DEATH_EVENT)
-        self.register('corpse', CorpseSystem(), 'biology', SystemPriority.CORPSE)
-        self.register('life_cycle', LifeCycleSystem(), 'biology', SystemPriority.LIFE_CYCLE)
-        self.register('senescence', SenescenceSystem(), 'biology', SystemPriority.SENESCENCE)
-        self.register('mutation', MutationSystem(), 'biology', SystemPriority.MUTATION)
-        self.register('biology_reproduction', BiologyReproductionSystem(), 'biology', SystemPriority.REPRODUCTION)
-        self.register('immune', ImmuneSystem(), 'biology', SystemPriority.IMMUNE)
-        self.register('damage_repair', DamageRepairSystem(), 'biology', SystemPriority.DAMAGE_REPAIR)
-        self.register('nutrient', NutrientSystem(), 'biology', SystemPriority.NUTRIENT)
-        self.register('competition', CompetitionSystem(), 'biology', SystemPriority.COMPETITION)
-
-    def _init_ecology(self) -> None:
-        """生态层：分解者、土壤同步、营养级、种群动态、生态平衡、物种形成"""
-        from decomposer.systems.decomposer_system import DecomposerSystem
-        from environment.soil.systems.soil_to_environment_sync_system import SoilToEnvironmentSyncSystem
-        from biology.ecology.trophic_level_system import TrophicLevelSystem
-        from biology.ecology.population_dynamics_system import PopulationDynamicsSystem
-        from biology.ecology.ecology_balance_system import EcologyBalanceSystem
-        from biology.ecology.speciation_system import SpeciationSystem
-
-        self.register('decomposer', DecomposerSystem(), 'ecology', SystemPriority.BIOLOGY)
-        self.register('soil_sync', SoilToEnvironmentSyncSystem(), 'ecology', SystemPriority.BIOLOGY)
-        self.register('trophic_level', TrophicLevelSystem(), 'ecology', SystemPriority.BIOLOGY)
-        self.register('population_dynamics', PopulationDynamicsSystem(), 'ecology', SystemPriority.BIOLOGY)
-        self.register('ecology_balance', EcologyBalanceSystem(), 'ecology', SystemPriority.BIOLOGY)
-        self.register('speciation', SpeciationSystem(), 'ecology', SystemPriority.BIOLOGY)
-
-    def _init_civilization(self) -> None:
-        """文明层：文明系统、技术演化、制作系统、建筑系统、农业系统"""
-        from civilization.systems.civilization_system import CivilizationSystem
-        from civilization.systems.technology_evolution_system import TechnologyEvolutionSystem
-        from civilization.systems.crafting_system import CraftingSystem
-        from civilization.systems.building_system import BuildingSystem
-        from civilization.systems.farm_system import FarmSystem
-
-        self.register('civilization', CivilizationSystem(), 'civilization', SystemPriority.CIVILIZATION)
-        self.register('technology_evolution', TechnologyEvolutionSystem(), 'civilization', SystemPriority.CIVILIZATION)
-        self.register('crafting', CraftingSystem(), 'civilization', SystemPriority.CIVILIZATION)
-        self.register('building', BuildingSystem(), 'civilization', SystemPriority.CIVILIZATION)
-        self.register('farm', FarmSystem(), 'civilization', SystemPriority.CIVILIZATION)
-
-    def _init_v35_v36(self) -> None:
-        """v3.5-v3.6 新系统：水文、地质、污染、海洋、天文、极端天气、物候学、迁徙、大气化学、紫外线"""
-        try:
-            from environment.hydrology.systems.water_cycle_system import WaterCycleSystem
-            from environment.geology.systems.geology_system import GeologySystem
-            from environment.pollution.systems.pollution_system import PollutionSystem
-            from environment.ocean.systems.ocean_system import OceanSystem
-            from environment.astronomy.systems.astronomy_system import AstronomySystem
-            from environment.extreme_weather.systems.extreme_weather_system import ExtremeWeatherSystem
-            from environment.phenology.systems.phenology_system import PhenologySystem
-            from animal.migration.systems.migration_system import MigrationSystem
-            from environment.atmosphere.systems.atmospheric_chemistry_system import AtmosphericChemistrySystem
-            from environment.light_field.systems.uv_system import UVSystem
-
-            self.register('water_cycle', WaterCycleSystem(), 'v35_v36', SystemPriority.WATER_CYCLE)
-            self.register('geology', GeologySystem(), 'v35_v36', SystemPriority.GEOLOGY)
-            self.register('pollution', PollutionSystem(), 'v35_v36', SystemPriority.POLLUTION)
-            self.register('ocean', OceanSystem(), 'v35_v36', SystemPriority.OCEAN)
-            self.register('astronomy', AstronomySystem(), 'v35_v36', SystemPriority.ASTRONOMY)
-            self.register('extreme_weather', ExtremeWeatherSystem(), 'v35_v36', SystemPriority.EXTREME_WEATHER)
-            self.register('phenology', PhenologySystem(), 'v35_v36', SystemPriority.PHENOLOGY)
-            self.register('migration', MigrationSystem(), 'v35_v36', SystemPriority.MIGRATION)
-            self.register('atmospheric_chemistry', AtmosphericChemistrySystem(), 'v35_v36', SystemPriority.ATMOSPHERIC_CHEMISTRY)
-            self.register('uv', UVSystem(), 'v35_v36', SystemPriority.UV)
-        except ImportError as e:
-            logger.warning(f"[SystemRegistry] v3.5-v3.6 系统导入失败: {e}")
+    @staticmethod
+    def _to_snake_case(name: str) -> str:
+        """CamelCase -> snake_case"""
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()

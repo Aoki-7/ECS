@@ -15,7 +15,6 @@ from typing import Dict, List, Callable
 
 from core.system import System
 from core.world import World
-from core.event_bus import EventBus
 from environment.environment_component import EnvironmentComponent
 from environment.soil.components.soil_component import SoilComponent
 from space.space_component import SpaceComponent

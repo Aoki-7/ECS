@@ -115,8 +115,8 @@ class WorldSerializer:
                 logger.warning(f"[Load] 无法解析组件类型 {type_name}: {e}")
                 continue
 
-            # v4.0: 使用 ArchetypeStore
-            if hasattr(world, '_component_store'):
+            # v4.0: 使用 ArchetypeStore (通过 World.add_component)
+            if hasattr(world, '_archetype_store'):
                 for entity_id_str, comp_data in comp_dict.items():
                     entity_id = int(entity_id_str)
                     entity = entity_map.get(entity_id)
@@ -129,6 +129,25 @@ class WorldSerializer:
                             comp = ComponentSerializer.deserialize(comp_data)
                         else:
                             # 迁移旧版本数据
+                            from save_load.component_migrator import migrate_component_data
+                            comp_data = migrate_component_data(type_name, comp_data)
+                            comp = comp_type.from_dict(comp_data)
+                        
+                        if comp is not None:
+                            world.add_component(entity, comp)
+                    except Exception as e:
+                        logger.warning(f"[Load] 反序列化组件 {type_name} 失败 (entity={entity_id}): {e}")
+            elif hasattr(world, '_component_store'):
+                for entity_id_str, comp_data in comp_dict.items():
+                    entity_id = int(entity_id_str)
+                    entity = entity_map.get(entity_id)
+                    if entity is None:
+                        logger.warning(f"[Load] 组件 {type_name} 引用了不存在的实体 {entity_id}")
+                        continue
+                    try:
+                        if isinstance(comp_data, dict) and "__type__" in comp_data:
+                            comp = ComponentSerializer.deserialize(comp_data)
+                        else:
                             from save_load.component_migrator import migrate_component_data
                             comp_data = migrate_component_data(type_name, comp_data)
                             comp = comp_type.from_dict(comp_data)
@@ -149,7 +168,6 @@ class WorldSerializer:
                         logger.warning(f"[Load] 组件 {type_name} 引用了不存在的实体 {entity_id}")
                         continue
                     try:
-                        # v4.0: 优先使用 ComponentSerializer
                         if isinstance(comp_data, dict) and "__type__" in comp_data:
                             comp = ComponentSerializer.deserialize(comp_data)
                         else:

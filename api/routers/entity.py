@@ -165,9 +165,7 @@ async def delete_entity(
     
     # 触发 EntityDestroyed 事件，通知各系统清理引用
     try:
-        from core.event_bus import EventBus
-        event_bus = EventBus.get_instance()
-        event_bus.emit("EntityDestroyed", {"entity_id": entity_id})
+        world.event_bus.publish("EntityDestroyed", {"entity_id": entity_id})
     except Exception as e:
         logger.warning(f"[API Entity] 发布 EntityDestroyed 事件失败: {e}")  # 事件系统可能未初始化
     

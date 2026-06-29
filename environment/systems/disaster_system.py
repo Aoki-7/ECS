@@ -116,8 +116,7 @@ class DisasterSystem(System):
 
         # 发布事件
         try:
-            from core.event_bus import EventBus
-            EventBus.get_instance().publish("disaster_fire", {
+            world.event_bus.publish("disaster_fire", {
                 "x": start_x, "y": start_y, "intensity": disaster["intensity"],
             })
         except Exception:

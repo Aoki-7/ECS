@@ -193,11 +193,20 @@ class RoleSystem(System):
         return RoleSystem.get_fulfillment_rate(world, entity) < (1 - threshold)
 
     # ═══════════════════════════════════════════════
-    # System update（预留：角色冲突检测等）
+    # System update
     # ═══════════════════════════════════════════════
 
     def update(self, world: World, dt: float = 1.0):
         super().update(world, dt)
-        # 当前无每 tick 必须执行的逻辑；
-        # 未来可在此处添加角色冲突检测、责任逾期检查等。
-        pass
+        # 角色重要性自然衰减，新责任添加未履行记录
+        for entity, role_comp in world.get_components(RoleComponent):
+            for role_type, roles in role_comp._roles.items():
+                for role in roles:
+                    if role.importance > 10.0:
+                        role.importance = max(10.0, role.importance - 0.05)
+
+            resp_comp = world.get_component(entity, ResponsibilityComponent)
+            if resp_comp is not None:
+                for resp in resp_comp.responsibilities:
+                    if resp not in resp_comp.fulfilled:
+                        resp_comp.fulfilled[resp] = False

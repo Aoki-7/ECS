@@ -23,9 +23,16 @@ class ActionManagementSystem(System):
 
     tick_interval = 1
 
-    def update(self, world: World, dt: float):
-        """更新动作状态（如需要每帧处理）"""
-        pass
+    def update(self, world: World, dt: float = 1.0):
+        super().update(world, dt)
+        # 动作队列调度：空闲时自动执行队列中的下一个动作
+        for entity, action in world.get_components(ActionComponent):
+            if action.status in (ActionStatus.IDLE, ActionStatus.SUCCESS,
+                                 ActionStatus.FAILED, ActionStatus.INTERRUPTED):
+                if action.action_queue:
+                    action.current_action = action.action_queue.pop(0)
+                    action.status = ActionStatus.RUNNING
+                    action.progress = 0.0
 
     @staticmethod
     def reset(action: ActionComponent):

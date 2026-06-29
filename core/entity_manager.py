@@ -144,6 +144,10 @@ class EntityManager:
         """活跃实体数量"""
         return len(self._entities)
 
+    def count(self) -> int:
+        """活跃实体数量（兼容方法）"""
+        return len(self._entities)
+
     def __contains__(self, entity: Entity) -> bool:
         """检查实体是否存在"""
         return self.has_entity(entity)

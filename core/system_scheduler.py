@@ -268,6 +268,10 @@ class SystemScheduler:
             "skipped": self._stats["skipped"],
         }
 
+    def __len__(self) -> int:
+        """注册的系统数量"""
+        return len(self._systems)
+
     def get_execution_order(self) -> List[str]:
         """获取执行顺序（用于调试）"""
         sorted_systems = self._sort()

@@ -14,7 +14,6 @@ from typing import Dict, List
 
 from core.system import System
 from core.world import World
-from core.event_bus import EventBus
 from environment.environment_component import EnvironmentComponent
 
 logger = logging.getLogger(__name__)
@@ -58,6 +57,6 @@ class DroughtDetectionSystem(System):
         logger.warning(f"[DroughtDetection] 干旱开始！预计持续 {disaster['duration']} ticks")
 
         try:
-            EventBus.get_instance().publish("disaster_drought_start", disaster)
+            world.event_bus.publish("disaster_drought_start", disaster)
         except Exception:
             pass

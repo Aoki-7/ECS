@@ -99,7 +99,7 @@ async def get_entities(
     
     # 兼容不同版本的 World API
     if hasattr(world, 'get_all_entities'):
-        entities = list(world.get_all_entities().values())
+        entities = world.get_all_entities()
     else:
         # 使用 entities 属性或 query 方法
         entities = list(getattr(world, 'entities', {}).values())
