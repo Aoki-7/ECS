@@ -11,31 +11,6 @@ from typing import Dict, List, Optional
 from core.component import Component
 
 @dataclass(slots=True)
-class FarmComponent(Component):
-    """
-    农场组件 - 纯数据版
-    存储农场信息。
-    """
-    # 农田地块
-    plots: Dict[int, Dict] = field(default_factory=dict)
-    
-    # 作物类型
-    crop_types: List[str] = field(default_factory=list)
-    
-    # 灌溉系统
-    irrigation_level: float = 0.0
-    water_source: str = "rain"
-    
-    # 产量统计
-    total_yield: float = 0.0
-    harvest_count: int = 0
-    
-    # 状态
-    is_active: bool = True
-    founded_tick: int = 0
-
-
-@dataclass(slots=True)
 class FarmPlotComponent(Component):
     """
     农田地块组件 - 纯数据版
