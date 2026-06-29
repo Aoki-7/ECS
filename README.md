@@ -114,7 +114,7 @@ python -m pytest --cov=core --cov-report=term-missing
 ```
 ECS/
 ├── core/                          # ECS 核心引擎
-│   ├── world.py                   # 世界中心，兼容 v3.9 API
+│   ├── world.py                   # 世界中心
 │   ├── archetype_store.py         # 查询缓存与分桶
 │   ├── system_scheduler.py        # 系统调度（优先级 + 间隔）
 │   ├── entity_manager.py          # 实体生命周期管理
@@ -130,8 +130,7 @@ ECS/
 ├── time_module/                   # 时间系统（昼夜/季节/历法）
 ├── environment/                   # 环境系统（大气/天气/季节/气候/土壤/地形）
 ├── biology/                       # 生物学（遗传/生命周期/生态学/种群）
-│   ├── lifecycle/                 # 生命周期子系统（生长/出生/衰老/繁殖）
-│   └── systems/                   # 兼容层转发（已迁移至 lifecycle）
+│   └── lifecycle/                 # 生命周期子系统（生长/出生/衰老/繁殖）
 ├── plant/                         # 植物层
 ├── animal/                        # 动物层（10 系统生态模拟）
 ├── human/                         # 人类层（生理/认知/社交/行为/经济/战斗）
