@@ -158,7 +158,7 @@ class TechnologyEvolutionSystem(System):
         # 如果某个技术只有少数人知道，可能失传
         tech_holders: Dict[str, List[int]] = {}
 
-        for entity, know_comp in world.get_components(KnowledgeComponent):
+        for entity, (know_comp) in world.get_components(KnowledgeComponent):
             # 确保 know_comp 是组件实例而非列表
             if not hasattr(know_comp, 'known_technologies'):
                 continue
@@ -180,7 +180,7 @@ class TechnologyEvolutionSystem(System):
 
     def _update_cultural_tech_pools(self, world: World) -> None:
         """更新文明技术池"""
-        for entity, cult_pool in world.get_components(CulturalTechPoolComponent):
+        for entity, (cult_pool) in world.get_components(CulturalTechPoolComponent):
             # 整合周围个体的知识
             from space.space_component import SpaceComponent
             space = world.get_component(entity, SpaceComponent)

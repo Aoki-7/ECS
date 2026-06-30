@@ -13,24 +13,19 @@
 '''
 
 from core.component import Component
+from core.component_serializer import register_component
 from dataclasses import dataclass, field
 from typing import Dict, Any
-from enum import Enum, auto
+
+from .base_resource_component import ResourceState
 
 
-class ResourceState(Enum):
-    """资源状态枚举"""
-    AVAILABLE = auto()  # 可用
-    DEPLETED = auto()   # 耗尽
-    LOCKED = auto()     # 锁定
-    REGENERATING = auto()  # 再生中
-
-
+@register_component
 @dataclass
 class ResourceComponent(Component):
     """
     描述环境中的资源（纯数据版）。
-    
+
     属性:
         resource_type: 资源类型（如树木、果实、动物）
         amount: 当前资源数量
@@ -49,7 +44,38 @@ class ResourceComponent(Component):
     regen_rate: float = 0.0
     state: ResourceState = ResourceState.AVAILABLE
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
+    def to_dict(self) -> dict:
+        return {
+            "resource_type": self.resource_type,
+            "amount": self.amount,
+            "max_amount": self.max_amount,
+            "quality": self.quality,
+            "regenerable": self.regenerable,
+            "regen_rate": self.regen_rate,
+            "state": self.state.name,
+            "metadata": self.metadata,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ResourceComponent":
+        state = ResourceState.AVAILABLE
+        state_name = data.get("state", "AVAILABLE")
+        try:
+            state = ResourceState[state_name]
+        except KeyError:
+            state = ResourceState.AVAILABLE
+        return cls(
+            resource_type=data.get("resource_type", ""),
+            amount=data.get("amount", 0.0),
+            max_amount=data.get("max_amount", 100.0),
+            quality=data.get("quality", 1.0),
+            regenerable=data.get("regenerable", False),
+            regen_rate=data.get("regen_rate", 0.0),
+            state=state,
+            metadata=data.get("metadata", {}),
+        )
+
     def __post_init__(self):
         """初始化后验证（仅数据验证，无业务逻辑）"""
         # 验证数量

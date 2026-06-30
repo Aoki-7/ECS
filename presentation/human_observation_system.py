@@ -76,7 +76,7 @@ class HumanObservationSystem(System):
         step = getattr(world, "_step_count", 0)
 
         humans = []
-        for entity, _ in world.get_components(HumanComponent):
+        for entity, (_) in world.get_components(HumanComponent):
             identity = world.get_component(entity, IdentityComponent)
             age = world.get_component(entity, LifeCycleComponent)
             gender = world.get_component(entity, GenderComponent)

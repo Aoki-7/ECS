@@ -79,7 +79,7 @@ class HealthSystem(System):
         """
 
         # 单次遍历：查询所有 HealthStatusComponent，按需补查 Needs
-        for entity, components in list(world.get_components(HealthStatusComponent)):
+        for entity, (components) in list(world.get_components(HealthStatusComponent)):
             health = components[0]
             needs = world.get_component(entity, PhysiologyNeedsComponent)
             self._apply_health_logic(health=health, needs=needs, dt=dt)

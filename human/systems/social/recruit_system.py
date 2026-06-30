@@ -41,7 +41,7 @@ class RecruitSystem(System):
     NEW_MEMBER_RELATION_LOYALTY_FACTOR = 0.3  # 关系对忠诚度的影响系数
 
     def update(self, world: World, dt: float):
-        current_time = (world.get_time().total_hours if world.get_time() else 0.0)
+        current_time = ((world.get_time().total_hours if world.get_time() else 0.0) if world.get_time() else 0.0)
         # 先缓存所有无部落成员，避免多部落时重复遍历
         candidates = []
         for entity, (space, membership) in world.get_components(

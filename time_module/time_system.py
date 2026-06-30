@@ -47,7 +47,8 @@ class TimeSystem(System):
                 world.add_component(world_entity, time)
                 world.set_world_entity(world_entity)
             logger.warning("[TimeSystem] 世界时间组件未初始化，已自动创建")
-        
+            world.set_time(time)
+
         # 更新总时间
         time.total_hours += scaled_delta
         

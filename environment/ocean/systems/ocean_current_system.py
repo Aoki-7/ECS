@@ -28,6 +28,7 @@ import logging
 import math
 from typing import Dict, Tuple, Optional
 
+from core.sqrt_cache import cached_sqrt, cached_distance
 from core.system import System
 from core.world import World
 from core.entity import Entity
@@ -124,7 +125,7 @@ class OceanCurrentSystem(System):
                     continue
 
                 # 计算距离
-                dist = math.sqrt(dx*dx + dy*dy)
+                dist = cached_distance(dx, dy)
 
                 # 指数衰减影响
                 influence = self.TEMP_INFLUENCE_COEFF * math.exp(-dist / self.TEMP_INFLUENCE_RANGE) * dt

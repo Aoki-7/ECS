@@ -141,7 +141,8 @@ class PredationSystem(System):
 
         if not success:
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"[Predation] E{predator_id} 攻击 E{prey_id} 失败")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[Predation] E{predator_id} 攻击 E{prey_id} 失败")
             return
 
         prey_energy = world.get_component(prey, EnergyComponent)
@@ -150,7 +151,8 @@ class PredationSystem(System):
 
         prey_energy.value = max(0.0, prey_energy.value - damage)
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"[Predation] E{predator_id} 对 E{prey_id} 造成 {damage:.1f} 伤害")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"[Predation] E{predator_id} 对 E{prey_id} 造成 {damage:.1f} 伤害")
 
         if prey_energy.value <= 0:
             self._kill_prey(world, prey, prey_id, predator_id, pred_energy)

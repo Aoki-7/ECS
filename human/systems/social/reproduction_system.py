@@ -49,7 +49,7 @@ class ReproductionSystem(System):
             world: World实例
             dt: 时间增量（小时）
         """
-        current_time = (world.get_time().total_hours if world.get_time() else 0.0)
+        current_time = ((world.get_time().total_hours if world.get_time() else 0.0) if world.get_time() else 0.0)
 
         for entity, (relation, repro, age, gender) in list(world.get_components(
             RelationshipComponent, ReproductionComponent, LifeCycleComponent, GenderComponent

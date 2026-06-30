@@ -47,6 +47,7 @@ from environment.hydrology.systems.infiltration_calculator import InfiltrationCa
 from environment.hydrology.systems.runoff_calculator import RunoffCalculator
 from environment.hydrology.systems.groundwater_exchanger import GroundwaterExchanger
 from environment.hydrology.systems.river_flow_calculator import RiverFlowCalculator
+from core.sqrt_cache import cached_sqrt
 
 logger = logging.getLogger(__name__)
 

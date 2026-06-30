@@ -32,6 +32,7 @@ import logging
 import math
 from typing import Dict, Tuple, Optional
 
+from core.sqrt_cache import cached_sqrt, cached_distance
 from core.system import System
 from core.world import World
 from core.entity import Entity
@@ -142,7 +143,7 @@ class GroundwaterFlowSystem(System):
 
                 # 达西定律: 流速 = K * (H1 - H2) / L
                 head_diff = heads[key] - heads[nk]
-                dist = math.sqrt(dx*dx + dy*dy)
+                dist = cached_distance(dx, dy)
 
                 # 有效扩散系数
                 n_k = k_cache[nk]

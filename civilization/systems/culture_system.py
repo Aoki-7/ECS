@@ -23,7 +23,7 @@ class CultureSystem(System):
 
     def update(self, world: World, dt: float = 1.0):
         super().update(world, dt)
-        for entity, culture in world.get_components(CultureComponent):
+        for entity, (culture) in world.get_components(CultureComponent):
             # 文化认同度向均值缓慢回归
             if culture.cultural_identity > 0.5:
                 culture.cultural_identity = max(0.5, culture.cultural_identity - 0.005)

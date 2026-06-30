@@ -55,7 +55,8 @@ class CorpseSystem(System):
             if corpse.decay_progress >= 1.0:
                 # 尸体完全分解
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"[Corpse] {corpse.original_name} fully decayed")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"[Corpse] {corpse.original_name} fully decayed")
                 world.remove_entity(entity)
                 continue
 

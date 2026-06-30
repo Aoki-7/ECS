@@ -174,7 +174,7 @@ class TechnologySystem(System):
 
         # 通知所有人类（限制上限避免内存泄漏）
         count = 0
-        for entity, knowledge in world.get_components(KnowledgeComponent):
+        for entity, (knowledge) in world.get_components(KnowledgeComponent):
             if knowledge:
                 knowledge.known_technologies.add(tech_name)
                 count += 1

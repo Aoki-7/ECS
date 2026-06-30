@@ -19,7 +19,7 @@ class FarmSystem(System):
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """更新农场生长"""
-        for entity, farm in world.get_components(FarmPlotComponent):
+        for entity, (farm) in world.get_components(FarmPlotComponent):
             if isinstance(farm, list):
                 farm = farm[0]
             FarmPlotSystem.update_growth(farm, dt, {"temperature": 20.0, "light": 0.7, "moisture": 0.5})
@@ -41,13 +41,13 @@ class FarmSystem(System):
             return "winter"
 
 
-class HarvestSystem(System):
+class FarmHarvestSystem(System):
     """收割系统"""
     tick_interval = 50
 
     def update(self, world: World, dt: float = 1.0) -> None:
         """处理收割"""
-        for entity, farm in world.get_components(FarmPlotComponent):
+        for entity, (farm) in world.get_components(FarmPlotComponent):
             if isinstance(farm, list):
                 farm = farm[0]
             if FarmPlotSystem.can_harvest(farm):

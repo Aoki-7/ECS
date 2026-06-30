@@ -21,6 +21,7 @@ from core.world import World
 from biology.ecology.components.food_chain_component import FoodChainComponent
 from biology.ecology.components.population_component import PopulationComponent
 from space.space_component import SpaceComponent
+from core.sqrt_cache import cached_sqrt
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +140,7 @@ class EcologyBalanceSystem(System):
             mean = sum(series) / len(series)
             if mean > 0:
                 variance = sum((x - mean) ** 2 for x in series) / len(series)
-                cv = math.sqrt(variance) / mean
+                cv = cached_sqrt(variance) / mean
                 total_var += cv
 
         return total_var / max(len(all_levels), 1)

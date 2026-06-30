@@ -41,6 +41,6 @@ class VegetationCouplingSystem(System):
     def _get_environment_grid(self, world: World) -> Dict:
         """获取环境网格"""
         grid = {}
-        for entity, env in world.get_components(EnvironmentComponent):
+        for entity, (env) in world.get_components(EnvironmentComponent):
             grid[(0, 0)] = entity.id  # 简化处理
         return grid

@@ -39,6 +39,7 @@ from plant.components.plant_component import PlantComponent
 from biology.ecology.speciation_analyzer import SpeciationAnalyzer
 from biology.ecology.speciation_registry import SpeciationRegistry
 from biology.ecology.speciation_migrator import SpeciationMigrator
+from core.sqrt_cache import cached_sqrt
 
 logger = logging.getLogger(__name__)
 

@@ -26,7 +26,7 @@ class ActionManagementSystem(System):
     def update(self, world: World, dt: float = 1.0):
         super().update(world, dt)
         # 动作队列调度：空闲时自动执行队列中的下一个动作
-        for entity, action in world.get_components(ActionComponent):
+        for entity, (action,) in world.get_components(ActionComponent):
             if action.status in (ActionStatus.IDLE, ActionStatus.SUCCESS,
                                  ActionStatus.FAILED, ActionStatus.INTERRUPTED):
                 if action.action_queue:

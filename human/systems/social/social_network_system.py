@@ -24,7 +24,7 @@ class SocialNetworkSystem(System):
 
     def update(self, world: World, dt: float = 1.0):
         super().update(world, dt)
-        for entity, network in world.get_components(SocialNetworkComponent):
+        for entity, (network) in world.get_components(SocialNetworkComponent):
             # 同步成员数量
             network.network_size = len(network.members)
 

@@ -87,7 +87,8 @@ class AnimalSocialSystem(System):
                 social.group_id = nearest_group
                 social.group_role = "member"
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"[Social] E{entity.id} 加入群体 {nearest_group}")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"[Social] E{entity.id} 加入群体 {nearest_group}")
 
     def _find_nearest_group(
         self, world: World, space_system: SpaceSystem,
@@ -139,7 +140,8 @@ class AnimalSocialSystem(System):
                 if mate_social:
                     mate_social.mate_id = entity.id
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"[Social] E{entity.id} 与 E{mate.id} 配对")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"[Social] E{entity.id} 与 E{mate.id} 配对")
 
     def _find_mate(
         self, world: World, space_system: SpaceSystem,
@@ -224,7 +226,7 @@ class AnimalSocialSystem(System):
         """衰减所有社交关系"""
         decay_rate = 0.001 * dt
         # 使用 list() 复制避免迭代修改风险
-        for entity, social in list(world.get_components(AnimalSocialComponent)):
+        for entity, (social) in list(world.get_components(AnimalSocialComponent)):
             # 衰减关系分数
             to_remove = []
             for other_id, score in social.relationship_scores.items():

@@ -82,7 +82,7 @@ class NeedsSystem(System):
         # 尝试新组件
         try:
             from biology.components.hunger_component import HungerComponent
-            for entity, _ in world.get_components(HungerComponent):
+            for entity, (_) in world.get_components(HungerComponent):
                 if entity not in entities:
                     entities.append(entity)
         except ImportError:
@@ -90,7 +90,7 @@ class NeedsSystem(System):
             
         try:
             from biology.components.thirst_component import ThirstComponent
-            for entity, _ in world.get_components(ThirstComponent):
+            for entity, (_) in world.get_components(ThirstComponent):
                 if entity not in entities:
                     entities.append(entity)
         except ImportError:
@@ -98,7 +98,7 @@ class NeedsSystem(System):
             
         try:
             from biology.components.sleep_component import SleepComponent
-            for entity, _ in world.get_components(SleepComponent):
+            for entity, (_) in world.get_components(SleepComponent):
                 if entity not in entities:
                     entities.append(entity)
         except ImportError:
@@ -106,7 +106,7 @@ class NeedsSystem(System):
             
         try:
             from biology.components.temperature_component import TemperatureComponent
-            for entity, _ in world.get_components(TemperatureComponent):
+            for entity, (_) in world.get_components(TemperatureComponent):
                 if entity not in entities:
                     entities.append(entity)
         except ImportError:
@@ -114,7 +114,7 @@ class NeedsSystem(System):
             
         try:
             from biology.components.social_needs_component import SocialNeedsComponent
-            for entity, _ in world.get_components(SocialNeedsComponent):
+            for entity, (_) in world.get_components(SocialNeedsComponent):
                 if entity not in entities:
                     entities.append(entity)
         except ImportError:
@@ -124,7 +124,7 @@ class NeedsSystem(System):
         if not entities:
             try:
                 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
-                for entity, _ in world.get_components(PhysiologyNeedsComponent):
+                for entity, (_) in world.get_components(PhysiologyNeedsComponent):
                     entities.append(entity)
             except ImportError:
                 pass
@@ -224,7 +224,8 @@ class NeedsSystem(System):
         # 警告状态
         elif top_score >= self.WARNING_THRESHOLD:
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"[NeedsSystem] 实体 {entity.id} {top_need} 警告({top_score:.1f})")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[NeedsSystem] 实体 {entity.id} {top_need} 警告({top_score:.1f})")
 
     def _trigger_critical_event(self, world: World, entity: Entity, need_type: str, score: float) -> None:
         """触发紧急需求事件"""

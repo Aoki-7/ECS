@@ -34,16 +34,20 @@ class PhysiologyNeedsSystem(System):
     priority = 40
 
     # ── 饥饿参数 ──
-    BASE_HUNGER_RATE = 2.0
+    # 与原 HungerSystem（tick_interval=20, BASE=4.0）等效：0.2/tick
+    BASE_HUNGER_RATE = 0.2
 
     # ── 口渴参数 ──
-    BASE_THIRST_RATE = 1.5
+    # 与原 ThirstSystem（tick_interval=20, BASE=3.5）等效：0.175/tick
+    BASE_THIRST_RATE = 0.175
 
     # ── 精力参数 ──
-    BASE_ENERGY_DECAY = 1.0
+    # 与原 EnergySystem（tick_interval=20, BASE=1.5）等效：0.075/tick
+    BASE_ENERGY_DECAY = 0.075
 
     # ── 社交参数 ──
-    SOCIAL_DECAY_RATE = 0.3
+    # 与原 SocialNeedSystem（tick_interval=20, BASE=0.3）等效：0.015/tick
+    SOCIAL_DECAY_RATE = 0.015
 
     def update(self, world: World, dt: float):
         env = world.get_environment()

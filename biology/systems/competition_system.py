@@ -22,6 +22,7 @@ from biology.lifecycle.components.morphology_component import MorphologyComponen
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.traits.trait import Trait
 from space.space_component import SpaceComponent
+from core.sqrt_cache import cached_sqrt
 
 
 class CompetitionSystem(System):
@@ -93,7 +94,7 @@ class CompetitionSystem(System):
         """两个实体之间的资源竞争"""
         dx = abs(c1["space"].x - c2["space"].x)
         dy = abs(c1["space"].y - c2["space"].y)
-        distance = math.sqrt(dx * dx + dy * dy)
+        distance = cached_sqrt(dx * dx + dy * dy)
         if distance < 0.1:
             distance = 0.1
 

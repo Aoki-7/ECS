@@ -29,6 +29,7 @@ import logging
 import math
 from typing import Dict, Tuple, Optional
 
+from core.sqrt_cache import cached_sqrt, cached_distance
 from core.system import System
 from core.world import World
 from core.entity import Entity
@@ -163,7 +164,7 @@ class ErosionSedimentSystem(System):
             if elev_diff <= 0:
                 continue
 
-            dist = math.sqrt(dx*dx + dy*dy)
+            dist = cached_distance(dx, dy)
             slope = elev_diff / max(dist, 0.1)
 
             velocity = WATER_FLOW_BASE_RATE * (slope ** WATER_FLOW_SLOPE_EXPONENT)

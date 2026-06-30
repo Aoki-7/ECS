@@ -11,6 +11,7 @@ from core.world import World
 from space.space_component import SpaceComponent
 from environment.terrain.components.terrain_component import TerrainComponent
 from environment.terrain.config.terrain_types import TerrainType
+from core.sqrt_cache import cached_sqrt, cached_distance
 
 
 class TerrainGenerator:
@@ -136,7 +137,7 @@ class TerrainGenerator:
             dx = (elevation - elevation) / 2  # 简化，实际需要相邻点高度
             dy = (elevation - elevation) / 2
 
-            slope = math.sqrt(dx*dx + dy*dy)
+            slope = cached_distance(dx, dy)
             aspect = math.degrees(math.atan2(dy, dx)) % 360
 
         # 根据高度设置其他属性

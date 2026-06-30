@@ -43,6 +43,7 @@ import math
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple, Optional
 
+from core.sqrt_cache import cached_sqrt, cached_distance
 from core.world import World
 from core.entity import Entity
 
@@ -322,7 +323,7 @@ class GravityWaterFlowProcessor(ContinuumProcessor):
                 if elev_diff <= 0:
                     continue
 
-                dist = math.sqrt(dx*dx + dy*dy)
+                dist = cached_distance(dx, dy)
                 slope = elev_diff / max(dist, 0.1)
 
                 flow = (
@@ -399,7 +400,7 @@ class WindAdvectionProcessor(ContinuumProcessor):
                 if n_env is None:
                     continue
 
-                dist = math.sqrt(dx * dx + dy * dy)
+                dist = cached_sqrt(dx * dx + dy * dy)
                 to_vx = -dx / dist
                 to_vy = -dy / dist
 

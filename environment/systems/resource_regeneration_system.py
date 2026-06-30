@@ -14,7 +14,7 @@ class ResourceRegenerationSystem(System):
     REGEN_RATE = 0.1
 
     def update(self, world: World, dt: float):
-        for entity, resource in world.query_components(ResourceComponent):
+        for entity, (resource,) in world.query_components(ResourceComponent):
             if resource.resource_type in ["tree", "fruit"]:
                 resource.amount += self.REGEN_RATE * dt  # 树木和果实随时间再生
 

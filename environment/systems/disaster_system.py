@@ -230,7 +230,7 @@ class DisasterSystem(System):
         disaster["duration"] -= dt
 
         # 全局影响：降低土壤湿度
-        for entity, soil in world.get_components(SoilComponent):
+        for entity, (soil) in world.get_components(SoilComponent):
             soil.moisture = max(soil.wilting_point, soil.moisture - 0.01 * dt * disaster["intensity"])
 
         if disaster["duration"] <= 0:
@@ -244,7 +244,7 @@ class DisasterSystem(System):
         cx, cy = disaster["x"], disaster["y"]
         radius = disaster["radius"]
 
-        for entity, space in world.get_components(SpaceComponent):
+        for entity, (space) in world.get_components(SpaceComponent):
             dist = math.hypot(space.x - cx, space.y - cy)
             if dist <= radius:
                 damage_fn(world, entity, disaster, dist)

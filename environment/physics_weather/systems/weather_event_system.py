@@ -25,6 +25,7 @@ import math
 from collections import deque
 from typing import Dict, Optional
 
+from core.sqrt_cache import cached_sqrt
 from core.system import System
 from core.world import World
 from identity.event_log_system import EventLog
@@ -83,7 +84,7 @@ class WeatherEventSystem(System):
         if weather is None:
             return
 
-        current_time = (world.get_time().total_hours if world.get_time() else 0.0)
+        current_time = ((world.get_time().total_hours if world.get_time() else 0.0) if world.get_time() else 0.0)
 
         snapshot = self._take_snapshot(weather)
 
@@ -128,7 +129,7 @@ class WeatherEventSystem(System):
         """计算滑动窗口的均值和标准差"""
         mean = sum(history) / len(history)
         variance = sum((x - mean) ** 2 for x in history) / len(history)
-        std = math.sqrt(variance) if variance > 0 else 1.0
+        std = cached_sqrt(variance) if variance > 0 else 1.0
         std = max(std, abs(mean) * 0.05 + 0.01)
         return mean, std
 

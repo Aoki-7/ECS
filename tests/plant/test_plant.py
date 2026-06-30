@@ -8,7 +8,7 @@ Plant 模块综合测试
     2. Presets           — 物种预设完整性、基因值合理性
     3. PlantComponent    — 默认值与属性访问
     4. CanopyComponent   — 默认值与属性访问
-    5. RootComponent     — 默认值与属性访问
+    5. PlantRootComponent — 默认值与属性访问
     6. PlantPhotosynthesisSystem — 光合作用计算与 phenotype 写入
     7. SeedDispersalSystem       — 传播条件判定、边界检查、土壤适宜性
     8. PlantWaterUptakeSystem    — 吸水计算、水分胁迫、phenotype 写入
@@ -34,7 +34,7 @@ from plant.plant_factory import PlantFactory
 from plant.presets import SPECIES_PRESETS, SPECIES_LIFECYCLE
 from plant.components.plant_component import PlantComponent
 from plant.components.canopy_component import CanopyComponent
-from plant.components.root_component import RootComponent
+from plant.components.root_component import PlantRootComponent
 from plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
 from plant.systems.seed_dispersal_system import SeedDispersalSystem
 from plant.systems.water_uptake_system import PlantWaterUptakeSystem
@@ -136,7 +136,7 @@ class TestPlantFactory(PlantTestBase):
             PlantComponent,
             LightReceiverComponent,
             CanopyComponent,
-            RootComponent,
+            PlantRootComponent,
         ]
         for comp_type in required_components:
             comp = self.world.get_component(entity, comp_type)
@@ -310,8 +310,8 @@ class TestPlantComponents(unittest.TestCase):
         self.assertEqual(cc.photosynthetic_efficiency, 0.05)
 
     def test_root_component_defaults(self):
-        """RootComponent 默认值正确"""
-        rc = RootComponent()
+        """PlantRootComponent 默认值正确"""
+        rc = PlantRootComponent()
         self.assertEqual(rc.root_depth, 5.0)
         self.assertEqual(rc.root_radius, 10.0)
         self.assertEqual(rc.water_absorption_rate, 1.0)
@@ -329,8 +329,8 @@ class TestPlantComponents(unittest.TestCase):
         self.assertFalse(hasattr(cc, "__dict__"))
 
     def test_root_component_slots(self):
-        """RootComponent 使用 __slots__"""
-        rc = RootComponent()
+        """PlantRootComponent 使用 __slots__"""
+        rc = PlantRootComponent()
         self.assertFalse(hasattr(rc, "__dict__"))
 
 
@@ -586,7 +586,7 @@ class TestPlantWaterUptakeSystem(PlantTestBase):
     def test_no_soil_no_uptake(self):
         """无土壤时不吸水"""
         entity = self.create_mature_plant(x=10, y=10)
-        root = self.world.get_component(entity, RootComponent)
+        root = self.world.get_component(entity, PlantRootComponent)
         root.current_water_uptake = 0.0
 
         self.system.update(self.world, dt=1.0)
@@ -600,7 +600,7 @@ class TestPlantWaterUptakeSystem(PlantTestBase):
 
         self.system.update(self.world, dt=1.0)
 
-        root = self.world.get_component(entity, RootComponent)
+        root = self.world.get_component(entity, PlantRootComponent)
         self.assertGreater(root.current_water_uptake, 0.0)
 
     def test_low_moisture_low_uptake(self):
@@ -610,7 +610,7 @@ class TestPlantWaterUptakeSystem(PlantTestBase):
 
         self.system.update(self.world, dt=1.0)
 
-        root = self.world.get_component(entity, RootComponent)
+        root = self.world.get_component(entity, PlantRootComponent)
         self.assertLess(root.current_water_uptake, 0.5)
 
     def test_water_stress_writes_phenotype(self):

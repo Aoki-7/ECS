@@ -221,7 +221,7 @@ class ReputationSystem(System):
     def update(self, world: World, dt: float = 1.0):
         super().update(world, dt)
         # 声誉自然衰减与谣言传播
-        for entity, rep in world.get_components(ReputationComponent):
+        for entity, (rep) in world.get_components(ReputationComponent):
             # 声誉向中性值 50 缓慢回归
             if rep.reputation > 50:
                 rep.reputation = max(50.0, rep.reputation - 0.2)

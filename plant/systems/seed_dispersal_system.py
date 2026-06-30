@@ -31,6 +31,7 @@ from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from space.space_component import SpaceComponent
 from environment.soil.components.soil_component import SoilComponent
 from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
+from core.sqrt_cache import cached_sqrt
 
 
 class SeedDispersalSystem(System):
@@ -119,7 +120,7 @@ class SeedDispersalSystem(System):
     def _compute_dispersal_pos(self, space, dispersal: float) -> tuple:
         """计算单个种子的散布位置"""
         angle = self._rng.uniform(0, 2.0 * math.pi)
-        distance = dispersal * math.sqrt(self._rng.random())
+        distance = dispersal * cached_sqrt(self._rng.random())
         return int(space.x) + int(distance * math.cos(angle)), int(space.y) + int(distance * math.sin(angle))
 
     def _is_valid_seed_pos(self, x: int, y: int, world_config, soil_cache: dict) -> bool:

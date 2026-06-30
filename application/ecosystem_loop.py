@@ -367,7 +367,7 @@ class EcosystemLoop:
                 species_ids.add(tracker.species_id)
 
         from biology.lifecycle.corpse.components.corpse_component import CorpseComponent
-        for entity, _ in self.world.get_components(CorpseComponent):
+        for entity, (_) in self.world.get_components(CorpseComponent):
             corpses += 1
 
         for entity, (soil,) in self.world.get_components(SoilComponent):

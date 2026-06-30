@@ -31,6 +31,7 @@ from biology.components.smell_component import SmellComponent
 from space.space_component import SpaceComponent
 
 import logging
+from core.sqrt_cache import cached_sqrt
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +149,7 @@ class SmellDiffusionSystem(System):
                 for dy in range(-2, 3):
                     key = (grid_x + dx, grid_y + dy)
                     if key in self._smell_field:
-                        distance = math.sqrt(dx * dx + dy * dy)
+                        distance = cached_sqrt(dx * dx + dy * dy)
                         factor = 1.0 / (1.0 + distance)
                         for scent_type, intensity in self._smell_field[key].items():
                             detected[scent_type] = detected.get(scent_type, 0.0) + intensity * factor
@@ -157,7 +158,8 @@ class SmellDiffusionSystem(System):
             # 这里简化为打印日志
             if detected:
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"[Smell] Entity {entity.id} detected: {detected}")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"[Smell] Entity {entity.id} detected: {detected}")
 
     def get_smell_at(self, x: float, y: float) -> Dict[str, float]:
         """获取指定位置的气味"""

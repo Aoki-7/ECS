@@ -12,7 +12,7 @@ from core.component import Component
 
 
 @dataclass(slots=True)
-class RootComponent(Component):
+class PlantRootComponent(Component):
     """
     根系组件
 

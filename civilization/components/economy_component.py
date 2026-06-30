@@ -20,7 +20,7 @@ from core.component import Component
 
 
 @dataclass(slots=True)
-class EconomyComponent(Component):
+class CivilizationEconomyComponent(Component):
     """
     经济组件 - 纯数据版
 

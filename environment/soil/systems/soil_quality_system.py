@@ -22,7 +22,7 @@ class SoilQualitySystem(System):
 
     def update(self, world: World, dt: float = 1.0):
         super().update(world, dt)
-        for entity, quality in world.get_components(SoilQualityComponent):
+        for entity, (quality) in world.get_components(SoilQualityComponent):
             # 土壤质量向自然均值 0.6 缓慢回归
             if quality.quality > 0.6:
                 quality.quality = max(0.6, quality.quality - 0.001)

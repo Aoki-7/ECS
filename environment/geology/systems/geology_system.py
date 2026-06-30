@@ -27,15 +27,15 @@ class GeologySystem(System):
         super().update(world, dt)
 
         # 板块移动
-        for entity, plate in world.get_components(PlateComponent):
+        for entity, (plate) in world.get_components(PlateComponent):
             plate.vx *= 0.999
             plate.vy *= 0.999
 
         # 沉积物积累
-        for entity, sediment in world.get_components(SedimentComponent):
+        for entity, (sediment) in world.get_components(SedimentComponent):
             sediment.sediment += 0.001 * dt
 
         # 地表物质风化（硬度下降，渗透率上升）
-        for entity, material in world.get_components(SurfaceMaterialComponent):
+        for entity, (material) in world.get_components(SurfaceMaterialComponent):
             material.hardness = max(0.0, material.hardness - 0.0001 * dt)
             material.permeability = min(1.0, material.permeability + 0.0001 * dt)

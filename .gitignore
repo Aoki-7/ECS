@@ -25,3 +25,8 @@ Thumbs.db
 
 # Reports
 reports/
+
+# Runtime artifacts
+saves/
+data/*.db
+debug_*.py

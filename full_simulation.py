@@ -63,6 +63,10 @@ from resource.wood.components.wood_component import WoodComponent
 from resource.stone.components.stone_component import StoneComponent
 from resource.metal.components.metal_component import MetalComponent
 from environment.environment_component import EnvironmentComponent
+from human.components.basic.human_component import HumanComponent
+from resource.food.components.food_component import FoodComponent
+from resource.water.components.water_component import WaterComponent
+from plant.components.plant_component import PlantComponent
 
 
 class FullSimulationLoop(SimulationLoop):
@@ -82,9 +86,9 @@ class FullSimulationLoop(SimulationLoop):
     # -----------------------------------------------------
     # 系统初始化扩展
     # -----------------------------------------------------
-    def _init_systems(self):
+    def init(self) -> None:
         """初始化所有系统：先调用父类基础系统，再注册扩展系统。"""
-        super()._init_systems()
+        super().init()
         self._init_extended_systems()
 
     def _init_extended_systems(self):
@@ -195,22 +199,30 @@ class FullSimulationLoop(SimulationLoop):
     # -----------------------------------------------------
     def get_stats(self) -> dict:
         """获取当前统计信息（扩展版）"""
+        import time
+
         stats = super().get_stats()
+        step = stats.get('step', 0)
+
+        # 计算步速
+        now = time.perf_counter()
+        if not hasattr(self, '_stats_start_time'):
+            self._stats_start_time = now
+        elapsed = now - self._stats_start_time
+        stats['steps_per_second'] = step / elapsed if elapsed > 0 else 0.0
 
         # 使用 get_components() 避免 O(E) 全量遍历
-        plant_count = sum(1 for _ in self.world.get_components(GenomeComponent))
-        wood_count = sum(1 for _ in self.world.get_components(WoodComponent))
-        stone_count = sum(1 for _ in self.world.get_components(StoneComponent))
-        metal_count = sum(1 for _ in self.world.get_components(MetalComponent))
-        env_cell_count = sum(1 for _ in self.world.get_components(EnvironmentComponent))
+        stats['total_entities'] = len(self.world.entities)
+        stats['human_count'] = sum(1 for _ in self.world.get_components(HumanComponent))
+        stats['food_count'] = sum(1 for _ in self.world.get_components(FoodComponent))
+        stats['water_count'] = sum(1 for _ in self.world.get_components(WaterComponent))
+        stats['plant_count'] = sum(1 for _ in self.world.get_components(PlantComponent))
+        stats['wood_count'] = sum(1 for _ in self.world.get_components(WoodComponent))
+        stats['stone_count'] = sum(1 for _ in self.world.get_components(StoneComponent))
+        stats['metal_count'] = sum(1 for _ in self.world.get_components(MetalComponent))
+        stats['env_cell_count'] = sum(1 for _ in self.world.get_components(EnvironmentComponent))
+        stats['civilization_stage'] = '部落'
 
-        stats.update({
-            'plant_count': plant_count,
-            'wood_count': wood_count,
-            'stone_count': stone_count,
-            'metal_count': metal_count,
-            'env_cell_count': env_cell_count,
-        })
         return stats
 
     def run_simulation(self, steps: int = 300, delta_hours: float = 1.0,
@@ -219,6 +231,10 @@ class FullSimulationLoop(SimulationLoop):
         """
         运行全面模拟（扩展版输出格式）。
         """
+        # 确保扩展系统已初始化
+        if not hasattr(self, 'env_sync_system'):
+            self.init()
+
         logger.info(f"[Run] 全面模拟: {steps} 步 × {delta_hours}h")
 
         for step in range(steps):

@@ -47,7 +47,7 @@ class WorldVisualizer:
             return {"type": "heatmap", "data": []}
 
         positions = []
-        for entity, comps in self.world.get_components(SpaceComponent):
+        for entity, (comps) in self.world.get_components(SpaceComponent):
             space = comps[0] if isinstance(comps, list) else comps
             positions.append({"x": space.x, "y": space.y, "id": entity.id})
 
@@ -86,7 +86,7 @@ class WorldVisualizer:
         # 尝试获取社交关系
         try:
             from animal.components.animal_social_component import AnimalSocialComponent
-            for entity, social in self.world.get_components(AnimalSocialComponent):
+            for entity, (social) in self.world.get_components(AnimalSocialComponent):
                 for other_id, score in social.relationship_scores.items():
                     if abs(score) > 0.3:
                         edges.append({

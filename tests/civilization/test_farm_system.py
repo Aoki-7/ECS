@@ -14,7 +14,7 @@ from environment.soil.components.soil_component import SoilComponent
 from civilization.components.farm_component import (
     FarmPlotComponent, FarmingKnowledgeComponent, IrrigationComponent
 )
-from civilization.systems.farm_system import FarmSystem, HarvestSystem, FarmPlotSystem, FarmingKnowledgeSystem, IrrigationSystem
+from civilization.systems.farm_system import FarmSystem, FarmHarvestSystem, FarmPlotSystem, FarmingKnowledgeSystem, IrrigationSystem
 
 
 class TestFarmPlotComponent(unittest.TestCase):
@@ -141,10 +141,10 @@ class TestFarmSystem(unittest.TestCase):
         self.assertEqual(self.system._get_season(300), "winter")
 
 
-class TestHarvestSystem(unittest.TestCase):
+class TestFarmHarvestSystem(unittest.TestCase):
     def setUp(self):
         self.world = World()
-        self.system = HarvestSystem()
+        self.system = FarmHarvestSystem()
 
     def test_harvest_mature_crop(self):
         """收割成熟作物"""

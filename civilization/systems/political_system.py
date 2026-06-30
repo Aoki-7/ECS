@@ -23,7 +23,7 @@ class PoliticalSystem(System):
 
     def update(self, world: World, dt: float = 1.0):
         super().update(world, dt)
-        for entity, political in world.get_components(PoliticalComponent):
+        for entity, (political) in world.get_components(PoliticalComponent):
             # 影响力自然衰减
             if political.influence > 0.0:
                 political.influence = max(0.0, political.influence - 0.002)

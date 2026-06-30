@@ -127,7 +127,7 @@ class TestSystemUpdatePerformance(unittest.TestCase):
         class SimpleSystem:
             tick_interval = 1
             def update(self, world, dt):
-                for entity, space in world.get_components(SpaceComponent):
+                for entity, (space) in world.get_components(SpaceComponent):
                     pass
 
         world.add_system(SimpleSystem())

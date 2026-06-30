@@ -14,7 +14,7 @@
 from core.system import System
 from core.world import World
 
-from plant.components.root_component import RootComponent
+from plant.components.root_component import PlantRootComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.traits.trait import Trait
 from biology.systems.phenotype_system import PhenotypeSystem
@@ -49,7 +49,7 @@ class PlantWaterUptakeSystem(System):
         self._build_soil_cache(world)
 
         for entity, (root, space, pheno) in world.get_components(
-            RootComponent,
+            PlantRootComponent,
             SpaceComponent,
             PhenotypeComponent,
         ):

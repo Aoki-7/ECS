@@ -80,7 +80,7 @@ class CivilizationSystem(System):
         """更新文明发展指标"""
         # 计算人口
         human_count = 0
-        for entity, _ in world.get_components(HumanComponent):  # 需要导入HumanComponent
+        for entity, (_) in world.get_components(HumanComponent):  # 需要导入HumanComponent
             human_count += 1
         self.civilization_metrics['population'] = human_count
 
@@ -91,7 +91,7 @@ class CivilizationSystem(System):
         # 计算经济复杂度
         total_wealth = 0.0
         trade_count = 0
-        for entity, components in world.get_components(EconomyComponent):
+        for entity, (components) in world.get_components(EconomyComponent):
             economy = components[0]  # EconomyComponent是第一个组件
             total_wealth += economy.wealth
             # 计算交易历史
@@ -104,7 +104,7 @@ class CivilizationSystem(System):
 
         # 计算社会组织度
         relationship_count = 0
-        for entity, components in world.get_components(SocialComponent):
+        for entity, (components) in world.get_components(SocialComponent):
             social = components[0]  # SocialComponent是第一个组件
             relationship_count += len(social.relations)
 
@@ -112,7 +112,7 @@ class CivilizationSystem(System):
 
         # 计算资源多样性
         resource_types = set()
-        for entity, components in world.get_components(InventoryComponent):
+        for entity, (components) in world.get_components(InventoryComponent):
             inventory = components[0]  # InventoryComponent是第一个组件
             # 简化：假设库存中有物品就认为有该资源类型
             if len(inventory.items) > 0:

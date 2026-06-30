@@ -199,7 +199,7 @@ class RoleSystem(System):
     def update(self, world: World, dt: float = 1.0):
         super().update(world, dt)
         # 角色重要性自然衰减，新责任添加未履行记录
-        for entity, role_comp in world.get_components(RoleComponent):
+        for entity, (role_comp) in world.get_components(RoleComponent):
             for role_type, roles in role_comp._roles.items():
                 for role in roles:
                     if role.importance > 10.0:

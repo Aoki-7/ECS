@@ -33,7 +33,7 @@ from identity.category import EntityCategory
 from identity.subcategory import PlantSubCategory
 from environment.light_field.components.light_receiver_component import LightReceiverComponent
 from plant.components.plant_component import PlantComponent
-from plant.components.root_component import RootComponent
+from plant.components.root_component import PlantRootComponent
 from plant.components.canopy_component import CanopyComponent
 
 from .presets import SPECIES_PRESETS, SPECIES_LIFECYCLE
@@ -454,7 +454,7 @@ class PlantFactory:
         world.add_component(entity, CanopyComponent())
 
         # 根系组件：描述根系形态与吸水能力
-        world.add_component(entity, RootComponent())
+        world.add_component(entity, PlantRootComponent())
 
         # 食物链组件：植物是生产者（营养级 1）
         world.add_component(entity, FoodChainComponent(

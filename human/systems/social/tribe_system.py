@@ -67,7 +67,7 @@ class TribeSystem(System):
     def _init_tribes(self, world: World):
         """初始化：为所有无部落的人类创建一个初始部落"""
         humans = []
-        for entity, _ in world.get_components(TribeMembershipComponent):
+        for entity, (_) in world.get_components(TribeMembershipComponent):
             humans.append(entity)
 
         if not humans:
@@ -146,7 +146,8 @@ class TribeSystem(System):
 
         removed = len(tribe.member_ids) - len(valid_members)
         if removed > 0:
-            tribe.member_ids = valid_members
+            tribe.members = {mid: tribe.members.get(mid, 'member') for mid in valid_members}
+            tribe.tribe_size = len(valid_members)
             if tribe.leader_id not in valid_members:
                 tribe.leader_id = None
 

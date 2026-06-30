@@ -123,7 +123,8 @@ class AnimalMigrationSystem(System):
             self._path_index[entity.id] = 0
             self._migration_states[entity.id] = "migrating"
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"[Migration] E{entity.id} 路径规划完成，共 {len(smoothed)} 个路径点")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[Migration] E{entity.id} 路径规划完成，共 {len(smoothed)} 个路径点")
         else:
             # 路径规划失败，尝试最近可达点
             nearest = self._pathfinding.find_nearest_reachable(
@@ -140,7 +141,8 @@ class AnimalMigrationSystem(System):
                 # 完全无法到达，放弃迁徙
                 self._migration_states[entity.id] = "settled"
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"[Migration] E{entity.id} 无法找到可达路径，放弃迁徙")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"[Migration] E{entity.id} 无法找到可达路径，放弃迁徙")
 
         # 群体领袖通知成员
         social = world.get_component(entity, AnimalSocialComponent)
@@ -294,8 +296,9 @@ class AnimalMigrationSystem(System):
         self, world: World, leader_entity, group_id: int, target
     ) -> None:
         """通知群体成员开始迁徙"""
-        for entity, social in world.get_components(AnimalSocialComponent):
+        for entity, (social) in world.get_components(AnimalSocialComponent):
             if social.group_id == group_id and entity.id != leader_entity.id:
                 self._migration_states[entity.id] = "preparing"
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"[Migration] E{entity.id} 响应领袖迁徙号召")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"[Migration] E{entity.id} 响应领袖迁徙号召")

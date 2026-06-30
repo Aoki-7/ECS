@@ -104,7 +104,8 @@ class PopulationDynamicsSystem(System):
         if logger.isEnabledFor(logging.DEBUG):
             stats = ", ".join(f"L{k}={v}" for k, v in sorted(counts.items()))
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"[PopDyn] 种群统计: {stats}, 总面积≈{area:.0f}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"[PopDyn] 种群统计: {stats}, 总面积≈{area:.0f}")
 
     def _count_by_trophic_level(self, world: World) -> dict[int, int]:
         """按营养级统计实体数量"""

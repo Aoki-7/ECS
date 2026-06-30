@@ -27,6 +27,7 @@ from core.system import System
 from environment.climate.climate_component import ClimateComponent
 from environment.ocean.components.ocean_current_component import OceanCurrentComponent
 from space.space_component import SpaceComponent
+from core.sqrt_cache import cached_sqrt
 
 
 class ClimateSystem(System):
@@ -101,7 +102,7 @@ class ClimateSystem(System):
 
     def _update_temperature(self, climate: ClimateComponent, target: float, dt: float) -> None:
         """温度趋势标准 OU 更新。"""
-        noise = random.gauss(0, self.SIGMA_TEMP * math.sqrt(dt))
+        noise = random.gauss(0, self.SIGMA_TEMP * cached_sqrt(dt))
         climate.temp_trend += self.THETA_TEMP * (target - climate.temp_trend) * dt + noise
         climate.temp_trend = self._clamp(
             climate.temp_trend, self.TEMP_TREND_MIN, self.TEMP_TREND_MAX
@@ -109,7 +110,7 @@ class ClimateSystem(System):
 
     def _update_humidity(self, climate: ClimateComponent, target: float, dt: float) -> None:
         """湿度趋势标准 OU 更新。"""
-        noise = random.gauss(0, self.SIGMA_HUMID * math.sqrt(dt))
+        noise = random.gauss(0, self.SIGMA_HUMID * cached_sqrt(dt))
         climate.humidity_trend += self.THETA_HUMID * (target - climate.humidity_trend) * dt + noise
         climate.humidity_trend = self._clamp(
             climate.humidity_trend, self.HUMID_TREND_MIN, self.HUMID_TREND_MAX
@@ -117,7 +118,7 @@ class ClimateSystem(System):
 
     def _update_rainfall(self, climate: ClimateComponent, target: float, dt: float) -> None:
         """降雨趋势标准 OU 更新。"""
-        noise = random.gauss(0, self.SIGMA_RAIN * math.sqrt(dt))
+        noise = random.gauss(0, self.SIGMA_RAIN * cached_sqrt(dt))
         climate.rainfall_trend += self.THETA_RAIN * (target - climate.rainfall_trend) * dt + noise
         climate.rainfall_trend = self._clamp(
             climate.rainfall_trend, self.RAIN_TREND_MIN, self.RAIN_TREND_MAX

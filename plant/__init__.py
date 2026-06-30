@@ -69,7 +69,7 @@ from .presets import SPECIES_PRESETS, SPECIES_LIFECYCLE
 # 组件
 from .components.plant_component import PlantComponent
 from .components.canopy_component import CanopyComponent
-from .components.root_component import RootComponent
+from .components.root_component import PlantRootComponent
 
 # 系统
 from .systems.photosynthesis_system import PlantPhotosynthesisSystem
@@ -85,7 +85,7 @@ __all__ = [
     # 组件
     "PlantComponent",
     "CanopyComponent",
-    "RootComponent",
+    "PlantRootComponent",
     # 系统
     "PlantPhotosynthesisSystem",
     "SeedDispersalSystem",

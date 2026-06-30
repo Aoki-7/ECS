@@ -57,7 +57,7 @@ class GravitySystem(System):
         if gravity is None or not gravity.is_enabled:
             return
 
-        for entity, space in world.get_components(SpaceComponent):
+        for entity, (space) in world.get_components(SpaceComponent):
             self._apply_gravity(entity, space, gravity, dt)
 
     def _get_gravity(self, world: World) -> Optional[GravityComponent]:
