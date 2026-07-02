@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -20,6 +21,7 @@ from human.components.social.tribe_component import TribeComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
 from human.components.social.social_component import SocialComponent
 from human.components.basic.identity_component import IdentityComponent
+from human.systems.social.tribe_system import TribeSystem
 from space.space_component import SpaceComponent
 from identity.event_log_system import EventLog
 
@@ -47,7 +49,7 @@ class RecruitSystem(System):
         for entity, (space, membership) in world.get_components(
             SpaceComponent, TribeMembershipComponent
         ):
-            if not membership.is_member():
+            if not TribeSystem.is_member(membership):
                 candidates.append((entity, space))
 
         if not candidates:
@@ -59,7 +61,7 @@ class RecruitSystem(System):
     def _try_recruit(self, world: World, tribe_entity, tribe: TribeComponent,
                      candidates: list, current_time: float):
         """尝试招募附近的无部落成员"""
-        if tribe.get_member_count() >= self.MAX_TRIBE_SIZE:
+        if TribeSystem.get_member_count(tribe) >= self.MAX_TRIBE_SIZE:
             return  # 部落太大不再招募
 
         center_x, center_y = tribe.home_territory
@@ -94,7 +96,7 @@ class RecruitSystem(System):
                 continue
 
             # 执行招募
-            tribe.add_member(entity.id)
+            TribeSystem.add_member(tribe, entity.id)
             membership = world.get_component(entity, TribeMembershipComponent)
             if membership is not None:
                 membership.tribe_id = tribe_entity.id
@@ -119,7 +121,7 @@ class RecruitSystem(System):
             from human.components.cognitive.memory_component import MemoryComponent
             memory = world.get_component(entity, MemoryComponent)
             if memory:
-                memory.add_event(
+                MemoryManagementSystem.add_event(memory, 
                     current_time, "joined_tribe",
                     f"加入部落 '{tribe.name}'",
                     impact=0.4,

@@ -19,6 +19,7 @@ from core.world import World
 from core.system import System
 
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.systems.life_cycle_system import LifeCycleSystem
 from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.lifecycle.components.morphology_component import MorphologyComponent
 from biology.components.phenotype_component import PhenotypeComponent
@@ -62,11 +63,11 @@ class SenescenceSystem(System):
                 list(world.get_components(LifeCycleComponent, EnergyComponent)):
 
             # 跳过已在衰老/死亡的实体
-            if lifecycle.is_senescence or lifecycle.is_dead:
+            if LifeCycleSystem.is_senescence(lifecycle) or LifeCycleSystem.is_dead(lifecycle):
                 continue
 
             # 长期能量不足 → 触发衰老
-            if energy.value <= 0 and lifecycle.is_alive:
+            if energy.value <= 0 and LifeCycleSystem.is_alive(lifecycle):
                 lifecycle.senescence_triggered = True
 
     # -------------------------------------------------
@@ -87,7 +88,7 @@ class SenescenceSystem(System):
 
         退化程度与衰老持续时间成正比（senescence_ratio: 0→1）。
         """
-        if not lifecycle.is_senescence:
+        if not LifeCycleSystem.is_senescence(lifecycle):
             return
 
         # 衰老系数（随衰老时间递增）

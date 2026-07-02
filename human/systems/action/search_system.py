@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -206,7 +207,7 @@ class SearchSystem(System):
             logger.warning(f"[SearchSystem] 获取世界时间失败: {e}")
 
         if place_type is not None:
-            memory.record_place(target_pos, place_type, current_time, sentiment=0.5)
+            MemoryManagementSystem.record_place(memory, target_pos, place_type, current_time, sentiment=0.5)
 
     def _task_to_place_type(self, task: TaskComponent) -> str | None:
         """任务类型转换为地点类型"""

@@ -22,6 +22,7 @@ from identity.event_log_system import EventLog
 from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.components.genome_component import GenomeComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
+from biology.lifecycle.systems.life_cycle_system import LifeCycleSystem
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.lifecycle.components.morphology_component import MorphologyComponent
 from biology.traits.trait import Trait
@@ -73,7 +74,7 @@ class BiologyReproductionSystem(System):
 
     def _generate_seeds_for_entity(self, world, entity, genome, pheno, energy, lifecycle, space):
         """为单个实体生成种子，返回种子列表 [(x, y, genome, species, generation), ...]"""
-        if not lifecycle.is_mature:
+        if not LifeCycleSystem.is_mature(lifecycle):
             return []
 
         growth = PhenotypeSystem.get(pheno, "growth_partition", 0.4)

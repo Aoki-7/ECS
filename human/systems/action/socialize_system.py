@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -26,6 +27,7 @@ from human.components.cognitive.memory_component import MemoryComponent
 from human.components.cognitive.personality_component import PersonalityComponent
 from human.components.social.relationship_component import RelationshipComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
+from human.systems.social.tribe_system import TribeSystem
 from human.components.basic.identity_component import IdentityComponent
 
 
@@ -123,9 +125,9 @@ class SocializeSystem(System):
                     membership.tribe_id == target_membership.tribe_id):
                     quality = min(self.QUALITY_MAX, quality + self.TRIBE_QUALITY_BONUS)
                     # 增加忠诚度
-                    membership.add_loyalty(self.TRIBE_LOYALTY_BONUS)
+                    TribeSystem.add_loyalty(membership, self.TRIBE_LOYALTY_BONUS)
                     if target_membership:
-                        target_membership.add_loyalty(self.TRIBE_LOYALTY_BONUS)
+                        TribeSystem.add_loyalty(target_membership, self.TRIBE_LOYALTY_BONUS)
 
         # 影响情绪
         if emotion:
@@ -139,12 +141,12 @@ class SocializeSystem(System):
         # 记录到记忆
         if memory:
             desc = f"与伙伴进行了愉快的社交" if quality > 0.5 else "进行了社交互动"
-            memory.add_event(
+            MemoryManagementSystem.add_event(memory, 
                 current_time, "socialized", desc,
                 impact=self.MEMORY_IMPACT_MULTIPLIER * quality,
                 location=getattr(action, 'target_pos', None)
             )
-            memory.record_success("socialize")
+            MemoryManagementSystem.record_success(memory, "socialize")
 
         # 如果有目标实体，更新双方关系
         if action.target_entity is not None:
@@ -209,13 +211,13 @@ class SocializeSystem(System):
         name2 = identity2.name if identity2 else f"Human_{entity2.id}"
         
         if memory1:
-            memory1.record_person(
+            MemoryManagementSystem.record_person(memory1, 
                 entity2.id, name2, current_time,
                 relationship="friend", trust=self.MEMORY_TRUST_BASE + self.MEMORY_TRUST_QUALITY_FACTOR * quality
             )
         
         if memory2:
-            memory2.record_person(
+            MemoryManagementSystem.record_person(memory2, 
                 entity1.id, name1, current_time,
                 relationship="friend", trust=0.5 + 0.2 * quality
             )

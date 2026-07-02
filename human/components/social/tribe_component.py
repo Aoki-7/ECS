@@ -45,21 +45,6 @@ class TribeComponent(Component):
         """兼容旧系统：name 属性映射到 tribe_name"""
         self.tribe_name = value
 
-    def get_member_count(self) -> int:
-        """获取成员数量"""
-        return len(self.members)
-
-    def add_member(self, entity_id: int, role: str = "member") -> None:
-        """添加成员"""
-        self.members[entity_id] = role
-        self.tribe_size = len(self.members)
-
-    def remove_member(self, entity_id: int) -> None:
-        """移除成员"""
-        if entity_id in self.members:
-            del self.members[entity_id]
-            self.tribe_size = len(self.members)
-
     @property
     def member_ids(self) -> List[int]:
         """获取成员 ID 列表"""
@@ -79,10 +64,6 @@ class TribeComponent(Component):
     def culture(self) -> dict:
         """获取部落文化（兼容属性）"""
         return {}
-
-    def set_leader(self, entity_id: int) -> None:
-        """设置领袖"""
-        self.leader_id = entity_id
 
     def __getattr__(self, name):
         """动态属性回退，兼容旧系统的 _milestone_5 等属性"""

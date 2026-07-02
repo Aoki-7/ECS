@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -157,17 +158,17 @@ class HarvestSystem(System):
         if memory is None:
             return
         current_time = world.get_time().total_hours
-        memory.add_event(
+        MemoryManagementSystem.add_event(memory, 
             current_time, "harvested_plant",
             f"在 ({space.x}, {space.y}) 收获了 {yield_amount:.1f} {plant_comp.yield_type}",
             impact=0.6,
             location=(space.x, space.y)
         )
-        memory.record_place(
+        MemoryManagementSystem.record_place(memory, 
             (space.x, space.y), "food_source",
             current_time, sentiment=0.7
         )
-        memory.record_success("harvest_plant")
+        MemoryManagementSystem.record_success(memory, "harvest_plant")
 
     def _calculate_yield(self, plant_comp: PlantComponent, morph: MorphologyComponent | None) -> float:
         """计算实际收获量"""

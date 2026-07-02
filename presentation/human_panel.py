@@ -146,6 +146,7 @@ class HumanStatePanel:
         from human.components.social.tribe_membership_component import TribeMembershipComponent
         from space.space_component import SpaceComponent
         from human.components.social.tribe_component import TribeComponent
+        from human.systems.social.tribe_system import TribeSystem
         from identity.event_log_system import EventLog
         
         # 统计总体信息
@@ -222,8 +223,8 @@ class HumanStatePanel:
             intent_str = intent.intent.name if intent and intent.intent else "-"
             action_str = action.current_action.name if action and action.current_action else "-"
 
-            if membership and membership.is_member():
-                role_icon = "[L]" if membership.is_leader() else "[E]" if membership.role == "elder" else "[M]"
+            if membership and TribeSystem.is_member(membership):
+                role_icon = "[L]" if TribeSystem.is_leader(membership) else "[E]" if membership.role == "elder" else "[M]"
                 tribe_str = f"{role_icon} {self._loyalty_badge(membership.loyalty)}"
             else:
                 tribe_str = "-"

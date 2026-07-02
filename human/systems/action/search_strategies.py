@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -212,7 +213,7 @@ class MemorySearchStrategy(SearchStrategy):
         if place_type is None:
             return None, None, "memory"
 
-        mem_pos = memory.find_best_place_by_type(place_type)
+        mem_pos = MemoryManagementSystem.find_best_place_by_type(memory, place_type)
         if mem_pos is None:
             return None, None, "memory"
 

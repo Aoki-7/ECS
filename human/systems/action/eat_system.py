@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -115,17 +116,17 @@ class EatSystem(System):
         time_obj = world.get_time()
         current_time = time_obj.total_hours if time_obj else 0.0
         if memory:
-            memory.add_event(
+            MemoryManagementSystem.add_event(memory, 
                 current_time, "found_food",
                 f"在 ({space.x}, {space.y}) 进食",
                 impact=0.5,
                 location=(space.x, space.y)
             )
-            memory.record_place(
+            MemoryManagementSystem.record_place(memory, 
                 (space.x, space.y), "food_source",
                 current_time, sentiment=0.6
             )
-            memory.record_success("find_food")
+            MemoryManagementSystem.record_success(memory, "find_food")
 
         action.progress = 1.0
         action.status = ActionStatus.SUCCESS

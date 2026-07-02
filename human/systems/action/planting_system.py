@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -123,14 +124,14 @@ class PlantingSystem(System):
         if memory is None:
             return
         current_time = world.get_time().total_hours
-        memory.add_event(
+        MemoryManagementSystem.add_event(memory, 
             current_time,
             "planted",
             f"在 ({target_x}, {target_y}) 种植了 {species}",
             impact=0.5,
             location=(target_x, target_y),
         )
-        memory.record_success("plant")
+        MemoryManagementSystem.record_success(memory, "plant")
 
     def _fail(self, action: ActionComponent, task: TaskComponent, reason: str) -> None:
         action.current_action = ActionType.IDLE

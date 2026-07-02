@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -111,10 +112,10 @@ class MemoryStrategy(DecisionStrategy):
             return
 
         # 如果记得水源位置，增加找水意图
-        if needs.thirst > 30 and memory.has_memory_of('water_source'):
+        if needs.thirst > 30 and MemoryManagementSystem.has_memory_of(memory, 'water_source'):
             scores[IntentType.DRINK] = scores.get(IntentType.DRINK, 0) + 15
         # 如果记得食物位置，增加觅食意图
-        if needs.hunger > 30 and memory.has_memory_of('food_source'):
+        if needs.hunger > 30 and MemoryManagementSystem.has_memory_of(memory, 'food_source'):
             scores[IntentType.EAT] = scores.get(IntentType.EAT, 0) + 15
 
 

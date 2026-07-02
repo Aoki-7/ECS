@@ -78,7 +78,7 @@ class TestMemoryManagementSystem:
     def test_record_place(self, memory):
         """测试记录地点"""
         MemoryManagementSystem.record_place(
-            memory, pos=(10, 20), place_type="water_source",
+            memory, place_id=(10, 20), place_type="water_source",
             time=100.0, sentiment=0.8
         )
 
@@ -102,7 +102,7 @@ class TestMemoryManagementSystem:
         MemoryManagementSystem.record_place(memory, (100, 100), "water_source", 100.0, 0.5)
 
         best = MemoryManagementSystem.find_best_place_by_type(
-            memory, "water_source", current_pos=(10, 10)
+            memory, "water_source"
         )
         # 最近且情感最好的是 (0, 0)
         assert best == (0, 0)
@@ -110,7 +110,7 @@ class TestMemoryManagementSystem:
     def test_find_best_place_no_match(self, memory):
         """测试无匹配地点"""
         result = MemoryManagementSystem.find_best_place_by_type(
-            memory, "water_source", (0, 0)
+            memory, "water_source"
         )
         assert result is None
 
@@ -127,7 +127,7 @@ class TestMemoryManagementSystem:
 
     def test_update_relationship(self, memory):
         """测试更新关系"""
-        MemoryManagementSystem.record_person(memory, 42, "Alice", "friend", 100.0, 0.5)
+        MemoryManagementSystem.record_person(memory, 42, "Alice", "friend", time=100.0, trust=0.5)
         MemoryManagementSystem.update_relationship(memory, 42, 200.0, trust_delta=0.2)
 
         assert memory.people[42]["trust"] == 0.7
@@ -135,7 +135,7 @@ class TestMemoryManagementSystem:
 
     def test_update_relationship_clamped(self, memory):
         """测试关系值限制在 0-1"""
-        MemoryManagementSystem.record_person(memory, 42, "Alice", "friend", 100.0, 0.9)
+        MemoryManagementSystem.record_person(memory, 42, "Alice", "friend", time=100.0, trust=0.9)
         MemoryManagementSystem.update_relationship(memory, 42, 200.0, trust_delta=0.2)
 
         assert memory.people[42]["trust"] == 1.0  # 上限

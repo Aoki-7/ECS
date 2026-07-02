@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -35,16 +36,58 @@ from identity.event_log_system import EventLog
 
 
 class TribeSystem(System):
-    tick_interval = 10  # 每10帧执行一次
-    """
-    部落系统协调器
-    
+    """部落系统协调器
+
     负责部落初始化、成员清理和新生儿分配。
     具体的领地维护、领袖选举、忠诚度更新、成员招募
     由 TerritorySystem / LeadershipSystem / LoyaltySystem / RecruitSystem 处理。
     """
-
+    tick_interval = 10  # 每10帧执行一次
     priority = 43  # 在拆分后的子系统之后执行清理
+
+    # ---------- 静态业务方法（原 Component 方法迁移至此） ----------
+    @staticmethod
+    def add_member(tribe: TribeComponent, entity_id: int, role: str = "member") -> None:
+        """添加成员到部落"""
+        tribe.members[entity_id] = role
+        tribe.tribe_size = len(tribe.members)
+
+    @staticmethod
+    def remove_member(tribe: TribeComponent, entity_id: int) -> None:
+        """从部落移除成员"""
+        if entity_id in tribe.members:
+            del tribe.members[entity_id]
+            tribe.tribe_size = len(tribe.members)
+
+    @staticmethod
+    def get_member_count(tribe: TribeComponent) -> int:
+        """获取部落成员数量"""
+        return len(tribe.members)
+
+    @staticmethod
+    def set_leader(tribe: TribeComponent, entity_id: int) -> None:
+        """设置部落领袖"""
+        tribe.leader_id = entity_id
+
+    @staticmethod
+    def add_loyalty(membership: TribeMembershipComponent, amount: float) -> None:
+        """增加/减少成员忠诚度"""
+        membership.loyalty = min(1.0, max(0.0, membership.loyalty + amount))
+
+    @staticmethod
+    def is_member(membership: TribeMembershipComponent) -> bool:
+        """是否为活跃成员"""
+        return membership.tribe_id is not None and membership.is_active_member
+
+    @staticmethod
+    def is_leader(membership: TribeMembershipComponent) -> bool:
+        """是否为领袖"""
+        return membership.role == "leader"
+
+    @staticmethod
+    def add_contribution(membership: TribeMembershipComponent, amount: float) -> None:
+        """增加成员贡献值"""
+        membership.contribution += amount
 
     def __init__(self):
         self._initialized = False
@@ -60,7 +103,7 @@ class TribeSystem(System):
             self._cleanup_members(world, tribe)
 
             # 记录部落里程碑
-            if tribe.get_member_count() >= 5 and not hasattr(tribe, '_milestone_5'):
+            if TribeSystem.get_member_count(tribe) >= 5 and not hasattr(tribe, '_milestone_5'):
                 tribe._milestone_5 = True
                 logger.debug(f"[TribeSystem] 部落 '{tribe.name}' 达到5人里程碑")
 
@@ -107,7 +150,7 @@ class TribeSystem(System):
         for entity in humans:
             membership = world.get_component(entity, TribeMembershipComponent)
             if membership:
-                tribe.add_member(entity.id)
+                TribeSystem.add_member(tribe, entity.id)
                 membership.tribe_id = tribe_entity.id
                 # 防御：TribeMembershipComponent 可能没有 joined_time 字段
                 if hasattr(membership, 'joined_time'):
@@ -116,11 +159,7 @@ class TribeSystem(System):
                     membership.joined_tick = getattr(world, 'current_tick', 0)
                 if entity == oldest:
                     membership.role = "leader"
-                    # 防御：TribeComponent 可能没有 set_leader 方法
-                    if hasattr(tribe, 'set_leader'):
-                        tribe.set_leader(entity.id)
-                    else:
-                        tribe.leader_id = entity.id
+                    TribeSystem.set_leader(tribe, entity.id)
                 else:
                     membership.role = "member"
                 membership.loyalty = 60.0 + random.uniform(-10, 10)
@@ -158,7 +197,7 @@ class TribeSystem(System):
         继承母亲的部落。
         """
         parent_membership = world.get_component(parent_entity, TribeMembershipComponent)
-        if not parent_membership or not parent_membership.is_member():
+        if not parent_membership or not TribeSystem.is_member(parent_membership):
             return
 
         tribe_entity = world.query_entity(parent_membership.tribe_id)
@@ -173,7 +212,7 @@ class TribeSystem(System):
         if child_membership is None:
             return
 
-        tribe.add_member(child_entity.id)
+        TribeSystem.add_member(tribe, child_entity.id)
         child_membership.tribe_id = tribe_entity.id
         child_membership.role = "member"
         # 防御：TribeMembershipComponent 可能没有 joined_time 字段
@@ -184,7 +223,7 @@ class TribeSystem(System):
         child_membership.loyalty = 50.0 + parent_membership.loyalty * 0.3
 
         # 父母贡献值增加
-        parent_membership.add_contribution(10)
+        TribeSystem.add_contribution(parent_membership, 10)
 
         # 记录到全局事件日志
         child_identity = world.get_component(child_entity, IdentityComponent)
@@ -202,7 +241,7 @@ class TribeSystem(System):
         # 记录到记忆
         memory = world.get_component(parent_entity, MemoryComponent)
         if memory:
-            memory.add_event(
+            MemoryManagementSystem.add_event(memory, 
                 current_time, "tribe_birth",
                 f"部落 '{tribe.name}' 迎来了新生儿 {child_name}",
                 impact=0.5,
@@ -216,7 +255,7 @@ class TribeSystem(System):
             return {}
 
         avg_loyalty = 0
-        member_count = tribe.get_member_count()
+        member_count = TribeSystem.get_member_count(tribe)
 
         for member_id in tribe.member_ids:
             entity = world.query_entity(member_id)

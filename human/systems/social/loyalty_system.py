@@ -16,6 +16,7 @@ from core.world import World
 
 from human.components.social.tribe_component import TribeComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
+from human.systems.social.tribe_system import TribeSystem
 from space.space_component import SpaceComponent
 
 
@@ -57,12 +58,12 @@ class LoyaltySystem(System):
                 if space:
                     dist = math.hypot(space.x - leader_space.x, space.y - leader_space.y)
                     if dist < self.LEADER_PROXIMITY_THRESHOLD:
-                        membership.add_loyalty(self.LOYALTY_SOCIAL_BONUS * dt)
+                        TribeSystem.add_loyalty(membership, self.LOYALTY_SOCIAL_BONUS * dt)
                     elif dist > self.LEADER_DISTANCE_THRESHOLD:
-                        membership.add_loyalty(-self.LOYALTY_LEADER_DISTANCE_PENALTY * dt)
+                        TribeSystem.add_loyalty(membership, -self.LOYALTY_LEADER_DISTANCE_PENALTY * dt)
 
             # 自然衰减
-            membership.add_loyalty(-self.LOYALTY_DECAY * dt)
+            TribeSystem.add_loyalty(membership, -self.LOYALTY_DECAY * dt)
 
             # 贡献值自然微增（存活奖励）
             membership.contribution += self.CONTRIBUTION_SURVIVAL_BONUS * dt

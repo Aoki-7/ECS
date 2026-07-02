@@ -19,6 +19,7 @@ from human.components.social.tribe_membership_component import TribeMembershipCo
 from human.components.basic.identity_component import IdentityComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from human.components.social.social_component import SocialComponent
+from human.systems.social.tribe_system import TribeSystem
 from identity.event_log_system import EventLog
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ class LeadershipSystem(System):
                         old_mem.role = "elder"
 
             # 新领袖上任
-            tribe.set_leader(best_candidate.id)
+            TribeSystem.set_leader(tribe, best_candidate.id)
             new_mem = world.get_component(best_candidate, TribeMembershipComponent)
             if new_mem:
                 new_mem.role = "leader"

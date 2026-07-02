@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -64,7 +65,7 @@ class MemoryWriter:
                 nc = world.get_component(target, NameComponent)
                 if nc is not None:
                     name = nc.get_full_name()
-                memory.record_person(
+                MemoryManagementSystem.record_person(memory, 
                     entity_id=eid,
                     name=name or f"E{eid}",
                     relationship="seen",
@@ -85,7 +86,7 @@ class MemoryWriter:
             elif world.get_component(target, FoodComponent) is not None or \
                  world.get_component(target, WaterComponent) is not None:
                 resource_type = "food" if world.get_component(target, FoodComponent) else "water"
-                memory.record_place(
+                MemoryManagementSystem.record_place(memory, 
                     place_id=eid,
                     place_type=resource_type,
                     location=(t_space.x, t_space.y) if t_space else None,
@@ -103,7 +104,7 @@ class MemoryWriter:
 
             # 植物 → 记录地点
             elif world.get_component(target, PlantComponent) is not None:
-                memory.record_place(
+                MemoryManagementSystem.record_place(memory, 
                     place_id=eid,
                     place_type="plant",
                     location=(t_space.x, t_space.y) if t_space else None,
@@ -112,7 +113,7 @@ class MemoryWriter:
 
             # 尸体/死亡标记 → 记录异常事件
             elif world.get_component(target, DeadTagComponent) is not None:
-                memory.add_event(
+                MemoryManagementSystem.add_event(memory, 
                     event_type="perception_alert",
                     description=f"发现尸体 E{eid}",
                     location=(t_space.x, t_space.y) if t_space else None,
@@ -131,7 +132,7 @@ class MemoryWriter:
             # 生命周期阶段变化（如婴儿、老年）→ 记录事件
             lc = world.get_component(target, LifeCycleComponent)
             if lc is not None and lc.stage != "adult":
-                memory.add_event(
+                MemoryManagementSystem.add_event(memory, 
                     event_type="perception_life_stage",
                     description=f"看到 {lc.stage} 阶段的生命体 E{eid}",
                     location=(t_space.x, t_space.y) if t_space else None,

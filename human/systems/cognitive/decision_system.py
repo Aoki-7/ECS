@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -175,7 +176,7 @@ class DecisionSystem(System):
         
         # 记录决策到记忆
         if memory and hasattr(memory, 'add_event') and not is_survival_critical:
-            memory.add_event(
+            MemoryManagementSystem.add_event(memory, 
                 current_time, "decision",
                 f"决定执行{intent.intent.name}",
                 impact=emotion.get_mood_score() * 0.3 if hasattr(emotion, 'get_mood_score') else 0.0

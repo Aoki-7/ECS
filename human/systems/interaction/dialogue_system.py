@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -253,7 +254,7 @@ class DialogueSystem(System):
         memory = world.get_component(entity, MemoryComponent)
         if memory and dialogue.target_entity_id is not None:
             current_time = world.get_time().total_hours
-            memory.add_event(
+            MemoryManagementSystem.add_event(memory, 
                 current_time, "dialogue",
                 f"与 {dialogue.target_entity_id} 进行了对话",
                 impact=dialogue.sentiment * 0.3,

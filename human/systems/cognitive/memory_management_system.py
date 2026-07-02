@@ -105,57 +105,77 @@ class MemoryManagementSystem(System):
         return sum(e["impact"] for e in relevant) / len(relevant)
 
     @staticmethod
-    def record_place(memory: MemoryComponent, pos: Tuple, place_type: str,
-                     time: float, sentiment: float = 0.5):
-        """记录地点记忆"""
-        key = pos
+    def record_place(memory: MemoryComponent, place_id, place_type: str,
+                     time: float = None, sentiment: float = None,
+                     location=None, **kwargs):
+        """记录地点记忆（兼容 Component 原签名）"""
+        key = place_id
         if key not in memory.places:
-            memory.places[key] = {
+            entry = {
                 "type": place_type,
-                "last_visit": time,
-                "sentiment": sentiment,
                 "visits": 1,
             }
+            if time is not None:
+                entry["last_visit"] = time
+            if sentiment is not None:
+                entry["sentiment"] = sentiment
+            else:
+                entry["sentiment"] = 0.5
+            if location is not None:
+                entry["location"] = location
+            memory.places[key] = entry
         else:
-            memory.places[key]["last_visit"] = time
-            memory.places[key]["visits"] += 1
-            # 情感更新（加权平均）
-            old_sentiment = memory.places[key]["sentiment"]
-            memory.places[key]["sentiment"] = (old_sentiment * 0.7 + sentiment * 0.3)
+            entry = memory.places[key]
+            if place_type is not None:
+                entry["type"] = place_type
+            if time is not None:
+                entry["last_visit"] = time
+            entry["visits"] = entry.get("visits", 0) + 1
+            if sentiment is not None:
+                old = entry.get("sentiment", 0.5)
+                entry["sentiment"] = old * 0.7 + sentiment * 0.3
+            if location is not None:
+                entry["location"] = location
+
 
     @staticmethod
-    def find_best_place_by_type(memory: MemoryComponent, place_type: str,
-                                current_pos: Tuple) -> Optional[Tuple]:
-        """根据类型找到最佳地点（最近 + 情感最好）"""
+    def find_best_place_by_type(memory: MemoryComponent, place_type: str):
+        """根据类型找到最佳地点（返回 place_id）"""
         candidates = [
-            (pos, data) for pos, data in memory.places.items()
-            if data["type"] == place_type
+            (place_id, data) for place_id, data in memory.places.items()
+            if data.get("type") == place_type
         ]
 
         if not candidates:
             return None
 
-        # 评分 = 情感 - 距离惩罚
+        # 优先按情感，其次按最近访问时间
         def score(item):
-            pos, data = item
-            dist = math.hypot(pos[0] - current_pos[0], pos[1] - current_pos[1])
-            distance_penalty = dist / MemoryManagementSystem.MAX_SEARCH_DISTANCE
-            return data["sentiment"] - distance_penalty
+            place_id, data = item
+            sentiment = data.get("sentiment", 0.5)
+            last_visit = data.get("last_visit", 0.0) or 0.0
+            return (sentiment, last_visit)
 
         best = max(candidates, key=score)
         return best[0]
 
+
     @staticmethod
     def record_person(memory: MemoryComponent, entity_id: int, name: str,
-                      relationship: str, time: float, trust: float = 0.5):
+                      relationship: str = "seen", location=None, time: float = None,
+                      trust: float = 0.5):
         """记录人物记忆"""
-        memory.people[entity_id] = {
+        person = {
             "name": name,
             "relationship": relationship,
-            "last_interaction": time,
             "trust": trust,
             "events": [],
         }
+        if location is not None:
+            person["location"] = location
+        if time is not None:
+            person["last_interaction"] = time
+        memory.people[entity_id] = person
 
     @staticmethod
     def update_relationship(memory: MemoryComponent, entity_id: int,
@@ -167,6 +187,14 @@ class MemoryManagementSystem(System):
         person = memory.people[entity_id]
         person["last_interaction"] = time
         person["trust"] = max(0.0, min(1.0, person["trust"] + trust_delta))
+
+    @staticmethod
+    def has_memory_of(memory: MemoryComponent, place_type: str) -> bool:
+        """检查是否记录过某类地点"""
+        return any(
+            isinstance(data, dict) and data.get("type") == place_type
+            for data in memory.places.values()
+        )
 
     @staticmethod
     def record_success(memory: MemoryComponent, action_type: str):

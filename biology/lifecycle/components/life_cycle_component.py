@@ -115,25 +115,3 @@ class LifeCycleComponent(Component):
     def age(self, value: float) -> None:
         """兼容旧系统：age 属性映射到 current_age"""
         self.current_age = value
-
-    # 注意：以下属性是数据查询而非业务逻辑，保留以兼容旧代码
-    # 业务逻辑（如阶段转换判断）已迁移到 LifeCycleSystem
-    @property
-    def is_mature(self) -> bool:
-        """是否为成熟期"""
-        return self.stage == self.MATURE
-
-    @property
-    def is_senescence(self) -> bool:
-        """是否为衰老期"""
-        return self.stage == self.SENESCENCE
-
-    @property
-    def is_dead(self) -> bool:
-        """是否已死亡"""
-        return self.stage == self.DEAD
-
-    @property
-    def is_alive(self) -> bool:
-        """是否存活"""
-        return self.stage != self.DEAD

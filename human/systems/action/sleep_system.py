@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -73,13 +74,13 @@ class SleepSystem(System):
                 time_obj = world.get_time()
                 current_time = time_obj.total_hours if time_obj else 0.0
                 if memory:
-                    memory.add_event(
+                    MemoryManagementSystem.add_event(memory, 
                         current_time, "slept",
                         f"在 ({space.x if space else '?'}, {space.y if space else '?'}) 休息恢复体力",
                         impact=0.4,
                         location=(space.x, space.y) if space else None
                     )
-                    memory.record_success("rest")
+                    MemoryManagementSystem.record_success(memory, "rest")
 
                 # 标记完成
                 action.progress = 1.0

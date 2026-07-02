@@ -23,6 +23,7 @@ from human.components.cognitive.emotion_component import EmotionComponent
 from human.components.cognitive.intent_component import IntentComponent
 from human.components.action.action_component import ActionComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
+from human.systems.social.tribe_system import TribeSystem
 from space.space_component import SpaceComponent
 
 from presentation.human_observation_component import HumanObservationComponent
@@ -101,9 +102,9 @@ class HumanObservationSystem(System):
 
             # 部落信息
             tribe_info = "-"
-            if membership and membership.is_member():
+            if membership and TribeSystem.is_member(membership):
                 role = (
-                    "首领" if membership.is_leader()
+                    "首领" if TribeSystem.is_leader(membership)
                     else "长老" if membership.role == "elder"
                     else "成员"
                 )

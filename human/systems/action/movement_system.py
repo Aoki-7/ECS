@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
@@ -120,7 +121,7 @@ class MovementSystem(System):
         if task and task.task == TaskType.EXPLORE:
             memory = world.get_component(entity, MemoryComponent)
             if memory and hasattr(memory, 'record_success'):
-                memory.record_success("explore")
+                MemoryManagementSystem.record_success(memory, "explore")
             elif memory and hasattr(memory, 'recent_successes'):
                 if isinstance(memory.recent_successes, list):
                     memory.recent_successes.append("explore")

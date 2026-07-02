@@ -1,3 +1,4 @@
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -86,7 +87,7 @@ class DeathEventSystem(System):
                 relation.relationship_strength = max(0.0, relation.relationship_strength - 50.0)
                 memory = world.get_component(entity, MemoryComponent)
                 if memory is not None:
-                    memory.add_event(
+                    MemoryManagementSystem.add_event(memory, 
                         world.get_time().total_hours if world.get_time() else 0.0,
                         "partner_death",
                         f"伴侣 {dead_name} 因 {reason} 去世",

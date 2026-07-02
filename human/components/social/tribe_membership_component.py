@@ -33,12 +33,3 @@ class TribeMembershipComponent(Component):
     
     # 状态
     is_active_member: bool = True
-
-    # 兼容旧系统：add_loyalty 方法
-    def add_loyalty(self, amount: float) -> None:
-        """增加忠诚度"""
-        self.loyalty = min(1.0, max(0.0, self.loyalty + amount))
-
-    def is_member(self) -> bool:
-        """是否为活跃成员"""
-        return self.tribe_id is not None and self.is_active_member
