@@ -17,6 +17,7 @@ from core.entity import Entity
 from core.world import World
 
 from resource.food.components.food_component import FoodComponent
+from resource.food.systems.food_clean_up_system import FoodCleanupSystem
 from resource.components.resource_component import ResourceComponent, ResourceState
 from resource.wood.components.wood_component import WoodComponent
 from resource.stone.components.stone_component import StoneComponent
@@ -33,7 +34,7 @@ def spoiled_food_condition(food: FoodComponent) -> bool:
     """食物是否变质"""
     if food is None:
         return False
-    return food.is_spoiled()
+    return FoodCleanupSystem.is_spoiled(food)
 
 
 def spoiled_food_transform(entity: Entity, world: World):

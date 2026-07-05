@@ -1,17 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 '''
 @文件:wood_component.py
 @说明:木材组件
 @时间:2026/04/16
 @作者:GitHub Copilot
-@版本:1.0
+@版本:1.1
 '''
 
 from dataclasses import dataclass, field
 from typing import Dict
 
-from core.component import Component
 from resource.components.base_resource_component import BaseResourceComponent
 
 
@@ -51,39 +50,3 @@ class WoodComponent(BaseResourceComponent):
     #   "fuel_value": 100.0,
     #   "build_quality": 0.8
     # }
-
-    # ===== 行为方法 =====
-    def harvest(self) -> float:
-        """
-        被采集，返回实际采集量
-        """
-        if self.amount <= 0:
-            return 0.0
-
-        harvested = min(self.harvest_size, self.amount)
-        self.amount -= harvested
-        return harvested
-
-    def is_empty(self) -> bool:
-        return self.amount <= 0
-
-    def update_decay(self, dt: float):
-        """
-        木材腐朽更新
-        """
-        if not self.is_perishable:
-            return
-
-        self.quality -= self.decay_rate * dt * (1 + self.infestation)
-        self.quality = max(0.0, self.quality)
-
-    def get_fuel_value(self) -> float:
-        """
-        获取燃料价值（考虑湿度）
-        """
-        base_value = 100.0
-        moisture_penalty = 1.0 - self.moisture * 0.5
-        return base_value * self.quality * moisture_penalty
-
-    def is_usable(self) -> bool:
-        return self.quality > 0.3

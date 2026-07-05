@@ -5,7 +5,7 @@
 @说明:食物清理系统
 @时间:2026/03/25 11:59:24
 @作者:Sherry
-@版本:1.0
+@版本:1.1
 '''
 
 from core.system import System
@@ -29,6 +29,16 @@ class FoodCleanupSystem(System):
     - 不修改 FoodComponent 内部逻辑
     - 只做“判定 + 移除”
     """
+
+    @staticmethod
+    def is_empty(food: FoodComponent) -> bool:
+        """食物是否耗尽"""
+        return food.amount <= 0
+
+    @staticmethod
+    def is_spoiled(food: FoodComponent) -> bool:
+        """食物是否已腐败"""
+        return food.freshness <= 0.2
 
     def __init__(self,
                  remove_if_empty: bool = True,
@@ -55,11 +65,11 @@ class FoodCleanupSystem(System):
             should_remove = False
 
             # 1. 吃完
-            if self.remove_if_empty and food.is_empty():
+            if self.remove_if_empty and self.is_empty(food):
                 should_remove = True
 
             # 2. 腐败（可选策略）
-            elif self.remove_if_spoiled and food.is_spoiled():
+            elif self.remove_if_spoiled and self.is_spoiled(food):
                 should_remove = True
 
             if should_remove:

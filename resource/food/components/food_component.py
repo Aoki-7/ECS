@@ -1,17 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 '''
 @文件:food_component.py
 @说明:食物组件
 @时间:2026/03/18 15:16:09
 @作者:Sherry
-@版本:1.0
+@版本:1.1
 '''
 
 from dataclasses import dataclass, field
 from typing import Dict
 
-from core.component import Component
 from resource.components.base_resource_component import BaseResourceComponent
 
 
@@ -53,42 +52,3 @@ class FoodComponent(BaseResourceComponent):
     #   "mood": +5,
     #   "stress": -3
     # }
-
-    # ===== 行为方法 =====
-    def consume(self) -> float:
-        """
-        被吃一口，返回实际消耗量
-        """
-        if self.amount <= 0:
-            return 0.0
-
-        consumed = min(self.bite_size, self.amount)
-        self.amount -= consumed
-        return consumed
-
-    def is_empty(self) -> bool:
-        return self.amount <= 0
-
-    def update_decay(self, dt: float):
-        """
-        食物腐败更新
-        """
-        if not self.is_perishable:
-            return
-
-        self.freshness -= self.decay_rate * dt
-        self.freshness = max(0.0, self.freshness)
-
-    def get_effect_multiplier(self) -> float:
-        """
-        新鲜度影响效果（越腐败效果越差甚至反转）
-        """
-        if self.freshness > 0.5:
-            return 1.0
-        elif self.freshness > 0.2:
-            return 0.7
-        else:
-            return 0.3
-
-    def is_spoiled(self) -> bool:
-        return self.freshness <= 0.2
