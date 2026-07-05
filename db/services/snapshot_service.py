@@ -65,6 +65,11 @@ class SnapshotService:
         return [s.to_dict() for s in snapshots]
 
     @staticmethod
+    def get_by_id(snapshot_id: int) -> Optional[Snapshot]:
+        """根据 ID 获取快照"""
+        return SnapshotRepository.get_by_id(snapshot_id)
+
+    @staticmethod
     def delete(snapshot_id: int) -> bool:
         """删除快照"""
         return SnapshotRepository.delete(snapshot_id)

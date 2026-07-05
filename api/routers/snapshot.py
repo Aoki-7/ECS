@@ -101,10 +101,11 @@ async def get_snapshot(
     Returns:
         快照详情
     """
-    snapshot = SnapshotService.list_all(1, 0)
-    # TODO: 实现根据 ID 获取
-    
-    raise HTTPException(status_code=404, detail=f"Snapshot {snapshot_id} not found")
+    snapshot = SnapshotService.get_by_id(snapshot_id)
+    if not snapshot:
+        raise HTTPException(status_code=404, detail=f"Snapshot {snapshot_id} not found")
+
+    return snapshot.to_dict()
 
 
 @router.delete("/{snapshot_id}")

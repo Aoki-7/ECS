@@ -139,9 +139,14 @@ async def list_systems(
         所有注册的系统信息
     """
     world = manager.get_world()
-    
-    # 获取系统列表
+
     systems = []
-    # TODO: 遍历所有系统
-    
+    for system in world.systems:
+        systems.append({
+            "name": type(system).__name__,
+            "enabled": True,
+            "tick_interval": getattr(system, "tick_interval", 1),
+            "priority": getattr(system, "priority", 0),
+        })
+
     return systems

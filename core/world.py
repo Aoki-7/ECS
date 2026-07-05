@@ -16,7 +16,7 @@ World — v4.0 核心重构
 
 import logging
 import traceback
-from typing import Optional, Iterator, Tuple
+from typing import Dict, Optional, Iterator, Tuple
 
 from core.entity import Entity
 from core.component import Component
@@ -226,6 +226,14 @@ class World:
         
         entity_id = _get_entity_id(entity)
         return self._archetype_store.has_component(entity_id, component_type)
+
+    def get_entity_components(self, entity: Entity) -> Dict[type, Component]:
+        """获取实体的所有组件"""
+        if entity is None:
+            return {}
+        
+        entity_id = _get_entity_id(entity)
+        return self._archetype_store.get_entity_components(entity_id)
 
     def get_components(self, *component_types) -> Iterator[Tuple[Entity, list]]:
         """查询具有指定组件组合的实体"""

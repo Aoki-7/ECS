@@ -190,7 +190,7 @@ class GroundwaterFlowSystem(System):
                 groundwater.water_table += recharge
 
             # 河流补给 (如果附近有河流)
-            # TODO: 检查邻居是否有河流
+            # NOTE: 河流补给需要独立的河流组件与邻居索引；当前仅实现降雨补给
 
     def _process_discharge(self, world: World, grid: Dict, dt: float) -> None:
         """排泄: 地下水 → 河流/泉水/蒸发"""

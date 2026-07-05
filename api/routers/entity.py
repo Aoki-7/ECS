@@ -15,11 +15,30 @@ Entity API 路由
 
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any, Optional
+import dataclasses
 
 from api.dependencies import get_world_manager, WorldManager
 from api.schemas.entity import EntityCreate, EntityUpdate, EntityDetail
 
 router = APIRouter(prefix="/entity", tags=["Entity"])
+
+
+def _component_to_dict(component: Any) -> Dict[str, Any]:
+    """将组件实例序列化为字典"""
+    if hasattr(component, "to_dict"):
+        return component.to_dict()
+    if dataclasses.is_dataclass(component):
+        return dataclasses.asdict(component)
+    return vars(component)
+
+
+def _serialize_entity_components(world, entity) -> Dict[str, Any]:
+    """序列化实体的所有组件"""
+    components = world.get_entity_components(entity)
+    return {
+        comp_type.__name__: _component_to_dict(comp)
+        for comp_type, comp in components.items()
+    }
 
 
 @router.get("/{entity_id}", response_model=EntityDetail)
@@ -44,11 +63,9 @@ async def get_entity(
     entity = world.get_entity(entity_id)
     if entity is None:
         raise HTTPException(status_code=404, detail=f"Entity {entity_id} not found")
-    
-    # 获取组件列表
-    components = {}
-    # TODO: 获取实体所有组件
-    
+
+    components = _serialize_entity_components(world, entity)
+
     return {
         "id": entity.id,
         "generation": entity.generation,
@@ -71,14 +88,16 @@ async def get_entity_components(
         组件列表及其数据
     """
     world = manager.get_world()
-    
+
     if not world.has_entity_id(entity_id):
         raise HTTPException(status_code=404, detail=f"Entity {entity_id} not found")
-    
-    # 获取所有组件
-    components = {}
-    # TODO: 遍历所有组件类型并获取
-    
+
+    entity = world.get_entity(entity_id)
+    if entity is None:
+        raise HTTPException(status_code=404, detail=f"Entity {entity_id} not found")
+
+    components = _serialize_entity_components(world, entity)
+
     return {
         "entity_id": entity_id,
         "components": components,
@@ -101,10 +120,13 @@ async def create_entity(
     """
     world = manager.get_world()
     entity = world.create_entity()
-    
-    # 添加组件
-    # TODO: 根据 data 添加组件
-    
+
+    if data.components:
+        raise HTTPException(
+            status_code=501,
+            detail="Component creation by name is not yet supported. Create an empty entity instead."
+        )
+
     return {
         "id": entity.id,
         "generation": entity.generation,
@@ -128,13 +150,16 @@ async def update_entity(
         更新结果
     """
     world = manager.get_world()
-    
+
     if not world.has_entity_id(entity_id):
         raise HTTPException(status_code=404, detail=f"Entity {entity_id} not found")
-    
-    # 更新组件
-    # TODO: 根据 data 更新组件
-    
+
+    if data.components:
+        raise HTTPException(
+            status_code=501,
+            detail="Component update by name is not yet supported."
+        )
+
     return {
         "id": entity_id,
         "updated": True,

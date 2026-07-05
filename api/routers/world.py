@@ -12,7 +12,7 @@ World API 路由
 版本: v4.0
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import List, Optional
 
 from api.dependencies import get_world_manager, WorldManager
@@ -20,6 +20,17 @@ from api.schemas.world import WorldStats, QueryResult, ArchetypeInfo
 
 router = APIRouter(prefix="/world", tags=["World"])
 
+
+def _resolve_component_types(world, names: List[str]) -> List[type]:
+    """根据组件类名解析组件类型"""
+    registered = {comp_type.__name__: comp_type for comp_type in world.components.keys()}
+    resolved = []
+    for name in names:
+        comp_type = registered.get(name)
+        if comp_type is None:
+            raise HTTPException(status_code=404, detail=f"Component type {name} not found")
+        resolved.append(comp_type)
+    return resolved
 
 @router.get("/stats", response_model=WorldStats)
 async def get_world_stats(
@@ -51,11 +62,19 @@ async def query_components(
         实体列表及其组件数据
     """
     world = manager.get_world()
-    
-    # 动态解析组件类型
-    # TODO: 实现组件类型映射
+
+    try:
+        types = _resolve_component_types(world, component_types)
+    except HTTPException:
+        raise
+
     results = []
-    
+    for entity, components in world.get_components(*types):
+        results.append({
+            "entity_id": entity.id,
+            "components": [comp.to_dict() if hasattr(comp, "to_dict") else vars(comp) for comp in components]
+        })
+
     return {
         "query": component_types,
         "count": len(results),

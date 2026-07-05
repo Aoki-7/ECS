@@ -280,6 +280,19 @@ class ArchetypeStore:
         arch = self._archetypes[arch_id]
         return arch.get_component(entity_id, component_type)
 
+    def get_entity_components(self, entity) -> Dict[Type[Component], Component]:
+        """获取实体的所有组件"""
+        entity_id = _get_entity_id(entity)
+        arch_id = self._entity_archetype.get(entity_id)
+        if arch_id is None:
+            return {}
+
+        arch = self._archetypes[arch_id]
+        return {
+            comp_type: arch.get_component(entity_id, comp_type)
+            for comp_type in arch.component_types
+        }
+
     def query_entities(self, component_types: tuple) -> list:
         """查询具有指定组件组合的实体ID列表"""
         result = []
