@@ -4,9 +4,7 @@
 冲突管理系统 - 处理人际间的矛盾、竞争与协作
 """
 
-from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
-from enum import Enum, auto
 import random
 
 from core.system import System
@@ -18,51 +16,12 @@ from human.components.cognitive.personality_component import PersonalityComponen
 from human.components.cognitive.emotion_component import EmotionComponent
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 
-
-class ConflictType(Enum):
-    RESOURCE = auto()         # 资源争夺
-    VALUES = auto()           # 价值观冲突
-    RELATIONAL = auto()       # 关系问题
-    TASK = auto()             # 任务/目标冲突
-    MISCOMMUNICATION = auto()   # 沟通误解
-
-
-class ResolutionStrategy(Enum):
-    AVOIDANCE = auto()        # 回避
-    COMPROMISE = auto()       # 妥协
-    COMPETITION = auto()      # 竞争
-    COLLABORATION = auto()    # 协作
-    ACCOMMODATION = auto()    # 迁就
-    DIALOGUE = auto()         # 对话沟通
-
-
-@dataclass
-class ConflictInstance:
-    """冲突实例记录"""
-    id: str = field(default_factory=lambda: f"conflict_{len(ConflictInstance._instances) + 1}")
-    conflict_type: Optional[ConflictType] = None
-    parties: List[int] = field(default_factory=list)
-    description: str = ""
-    intensity: float = 0.0     # 冲突强度 0-100
-    current_phase: str = "active"  # active, resolution, resolved
-    resolution_method: Optional[str] = None
-    outcome: str = ""
-    
-    _instances = []
-
-    def add_party(self, entity_id: int):
-        if entity_id not in self.parties:
-            self.parties.append(entity_id)
-    
-    def get_participant_count(self) -> int:
-        return len(self.parties)
-
-
-class RelationshipQuality(Enum):
-    STRAINED = "strained"     # 紧张
-    DAMAGED = "damaged"       # 受损
-    STABLE = "stable"         # 稳定
-    IMPROVED = "improved"     # 改善
+from human.systems.interaction.conflict_models import (
+    ConflictType,
+    ResolutionStrategy,
+    RelationshipQuality,
+    ConflictInstance,
+)
 
 
 class ConflictManagementSystem(System):

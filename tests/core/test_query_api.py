@@ -11,6 +11,7 @@ from core.world import World
 from core.entity import Entity
 from core.component import Component
 from core.query_api import QueryResult, WorldQueryMixin
+from human.components.abilities.velocity_component import VelocityComponent
 
 
 @dataclass
@@ -23,12 +24,6 @@ class HealthComponent(Component):
 class PositionComponent(Component):
     x: float = 0.0
     y: float = 0.0
-
-
-@dataclass
-class VelocityComponent(Component):
-    vx: float = 0.0
-    vy: float = 0.0
 
 
 class TestQueryAPI:

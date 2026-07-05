@@ -14,46 +14,16 @@ ConflictResolutionSystem - 冲突解决系统
 
 import random
 from typing import Dict, List, Optional, Tuple
-from enum import Enum, auto
 
 from core.system import System
 from core.world import World
 
-
-class ResolutionStrategy(Enum):
-    AVOIDANCE = auto()
-    COMPROMISE = auto()
-    COMPETITION = auto()
-    COLLABORATION = auto()
-    ACCOMMODATION = auto()
-    DIALOGUE = auto()
-
-
-class RelationshipQuality(Enum):
-    STRAINED = "strained"
-    DAMAGED = "damaged"
-    STABLE = "stable"
-    IMPROVED = "improved"
-
-
-class ConflictInstance:
-    """冲突实例记录"""
-    _counter = 0
-
-    def __init__(self, conflict_type=None, description="", parties=None, intensity=0.0):
-        ConflictInstance._counter += 1
-        self.id = f"conflict_{ConflictInstance._counter}"
-        self.conflict_type = conflict_type
-        self.parties = parties or []
-        self.description = description
-        self.intensity = intensity
-        self.current_phase = "active"
-        self.resolution_method = None
-        self.outcome = ""
-
-    def add_party(self, entity_id: int):
-        if entity_id not in self.parties:
-            self.parties.append(entity_id)
+from human.systems.interaction.conflict_models import (
+    ConflictType,
+    ResolutionStrategy,
+    RelationshipQuality,
+    ConflictInstance,
+)
 
 
 class ConflictResolutionSystem(System):
