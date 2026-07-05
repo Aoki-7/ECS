@@ -182,11 +182,12 @@ class NeedsSystem(System):
                 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
                 comp = world.get_component(entity, PhysiologyNeedsComponent)
                 if comp:
-                    needs['hunger'] = getattr(comp, 'hunger', 0.0) * 100
-                    needs['thirst'] = getattr(comp, 'thirst', 0.0) * 100
-                    needs['sleep'] = getattr(comp, 'sleepiness', 0.0) * 100
-                    needs['fatigue'] = getattr(comp, 'fatigue', 0.0) * 100
-                    needs['social'] = (100 - getattr(comp, 'social', 50.0)) * 2
+                    needs['hunger'] = getattr(comp, 'hunger', 0.0)
+                    needs['thirst'] = getattr(comp, 'thirst', 0.0)
+                    needs['sleep'] = getattr(comp, 'sleepiness', 0.0)
+                    needs['fatigue'] = getattr(comp, 'fatigue', 0.0)
+                    needs['temperature'] = abs(0.5 - getattr(comp, 'temperature_comfort', 0.5)) * 100
+                    needs['social'] = 100 - getattr(comp, 'social', 50.0)
             except ImportError:
                 pass
         
