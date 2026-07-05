@@ -105,13 +105,3 @@ class LifeCycleComponent(Component):
 
         # 死亡原因（DeathSystem 填写）
         self.death_reason = None
-
-    @property
-    def age(self) -> float:
-        """兼容旧系统：age 属性映射到 current_age"""
-        return self.current_age
-
-    @age.setter
-    def age(self, value: float) -> None:
-        """兼容旧系统：age 属性映射到 current_age"""
-        self.current_age = value

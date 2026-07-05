@@ -38,12 +38,12 @@ class AgricultureCouplingSystem(System):
                 continue
 
             if hasattr(gathering, 'fertilizing') and gathering.fertilizing:
-                if hasattr(soil, 'nutrient_n'):
-                    soil.nutrient_n += self.FERTILIZER_N_BOOST * dt
-                if hasattr(soil, 'nutrient_p'):
-                    soil.nutrient_p += self.FERTILIZER_P_BOOST * dt
-                if hasattr(soil, 'nutrient_k'):
-                    soil.nutrient_k += self.FERTILIZER_K_BOOST * dt
+                if hasattr(soil, 'nitrogen'):
+                    soil.nitrogen += self.FERTILIZER_N_BOOST * dt
+                if hasattr(soil, 'phosphorus'):
+                    soil.phosphorus += self.FERTILIZER_P_BOOST * dt
+                if hasattr(soil, 'potassium'):
+                    soil.potassium += self.FERTILIZER_K_BOOST * dt
 
             if hasattr(gathering, 'harvesting') and gathering.harvesting:
                 if hasattr(soil, 'vegetation_cover'):

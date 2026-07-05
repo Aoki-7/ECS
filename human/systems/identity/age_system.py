@@ -17,8 +17,8 @@ class AgeSystem(System):
     tick_interval = 10  # 每10帧执行一次
     """
     年龄增长系统
-    
-    每步推进 LifeCycleComponent.age。
+
+    每步推进 LifeCycleComponent.current_age。
     时间压缩比例：每模拟步（1小时）≈ 0.05年（约18天），
     使新生儿在约360步后达到生育年龄（18岁）。
     """
@@ -29,4 +29,4 @@ class AgeSystem(System):
     def update(self, world: World, dt: float):
         for entity, [age] in world.get_components(LifeCycleComponent):
             age: LifeCycleComponent
-            age.age += self.YEAR_PER_STEP * dt
+            age.current_age += self.YEAR_PER_STEP * dt

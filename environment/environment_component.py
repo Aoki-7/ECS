@@ -80,13 +80,9 @@ class EnvironmentComponent(Component):
     weather_history: List[Dict] = field(default_factory=list)
 
     def __post_init__(self):
-        """根据初始化参数计算派生字段"""
-        # 白天判断：PAR > 50 视为白天
-        self.is_daytime = self.par > 50.0
+        """派生字段由 EnvironmentSyncSystem 统一计算"""
         from environment.systems.environment_sync_system import EnvironmentSyncSystem
-        self.water_stress_index = EnvironmentSyncSystem.calculate_water_stress_index(
-            self.soil_moisture, self.field_capacity, self.wilting_point
-        )
+        EnvironmentSyncSystem.initialize_component(self)
 
     def __getattr__(self, name: str):
         """动态返回默认值，兼容任何缺失字段"""

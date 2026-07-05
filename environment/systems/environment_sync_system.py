@@ -203,6 +203,14 @@ class EnvironmentSyncSystem(System):
         )
 
     @staticmethod
+    def initialize_component(env: EnvironmentComponent) -> None:
+        """根据 EnvironmentComponent 的初始化参数计算派生字段"""
+        env.is_daytime = env.par > 50.0
+        env.water_stress_index = EnvironmentSyncSystem.calculate_water_stress_index(
+            env.soil_moisture, env.field_capacity, env.wilting_point
+        )
+
+    @staticmethod
     def calculate_water_stress_index(soil_moisture: float, field_capacity: float,
                                        wilting_point: float) -> float:
         """根据土壤水分、田间持水量和萎蔫点计算水分胁迫指数"""

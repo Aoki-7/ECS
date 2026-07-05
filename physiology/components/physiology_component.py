@@ -53,9 +53,6 @@ class PhysioStat:
     # 耦合项：{其他stat名: 影响系数}
     influences: Dict[str, float] = field(default_factory=dict)
 
-    def clamp(self):
-        self.value = max(self.min_value, min(self.value, self.max_value))
-
 
 
 @dataclass

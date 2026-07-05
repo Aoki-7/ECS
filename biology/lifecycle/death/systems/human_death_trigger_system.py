@@ -57,9 +57,9 @@ class HumanDeathTriggerSystem(System):
             reason = None
             details = ""
 
-            if age.age >= age.max_age:
+            if age.current_age >= age.max_age:
                 reason = "old_age"
-                details = f"age={age.age:.0f}/{age.max_age:.0f}"
+                details = f"age={age.current_age:.0f}/{age.max_age:.0f}"
             elif health.hp <= 0:
                 reason = "hp_depleted"
                 details = f"hp={health.hp:.1f}"

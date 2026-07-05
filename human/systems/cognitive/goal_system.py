@@ -97,7 +97,7 @@ class GoalSystem(System):
             dt: 时间增量
         """
         # 确定人生阶段
-        life_stage = self._stage_evaluator.get_life_stage(age.age)
+        life_stage = self._stage_evaluator.get_life_stage(age.current_age)
 
         # 获取或创建当前目标
         if not goal.current_goal:

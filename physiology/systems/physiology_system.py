@@ -1,20 +1,28 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 '''
 @文件:physiology_system.py
 @说明:通用生理系统
 @时间:2026/03/21 21:43:17
 @作者:Sherry
-@版本:1.0
+@版本:1.1
 '''
 
 from core.system import System
 from core.world import World
-from physiology.components.physiology_component import PhysiologyComponent
+from physiology.components.physiology_component import PhysiologyComponent, PhysioStat
 
 
 class PhysiologySystem(System):
     tick_interval = 20  # 每20帧执行一次
+
+    @staticmethod
+    def clamp_stat(stat: PhysioStat) -> None:
+        """将生理指标值限制在 [min_value, max_value] 范围内"""
+        if stat.value < stat.min_value:
+            stat.value = stat.min_value
+        elif stat.value > stat.max_value:
+            stat.value = stat.max_value
 
     def update(self, world: World, dt: float):
         """
@@ -52,4 +60,4 @@ class PhysiologySystem(System):
 
             # --- Step 4: clamp ---
             for stat in phys.stats.values():
-                stat.clamp()
+                self.clamp_stat(stat)

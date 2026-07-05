@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# -*- encoding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 @文件:biology/components/nutrient_component.py
 @说明:营养组件 - 纯数据版
@@ -31,29 +31,3 @@ class NutrientComponent(Component):
     max_nitrogen: float = 100.0
     max_phosphorus: float = 100.0
     max_potassium: float = 100.0
-
-    # 兼容旧系统： nutrient_n / nutrient_p / nutrient_k 别名
-    # 注意：property是数据访问而非业务逻辑，保留以兼容旧代码
-    @property
-    def nutrient_n(self) -> float:
-        return self.nitrogen
-
-    @nutrient_n.setter
-    def nutrient_n(self, value: float) -> None:
-        self.nitrogen = value
-
-    @property
-    def nutrient_p(self) -> float:
-        return self.phosphorus
-
-    @nutrient_p.setter
-    def nutrient_p(self, value: float) -> None:
-        self.phosphorus = value
-
-    @property
-    def nutrient_k(self) -> float:
-        return self.potassium
-
-    @nutrient_k.setter
-    def nutrient_k(self, value: float) -> None:
-        self.potassium = value
