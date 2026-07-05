@@ -15,6 +15,7 @@ ECS 世界模拟引擎 — 统一模拟入口脚本
 
 import sys
 import logging
+import argparse
 
 # 修复 Windows 终端中文乱码
 sys.stdout.reconfigure(encoding='utf-8')
@@ -33,6 +34,12 @@ from application.simulation_loop import SimulationLoop
 
 def main():
     """主函数"""
+    parser = argparse.ArgumentParser(description="ECS 世界模拟")
+    parser.add_argument("--steps", type=int, default=1000, help="运行步数")
+    parser.add_argument("--delta-hours", type=float, default=1.0, help="每步小时数")
+    parser.add_argument("--quiet", action="store_true", help="关闭 verbose 输出")
+    args = parser.parse_args()
+
     logger.info("=== ECS 世界模拟 ===")
 
     world = World()
@@ -41,7 +48,7 @@ def main():
     simulation.create_initial_resources(food_count=80, water_count=80)
     simulation.create_initial_plants(plant_count=30)
     simulation.create_initial_population(human_count=10)
-    simulation.run_simulation(steps=1000, delta_hours=1.0, verbose=True)
+    simulation.run_simulation(steps=args.steps, delta_hours=args.delta_hours, verbose=not args.quiet)
 
 
 if __name__ == "__main__":

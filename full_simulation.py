@@ -23,6 +23,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 import random
 import logging
+import argparse
 
 logger = logging.getLogger(__name__)
 
@@ -275,10 +276,17 @@ class FullSimulationLoop(SimulationLoop):
 
 def main():
     """全面模拟主函数"""
+    parser = argparse.ArgumentParser(description="ECS 世界模拟 — 完整版")
+    parser.add_argument("--steps", type=int, default=300, help="运行步数")
+    parser.add_argument("--delta-hours", type=float, default=1.0, help="每步小时数")
+    parser.add_argument("--quiet", action="store_true", help="关闭 verbose 输出")
+    args = parser.parse_args()
+
     logger.info("=== ECS 全面世界模拟 ===")
 
     world = World()
     simulation = FullSimulationLoop(world)
+    simulation.init()
     simulation.create_initial_resources(
         food_count=80,
         water_count=80,
@@ -288,7 +296,7 @@ def main():
         metal_count=5,
     )
     simulation.create_initial_population(human_count=10)
-    simulation.run_simulation(steps=300, delta_hours=1.0, verbose=True)
+    simulation.run_simulation(steps=args.steps, delta_hours=args.delta_hours, verbose=not args.quiet)
 
 
 if __name__ == "__main__":
