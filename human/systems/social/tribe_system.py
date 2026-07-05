@@ -19,6 +19,7 @@ from human.systems.cognitive.memory_management_system import MemoryManagementSys
 
 import logging
 import random
+from typing import List, Dict
 
 from core.system import System
 from core.world import World
@@ -89,6 +90,36 @@ class TribeSystem(System):
         """增加成员贡献值"""
         membership.contribution += amount
 
+    @staticmethod
+    def get_member_ids(tribe: TribeComponent) -> List[int]:
+        """获取成员 ID 列表"""
+        return list(tribe.members.keys())
+
+    @staticmethod
+    def get_territory_center(tribe: TribeComponent) -> tuple:
+        """获取部落中心位置（无则返回原点）"""
+        return tribe.territory_center if tribe.territory_center else (0.0, 0.0)
+
+    @staticmethod
+    def set_territory_center(tribe: TribeComponent, value: tuple) -> None:
+        """设置部落中心位置"""
+        tribe.territory_center = value
+
+    @staticmethod
+    def get_culture(tribe: TribeComponent) -> Dict[str, float]:
+        """获取部落文化（当前为占位，未来可扩展为字段）"""
+        return {}
+
+    @staticmethod
+    def has_milestone(tribe: TribeComponent, name: str) -> bool:
+        """检查部落是否已达成某里程碑"""
+        return tribe.milestones.get(name, False)
+
+    @staticmethod
+    def set_milestone(tribe: TribeComponent, name: str, value: bool = True) -> None:
+        """设置部落里程碑状态"""
+        tribe.milestones[name] = value
+
     def __init__(self):
         self._initialized = False
         self._tribe_entity_cache = None
@@ -103,9 +134,9 @@ class TribeSystem(System):
             self._cleanup_members(world, tribe)
 
             # 记录部落里程碑
-            if TribeSystem.get_member_count(tribe) >= 5 and not hasattr(tribe, '_milestone_5'):
-                tribe._milestone_5 = True
-                logger.debug(f"[TribeSystem] 部落 '{tribe.name}' 达到5人里程碑")
+            if TribeSystem.get_member_count(tribe) >= 5 and not TribeSystem.has_milestone(tribe, '_milestone_5'):
+                TribeSystem.set_milestone(tribe, '_milestone_5')
+                logger.debug(f"[TribeSystem] 部落 '{tribe.tribe_name}' 达到5人里程碑")
 
     def _init_tribes(self, world: World):
         """初始化：为所有无部落的人类创建一个初始部落"""
@@ -130,7 +161,7 @@ class TribeSystem(System):
                 total_x += space.x
                 total_y += space.y
 
-        tribe.home_territory = (total_x / len(humans), total_y / len(humans))
+        TribeSystem.set_territory_center(tribe, (total_x / len(humans), total_y / len(humans)))
         # 防御：TribeComponent 可能没有 formed_time 字段
         if hasattr(tribe, 'formed_time'):
             tribe.formed_time = world.get_time().total_hours
@@ -165,25 +196,25 @@ class TribeSystem(System):
                 membership.loyalty = 60.0 + random.uniform(-10, 10)
 
         self._tribe_entity_cache = tribe_entity
-        logger.debug(f"[TribeSystem] 初始部落 '{tribe.name}' 成立，成员 {len(humans)} 人，领袖: {oldest.id if oldest else '无'}")
+        logger.debug(f"[TribeSystem] 初始部落 '{tribe.tribe_name}' 成立，成员 {len(humans)} 人，领袖: {oldest.id if oldest else '无'}")
         EventLog.log(
             world, event_type="tribe_formed",
-            description=f"部落 '{tribe.name}' 成立，成员 {len(humans)} 人",
+            description=f"部落 '{tribe.tribe_name}' 成立，成员 {len(humans)} 人",
             entity_id=oldest.id if oldest else None,
-            location=tribe.home_territory,
-            data={"tribe_name": tribe.name, "member_count": len(humans), "leader_id": oldest.id if oldest else None},
+            location=TribeSystem.get_territory_center(tribe),
+            data={"tribe_name": tribe.tribe_name, "member_count": len(humans), "leader_id": oldest.id if oldest else None},
             severity="milestone"
         )
 
     def _cleanup_members(self, world: World, tribe: TribeComponent):
         """清理已不存在的成员"""
         valid_members = []
-        for member_id in tribe.member_ids:
+        for member_id in TribeSystem.get_member_ids(tribe):
             entity = world.query_entity(member_id)
             if entity is not None:
                 valid_members.append(member_id)
 
-        removed = len(tribe.member_ids) - len(valid_members)
+        removed = len(TribeSystem.get_member_ids(tribe)) - len(valid_members)
         if removed > 0:
             tribe.members = {mid: tribe.members.get(mid, 'member') for mid in valid_members}
             tribe.tribe_size = len(valid_members)
@@ -230,11 +261,11 @@ class TribeSystem(System):
         child_name = child_identity.name if child_identity else f"Human_{child_entity.id}"
         EventLog.log(
             world, event_type="tribe_birth",
-            description=f"部落 '{tribe.name}' 迎来新生儿 {child_name}",
+            description=f"部落 '{tribe.tribe_name}' 迎来新生儿 {child_name}",
             entity_id=child_entity.id,
             target_id=parent_entity.id,
-            location=tribe.home_territory,
-            data={"tribe_name": tribe.name, "child_name": child_name},
+            location=TribeSystem.get_territory_center(tribe),
+            data={"tribe_name": tribe.tribe_name, "child_name": child_name},
             severity="info"
         )
 
@@ -243,9 +274,9 @@ class TribeSystem(System):
         if memory:
             MemoryManagementSystem.add_event(memory, 
                 current_time, "tribe_birth",
-                f"部落 '{tribe.name}' 迎来了新生儿 {child_name}",
+                f"部落 '{tribe.tribe_name}' 迎来了新生儿 {child_name}",
                 impact=0.5,
-                location=tribe.home_territory
+                location=TribeSystem.get_territory_center(tribe)
             )
 
     def get_tribe_stats(self, world: World, tribe_entity: Entity) -> dict:
@@ -257,7 +288,7 @@ class TribeSystem(System):
         avg_loyalty = 0
         member_count = TribeSystem.get_member_count(tribe)
 
-        for member_id in tribe.member_ids:
+        for member_id in TribeSystem.get_member_ids(tribe):
             entity = world.query_entity(member_id)
             if entity:
                 membership = world.get_component(entity, TribeMembershipComponent)
@@ -268,10 +299,10 @@ class TribeSystem(System):
             avg_loyalty /= member_count
 
         return {
-            "name": tribe.name,
+            "name": tribe.tribe_name,
             "members": member_count,
             "leader_id": tribe.leader_id,
-            "territory": tribe.home_territory,
+            "territory": TribeSystem.get_territory_center(tribe),
             "avg_loyalty": avg_loyalty,
-            "culture": tribe.culture,
+            "culture": TribeSystem.get_culture(tribe),
         }

@@ -52,13 +52,13 @@ class LeadershipSystem(System):
                 return  # 领袖健在
 
         # 需要选新领袖
-        if not tribe.member_ids:
+        if not TribeSystem.get_member_ids(tribe):
             return
 
         best_candidate = None
         best_score = -1
 
-        for member_id in tribe.member_ids:
+        for member_id in TribeSystem.get_member_ids(tribe):
             entity = world.query_entity(member_id)
             if entity is None:
                 continue
@@ -103,14 +103,14 @@ class LeadershipSystem(System):
 
             identity = world.get_component(best_candidate, IdentityComponent)
             name = identity.name if identity else f"Human_{best_candidate.id}"
-            logger.debug(f"[LeadershipSystem] 部落 '{tribe.name}' 领袖更替: {name} (得分 {best_score:.0f})")
+            logger.debug(f"[LeadershipSystem] 部落 '{tribe.tribe_name}' 领袖更替: {name} (得分 {best_score:.0f})")
 
             EventLog.log(
                 world, event_type="tribe_leader_change",
-                description=f"部落 '{tribe.name}' 领袖更替为 {name}",
+                description=f"部落 '{tribe.tribe_name}' 领袖更替为 {name}",
                 entity_id=best_candidate.id,
                 target_id=old_leader_id,
-                location=tribe.home_territory,
-                data={"tribe_name": tribe.name, "new_leader_name": name, "score": best_score},
+                location=TribeSystem.get_territory_center(tribe),
+                data={"tribe_name": tribe.tribe_name, "new_leader_name": name, "score": best_score},
                 severity="warning"
             )

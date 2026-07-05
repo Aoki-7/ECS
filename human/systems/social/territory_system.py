@@ -31,12 +31,12 @@ class TerritorySystem(System):
 
     def _update_territory(self, world: World, tribe: TribeComponent):
         """更新领地中心为所有成员的平均位置"""
-        if not tribe.member_ids:
+        if not TribeSystem.get_member_ids(tribe):
             return
 
         total_x, total_y = 0, 0
         count = 0
-        for member_id in tribe.member_ids:
+        for member_id in TribeSystem.get_member_ids(tribe):
             entity = world.query_entity(member_id)
             if entity:
                 space = world.get_component(entity, SpaceComponent)
@@ -48,8 +48,8 @@ class TerritorySystem(System):
         if count > 0:
             new_x = total_x / count
             new_y = total_y / count
-            old_x, old_y = tribe.home_territory
-            tribe.home_territory = (
+            old_x, old_y = TribeSystem.get_territory_center(tribe)
+            TribeSystem.set_territory_center(tribe, (
                 old_x * self.TERRITORY_SMOOTHING + new_x * (1.0 - self.TERRITORY_SMOOTHING),
                 old_y * self.TERRITORY_SMOOTHING + new_y * (1.0 - self.TERRITORY_SMOOTHING),
-            )
+            ))

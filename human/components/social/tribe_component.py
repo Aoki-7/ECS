@@ -1,14 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 '''
 @文件:tribe_component.py
-@说明:部落组件 v2.0 - 纯数据版
+@说明:部落组件 v3.0 - 纯数据版
 '''
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from core.component import Component
+
 
 @dataclass(slots=True)
 class TribeComponent(Component):
@@ -18,55 +19,22 @@ class TribeComponent(Component):
     """
     # 部落成员 {entity_id: role}
     members: Dict[int, str] = field(default_factory=dict)
-    
+
     # 部落领袖
     leader_id: Optional[int] = None
-    
+
     # 部落领土
     territory_center: Optional[tuple] = None
     territory_radius: float = 0.0
-    
+
     # 部落属性
     tribe_name: str = ""
     tribe_size: int = 0
     max_size: int = 50
-    
+
     # 部落状态
     is_active: bool = True
     founded_tick: int = 0
 
-    @property
-    def name(self) -> str:
-        """兼容旧系统：name 属性映射到 tribe_name"""
-        return self.tribe_name
-
-    @name.setter
-    def name(self, value: str) -> None:
-        """兼容旧系统：name 属性映射到 tribe_name"""
-        self.tribe_name = value
-
-    @property
-    def member_ids(self) -> List[int]:
-        """获取成员 ID 列表"""
-        return list(self.members.keys())
-
-    @property
-    def home_territory(self) -> tuple:
-        """获取部落中心位置"""
-        return self.territory_center if self.territory_center else (0.0, 0.0)
-
-    @home_territory.setter
-    def home_territory(self, value: tuple) -> None:
-        """设置部落中心位置"""
-        self.territory_center = value
-
-    @property
-    def culture(self) -> dict:
-        """获取部落文化（兼容属性）"""
-        return {}
-
-    def __getattr__(self, name):
-        """动态属性回退，兼容旧系统的 _milestone_5 等属性"""
-        if name.startswith('_milestone_'):
-            return False
-        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+    # 里程碑标记
+    milestones: Dict[str, bool] = field(default_factory=dict)

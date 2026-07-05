@@ -43,7 +43,7 @@ class LoyaltySystem(System):
         leader = world.query_entity(tribe.leader_id) if tribe.leader_id else None
         leader_space = world.get_component(leader, SpaceComponent) if leader else None
 
-        for member_id in tribe.member_ids:
+        for member_id in TribeSystem.get_member_ids(tribe):
             entity = world.query_entity(member_id)
             if entity is None:
                 continue

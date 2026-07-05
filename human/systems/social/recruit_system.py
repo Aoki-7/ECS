@@ -64,7 +64,7 @@ class RecruitSystem(System):
         if TribeSystem.get_member_count(tribe) >= self.MAX_TRIBE_SIZE:
             return  # 部落太大不再招募
 
-        center_x, center_y = tribe.home_territory
+        center_x, center_y = TribeSystem.get_territory_center(tribe)
 
         for entity, space in candidates:
             # 距离检查
@@ -77,7 +77,7 @@ class RecruitSystem(System):
             known_member = False
             best_relation = -100
             if social:
-                for member_id in tribe.member_ids:
+                for member_id in TribeSystem.get_member_ids(tribe):
                     relation_score = social.relations.get(member_id)
                     if relation_score is not None:
                         known_member = True
@@ -106,14 +106,14 @@ class RecruitSystem(System):
 
             identity = world.get_component(entity, IdentityComponent)
             name = identity.name if identity else f"Human_{entity.id}"
-            logger.debug(f"[RecruitSystem] {name} 加入部落 '{tribe.name}'")
+            logger.debug(f"[RecruitSystem] {name} 加入部落 '{tribe.tribe_name}'")
 
             EventLog.log(
                 world, event_type="joined_tribe",
-                description=f"{name} 加入部落 '{tribe.name}'",
+                description=f"{name} 加入部落 '{tribe.tribe_name}'",
                 entity_id=entity.id,
                 location=(space.x, space.y),
-                data={"tribe_name": tribe.name, "member_name": name},
+                data={"tribe_name": tribe.tribe_name, "member_name": name},
                 severity="info"
             )
 
@@ -123,7 +123,7 @@ class RecruitSystem(System):
             if memory:
                 MemoryManagementSystem.add_event(memory, 
                     current_time, "joined_tribe",
-                    f"加入部落 '{tribe.name}'",
+                    f"加入部落 '{tribe.tribe_name}'",
                     impact=0.4,
                     location=(space.x, space.y)
                 )
