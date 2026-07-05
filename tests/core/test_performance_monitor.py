@@ -24,7 +24,10 @@ class MonitoredSystem(System):
 
     @monitored_update
     def update(self, world: World, dt: float = 1.0) -> None:
-        time.sleep(0.002)  # 模拟 2ms 工作
+        # 使用忙等待避免系统 sleep 在小剂量时提前返回导致计时抖动
+        deadline = time.perf_counter() + 0.005
+        while time.perf_counter() < deadline:
+            pass
 
 
 class TestPerformanceMonitor:
