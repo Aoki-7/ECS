@@ -198,7 +198,47 @@ class EnvironmentSyncSystem(System):
         env.soil_temperature = env.soil_temperature * 0.95 + weather.temperature * 0.05
 
         # 水分胁迫指数（基于当前土壤湿度重新计算）
-        env._recalc_water_stress()
+        env.water_stress_index = EnvironmentSyncSystem.calculate_water_stress_index(
+            env.soil_moisture, env.field_capacity, env.wilting_point
+        )
+
+    @staticmethod
+    def calculate_water_stress_index(soil_moisture: float, field_capacity: float,
+                                       wilting_point: float) -> float:
+        """根据土壤水分、田间持水量和萎蔫点计算水分胁迫指数"""
+        if field_capacity > wilting_point:
+            stress = (field_capacity - soil_moisture) / (field_capacity - wilting_point)
+            return float(max(0.0, min(1.0, stress)))
+        return 0.0
+
+    @staticmethod
+    def snapshot(env: EnvironmentComponent) -> dict:
+        """快照 - 返回高频使用字段"""
+        return {
+            'time_of_day': env.time_of_day,
+            'is_daytime': env.is_daytime,
+            'year_progress': env.year_progress,
+            'season': env.season,
+            'temperature': env.temperature,
+            'air_temperature': env.air_temperature,
+            'humidity': env.humidity,
+            'air_humidity': env.air_humidity,
+            'precipitation': env.precipitation,
+            'rainfall': env.rainfall,
+            'wind_speed': env.wind_speed,
+            'wind_direction': env.wind_direction,
+            'light_level': env.light_level,
+            'par': env.par,
+            'photoperiod': env.photoperiod,
+            'dli': env.dli,
+            'soil_moisture': env.soil_moisture,
+            'soil_temperature': env.soil_temperature,
+            'water_stress_index': env.water_stress_index,
+            'co2': env.co2,
+            'o2': env.o2,
+            'vpd': env.vpd,
+            'day_night_temp_diff': env.day_night_temp_diff,
+        }
 
     @staticmethod
     def _year_progress_to_season(year_progress: float) -> str:

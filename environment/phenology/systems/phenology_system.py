@@ -56,6 +56,33 @@ class PhenologySystem(System):
     # 物理常数
     HOURS_PER_TICK = 0.5  # 每 tick 代表的小时数（根据游戏速度调整）
 
+
+    # === 业务方法（从 PhenologyComponent 迁移） ===
+    @staticmethod
+    def calculate_gdd(phenology: PhenologyComponent, temperature: float) -> float:
+        """计算生长度日"""
+        return max(0.0, temperature - phenology.gdd_base)
+
+    @staticmethod
+    def accumulate_chill(phenology: PhenologyComponent,
+                         temperature: float, hours: float) -> float:
+        """累积需冷量，返回本次增加的小时数"""
+        if temperature < 7.2:  # 7.2°C 是标准需冷温度
+            phenology.chill_hours += hours
+            return hours
+        return 0.0
+
+    @staticmethod
+    def check_transition(phenology: PhenologyComponent, target_stage: str) -> bool:
+        """检查是否可以转换到目标阶段"""
+        thresholds = {
+            "leafing": 150.0,
+            "flowering": 300.0,
+            "fruiting": 500.0,
+            "senescence": 700.0,
+        }
+        return phenology.gdd_accumulated >= thresholds.get(target_stage, float('inf'))
+
     def update(self, world: World, dt: float) -> None:
         """更新物候"""
         for entity, (phenology, env) in world.get_components(
@@ -85,12 +112,12 @@ class PhenologySystem(System):
 
         # 积温累积（生长季）
         if phenology.phenophase != "dormant":
-            gdd = phenology.calculate_gdd(temperature)
+            gdd = PhenologySystem.calculate_gdd(phenology, temperature)
             phenology.gdd_accumulated += gdd * hours / 24.0  # 转换为日积温
 
         # 需冷量累积（休眠季）
         if phenology.phenophase == "dormant":
-            chill = phenology.accumulate_chill(temperature, hours)
+            chill = PhenologySystem.accumulate_chill(phenology, temperature, hours)
             phenology.chill_hours += chill
 
     def _check_phenophase_transition(self, phenology: PhenologyComponent,
@@ -129,31 +156,31 @@ class PhenologySystem(System):
     def _can_leaf(self, phenology: PhenologyComponent, env: EnvironmentComponent,
                   day_length: float, soil_moisture: float) -> bool:
         """展叶条件：积温满足"""
-        return phenology.check_transition("leafing")
+        return PhenologySystem.check_transition(phenology, "leafing")
 
     def _can_flower(self, phenology: PhenologyComponent, env: EnvironmentComponent,
                     day_length: float, soil_moisture: float) -> bool:
         """开花条件：积温满足 + 水分充足"""
-        gdd_ok = phenology.check_transition("flowering")
+        gdd_ok = PhenologySystem.check_transition(phenology, "flowering")
         water_ok = soil_moisture > 0.3
         return gdd_ok and water_ok
 
     def _can_fruit(self, phenology: PhenologyComponent, env: EnvironmentComponent,
                    day_length: float, soil_moisture: float) -> bool:
         """结果条件：积温满足"""
-        return phenology.check_transition("fruiting")
+        return PhenologySystem.check_transition(phenology, "fruiting")
 
     def _can_senesce(self, phenology: PhenologyComponent, env: EnvironmentComponent,
                      day_length: float, soil_moisture: float) -> bool:
         """衰老条件：积温满足 或 水分胁迫"""
-        gdd_ok = phenology.check_transition("senescence")
+        gdd_ok = PhenologySystem.check_transition(phenology, "senescence")
         water_stress = soil_moisture < 0.2
         return gdd_ok or water_stress
 
     def _can_leaf_fall(self, phenology: PhenologyComponent, env: EnvironmentComponent,
                        day_length: float, soil_moisture: float) -> bool:
         """落叶条件：积温满足 或 光周期缩短"""
-        gdd_ok = phenology.check_transition("leaf_fall")
+        gdd_ok = PhenologySystem.check_transition(phenology, "leaf_fall")
         # 光周期缩短（秋季）
         day_length_ok = day_length < 12.0 * (1 - phenology.day_length_sensitivity * 0.5)
         return gdd_ok or day_length_ok

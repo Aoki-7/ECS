@@ -6,6 +6,7 @@
 
 import math
 
+from environment.systems.environment_sync_system import EnvironmentSyncSystem
 from tests.environment.base import T, build_test_world, setup_weather_world
 
 
@@ -337,7 +338,7 @@ def test_no_nan_inf():
         valid = math.isfinite(val)
         T.ok(f"{name} = {val:.4f}") if valid else T.fail(f"{name} = {val} (不是有限数)")
 
-    data = EnvironmentComponent().snapshot()
+    data = EnvironmentSyncSystem.snapshot(EnvironmentComponent())
     all_finite = all(
         math.isfinite(v) if isinstance(v, (int, float)) else True
         for v in data.values()

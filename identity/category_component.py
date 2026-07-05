@@ -152,24 +152,6 @@ class CategoryComponent(Component):
                     f"{expected_enum.__name__}"
                 )
 
-    def matches(self, category: EntityCategory, subcategory: SubCategoryType = None) -> bool:
-        """检查是否匹配指定的分类。"""
-        if self.category != category:
-            return False
-        if subcategory is not None and self.subcategory != subcategory:
-            return False
-        return True
-
-    def has_tag(self, tag: str) -> bool:
-        return tag in self.tags
-
-    def add_tag(self, tag: str) -> None:
-        if tag not in self.tags:
-            self.tags.append(tag)
-
-    def remove_tag(self, tag: str) -> None:
-        if tag in self.tags:
-            self.tags.remove(tag)
 
     def to_dict(self) -> dict[str, Any]:
         return {

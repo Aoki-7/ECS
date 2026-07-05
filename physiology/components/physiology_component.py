@@ -64,6 +64,3 @@ class PhysiologyComponent(Component):
     通用生理组件
     """
     stats: Dict[str, PhysioStat]
-
-    def get(self, name: str) -> PhysioStat:
-        return self.stats[name]

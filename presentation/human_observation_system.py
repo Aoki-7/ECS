@@ -59,13 +59,52 @@ class HumanObservationSystem(System):
             if comp:
                 we.remove_component(HumanObservationComponent)
 
+
+    # === 业务方法（从 HumanObservationComponent 迁移） ===
+    @staticmethod
+    def add_snapshot(comp: HumanObservationComponent, snapshot: dict):
+        """添加一条快照，超出上限时裁剪旧记录"""
+        comp.history.append(snapshot)
+        if len(comp.history) > comp.max_history:
+            comp.history = comp.history[-comp.max_history:]
+
+    @staticmethod
+    def get_latest(comp: HumanObservationComponent) -> dict | None:
+        """获取最新快照"""
+        return comp.history[-1] if comp.history else None
+
+    @staticmethod
+    def get_human_history(comp: HumanObservationComponent, entity_id: int) -> list:
+        """获取某个特定 human 的所有历史状态"""
+        result = []
+        for record in comp.history:
+            for human in record.get("humans", []):
+                if human.get("entity_id") == entity_id:
+                    result.append({
+                        "timestamp": record.get("timestamp"),
+                        "step": record.get("step"),
+                        **human
+                    })
+        return result
+
+    @staticmethod
+    def get_human_count_trend(comp: HumanObservationComponent) -> list:
+        """获取人口数量变化趋势"""
+        return [
+            {
+                "timestamp": r.get("timestamp"),
+                "human_count": len(r.get("humans", []))
+            }
+            for r in comp.history
+        ]
+
     def update(self, world: World, dt: float = 1.0) -> None:
         snapshot = self._collect_snapshot(world)
         comp = world.get_world_component(HumanObservationComponent)
         if comp is None:
             comp = HumanObservationComponent()
             world.get_world_entity().add_component(comp)
-        comp.add_snapshot(snapshot)
+        HumanObservationSystem.add_snapshot(comp, snapshot)
         logger.debug(
             "[HumanObservation] 记录快照 step=%d humans=%d",
             snapshot["step"], len(snapshot["humans"]),

@@ -28,11 +28,11 @@ class TestPhenologyComponent:
         comp = PhenologyComponent(gdd_base=5.0)
         
         # 温度高于基准
-        gdd = comp.calculate_gdd(15.0)
+        gdd = PhenologySystem.calculate_gdd(comp, 15.0)
         assert gdd == 10.0  # 15 - 5 = 10
         
         # 温度低于基准
-        gdd = comp.calculate_gdd(3.0)
+        gdd = PhenologySystem.calculate_gdd(comp, 3.0)
         assert gdd == 0.0
 
     def test_chill_accumulation(self):
@@ -40,11 +40,11 @@ class TestPhenologyComponent:
         comp = PhenologyComponent()
         
         # 低温累积
-        chill = comp.accumulate_chill(5.0, 1.0)
+        chill = PhenologySystem.accumulate_chill(comp, 5.0, 1.0)
         assert chill == 1.0
         
         # 高温不累积
-        chill = comp.accumulate_chill(10.0, 1.0)
+        chill = PhenologySystem.accumulate_chill(comp, 10.0, 1.0)
         assert chill == 0.0
 
     def test_transition_check(self):
@@ -52,10 +52,10 @@ class TestPhenologyComponent:
         comp = PhenologyComponent(gdd_accumulated=200.0)
         
         # 满足 leafing 条件（需要 150）
-        assert comp.check_transition("leafing") == True
+        assert PhenologySystem.check_transition(comp, "leafing") == True
         
         # 不满足 flowering 条件（需要 300）
-        assert comp.check_transition("flowering") == False
+        assert PhenologySystem.check_transition(comp, "flowering") == False
 
     def test_serialization(self):
         comp = PhenologyComponent(

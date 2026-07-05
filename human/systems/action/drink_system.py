@@ -62,6 +62,27 @@ class DrinkSystem(System):
             if action.progress >= 1.0:
                 self._finish_drinking(world, entity, needs, action, task, inventory, space, water_entity, water_component, water_source)
 
+
+    # ===== 水组件业务方法（已从 WaterComponent 迁移）=====
+    @staticmethod
+    def drink(water_component: WaterComponent) -> float:
+        """被喝一口，返回实际消耗量"""
+        actual_amount = min(water_component.amount, water_component.sip_size)
+        water_component.amount -= actual_amount
+        return actual_amount
+
+    @staticmethod
+    def is_safe_to_drink(water_component: WaterComponent) -> bool:
+        """检查是否安全饮用"""
+        return water_component.purity > 0.5 and water_component.bacteria < 0.1
+
+    @staticmethod
+    def get_temperature_effect(water_component: WaterComponent) -> float:
+        """获取温度对饮用效果的影响"""
+        optimal_temp = 20.0
+        temp_diff = abs(water_component.temperature - optimal_temp)
+        return max(0.5, 1.0 - temp_diff * 0.02)  # 每度差降低2%
+
     def _find_water(self, world, space_system, space, inventory):
         """从背包和地面搜索水源，返回 (water_entity, water_source)"""
         # 防御：InventoryComponent 可能没有 find 方法
@@ -119,7 +140,7 @@ class DrinkSystem(System):
 
     def _finish_drinking(self, world, entity, needs, action, task, inventory, space, water_entity, water_component, water_source):
         """饮水完成处理"""
-        water_component.drink()
+        DrinkSystem.drink(water_component)
         needs.thirst = max(0, needs.thirst - 50)
 
         if water_component.amount <= 0:

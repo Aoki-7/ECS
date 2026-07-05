@@ -27,7 +27,7 @@ class TestCelestialBodyComponent:
     def test_tidal_force_calculation(self):
         """测试潮汐力计算（物理公式）"""
         comp = CelestialBodyComponent(mass=7.342e22, distance=3.844e8)
-        force = comp.tidal_force
+        force = TidalSystem.tidal_force(comp)
         # F_tidal = M / d³
         expected = 7.342e22 / (3.844e8 ** 3)
         assert abs(force - expected) < expected * 0.01  # 1%误差
@@ -41,11 +41,11 @@ class TestCelestialBodyComponent:
         )
         
         # 近地点（phase=0）
-        periapsis = comp.current_distance
+        periapsis = TidalSystem.current_distance(comp)
         
         # 远地点（phase=π）
         comp.current_phase = 3.14159
-        apoapsis = comp.current_distance
+        apoapsis = TidalSystem.current_distance(comp)
         
         # 近地点应该更近
         assert periapsis < apoapsis
@@ -55,7 +55,7 @@ class TestCelestialBodyComponent:
         comp = CelestialBodyComponent(phase_rate=0.229)
         initial_phase = comp.current_phase
         
-        comp.advance_phase(1.0)  # 推进1天
+        TidalSystem.advance_phase(comp, 1.0)  # 推进1天
         
         assert comp.current_phase > initial_phase
 

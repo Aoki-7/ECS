@@ -53,36 +53,3 @@ class WaterComponent(Component):
     #   "health": -10,  # 污染水会扣健康
     #   "energy": +5    # 凉水可能提神
     # }
-
-    # ===== 行为方法 =====
-    def drink(self) -> float:
-        """
-        被喝一口，返回实际消耗量
-
-        Returns:
-            float: 实际喝掉的水量
-        """
-        actual_amount = min(self.amount, self.sip_size)
-        self.amount -= actual_amount
-        return actual_amount
-
-    def is_safe_to_drink(self) -> bool:
-        """
-        检查是否安全饮用
-
-        Returns:
-            bool: True如果安全饮用
-        """
-        return self.purity > 0.5 and self.bacteria < 0.1
-
-    def get_temperature_effect(self) -> float:
-        """
-        获取温度对饮用效果的影响
-
-        Returns:
-            float: 温度修正因子（1.0为最适宜）
-        """
-        # 最适宜温度20°C，过热或过冷都会降低效果
-        optimal_temp = 20.0
-        temp_diff = abs(self.temperature - optimal_temp)
-        return max(0.5, 1.0 - temp_diff * 0.02)  # 每度差降低2%

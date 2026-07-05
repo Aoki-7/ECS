@@ -1,3 +1,4 @@
+import math
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -70,6 +71,35 @@ class StormSystem(System):
         # 4. 移除消散的风暴
         self._remove_dissipated_storms(world)
 
+
+    # === 业务方法（从 StormComponent 迁移） ===
+    @staticmethod
+    def coriolis_parameter(storm: StormComponent) -> float:
+        """科里奥利参数 f = 2Ω·sin(φ)"""
+        omega = 7.292e-5  # 地球自转角速度 rad/s
+        return 2 * omega * math.sin(math.radians(storm.latitude))
+
+    @staticmethod
+    def wind_speed_from_pressure(storm: StormComponent) -> float:
+        """由气压梯度计算风速"""
+        if storm.pressure_gradient <= 0:
+            return 0.0
+        f = abs(StormSystem.coriolis_parameter(storm))
+        if f < 1e-10:
+            f = 1e-10
+        return storm.pressure_gradient / f
+
+    @staticmethod
+    def update_intensity(storm: StormComponent) -> None:
+        """更新风暴强度"""
+        pg_factor = min(1.0, storm.pressure_gradient / 50.0)
+        tg_factor = min(1.0, storm.temperature_gradient / 30.0)
+        h_factor = storm.humidity
+
+        storm.intensity = (pg_factor * 0.4 + tg_factor * 0.3 + h_factor * 0.3)
+        storm.intensity = min(1.0, storm.intensity)
+        storm.max_wind_speed = StormSystem.wind_speed_from_pressure(storm)
+
     def _spawn_storms(self, world: World, dt: float) -> None:
         """
         根据大气条件生成风暴
@@ -138,7 +168,7 @@ class StormSystem(System):
             max_lifetime=env.air_humidity * 24.0,  # 湿度决定能量供应时间
         )
 
-        storm.update_intensity()
+        StormSystem.update_intensity(storm)
         world.add_component(entity, storm)
 
         logger.info(f"[Storm] 生成 {storm_type}，强度={storm.intensity:.2f}，位置=({space.x:.1f}, {space.y:.1f})")
@@ -169,7 +199,7 @@ class StormSystem(System):
             storm.central_pressure = 1013.0 - 50.0 * life_factor * storm.intensity
 
             # 更新强度
-            storm.update_intensity()
+            StormSystem.update_intensity(storm)
 
             # 更新直径（随强度变化）
             storm.diameter = 1.0 + 50.0 * storm.intensity

@@ -25,6 +25,7 @@ from core.world import World
 from environment.season.season_component import SeasonComponent
 from environment.environment_component import EnvironmentComponent
 from environment.astronomy.components.celestial_body_component import CelestialBodyComponent
+from environment.astronomy.systems.tidal_system import TidalSystem
 from time_module.time_component import TimeComponent
 
 import logging
@@ -183,7 +184,7 @@ class SeasonChangeSystem(System):
             # 轨道偏心率影响：近日点（约1月3日）接收更多辐射
             # 远日点（约7月4日）接收更少辐射
             # 简化为：根据当前距离调整有效天数
-            distance_factor = body.current_distance / body.distance
+            distance_factor = TidalSystem.current_distance(body) / body.distance
             
             # 距离越近，季节推进越快（北半球冬季更短）
             if distance_factor < 1.0:

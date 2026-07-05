@@ -83,45 +83,10 @@ class EnvironmentComponent(Component):
         """根据初始化参数计算派生字段"""
         # 白天判断：PAR > 50 视为白天
         self.is_daytime = self.par > 50.0
-        self._recalc_water_stress()
-
-    def _recalc_water_stress(self):
-        """根据土壤水分、田间持水量和萎蔫点重新计算水分胁迫指数"""
-        fc = self.field_capacity
-        wp = self.wilting_point
-        if fc > wp:
-            stress = (fc - self.soil_moisture) / (fc - wp)
-            self.water_stress_index = float(max(0.0, min(1.0, stress)))
-        else:
-            self.water_stress_index = 0.0
-
-    def snapshot(self) -> dict:
-        """快照 - 返回高频使用字段"""
-        return {
-            'time_of_day': self.time_of_day,
-            'is_daytime': self.is_daytime,
-            'year_progress': self.year_progress,
-            'season': self.season,
-            'temperature': self.temperature,
-            'air_temperature': self.air_temperature,
-            'humidity': self.humidity,
-            'air_humidity': self.air_humidity,
-            'precipitation': self.precipitation,
-            'rainfall': self.rainfall,
-            'wind_speed': self.wind_speed,
-            'wind_direction': self.wind_direction,
-            'light_level': self.light_level,
-            'par': self.par,
-            'photoperiod': self.photoperiod,
-            'dli': self.dli,
-            'soil_moisture': self.soil_moisture,
-            'soil_temperature': self.soil_temperature,
-            'water_stress_index': self.water_stress_index,
-            'co2': self.co2,
-            'o2': self.o2,
-            'vpd': self.vpd,
-            'day_night_temp_diff': self.day_night_temp_diff,
-        }
+        from environment.systems.environment_sync_system import EnvironmentSyncSystem
+        self.water_stress_index = EnvironmentSyncSystem.calculate_water_stress_index(
+            self.soil_moisture, self.field_capacity, self.wilting_point
+        )
 
     def __getattr__(self, name: str):
         """动态返回默认值，兼容任何缺失字段"""

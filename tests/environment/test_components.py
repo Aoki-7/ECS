@@ -37,7 +37,8 @@ def test_environment_component():
     T.ok(f"中间水分胁迫指数={e3.water_stress_index:.2f} (应为{expected:.2f})") \
         if abs(e3.water_stress_index - expected) < 0.01 else T.fail("中间胁迫指数错误")
 
-    snap = e.snapshot()
+    from environment.systems.environment_sync_system import EnvironmentSyncSystem
+    snap = EnvironmentSyncSystem.snapshot(e)
     T.ok(f"snapshot() 返回 {len(snap)} 个字段") if len(snap) >= 18 else T.fail("snapshot 字段不足")
 
     extreme = EnvironmentComponent(air_temperature=-50.0, soil_moisture=1.5, co2=10000.0)
@@ -323,9 +324,10 @@ def test_serialization_roundtrip():
     )
     from environment.soil.components.soil_component import SoilComponent, SoilType
 
+    from environment.systems.environment_sync_system import EnvironmentSyncSystem
     orig = EnvironmentComponent(par=500, air_temperature=30, soil_moisture=0.7,
                                  air_humidity=0.8, co2=800)
-    d = orig.snapshot()
+    d = EnvironmentSyncSystem.snapshot(orig)
     restored = EnvironmentComponent(**{k: v for k, v in d.items()
                                         if k in EnvironmentComponent.__dataclass_fields__})
     T.ok(f"EnvironmentComponent: PAR={restored.par}, T={restored.air_temperature}°C") \

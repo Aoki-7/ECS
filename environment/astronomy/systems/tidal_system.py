@@ -17,6 +17,7 @@ v3.5 新增 — P2
 """
 
 import logging
+import math
 from typing import Dict, List, Tuple
 
 from core.system import System
@@ -51,6 +52,46 @@ class TidalSystem(System):
     EARTH_RADIUS = 6.371e6  # 地球半径 m
     TIDE_AMPLIFICATION = 1.0e-6  # 潮汐放大系数（将引力转换为水位变化）
 
+
+    # === 业务方法（从 CelestialBodyComponent 迁移） ===
+    @staticmethod
+    def tidal_force(body: CelestialBodyComponent) -> float:
+        """潮汐力 = M / d³"""
+        d = body.distance
+        if d <= 0:
+            return 0.0
+        return body.mass / (d ** 3)
+
+    @staticmethod
+    def current_distance(body: CelestialBodyComponent) -> float:
+        """当前距离（考虑轨道偏心率）"""
+        a = body.distance
+        e = body.eccentricity
+        theta = body.current_phase
+        return a * (1 - e * e) / (1 + e * math.cos(theta))
+
+    @staticmethod
+    def get_tidal_force(body: CelestialBodyComponent) -> float:
+        """获取潮汐力（兼容旧测试）"""
+        return TidalSystem.tidal_force(body)
+
+    @staticmethod
+    def advance_orbit(body: CelestialBodyComponent, dt: float = 1.0) -> None:
+        """推进轨道"""
+        body.phase += body.phase_rate * dt
+        body.phase %= (2 * math.pi)
+        body.current_phase = body.phase
+
+    @staticmethod
+    def advance_phase(body: CelestialBodyComponent, dt: float = 1.0) -> None:
+        """推进相位"""
+        TidalSystem.advance_orbit(body, dt)
+
+    @staticmethod
+    def get_tide_level(body: CelestialBodyComponent) -> float:
+        """获取潮汐高度"""
+        return TidalSystem.tidal_force(body) * math.sin(body.phase)
+
     def update(self, world: World, dt: float) -> None:
         """更新潮汐"""
         # 1. 推进天体轨道
@@ -66,7 +107,7 @@ class TidalSystem(System):
         for entity, (body,) in world.get_components(CelestialBodyComponent):
             if body is None:
                 continue
-            body.advance_phase(dt_days)
+            TidalSystem.advance_phase(body, dt_days)
 
     def _update_tides(self, world: World, dt: float) -> None:
         """根据天体引力更新潮汐"""
@@ -80,7 +121,7 @@ class TidalSystem(System):
                 continue
 
             # 计算潮汐力（物理量）
-            force = body.tidal_force
+            force = TidalSystem.tidal_force(body)
             tidal_forces.append((force, body.current_phase, body_space))
 
         if not tidal_forces:

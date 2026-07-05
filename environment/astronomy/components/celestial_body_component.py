@@ -5,8 +5,6 @@
 @说明:天体组件 v2.0 - 纯数据版
 '''
 
-import math
-
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
@@ -52,41 +50,7 @@ class CelestialBodyComponent(Component):
             self.phase = self.current_phase
         if self.orbital_eccentricity != 0.0549:
             self.eccentricity = self.orbital_eccentricity
-    
-    @property
-    def tidal_force(self) -> float:
-        """潮汐力 = M / d³"""
-        d = self.distance
-        if d <= 0:
-            return 0.0
-        return self.mass / (d ** 3)
-    
-    @property
-    def current_distance(self) -> float:
-        """当前距离（考虑轨道偏心率）"""
-        a = self.distance
-        e = self.eccentricity
-        theta = self.current_phase  # 使用 current_phase 而非 phase
-        return a * (1 - e * e) / (1 + e * math.cos(theta))
-    
-    def get_tidal_force(self) -> float:
-        """获取潮汐力（兼容旧测试）"""
-        return self.tidal_force
-    
-    def advance_orbit(self, dt: float = 1.0) -> None:
-        """推进轨道（兼容旧测试）"""
-        self.phase += self.phase_rate * dt
-        self.phase %= (2 * math.pi)
-        self.current_phase = self.phase
-    
-    def advance_phase(self, dt: float = 1.0) -> None:
-        """推进相位（兼容旧测试）"""
-        self.advance_orbit(dt)
-    
-    def get_tide_level(self) -> float:
-        """获取潮汐高度（兼容旧测试）"""
-        return self.tidal_force * math.sin(self.phase)
-    
+
     def to_dict(self) -> dict:
         """序列化"""
         return {

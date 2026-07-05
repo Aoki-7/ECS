@@ -5,8 +5,6 @@
 @说明:风暴组件 v2.0 - 纯数据版
 '''
 
-import math
-
 from dataclasses import dataclass, field
 from typing import Dict, List
 
@@ -55,35 +53,6 @@ class StormComponent(Component):
     temperature_gradient: float = 0.0
     diameter: float = 0.0
     humidity: float = 0.5
-    
-    @property
-    def coriolis_parameter(self) -> float:
-        """科里奥利参数 f = 2Ω·sin(φ)"""
-        omega = 7.292e-5  # 地球自转角速度 rad/s
-        return 2 * omega * math.sin(math.radians(self.latitude))
-    
-    @property
-    def wind_speed_from_pressure(self) -> float:
-        """由气压梯度计算风速"""
-        if self.pressure_gradient <= 0:
-            return 0.0
-        f = abs(self.coriolis_parameter)
-        if f < 1e-10:
-            f = 1e-10
-        return self.pressure_gradient / f
-    
-    def update_intensity(self) -> None:
-        """更新强度"""
-        # 基于气压梯度和温度梯度计算强度
-        pg_factor = min(1.0, self.pressure_gradient / 50.0)
-        tg_factor = min(1.0, self.temperature_gradient / 30.0)
-        h_factor = self.humidity
-        
-        self.intensity = (pg_factor * 0.4 + tg_factor * 0.3 + h_factor * 0.3)
-        self.intensity = min(1.0, self.intensity)
-        
-        # 更新最大风速
-        self.max_wind_speed = self.wind_speed_from_pressure
     
     def to_dict(self) -> dict:
         """序列化"""

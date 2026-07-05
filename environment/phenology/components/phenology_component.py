@@ -41,27 +41,6 @@ class PhenologyComponent(Component):
     gdd_accumulated: float = 0.0
     day_length_sensitivity: float = 1.0
     
-    def calculate_gdd(self, temperature: float) -> float:
-        """计算生长度日"""
-        return max(0.0, temperature - self.gdd_base)
-    
-    def accumulate_chill(self, temperature: float, hours: float) -> float:
-        """累积需冷量"""
-        if temperature < 7.2:  # 7.2°C 是标准需冷温度
-            self.chill_hours += hours
-            return hours
-        return 0.0
-    
-    def check_transition(self, target_stage: str) -> bool:
-        """检查是否可以转换到目标阶段"""
-        thresholds = {
-            "leafing": 150.0,
-            "flowering": 300.0,
-            "fruiting": 500.0,
-            "senescence": 700.0,
-        }
-        return self.gdd_accumulated >= thresholds.get(target_stage, float('inf'))
-    
     def to_dict(self) -> dict:
         """序列化"""
         return {

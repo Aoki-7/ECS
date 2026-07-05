@@ -26,7 +26,7 @@ class TestStormComponent:
     def test_coriolis_parameter(self):
         """测试科里奥利参数计算"""
         comp = StormComponent(latitude=30.0)
-        f = comp.coriolis_parameter
+        f = StormSystem.coriolis_parameter(comp)
         # f = 2Ω·sin(φ)
         # Ω = 7.292e-5, φ = 30°
         # sin(30°) = 0.5
@@ -39,7 +39,7 @@ class TestStormComponent:
             latitude=30.0,
             pressure_gradient=10.0
         )
-        wind = comp.wind_speed_from_pressure
+        wind = StormSystem.wind_speed_from_pressure(comp)
         # 应该产生非零风速
         assert wind > 0
 
@@ -50,7 +50,7 @@ class TestStormComponent:
             temperature_gradient=10.0,
             humidity=0.9
         )
-        comp.update_intensity()
+        StormSystem.update_intensity(comp)
         
         # 强条件应该产生高强度
         assert comp.intensity > 0.5
