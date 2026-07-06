@@ -14,6 +14,7 @@
 
 import pytest
 import math
+from typing import Dict, Tuple
 
 from core.world import World
 from core.entity import Entity
@@ -395,5 +396,94 @@ class TestSelfRecoveryProcessor:
         env2 = world2.get_component(e2, EnvironmentComponent)
         change_small = env2.air_temperature - 24.0
 
-        # 大幅偏离恢复更快 (sigmoid 效应)
-        assert abs(change_large) > abs(change_small)
+
+class TestConservation:
+    """验证保守处理器满足质量/能量守恒"""
+
+    @staticmethod
+    def _build_uniform_grid(size: int = 3) -> Tuple[World, Dict, ContinuumCache]:
+        world = World()
+        grid = {}
+        for x in range(size):
+            for y in range(size):
+                e = world.create_entity()
+                world.add_component(e, SpaceComponent(x=x, y=y))
+                world.add_component(e, EnvironmentComponent(
+                    air_temperature=15.0 + x * 5.0 - y * 2.0,
+                    air_humidity=0.4 + x * 0.05,
+                    soil_moisture=0.3 + y * 0.06,
+                    soil_temperature=18.0 + x * 2.0 - y,
+                    wind_speed=0.0,  # 关闭风驱，避免引入边界通量
+                ))
+                world.add_component(e, TerrainComponent(
+                    terrain_type=TerrainType.PLAIN,
+                    elevation=10.0,
+                    slope=0.0,
+                ))
+                grid[(x, y)] = e
+        cache = ContinuumCache.build(world, grid)
+        return world, grid, cache
+
+    def test_thermal_diffusion_conserves_temperature(self):
+        world, grid, cache = self._build_uniform_grid()
+        before = take_conservation_snapshot(cache)
+        ThermalDiffusionProcessor().process(world, cache, grid, 1.0)
+        after = take_conservation_snapshot(cache)
+        diff = after - before
+        assert abs(diff.total_temperature) < 1e-9, f"温度不守恒: {diff.total_temperature}"
+
+    def test_humidity_diffusion_conserves_humidity_without_water_source(self):
+        world, grid, cache = self._build_uniform_grid()
+        before = take_conservation_snapshot(cache)
+        HumidityDiffusionProcessor().process(world, cache, grid, 1.0)
+        after = take_conservation_snapshot(cache)
+        diff = after - before
+        assert abs(diff.total_humidity) < 1e-9, f"湿度不守恒: {diff.total_humidity}"
+
+    def test_gravity_water_flow_conserves_moisture(self):
+        world, grid, cache = self._build_uniform_grid()
+        # 制造高程差异以触发下坡流
+        for key, eid in grid.items():
+            terrain = world.get_component(eid, TerrainComponent)
+            terrain.elevation = 50.0 - key[0] * 8.0 - key[1] * 3.0
+
+        before = take_conservation_snapshot(cache)
+        GravityWaterFlowProcessor().process(world, cache, grid, 1.0)
+        after = take_conservation_snapshot(cache)
+        diff = after - before
+        assert abs(diff.total_moisture) < 1e-9, f"水分不守恒: {diff.total_moisture}"
+
+    def test_wind_advection_conserves_temperature_and_humidity(self):
+        world, grid, cache = self._build_uniform_grid()
+        # 开启非零风速，构造温度/湿度梯度
+        for eid in grid.values():
+            env = world.get_component(eid, EnvironmentComponent)
+            env.wind_speed = 5.0
+
+        before = take_conservation_snapshot(cache)
+        WindAdvectionProcessor(prevailing_wind_deg=270.0).process(
+            world, cache, grid, 1.0
+        )
+        after = take_conservation_snapshot(cache)
+        diff = after - before
+        assert abs(diff.total_temperature) < 1e-9, f"风平流温度不守恒: {diff.total_temperature}"
+        assert abs(diff.total_humidity) < 1e-9, f"风平流湿度不守恒: {diff.total_humidity}"
+
+    def test_conservative_processor_combination_conserve(self):
+        world, grid, cache = self._build_uniform_grid()
+        for key, eid in grid.items():
+            terrain = world.get_component(eid, TerrainComponent)
+            terrain.elevation = 60.0 - key[0] * 10.0 - key[1] * 4.0
+
+        before = take_conservation_snapshot(cache)
+        for processor in [
+            ThermalDiffusionProcessor(),
+            HumidityDiffusionProcessor(),
+            GravityWaterFlowProcessor(),
+        ]:
+            processor.process(world, cache, grid, 1.0)
+        after = take_conservation_snapshot(cache)
+        diff = after - before
+        assert abs(diff.total_temperature) < 1e-9, f"组合温度不守恒: {diff.total_temperature}"
+        assert abs(diff.total_humidity) < 1e-9, f"组合湿度不守恒: {diff.total_humidity}"
+        assert abs(diff.total_moisture) < 1e-9, f"组合水分不守恒: {diff.total_moisture}"

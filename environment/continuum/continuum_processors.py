@@ -43,7 +43,7 @@ import math
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple, Optional
 
-from core.sqrt_cache import cached_sqrt, cached_distance
+from core.sqrt_cache import cached_distance
 from core.world import World
 from core.entity import Entity
 
@@ -291,34 +291,33 @@ class GravityWaterFlowProcessor(ContinuumProcessor):
     def process(self, world: World, cache: ContinuumCache, grid: Dict, dt: float,
                 bounds: Optional[Tuple] = None,
                 neighbor_offsets: Optional[list] = None) -> None:
-        # 预取海拔
+        if neighbor_offsets is None:
+            neighbor_offsets = NEIGHBOR_OFFSETS_MOORE
+
+        # 预取海拔与水域标记
         elevs = {}
-        waters = {}
+        is_water = {}
         for key in cache.grid_keys:
             terrain = cache.get_terrain(key)
             elevs[key] = terrain.elevation if terrain else 0.0
-            waters[key] = (terrain is not None
-                           and is_water_terrain(terrain.terrain_type))
+            is_water[key] = (terrain is not None
+                             and is_water_terrain(terrain.terrain_type))
 
-        # 计算净水分损失/增益
-        losses = {key: 0.0 for key in cache.grid_keys}
-
+        # 第一步：计算每条下坡边的原始流量
+        edges = []  # (src, dst, flow)
         for key in cache.grid_keys:
             env = cache.get_env(key)
             if env is None:
                 continue
 
             cur_elev = elevs[key]
-            is_water = waters[key]
-            available = 0.5 if is_water else env.soil_moisture
+            available = 0.5 if is_water[key] else env.soil_moisture
 
-            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0),
-                           (1, 1), (1, -1), (-1, 1), (-1, -1)]:
+            for dx, dy in neighbor_offsets:
                 nk = (key[0] + dx, key[1] + dy)
                 if nk not in grid:
                     continue
 
-                # 只流向下坡
                 elev_diff = cur_elev - elevs[nk]
                 if elev_diff <= 0:
                     continue
@@ -333,19 +332,39 @@ class GravityWaterFlowProcessor(ContinuumProcessor):
                     * dt
                 )
                 flow = min(flow, env.soil_moisture * 0.5)
+                if flow > 0:
+                    edges.append((key, nk, flow))
 
-                losses[key] -= flow
-                losses[nk] += flow
-
-        # 应用
-        for key, delta in losses.items():
-            if abs(delta) < 1e-10:
+        # 第二步：用剩余水量/剩余容量限制流量，确保质量守恒
+        outflows = {key: 0.0 for key in cache.grid_keys}
+        inflows = {key: 0.0 for key in cache.grid_keys}
+        for src, dst, raw_flow in edges:
+            src_env = cache.get_env(src)
+            dst_env = cache.get_env(dst)
+            if src_env is None or dst_env is None:
                 continue
+
+            # 不能超过源头的剩余水量
+            src_remaining = max(0.0, src_env.soil_moisture - outflows[src])
+            flow = min(raw_flow, src_remaining)
+
+            # 不能超过目的地的剩余容量（避免 clamp 时凭空损失/增加水分）
+            dst_capacity = max(0.0, 1.0 - dst_env.soil_moisture - inflows[dst])
+            flow = min(flow, dst_capacity)
+
+            if flow > 1e-12:
+                outflows[src] += flow
+                inflows[dst] += flow
+
+        # 第三步：统一应用净流入/流出
+        for key in cache.grid_keys:
             env = cache.get_env(key)
             if env is None:
                 continue
-            env.soil_moisture += delta
-            env.soil_moisture = clamp(env.soil_moisture, 0.0, 1.0)
+            delta = inflows[key] - outflows[key]
+            if abs(delta) < 1e-12:
+                continue
+            env.soil_moisture = clamp(env.soil_moisture + delta, 0.0, 1.0)
 
 
 class WindAdvectionProcessor(ContinuumProcessor):
@@ -381,15 +400,15 @@ class WindAdvectionProcessor(ContinuumProcessor):
         wind_vy = -math.cos(wind_rad)
 
         n_nei = len(neighbor_offsets)
-        fluxes = {}
+
+        # 用增量字典统一应用，避免同一 tick 内读取到已修改值
+        delta_t = {key: 0.0 for key in cache.grid_keys}
+        delta_h = {key: 0.0 for key in cache.grid_keys}
 
         for key in cache.grid_keys:
             env = cache.get_env(key)
             if env is None:
                 continue
-
-            net_t = 0.0
-            net_h = 0.0
 
             for dx, dy in neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
@@ -400,7 +419,8 @@ class WindAdvectionProcessor(ContinuumProcessor):
                 if n_env is None:
                     continue
 
-                dist = cached_sqrt(dx * dx + dy * dy)
+                dist = cached_distance(dx, dy)
+                # to_vx/to_vy 指向 key -> nk，即风从 key 吹向 nk 时 match > 0
                 to_vx = -dx / dist
                 to_vy = -dy / dist
 
@@ -411,19 +431,25 @@ class WindAdvectionProcessor(ContinuumProcessor):
                 strength = WIND_ADVECTION_COEFF * env.wind_speed * match * dt
                 strength = min(strength, 0.3)
 
-                net_t += strength * (n_env.air_temperature - env.air_temperature)
-                net_h += strength * (n_env.air_humidity - env.air_humidity)
+                # 上风(key) 向下风(nk) 传输热量/湿度，保持总量守恒
+                f_t = strength * (env.air_temperature - n_env.air_temperature)
+                f_h = strength * (env.air_humidity - n_env.air_humidity)
 
-            fluxes[key] = (net_t, net_h)
+                delta_t[key] -= f_t / n_nei
+                delta_t[nk] += f_t / n_nei
+                delta_h[key] -= f_h / n_nei
+                delta_h[nk] += f_h / n_nei
 
-        for key, (net_t, net_h) in fluxes.items():
+        for key in cache.grid_keys:
             env = cache.get_env(key)
             if env is None:
                 continue
-            env.air_temperature += net_t / n_nei
-            env.air_humidity += net_h / n_nei
-            env.air_temperature = clamp(env.air_temperature, -30.0, 50.0)
-            env.air_humidity = clamp(env.air_humidity, 0.01, 1.0)
+            env.air_temperature = clamp(
+                env.air_temperature + delta_t[key], -30.0, 50.0
+            )
+            env.air_humidity = clamp(
+                env.air_humidity + delta_h[key], 0.01, 1.0
+            )
 
 
 class SelfRecoveryProcessor(ContinuumProcessor):
@@ -459,7 +485,7 @@ class SelfRecoveryProcessor(ContinuumProcessor):
             else:
                 climax = DEFAULT_CLIMAX
 
-            c_t, c_h, c_m, c_n, c_p, c_k = climax
+            c_t, c_h, c_m = climax[:3]
 
             # 气温恢复
             d = c_t - env.air_temperature
@@ -476,17 +502,5 @@ class SelfRecoveryProcessor(ContinuumProcessor):
             env.soil_moisture += RECOVERY_RATE_MOISTURE * sigmoid_factor(d, RECOVERY_SIGMOID_K) * d * dt
             env.soil_moisture = clamp(env.soil_moisture, 0.0, 1.0)
 
-            # 氮恢复
-            d = c_n - env.nitrogen
-            env.nitrogen += RECOVERY_RATE_NITROGEN * sigmoid_factor(d, RECOVERY_SIGMOID_K) * d * dt
-            env.nitrogen = clamp(env.nitrogen, 0.0, 200.0)
-
-            # 磷恢复
-            d = c_p - env.phosphorus
-            env.phosphorus += RECOVERY_RATE_PHOSPHORUS * sigmoid_factor(d, RECOVERY_SIGMOID_K) * d * dt
-            env.phosphorus = clamp(env.phosphorus, 0.0, 100.0)
-
-            # 钾恢复
-            d = c_k - env.potassium
-            env.potassium += RECOVERY_RATE_POTASSIUM * sigmoid_factor(d, RECOVERY_SIGMOID_K) * d * dt
-            env.potassium = clamp(env.potassium, 0.0, 200.0)
+            # 注意：氮/磷/钾由 SoilComponent 与资源再生系统管理，不在连续统中恢复，
+            # 避免 EnvironmentComponent 出现未声明字段且导致守恒检查误报。

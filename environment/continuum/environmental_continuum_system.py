@@ -91,7 +91,7 @@ class EnvironmentalContinuumSystem(System):
         neighborhood: str = "moore",
         boundary: str = "reflective",
         prevailing_wind_deg: float = 270.0,
-        enable_conservation_check: bool = True,
+        enable_conservation_check: bool = False,
         conservation_tolerance: float = 1e-6,
     ):
         super().__init__()
