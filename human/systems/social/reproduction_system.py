@@ -13,6 +13,8 @@ import random
 
 from core.system import System
 from core.world import World
+from core.systems.world_config_system import WorldConfigSystem
+from core.components.world_config_component import WorldConfigComponent
 from identity.event_log_system import EventLog
 
 logger = logging.getLogger(__name__)
@@ -65,10 +67,11 @@ class ReproductionSystem(System):
             # 检查是否具备怀孕条件（仅限女性）
             partner_alive = (relation.partner_id is not None and
                              world.query_entity(relation.partner_id) is not None)
+            is_repr = (age.min_reproductive_age <= age.current_age <= age.max_reproductive_age)
             if (gender.gender == Gender.FEMALE and
                 relation.status in (RelationshipStatus.MARRIED, RelationshipStatus.DATING) and
                 partner_alive and
-                age.is_reproductive_age()):
+                is_repr):
                 # 检查是否可以生育（不在怀孕、冷却期已过）
                 if not repro.is_pregnant and current_time - repro.last_birth_time > repro.birth_cooldown:
                     # 随机生育几率（基于dt，适度提高）
@@ -135,9 +138,8 @@ class ReproductionSystem(System):
         # 计算新生儿的位置（在父母附近，随机偏移1格）
         child_x = (parent_space.x + random.randint(-1, 1)) if parent_space else 0
         child_y = (parent_space.y + random.randint(-1, 1)) if parent_space else 0
-        from core.components.world_config_component import WorldConfigComponent
         world_config = world.get_world_component(WorldConfigComponent)
-        child_x, child_y = world_config.clamp_position(child_x, child_y)
+        child_x, child_y = WorldConfigSystem.clamp_position(world_config, child_x, child_y)
         
         # 挂载 BirthRequestComponent，由 BirthSystem 执行实际生育
         world.add_component(entity, BirthRequestComponent(

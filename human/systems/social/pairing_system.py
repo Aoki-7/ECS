@@ -105,24 +105,29 @@ class PairingSystem(System):
 
     def _is_reproductive_age(self, age) -> bool:
         """判断是否为生育年龄"""
-        # 防御：如果 age 是对象，尝试获取 age 属性
-        if hasattr(age, 'age'):
-            age = age.age
+        if hasattr(age, 'current_age'):
+            age_value = age.current_age
+        elif hasattr(age, 'age'):
+            age_value = age.age
         elif hasattr(age, 'value'):
-            age = age.value
-        elif not isinstance(age, (int, float)):
+            age_value = age.value
+        elif isinstance(age, (int, float)):
+            age_value = age
+        else:
             return False
-        return 12 <= age <= 65
+        min_age = getattr(age, 'min_reproductive_age', 12)
+        max_age = getattr(age, 'max_reproductive_age', 65)
+        return min_age <= age_value <= max_age
 
     def form_relationship(self, world, entity1, entity2_info, relation1: RelationshipComponent, relation2: RelationshipComponent):
         """建立关系"""
         entity2 = entity2_info[0]
         relation1.status = RelationshipStatus.MARRIED
-        relation1.partner_id = entity2
-        relation2.relationship_strength = 70.0
+        relation1.partner_id = entity2.id
+        relation1.relationship_strength = 70.0
 
         relation2.status = RelationshipStatus.MARRIED
-        relation2.partner_id = entity1
+        relation2.partner_id = entity1.id
         relation2.relationship_strength = 50.0
         
         # 在社交组件中将对方标记为家庭成员
