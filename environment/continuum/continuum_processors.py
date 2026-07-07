@@ -23,7 +23,7 @@
 3. 重力水流 (Gravity Water Flow)
    物理: 达西定律简化
    公式: flow = k * slope^α * moisture * dt
-   离散: ΔM = flow (下坡流出) / n_downhill
+   离散: 按下坡边容量缩放后转移，源头/目的总量守恒
    单位: M (0~1), k (1/h), slope (m/m), dt (h)
 
 4. 风驱平流 (Wind Advection)
@@ -31,6 +31,7 @@
    公式: dT/dt = -v · ∇T
    离散: ΔT = C * wind_speed * cos(θ) * (T_neighbor - T_self) * dt / n_neighbors
    单位: T (°C), v (m/s), C (1/m), dt (h)
+   守恒实现：上风单元格减少的温度/湿度等于下风单元格增加的量
 
 5. 生态自恢复 (Ecological Self-Recovery)
    物理: 松弛模型 (向顶极状态恢复)

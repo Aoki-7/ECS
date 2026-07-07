@@ -94,6 +94,16 @@ class EnvironmentalContinuumSystem(System):
         enable_conservation_check: bool = False,
         conservation_tolerance: float = 1e-6,
     ):
+        """
+        Args:
+            neighborhood: "moore"(8) or "von_neumann"(4)
+            boundary: 边界条件，当前仅 "reflective"
+            prevailing_wind_deg: 盛行风向（度）
+            enable_conservation_check: 是否开启守恒检查。
+                默认关闭，因为自恢复、水域湿度源等处理器会引入有意的源/汇。
+                调试保守算法时可手动开启。
+            conservation_tolerance: 守恒检查容差
+        """
         super().__init__()
         self.neighborhood = neighborhood
         self.boundary = boundary

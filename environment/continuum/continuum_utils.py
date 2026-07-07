@@ -227,6 +227,9 @@ def check_conservation(before: ConservationSnapshot, after: ConservationSnapshot
     """
     检查守恒性
 
+    注意：本检查仅对封闭系统有意义。自恢复、水域湿度源、火灾等处理器会引入
+    有意的源/汇，启用检查时会产生预期内的警告。生产环境默认关闭该检查。
+
     Args:
         before: 处理前快照
         after: 处理后快照
