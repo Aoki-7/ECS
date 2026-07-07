@@ -14,6 +14,40 @@ from api.main import app
 
 client = TestClient(app)
 
+pytestmark = pytest.mark.slow
+
+
+def _use_in_memory_db():
+    """将 DB 切换到单连接内存数据库，避免污染本地 ecs_world.db"""
+    import sqlite3
+    from contextlib import contextmanager
+    import db.config
+
+    conn = sqlite3.connect(":memory:", check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+
+    class _NoCloseConnection:
+        def __init__(self, connection):
+            self._conn = connection
+
+        def __getattr__(self, name):
+            return getattr(self._conn, name)
+
+        def close(self):
+            # 保持连接开放，供后续 get_db 复用
+            pass
+
+    wrapped = _NoCloseConnection(conn)
+
+    db.config.get_connection = lambda: wrapped
+
+    @contextmanager
+    def _get_db():
+        yield wrapped
+
+    db.config.get_db = _get_db
+    db.config.init_db()
+
 
 class TestAPIPerformance:
     """API 性能测试"""
@@ -67,11 +101,10 @@ class TestDatabasePerformance:
 
     def test_snapshot_save_performance(self):
         """测试快照保存性能"""
-        from db.config import init_db
         from db.services.snapshot_service import SnapshotService
-        
-        # 确保数据库初始化
-        init_db()
+
+        # 使用内存数据库，避免污染本地 ecs_world.db
+        _use_in_memory_db()
         
         start = time.time()
         snapshot = SnapshotService.save("perf_test", "Performance test")
@@ -82,11 +115,10 @@ class TestDatabasePerformance:
 
     def test_history_query_performance(self):
         """测试历史记录查询性能"""
-        from db.config import init_db
         from db.services.history_service import HistoryService
-        
-        # 确保数据库初始化
-        init_db()
+
+        # 使用内存数据库，避免污染本地 ecs_world.db
+        _use_in_memory_db()
         
         # 创建 1000 条记录
         for i in range(1000):

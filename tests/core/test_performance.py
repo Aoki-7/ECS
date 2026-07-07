@@ -13,8 +13,11 @@
 import sys
 sys.path.insert(0, r"D:\个人助手\workspace\ECS")
 
+import pytest
 import time
 import unittest
+
+pytestmark = pytest.mark.slow
 
 from core.world import World
 from core.entity import Entity
