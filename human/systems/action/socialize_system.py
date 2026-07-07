@@ -23,6 +23,7 @@ from human.systems.physiological.physiology_needs_system import PhysiologyNeedsH
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from human.components.cognitive.emotion_component import EmotionComponent
+from human.systems.cognitive.emotion_system import EmotionSystem
 from human.components.cognitive.memory_component import MemoryComponent
 from human.components.cognitive.personality_component import PersonalityComponent
 from human.components.social.relationship_component import RelationshipComponent
@@ -131,11 +132,11 @@ class SocializeSystem(System):
 
         # 影响情绪
         if emotion:
-            emotion.adjust_emotion("happiness", self.HAPPINESS_ADJUSTMENT * quality)
-            emotion.adjust_emotion("joy", self.JOY_ADJUSTMENT * quality)
-            emotion.adjust_emotion("loneliness", self.LONELINESS_ADJUSTMENT * quality)
-            emotion.adjust_emotion("stress", self.STRESS_ADJUSTMENT * quality)
-            emotion.adjust_emotion("trust", self.TRUST_ADJUSTMENT * quality)
+            EmotionSystem.adjust_emotion(emotion, "happiness", self.HAPPINESS_ADJUSTMENT * quality)
+            EmotionSystem.adjust_emotion(emotion, "joy", self.JOY_ADJUSTMENT * quality)
+            EmotionSystem.adjust_emotion(emotion, "loneliness", self.LONELINESS_ADJUSTMENT * quality)
+            EmotionSystem.adjust_emotion(emotion, "stress", self.STRESS_ADJUSTMENT * quality)
+            EmotionSystem.adjust_emotion(emotion, "trust", self.TRUST_ADJUSTMENT * quality)
             emotion.last_mood_change = "社交互动"
 
         # 记录到记忆

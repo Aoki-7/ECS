@@ -113,6 +113,7 @@ class DeathEventSystem(System):
         try:
             from human.components.cognitive.emotion_component import EmotionComponent
             from human.components.basic.human_component import HumanComponent
+            from human.systems.cognitive.emotion_system import EmotionSystem
         except (ImportError, AttributeError):
             return
 
@@ -121,6 +122,6 @@ class DeathEventSystem(System):
             if not world.has_entity(entity) or entity.id == dead_entity.id:
                 continue
             # 悲伤 + 恐惧（对非正常死亡）
-            emotion.adjust_emotion("sadness", 0.05)
+            EmotionSystem.adjust_emotion(emotion, "sadness", 0.05)
             if reason in ("starvation", "dehydration", "hp_depleted"):
-                emotion.adjust_emotion("fear", 0.03)
+                EmotionSystem.adjust_emotion(emotion, "fear", 0.03)

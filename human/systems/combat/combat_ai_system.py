@@ -19,6 +19,7 @@ from human.components.action.action_component import (
 )
 from human.components.combat.combat_stats_component import CombatStatsComponent
 from human.components.cognitive.emotion_component import EmotionComponent
+from human.systems.cognitive.emotion_system import EmotionSystem
 from human.components.cognitive.personality_component import PersonalityComponent
 from human.components.perception.vision_component import VisionComponent
 from human.components.social.relationship_component import RelationshipComponent
@@ -57,7 +58,7 @@ class CombatAISystem(System):
                     action.current_action = ActionType.FLEE
                     action.status = ActionStatus.RUNNING
                     action.target_entity = threat.id
-                    emotion.adjust_emotion("fear", -0.1)  # 决策后稍微缓解
+                    EmotionSystem.adjust_emotion(emotion, "fear", -0.1)  # 决策后稍微缓解
                     continue
 
             # 2. 愤怒 + 高侵略性 -> 攻击
