@@ -56,16 +56,24 @@ class MemoryComponent(Component):
     def to_dict(self) -> dict:
         return {
             "events": self.events,
-            "places": self.places,
+            "places": self._convert_place_keys(self.places),
             "people": self.people,
             "recent_successes": self.recent_successes,
+        }
+
+    @staticmethod
+    def _convert_place_keys(places: dict) -> dict:
+        """地点记忆使用 tuple 坐标作为键，JSON 不支持，转为字符串键"""
+        return {
+            f"__tuple__:{k[0]},{k[1]}" if isinstance(k, tuple) else k: v
+            for k, v in places.items()
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "MemoryComponent":
         return cls(
             events=data.get("events", []),
-            places=data.get("places", {}),
+            places=cls._restore_place_keys(data.get("places", {})),
             people=data.get("people", {}),
             recent_successes=data.get("recent_successes", {
                 "find_water": 0,
@@ -75,5 +83,18 @@ class MemoryComponent(Component):
                 "rest": 0,
             }),
         )
+
+    @staticmethod
+    def _restore_place_keys(places: dict) -> dict:
+        """还原字符串地点键为 tuple 坐标"""
+        restored = {}
+        for k, v in places.items():
+            if isinstance(k, str) and k.startswith("__tuple__:"):
+                _, coords = k.split(":", 1)
+                x, y = coords.split(",", 1)
+                restored[(int(x), int(y))] = v
+            else:
+                restored[k] = v
+        return restored
 
 
