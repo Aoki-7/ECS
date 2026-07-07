@@ -158,7 +158,7 @@ class HumanObservationSystem(System):
             humans.append({
                 "entity_id": entity.id,
                 "name": identity.name if identity else f"E{entity.id}",
-                "age": round(age.age, 1) if age else 0.0,
+                "age": round(age.current_age, 1) if age else 0.0,
                 "gender": gender_str,
                 "position": (round(space.x, 1), round(space.y, 1)) if space else (None, None),
                 "hp": round(health.hp, 1) if health else 0.0,

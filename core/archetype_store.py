@@ -120,6 +120,13 @@ class Archetype:
             return None
         return self.columns.get(component_type, [None])[row_idx] if row_idx < len(self.columns.get(component_type, [])) else None
 
+    def has_component(self, entity_id: int, component_type: Type[Component]) -> bool:
+        """检查指定实体是否拥有某类组件"""
+        row_idx = self.entity_index.get(entity_id)
+        if row_idx is None:
+            return False
+        return component_type in self.component_types
+
     def __len__(self) -> int:
         return len(self.entities)
 
@@ -279,6 +286,16 @@ class ArchetypeStore:
 
         arch = self._archetypes[arch_id]
         return arch.get_component(entity_id, component_type)
+
+    def has_component(self, entity, component_type: Type[Component]) -> bool:
+        """检查实体是否有指定组件"""
+        entity_id = _get_entity_id(entity)
+        arch_id = self._entity_archetype.get(entity_id)
+        if arch_id is None:
+            return False
+
+        arch = self._archetypes[arch_id]
+        return arch.has_component(entity_id, component_type)
 
     def get_entity_components(self, entity) -> Dict[Type[Component], Component]:
         """获取实体的所有组件"""

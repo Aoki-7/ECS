@@ -96,15 +96,15 @@ class FullSimulationLoop(SimulationLoop):
         """注册父类未涵盖的扩展系统"""
 
         # 1. 环境同步（将天气+光场状态同步到每个 EnvironmentComponent 单元格）
-        self.env_sync_system = EnvironmentSyncSystem()
-        self.world.add_system(self.env_sync_system)
+        self._env_sync_system = EnvironmentSyncSystem()
+        self.world.add_system(self._env_sync_system)
 
         # 2. 资源再生（树木/果实缓慢再生）
-        self.resource_regen_system = ResourceRegenerationSystem()
-        self.world.add_system(self.resource_regen_system)
+        self._resource_regen_system = ResourceRegenerationSystem()
+        self.world.add_system(self._resource_regen_system)
 
         # 3. 资源腐败与清理系统
-        self.resource_decay_systems = [
+        self._resource_decay_systems = [
             FoodCleanupSystem(),      # 清理已耗尽/腐败的食物实体
             FoodDecaySystem(),        # 食物新鲜度衰减
             WoodDecaySystem(),        # 木材腐朽
@@ -112,16 +112,31 @@ class FullSimulationLoop(SimulationLoop):
             MetalOxidationSystem(),   # 金属氧化
             GarbageCleanupSystem(max_garbage=30),  # 清理垃圾实体，防止无限积累
         ]
-        for system in self.resource_decay_systems:
+        for system in self._resource_decay_systems:
             self.world.add_system(system)
 
         # 4. 人类身份系统（阵营合法性约束）
-        self.identity_system = IdentitySystem()
-        self.world.add_system(self.identity_system)
+        self._identity_system = IdentitySystem()
+        self.world.add_system(self._identity_system)
 
         # 5. 年龄增长系统
-        self.age_system = AgeSystem()
-        self.world.add_system(self.age_system)
+        self._age_system = AgeSystem()
+        self.world.add_system(self._age_system)
+
+    # 环境同步系统引用（供统计等外部访问）
+    env_sync_system = property(lambda self: getattr(self, '_env_sync_system', None))
+
+    # 资源腐败系统列表（供统计等外部访问）
+    resource_decay_systems = property(lambda self: getattr(self, '_resource_decay_systems', []))
+
+    # 资源再生系统引用（供统计等外部访问）
+    resource_regen_system = property(lambda self: getattr(self, '_resource_regen_system', None))
+
+    # 身份系统引用（供统计等外部访问）
+    identity_system = property(lambda self: getattr(self, '_identity_system', None))
+
+    # 年龄系统引用（供统计等外部访问）
+    age_system = property(lambda self: getattr(self, '_age_system', None))
 
     # -----------------------------------------------------
     # 初始资源创建扩展
@@ -173,27 +188,13 @@ class FullSimulationLoop(SimulationLoop):
     # -----------------------------------------------------
     def update(self, delta_hours: float = 1.0):
         """
-        执行一个时间步的更新：先调用父类完整管线，再追加扩展系统。
+        执行一个时间步的更新：复用父类调度器，不再手动调用扩展系统。
+
+        所有扩展系统（环境同步、资源腐败/再生、身份、年龄）均已通过
+        _init_extended_systems 注册到 World 调度器，由 SystemScheduler 统一
+        按 tick_interval 与优先级调度，避免重复执行与 tick_interval 失效。
         """
-        # 调用父类 update（已包含时间、环境、人类、生理、生物、规则、文明、资源再生）
         super().update(delta_hours)
-
-        # 扩展系统更新（在父类之后执行，确保依赖数据已就绪）
-        # 1. 环境同步（将最新天气同步到环境单元格）
-        self.env_sync_system.update(self.world, delta_hours)
-
-        # 2. 资源腐败系统
-        for system in self.resource_decay_systems:
-            system.update(self.world, delta_hours)
-
-        # 3. 资源再生
-        self.resource_regen_system.update(self.world, delta_hours)
-
-        # 4. 身份系统
-        self.identity_system.update(self.world, delta_hours)
-
-        # 5. 年龄增长系统
-        self.age_system.update(self.world, delta_hours)
 
     # -----------------------------------------------------
     # 统计信息扩展

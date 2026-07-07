@@ -31,8 +31,10 @@ class LifeStageEvaluator:
         Returns:
             str: 人生阶段标识
         """
-        # 防御：如果 age 是对象，尝试获取 age 属性
-        if hasattr(age, 'age'):
+        # 防御：如果 age 是对象，尝试获取 current_age / age / value 属性
+        if hasattr(age, 'current_age'):
+            age = age.current_age
+        elif hasattr(age, 'age'):
             age = age.age
         elif hasattr(age, 'value'):
             age = age.value

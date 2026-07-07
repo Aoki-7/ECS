@@ -173,8 +173,8 @@ class TribeSystem(System):
         max_age = -1
         for entity in humans:
             age = world.get_component(entity, LifeCycleComponent)
-            if age and age.age > max_age:
-                max_age = age.age
+            if age and age.current_age > max_age:
+                max_age = age.current_age
                 oldest = entity
 
         # 添加所有成员

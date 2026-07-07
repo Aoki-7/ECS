@@ -187,6 +187,9 @@ class SystemRegistry:
                 for name, cls in inspect.getmembers(module, inspect.isclass):
                     if not issubclass(cls, System) or cls is System:
                         continue
+                    # 只注册在本模块中定义的类，避免导入的依赖类被重复注册
+                    if cls.__module__ != module.__name__:
+                        continue
 
                     reg_name = self._to_snake_case(name).replace('_system', '')
                     if not reg_name:

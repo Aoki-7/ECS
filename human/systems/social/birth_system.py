@@ -47,7 +47,7 @@ class BirthSystem(System):
             # 2. 修正新生儿年龄为0
             age_comp = world.get_component(child, LifeCycleComponent)
             if age_comp:
-                age_comp.age = 0
+                age_comp.current_age = 0
 
             # 3. 分配部落（继承母亲部落）
             from human.systems.social.tribe_system import TribeSystem

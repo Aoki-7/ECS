@@ -199,7 +199,7 @@ class HumanStatePanel:
 
             name = identity.name if identity else f"E{entity.id}"
             gender_symbol = "M" if (gender and gender.gender == Gender.MALE) else "F" if (gender and gender.gender == Gender.FEMALE) else "?"
-            age_str = f"{age.age:.0f}{gender_symbol}" if age else "?"
+            age_str = f"{age.current_age:.0f}{gender_symbol}" if age else "?"
             pos_str = f"({space.x:.0f},{space.y:.0f})" if space else "(?,?)"
 
             hp_bar = self._hp_bar(health.hp if health else 0, health.max_hp if health else 100, 8)

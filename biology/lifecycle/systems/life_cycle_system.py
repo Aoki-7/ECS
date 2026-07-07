@@ -10,6 +10,7 @@ from core.system import System
 from core.world import World
 
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
+from human.components.basic.human_component import HumanComponent
 
 
 class LifeCycleSystem(System):
@@ -19,6 +20,10 @@ class LifeCycleSystem(System):
 
     def update(self, world: World, dt: float):
         for entity, (life,) in world.get_components(LifeCycleComponent):
+            # 人类年龄由 AgeSystem 按时间压缩比例推进，避免与本系统的小时尺度冲突
+            if world.has_component(entity, HumanComponent):
+                self._check_death(life)
+                continue
             self._update_age(life, dt)
             self._check_stage_advance(life)
             self._check_death(life)

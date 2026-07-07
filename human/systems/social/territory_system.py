@@ -14,6 +14,7 @@ from core.world import World
 
 from human.components.social.tribe_component import TribeComponent
 from space.space_component import SpaceComponent
+from human.systems.social.tribe_system import TribeSystem
 
 
 class TerritorySystem(System):

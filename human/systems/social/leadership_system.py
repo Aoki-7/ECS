@@ -67,7 +67,7 @@ class LeadershipSystem(System):
             # 年长加分
             age = world.get_component(entity, LifeCycleComponent)
             if age:
-                score += age.age * self.AGE_WEIGHT
+                score += age.current_age * self.AGE_WEIGHT
 
             # 忠诚度高的加分
             membership = world.get_component(entity, TribeMembershipComponent)
