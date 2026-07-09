@@ -57,9 +57,9 @@ class GoalGenerator:
             ])
 
             # 性格影响
-            if personality and personality.extraversion > 60:
+            if personality and personality.bravery > 0.6:
                 goals.append("扩展社交圈子")
-            if personality and personality.curiosity > 60:
+            if personality and personality.curiosity > 0.6:
                 goals.append("尝试新事物")
 
         elif life_stage == "adulthood":
@@ -82,9 +82,9 @@ class GoalGenerator:
 
             # 根据性格调整
             if personality:
-                if personality.discipline > 70:
+                if personality.discipline > 0.7:
                     goals.append("建造和改进设施")
-                if personality.curiosity > 70:
+                if personality.curiosity > 0.7:
                     goals.append("发现新的地方")
 
         elif life_stage == "elderhood":
@@ -106,10 +106,10 @@ class GoalGenerator:
         # 根据性格调整
         if personality:
             # 高成就需求
-            if personality.discipline > 75:
+            if personality.discipline > 0.75:
                 goals.append("成为社区的重要成员")
             # 高社交需求
-            if personality.kindness > 75:
+            if personality.kindness > 0.75:
                 goals.append("成为社交的中心")
 
         # 从目标列表中随机选择（或选择第一个）
