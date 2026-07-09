@@ -18,6 +18,7 @@ from typing import List, Dict
 from core.system import System
 from core.world import World
 
+from biology.systems.phenotype_system import PhenotypeSystem
 from biology.lifecycle.components.morphology_component import MorphologyComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.traits.trait import Trait
@@ -156,23 +157,27 @@ class CompetitionSystem(System):
             # 光照竞争失败 → 降低光合速率
             if morph.light_competition_score > 0:
                 shade_penalty = min(0.7, morph.light_competition_score * 0.3)
-                current_photo = pheno.get("max_photosynthesis_rate", 20.0)
-                pheno.set_trait(
+                current_photo = PhenotypeSystem.get(
+                    pheno, "max_photosynthesis_rate", 20.0
+                )
+                PhenotypeSystem.set_trait(
+                    pheno,
                     Trait(
                         name="max_photosynthesis_rate",
                         value=current_photo * (1.0 - shade_penalty),
                         source="competition",
-                    )
+                    ),
                 )
 
             # 水分竞争失败 → 降低水分利用效率
             if morph.water_competition_score > 0:
-                current_wue = pheno.get("water_use_efficiency", 0.05)
-                pheno.set_trait(
+                current_wue = PhenotypeSystem.get(pheno, "water_use_efficiency", 0.05)
+                PhenotypeSystem.set_trait(
+                    pheno,
                     Trait(
                         name="water_use_efficiency",
                         value=current_wue
                         * (1.0 - min(0.5, morph.water_competition_score * 0.2)),
                         source="competition",
-                    )
+                    ),
                 )
