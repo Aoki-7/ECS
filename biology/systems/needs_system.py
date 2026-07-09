@@ -211,37 +211,20 @@ class NeedsSystem(System):
         # NeedsSystem 仅负责优先级计算和协调
         pass
 
-    def _check_critical_needs(self, world: World, entity: Entity, needs: dict, priorities: List[Tuple[str, float]]) -> None:
-        """检查紧急需求并触发事件"""
-        if not priorities:
-            return
-            
-        top_need, top_score = priorities[0]
-        
-        # 紧急状态
-        if top_score >= self.CRITICAL_THRESHOLD:
-            logger.warning(f"[NeedsSystem] 实体 {entity.id} {top_need} 紧急！({top_score:.1f})")
-            self._trigger_critical_event(world, entity, top_need, top_score)
-        # 警告状态
-        elif top_score >= self.WARNING_THRESHOLD:
-            if logger.isEnabledFor(logging.DEBUG):
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"[NeedsSystem] 实体 {entity.id} {top_need} 警告({top_score:.1f})")
+    def _check_critical_needs(
+        self,
+        world: World,
+        entity: Entity,
+        needs: dict,
+        priorities: List[Tuple[str, float]],
+    ) -> None:
+        """检查紧急需求（已降级为只读兼容）
 
-    def _trigger_critical_event(self, world: World, entity: Entity, need_type: str, score: float) -> None:
-        """触发紧急需求事件"""
-        try:
-            world.event_bus.publish(
-                f"critical_{need_type}",
-                {
-                    "entity_id": entity.id,
-                    "need_type": need_type,
-                    "score": score,
-                },
-                source="NeedsSystem",
-            )
-        except Exception:
-            pass
+        实际的生理需求驱动由 PhysiologyNeedsSystem 负责。NeedsSystem 仅保留
+        需求读取/优先级计算能力，不再发出 WARNING 或发布事件，避免噪音。
+        """
+        # 保留优先级计算结果，但不再触发警告或事件
+        return
 
     def get_top_need(self, world: World, entity: Entity) -> Optional[Tuple[str, float]]:
         """获取实体最紧急的需求"""
