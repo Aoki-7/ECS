@@ -132,4 +132,4 @@ class EntitySpawner:
             grid.init_cells()
             logger.info("[Init] 环境网格已初始化")
         except ImportError:
-            logger.warning("[Init] 环境网格模块未找到，跳过初始化")
+            logger.debug("[Init] 环境网格模块未找到，跳过初始化")

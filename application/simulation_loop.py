@@ -72,6 +72,7 @@ class SimulationLoop:
         """初始化：实体池 + 系统 + 环境网格 + 世界配置"""
         self._init_entity_pool()
         self._init_world_config()
+        self._init_time()
         self.registry.init_all()
         self.spawner.init_environment_grid()
 
@@ -85,6 +86,21 @@ class SimulationLoop:
             self.world.add_component(world_entity, world_config)
             self.world.set_world_entity(world_entity)
             logger.info(f"[Init] 世界配置已创建: {world_config.map_width}x{world_config.map_height}")
+
+    def _init_time(self) -> None:
+        """初始化世界时间组件（若不存在）"""
+        if self.world.get_time() is not None:
+            return
+
+        from time_module.time_component import TimeComponent
+        time = TimeComponent()
+        world_entity = self.world.get_world_entity()
+        if world_entity is None:
+            world_entity = self.world.create_entity()
+            self.world.set_world_entity(world_entity)
+        self.world.add_component(world_entity, time)
+        self.world.set_time(time)
+        logger.debug("[Init] 世界时间组件已初始化")
 
     def _init_entity_pool(self) -> None:
         """初始化实体池"""
