@@ -62,6 +62,9 @@ class SystemScheduler:
         Args:
             system: 要注册的系统实例
         """
+        if any(type(s) is type(system) for s in self._systems):
+            logger.debug(f"[SystemScheduler] 跳过重复系统 {type(system).__name__}")
+            return
         self._systems.append(system)
         self._stats["registered"] += 1
         self._dirty = True

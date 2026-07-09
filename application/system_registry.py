@@ -75,6 +75,7 @@ class SystemRegistry:
     def __init__(self, world: World):
         self.world = world
         self._systems: Dict[str, Any] = {}
+        self._seen_classes: set[type] = set()
         self._groups: Dict[str, List[Any]] = {
             'infrastructure': [],
             'environment': [],
@@ -90,7 +91,13 @@ class SystemRegistry:
     # === 注册 ===
 
     def register(self, name: str, system: Any, group: str = 'default', priority: int = None) -> None:
-        """注册单个系统"""
+        """注册单个系统；同一 System 类仅注册一次，保留首次实例"""
+        system_class = type(system)
+        if system_class in self._seen_classes:
+            logger.debug(f"[SystemRegistry] 跳过重复注册 {system_class.__name__}（name={name}）")
+            return
+
+        self._seen_classes.add(system_class)
         if priority is not None:
             system.priority = priority
         self.world.add_system(system)
