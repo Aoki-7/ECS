@@ -76,6 +76,12 @@ class SoilComponent(Component):
     # 渗透率 (mm/h)
     permeability: float = 10.0
 
+    # 土壤厚度 (m)，供侵蚀/沉积系统使用
+    thickness: float = 1.0
+
+    # 泥沙负荷 (kg/m²)，供侵蚀/沉积系统使用
+    sediment_load: float = 0.0
+
     def to_dict(self):
         """导出为字典"""
         return {

@@ -24,6 +24,8 @@
     SeasonSystem 及土壤相关系统之后运行。
 """
 
+from typing import Dict, Optional
+
 from core.world import World
 from core.system import System
 
@@ -65,6 +67,10 @@ class EnvironmentSyncSystem(System):
     将天气系统、光场系统、季节系统、时间系统的状态同步到每个单元格的
     EnvironmentComponent。
     """
+
+    def __init__(self):
+        super().__init__()
+        self._last_world_spatial_values: Optional[Dict[str, float]] = None
 
     def update(self, world: World, delta_hours: float):
         # 防御：使用 world.get_world_component 替代 entity.get_component
@@ -126,23 +132,45 @@ class EnvironmentSyncSystem(System):
             year_progress = season.year_progress / season.year_length_hours if season.year_length_hours else 0.0
             season_name = self._year_progress_to_season(year_progress)
 
-        # ── 同步 world_entity 的环境组件（供人类/生物系统读取） ──
+        # ── 同步 world_entity 的环境组件（作为全球天气基准） ──
         world_env = world.get_environment()
+        spatial_delta = None
         if world_env is not None:
+            old_spatial = self._last_world_spatial_values
             self._sync_env(
                 world_env, weather, vpd_kpa, par, light_level, photoperiod,
                 is_daytime, hour, year_progress, season_name,
-                effective_diurnal_range, rainfall_mm_day, delta_hours
+                effective_diurnal_range, rainfall_mm_day, delta_hours,
+                is_cell=False
             )
+            new_spatial = {
+                "temperature": world_env.temperature,
+                "air_temperature": world_env.air_temperature,
+                "humidity": world_env.humidity,
+                "air_humidity": world_env.air_humidity,
+                "soil_moisture": world_env.soil_moisture,
+                "soil_temperature": world_env.soil_temperature,
+            }
+            if old_spatial is not None:
+                spatial_delta = {
+                    k: new_spatial[k] - old_spatial[k]
+                    for k in old_spatial
+                }
+            self._last_world_spatial_values = new_spatial
 
-        # ── 遍历所有普通单元格实体 ──
+        # ── 同步普通单元格实体（保留空间变化，只跟随全球天气增量） ──
         for entity, (env,) in world.get_components(EnvironmentComponent):
             env: EnvironmentComponent
+            if world_env is not None and env is world_env:
+                continue
             self._sync_env(
                 env, weather, vpd_kpa, par, light_level, photoperiod,
                 is_daytime, hour, year_progress, season_name,
-                effective_diurnal_range, rainfall_mm_day, delta_hours
+                effective_diurnal_range, rainfall_mm_day, delta_hours,
+                is_cell=True
             )
+            if spatial_delta is not None:
+                self._apply_spatial_delta(env, spatial_delta)
 
     def _sync_env(
         self,
@@ -159,19 +187,26 @@ class EnvironmentSyncSystem(System):
         effective_diurnal_range: float,
         rainfall_mm_day: float,
         delta_hours: float,
+        is_cell: bool = False,
     ):
-        """将天气数据同步到单个 EnvironmentComponent"""
+        """将天气数据同步到单个 EnvironmentComponent
+
+        Args:
+            is_cell: 为 True 时表示普通空间单元格，不直接覆盖温度/湿度/土壤温度，
+                     以保留环境连续统产生的局部空间变化。
+        """
         # 时间
         env.time_of_day = hour
         env.is_daytime = is_daytime
         env.year_progress = year_progress
         env.season = season_name
 
-        # 天气（同时维护 temperature/air_temperature、humidity/air_humidity 两组命名）
-        env.temperature = weather.temperature
-        env.air_temperature = weather.temperature
-        env.humidity = weather.relative_humidity
-        env.air_humidity = weather.relative_humidity
+        # 全球基准实体直接写入天气值；单元格保留局部变化，由增量逻辑修正
+        if not is_cell:
+            env.temperature = weather.temperature
+            env.air_temperature = weather.temperature
+            env.humidity = weather.relative_humidity
+            env.air_humidity = weather.relative_humidity
 
         # 降水
         env.precipitation = rainfall_mm_day
@@ -194,13 +229,24 @@ class EnvironmentSyncSystem(System):
         env.vpd = vpd_kpa
         env.day_night_temp_diff = effective_diurnal_range
 
-        # 土壤温度（一阶滞后，缓慢跟随气温）
-        env.soil_temperature = env.soil_temperature * 0.95 + weather.temperature * 0.05
+        # 土壤温度（一阶滞后，缓慢跟随气温）：仅对全球基准实体直接写入
+        if not is_cell:
+            env.soil_temperature = env.soil_temperature * 0.95 + weather.temperature * 0.05
 
         # 水分胁迫指数（基于当前土壤湿度重新计算）
         env.water_stress_index = EnvironmentSyncSystem.calculate_water_stress_index(
             env.soil_moisture, env.field_capacity, env.wilting_point
         )
+
+    def _apply_spatial_delta(self, env: EnvironmentComponent, spatial_delta: Dict[str, float]) -> None:
+        """将全球天气增量应用到单元格，保持局部空间变化"""
+        for k, delta in spatial_delta.items():
+            if not hasattr(env, k):
+                continue
+            value = getattr(env, k) + delta
+            if k in ("humidity", "air_humidity", "soil_moisture"):
+                value = max(0.0, min(1.0, value))
+            setattr(env, k, value)
 
     @staticmethod
     def initialize_component(env: EnvironmentComponent) -> None:

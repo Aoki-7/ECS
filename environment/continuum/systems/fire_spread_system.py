@@ -75,29 +75,57 @@ class FireSpreadSystem(System):
         super().__init__()
         self._neighbor_offsets = get_neighbor_offsets(neighborhood)
 
+        # 网格与组件缓存：环境单元是静态的，首次构建后复用
+        self._grid_cache: Optional[Dict] = None
+        self._bounds_cache: Optional[Tuple] = None
+        self._env_cache: Optional[Dict] = None
+        self._terrain_cache: Optional[Dict] = None
+
     def update(self, world: World, dt: float) -> None:
         """更新火灾蔓延"""
-        grid = self._build_grid(world)
-        if not grid:
+        if self._grid_cache is None:
+            grid = self._build_grid(world)
+            if not grid:
+                return
+            self._grid_cache = grid
+            self._bounds_cache = self._compute_bounds(grid)
+            self._env_cache = {
+                k: world.get_component(eid, EnvironmentComponent)
+                for k, eid in grid.items()
+            }
+            self._terrain_cache = {
+                k: world.get_component(eid, TerrainComponent)
+                for k, eid in grid.items()
+            }
+
+        grid = self._grid_cache
+        bounds = self._bounds_cache
+        env_cache = self._env_cache
+        terrain_cache = self._terrain_cache
+
+        # 快速判断：没有燃烧单元时跳过所有检查
+        has_fire = any(
+            env is not None and env.air_temperature >= self.IGNITION_TEMP
+            for env in env_cache.values()
+        )
+        if not has_fire:
             return
 
-        bounds = self._compute_bounds(grid)
-
         # 1. 处理燃烧中的火源
-        self._process_burning(world, grid, dt, bounds)
+        self._process_burning(grid, env_cache, terrain_cache, dt)
 
         # 2. 检查点燃条件
-        self._check_ignition(world, grid, dt, bounds)
+        self._check_ignition(grid, env_cache, terrain_cache, bounds, dt)
 
         # 3. 处理熄灭
-        self._process_extinguishing(world, grid, dt)
+        self._process_extinguishing(grid, env_cache, terrain_cache, dt)
 
-    def _process_burning(self, world: World, grid: Dict, dt: float,
-                         bounds: Optional[Tuple]) -> None:
+    def _process_burning(self, grid: Dict, env_cache: Dict,
+                         terrain_cache: Dict, dt: float) -> None:
         """处理燃烧中的火源"""
         for key, eid in grid.items():
-            env = world.get_component(eid, EnvironmentComponent)
-            terrain = world.get_component(eid, TerrainComponent)
+            env = env_cache.get(key)
+            terrain = terrain_cache.get(key)
             if env is None:
                 continue
 
@@ -115,12 +143,11 @@ class FireSpreadSystem(System):
             # 产生烟雾 (可扩展)
             logger.debug(f"Fire burning at {key}: temp={env.air_temperature:.1f}°C")
 
-    def _check_ignition(self, world: World, grid: Dict, dt: float,
-                        bounds: Optional[Tuple]) -> None:
+    def _check_ignition(self, grid: Dict, env_cache: Dict, terrain_cache: Dict,
+                        bounds: Optional[Tuple], dt: float) -> None:
         """检查点燃条件"""
         for key, eid in grid.items():
-            env = world.get_component(eid, EnvironmentComponent)
-            terrain = world.get_component(eid, TerrainComponent)
+            env = env_cache.get(key)
             if env is None:
                 continue
 
@@ -128,13 +155,15 @@ class FireSpreadSystem(System):
             if env.air_temperature >= self.IGNITION_TEMP:
                 continue
 
+            terrain = terrain_cache.get(key)
+
             # 检查邻居火源
             for dx, dy in self._neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
                 if nk is None or nk not in grid:
                     continue
 
-                n_env = world.get_component(grid[nk], EnvironmentComponent)
+                n_env = env_cache.get(nk)
                 if n_env is None:
                     continue
 
@@ -143,6 +172,7 @@ class FireSpreadSystem(System):
                     continue
 
                 # 计算点燃概率
+                terrain = terrain_cache.get(key)
                 ignition_prob = self._compute_ignition_probability(env, terrain, n_env)
 
                 if ignition_prob > 0.1:  # 阈值（降低以允许合理点燃）
@@ -177,17 +207,19 @@ class FireSpreadSystem(System):
 
         return temp_factor * humidity_factor * fuel_factor * wind_factor
 
-    def _process_extinguishing(self, world: World, grid: Dict, dt: float) -> None:
+    def _process_extinguishing(self, grid: Dict, env_cache: Dict,
+                               terrain_cache: Dict, dt: float) -> None:
         """处理熄灭"""
         for key, eid in grid.items():
-            env = world.get_component(eid, EnvironmentComponent)
-            terrain = world.get_component(eid, TerrainComponent)
+            env = env_cache.get(key)
             if env is None:
                 continue
 
             # 不在燃烧
             if env.air_temperature < self.IGNITION_TEMP:
                 continue
+
+            terrain = terrain_cache.get(key)
 
             # 降雨熄灭
             if env.rainfall > 5.0:  # 大雨
@@ -206,9 +238,11 @@ class FireSpreadSystem(System):
                 env.air_temperature = max(env.air_temperature - 30.0 * dt, 20.0)
 
     def _build_grid(self, world: World) -> Dict[Tuple[int, int], Entity]:
-        """构建网格索引"""
+        """构建网格索引：只包含完整环境单元"""
         grid = {}
-        for entity, (space,) in world.get_components(SpaceComponent):
+        for entity, (space, _env, _terrain) in world.get_components(
+            SpaceComponent, EnvironmentComponent, TerrainComponent
+        ):
             if space is None:
                 continue
             key = (int(space.x), int(space.y))

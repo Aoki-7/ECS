@@ -89,7 +89,7 @@ class AdaptiveTimestepSystem(System):
             3. 每个子步后验证稳定性
             4. 必要时进一步细分
         """
-        if dt <= 0:
+        if dt <= 0 or not self.wrapped_systems:
             return
 
         # 计算建议子步数

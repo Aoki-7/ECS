@@ -68,12 +68,8 @@ class SoilToEnvironmentSyncSystem(System):
         """建立网格坐标 -> EnvironmentComponent 的映射"""
         self._env_cache = {}
         for _, (env, space) in world.get_components(EnvironmentComponent, SpaceComponent):
-            gx = int(space.x) // 10
-            gy = int(space.y) // 10
-            self._env_cache[(gx, gy)] = env
+            self._env_cache[(int(space.x), int(space.y))] = env
 
     def _get_env_at(self, space: SpaceComponent):
         """获取坐标对应的环境组件"""
-        gx = int(space.x) // 10
-        gy = int(space.y) // 10
-        return self._env_cache.get((gx, gy))
+        return self._env_cache.get((int(space.x), int(space.y)))

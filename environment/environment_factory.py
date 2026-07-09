@@ -12,7 +12,6 @@ from environment.environment_component import EnvironmentComponent
 from environment.soil.components.soil_component import SoilComponent, SoilType
 from environment.terrain.components.terrain_component import TerrainComponent
 from environment.terrain.config.terrain_types import TerrainType
-from environment.light_field.components.light_field_component import LightFieldComponent
 
 
 class EnvironmentFactory:
@@ -38,12 +37,9 @@ class EnvironmentFactory:
 
         包含：
         - SpaceComponent（空间位置）
-        - PhysicalWeatherComponent（天气物理量）
-        - ClimateComponent（气候参数）
-        - AtmosphereComponent（大气参数）
+        - EnvironmentComponent（环境聚合状态）
         - SoilComponent（土壤参数）
         - TerrainComponent（地形参数）
-        - LightFieldComponent（光照参数）
         """
         # 创建实体
         entity = self.world.create_entity()
@@ -115,15 +111,6 @@ class EnvironmentFactory:
             vegetation_height=getattr(locals(), 'vegetation_height', 0.0),
         )
         self.world.add_component(entity, terrain)
-
-        # 5. 光场组件
-        light = LightFieldComponent(
-            par=300.0 + random.uniform(-50, 50),
-            total_radiation=500.0 + random.uniform(-100, 100),
-            sun_elevation=45.0,
-            sun_azimuth=180.0,
-        )
-        self.world.add_component(entity, light)
 
         return entity.id
 

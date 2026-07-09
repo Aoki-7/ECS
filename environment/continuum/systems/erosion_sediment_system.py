@@ -120,6 +120,12 @@ class ErosionSedimentSystem(System):
     def _process_deposition(self, world: World, grid: Dict, dt: float,
                             bounds: Optional[Tuple]) -> None:
         """沉积: 低速水流/坡度减缓处沉积"""
+        # 预取海拔
+        elevs = {}
+        for key, eid in grid.items():
+            terrain = world.get_component(eid, TerrainComponent)
+            elevs[key] = terrain.elevation if terrain else 0.0
+
         for key, eid in grid.items():
             soil = world.get_component(eid, SoilComponent)
             env = world.get_component(eid, EnvironmentComponent)
@@ -131,7 +137,7 @@ class ErosionSedimentSystem(System):
                 continue
 
             # 计算流速
-            flow_velocity = self._compute_flow_velocity(key, grid, {}, bounds)
+            flow_velocity = self._compute_flow_velocity(key, grid, elevs, bounds)
 
             # 流速低 → 沉积
             if flow_velocity < self.EROSION_THRESHOLD * 0.5:
@@ -154,12 +160,7 @@ class ErosionSedimentSystem(System):
                 continue
 
             # 计算坡度
-            if elevs:
-                elev_diff = elevs[key] - elevs.get(nk, 0.0)
-            else:
-                terrain = world.get_component(grid[key], TerrainComponent)
-                n_terrain = world.get_component(grid[nk], TerrainComponent)
-                elev_diff = (terrain.elevation if terrain else 0.0) - (n_terrain.elevation if n_terrain else 0.0)
+            elev_diff = elevs[key] - elevs.get(nk, 0.0)
 
             if elev_diff <= 0:
                 continue
@@ -173,9 +174,11 @@ class ErosionSedimentSystem(System):
         return max_velocity
 
     def _build_grid(self, world: World) -> Dict[Tuple[int, int], Entity]:
-        """构建网格索引"""
+        """构建网格索引：只包含完整环境单元（土壤+地形+环境）"""
         grid = {}
-        for entity, (space,) in world.get_components(SpaceComponent):
+        for entity, (space, _soil, _terrain, _env) in world.get_components(
+            SpaceComponent, SoilComponent, TerrainComponent, EnvironmentComponent
+        ):
             if space is None:
                 continue
             key = (int(space.x), int(space.y))

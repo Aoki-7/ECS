@@ -122,6 +122,11 @@ class EnvironmentalContinuumSystem(System):
             SelfRecoveryProcessor(),
         ]
 
+        # 网格缓存：环境单元是静态的，可在首次构建后复用
+        self._grid_cache: Optional[Dict] = None
+        self._bounds_cache: Optional[Tuple] = None
+        self._continuum_cache: Optional[ContinuumCache] = None
+
     # ========================
     # 主更新入口
     # ========================
@@ -130,20 +135,23 @@ class EnvironmentalContinuumSystem(System):
         """主更新：对网格执行所有物理过程
 
         流程:
-            1. 构建网格索引
+            1. 构建网格索引（首次运行，后续复用缓存）
             2. 预查询所有组件 (ContinuumCache)
             3. [可选] 拍摄守恒快照
             4. 顺序执行 5 大物理过程
             5. [可选] 验证守恒性
         """
-        grid = self._build_grid(world)
-        if not grid:
-            return
+        if self._grid_cache is None:
+            grid = self._build_grid(world)
+            if not grid:
+                return
+            self._grid_cache = grid
+            self._bounds_cache = self._compute_bounds(grid)
+            self._continuum_cache = ContinuumCache.build(world, grid)
 
-        bounds = self._compute_bounds(grid)
-
-        # 预查询所有组件 (单次遍历，避免重复查询)
-        cache = ContinuumCache.build(world, grid)
+        grid = self._grid_cache
+        bounds = self._bounds_cache
+        cache = self._continuum_cache
 
         # 守恒检查前快照
         before_snapshot = None

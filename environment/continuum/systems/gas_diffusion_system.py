@@ -74,102 +74,95 @@ class GasDiffusionSystem(System):
         super().__init__()
         self._neighbor_offsets = get_neighbor_offsets(neighborhood)
 
+        # 网格与组件缓存：环境单元是静态的，首次构建后复用
+        self._grid_cache: Optional[Dict] = None
+        self._bounds_cache: Optional[Tuple] = None
+        self._env_cache: Optional[Dict] = None
+
     def update(self, world: World, dt: float) -> None:
         """更新气体扩散"""
-        grid = self._build_grid(world)
-        if not grid:
-            return
+        if self._grid_cache is None:
+            grid = self._build_grid(world)
+            if not grid:
+                return
+            self._grid_cache = grid
+            self._bounds_cache = self._compute_bounds(grid)
+            self._env_cache = {
+                k: world.get_component(eid, EnvironmentComponent)
+                for k, eid in grid.items()
+            }
 
-        bounds = self._compute_bounds(grid)
+        grid = self._grid_cache
+        bounds = self._bounds_cache
+        env_cache = self._env_cache
 
         # 1. CO₂ 扩散
-        self._diffuse_co2(world, grid, dt, bounds)
+        self._diffuse_co2(grid, env_cache, dt, bounds)
 
         # 2. O₂ 扩散
-        self._diffuse_o2(world, grid, dt, bounds)
+        self._diffuse_o2(grid, env_cache, dt, bounds)
 
         # 3. 呼吸作用 (简化: 所有生物平均呼吸)
-        self._process_respiration(world, grid, dt)
+        self._process_respiration(grid, env_cache, dt)
 
         # 4. 大气交换 (边界条件)
-        self._atmospheric_exchange(world, grid, dt)
+        self._atmospheric_exchange(grid, env_cache, dt)
 
-    def _diffuse_co2(self, world: World, grid: Dict, dt: float,
+    def _diffuse_co2(self, grid: Dict, env_cache: Dict, dt: float,
                      bounds: Optional[Tuple]) -> None:
-        """CO₂ 扩散 — 优化版：先缓存环境数据"""
+        """CO₂ 扩散 — 使用已缓存的环境组件"""
         n_nei = len(self._neighbor_offsets)
-        
-        # 缓存环境数据，避免循环内重复get_component
-        env_cache = {}
-        for key, eid in grid.items():
-            env = world.get_component(eid, EnvironmentComponent)
-            if env is not None:
-                env_cache[key] = env.co2
 
-        # 计算净通量
-        net_fluxes = {key: 0.0 for key in env_cache.keys()}
-        
-        for key in env_cache:
-            c_self = env_cache[key]
+        # 缓存 CO₂ 浓度快照
+        co2_cache = {key: env.co2 for key, env in env_cache.items() if env is not None}
+        net_fluxes = {key: 0.0 for key in co2_cache.keys()}
+
+        for key in co2_cache:
+            c_self = co2_cache[key]
             for dx, dy in self._neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
-                if nk is None or nk not in env_cache:
+                if nk is None or nk not in co2_cache:
                     continue
 
-                c_neighbor = env_cache[nk]
+                c_neighbor = co2_cache[nk]
                 flux = compute_diffusion_flux(c_self, c_neighbor, self.CO2_DIFFUSION_RATE, dt, 50.0)
                 net_fluxes[key] += flux
                 net_fluxes[nk] -= flux
 
         # 应用净通量
         for key, net_flux in net_fluxes.items():
-            eid = grid[key]
-            env = world.get_component(eid, EnvironmentComponent)
-            if env is None:
-                continue
-            env.co2 += net_flux / n_nei
-            env.co2 = clamp(env.co2, 200.0, 1000.0)
+            env = env_cache[key]
+            env.co2 = clamp(env.co2 + net_flux / n_nei, 200.0, 1000.0)
 
-    def _diffuse_o2(self, world: World, grid: Dict, dt: float,
+    def _diffuse_o2(self, grid: Dict, env_cache: Dict, dt: float,
                     bounds: Optional[Tuple]) -> None:
-        """O₂ 扩散 — 优化版：先缓存环境数据"""
+        """O₂ 扩散 — 使用已缓存的环境组件"""
         n_nei = len(self._neighbor_offsets)
-        
-        # 缓存环境数据
-        env_cache = {}
-        for key, eid in grid.items():
-            env = world.get_component(eid, EnvironmentComponent)
-            if env is not None:
-                env_cache[key] = env.o2
 
-        # 计算净通量
-        net_fluxes = {key: 0.0 for key in env_cache.keys()}
-        
-        for key in env_cache:
-            c_self = env_cache[key]
+        o2_cache = {key: env.o2 for key, env in env_cache.items() if env is not None}
+        net_fluxes = {key: 0.0 for key in o2_cache.keys()}
+
+        for key in o2_cache:
+            c_self = o2_cache[key]
             for dx, dy in self._neighbor_offsets:
                 nk = resolve_boundary((key[0] + dx, key[1] + dy), grid, bounds)
-                if nk is None or nk not in env_cache:
+                if nk is None or nk not in o2_cache:
                     continue
 
-                c_neighbor = env_cache[nk]
+                c_neighbor = o2_cache[nk]
                 flux = compute_diffusion_flux(c_self, c_neighbor, self.O2_DIFFUSION_RATE, dt, 1.0)
                 net_fluxes[key] += flux
                 net_fluxes[nk] -= flux
 
         # 应用净通量
         for key, net_flux in net_fluxes.items():
-            eid = grid[key]
-            env = world.get_component(eid, EnvironmentComponent)
-            if env is None:
-                continue
-            env.o2 += net_flux / n_nei
+            env = env_cache[key]
+            env.o2 = clamp(env.o2 + net_flux / n_nei, 15.0, 25.0)
             env.o2 = clamp(env.o2, 15.0, 30.0)
 
-    def _process_respiration(self, world: World, grid: Dict, dt: float) -> None:
+    def _process_respiration(self, grid: Dict, env_cache: Dict, dt: float) -> None:
         """呼吸作用 — 简化模型"""
-        for key, eid in grid.items():
-            env = world.get_component(eid, EnvironmentComponent)
+        for env in env_cache.values():
             if env is None:
                 continue
 
@@ -179,10 +172,9 @@ class GasDiffusionSystem(System):
             env.o2 = max(15.0, env.o2 - respiration)
             env.co2 = min(1000.0, env.co2 + respiration * 20)  # CO₂ 增量更大
 
-    def _atmospheric_exchange(self, world: World, grid: Dict, dt: float) -> None:
+    def _atmospheric_exchange(self, grid: Dict, env_cache: Dict, dt: float) -> None:
         """大气交换 — 边界条件"""
-        for key, eid in grid.items():
-            env = world.get_component(eid, EnvironmentComponent)
+        for env in env_cache.values():
             if env is None:
                 continue
 
@@ -194,9 +186,11 @@ class GasDiffusionSystem(System):
             env.o2 += o2_diff * 0.001 * dt
 
     def _build_grid(self, world: World) -> Dict[Tuple[int, int], Entity]:
-        """构建网格索引"""
+        """构建网格索引：只包含完整环境单元"""
         grid = {}
-        for entity, (space,) in world.get_components(SpaceComponent):
+        for entity, (space, _env) in world.get_components(
+            SpaceComponent, EnvironmentComponent
+        ):
             if space is None:
                 continue
             key = (int(space.x), int(space.y))

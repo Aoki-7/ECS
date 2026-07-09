@@ -79,6 +79,14 @@ class EnvironmentComponent(Component):
     # === 历史记录 ===
     weather_history: List[Dict] = field(default_factory=list)
 
+    # === 土壤养分（由 SoilToEnvironmentSyncSystem 从 SoilComponent 同步） ===
+    nitrogen: float = 0.0
+    phosphorus: float = 0.0
+    potassium: float = 0.0
+
+    # === 扩展字段（供土壤有机质等动态属性使用） ===
+    extra: Dict = field(default_factory=dict)
+
     def __post_init__(self):
         """派生字段由 EnvironmentSyncSystem 统一计算"""
         from environment.systems.environment_sync_system import EnvironmentSyncSystem
