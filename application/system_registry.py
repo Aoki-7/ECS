@@ -27,6 +27,7 @@ _SCAN_PACKAGES = [
     ("environment/astronomy", "environment", SystemPriority.ATMOSPHERE),
     ("environment/atmosphere", "environment", SystemPriority.ATMOSPHERE),
     ("environment/hydrology", "environment", SystemPriority.ENVIRONMENT),
+    # ("environment/hydrology/systems", "environment", SystemPriority.ENVIRONMENT),  # 临时注释，新系统待修复
     ("environment/geology", "environment", SystemPriority.ENVIRONMENT),
     ("environment/pollution", "environment", SystemPriority.ENVIRONMENT),
     ("environment/ocean", "environment", SystemPriority.ENVIRONMENT),
@@ -45,6 +46,7 @@ _SCAN_PACKAGES = [
     ("human/systems/combat", "human", SystemPriority.HUMAN_COGNITIVE),
     ("human/systems/interaction", "human", SystemPriority.HUMAN_COGNITIVE),
     ("human/systems/physiological", "human", SystemPriority.PHYSIOLOGY),
+    ("human/rl", "human", SystemPriority.HUMAN_COGNITIVE),  # RL意图系统
     # 动物层
     ("animal/systems", "animal", SystemPriority.ANIMAL_NEEDS),
     ("animal/migration/systems", "animal", SystemPriority.ANIMAL_MIGRATION),
@@ -53,11 +55,17 @@ _SCAN_PACKAGES = [
     # 生物层
     ("biology/systems", "biology", SystemPriority.BIOLOGY),
     ("biology/lifecycle", "biology", SystemPriority.BIOLOGY),
+    ("biology/lifecycle/death/systems", "biology", SystemPriority.BIOLOGY),
+    ("biology/lifecycle/corpse/systems", "biology", SystemPriority.BIOLOGY),
     ("biology/ecology", "ecology", SystemPriority.COMPETITION),
     # 分解者
     ("decomposer/systems", "ecology", SystemPriority.BIOLOGY),
+    # 资源层
+    ("resource/ore/systems", "resource", SystemPriority.BIOLOGY),
     # 文明层
     ("civilization/systems", "civilization", SystemPriority.CIVILIZATION),
+    ("civilization/tools/systems", "civilization", SystemPriority.CIVILIZATION),
+    ("civilization/settlement/systems", "civilization", SystemPriority.CIVILIZATION),
 ]
 
 
@@ -124,6 +132,26 @@ class SystemRegistry:
         self._init_environment()
         # 其余层级通过自动扫描注册
         self._auto_scan_all()
+        # 根据配置启用RL意图系统
+        self._init_rl_intent_system()
+
+    def _init_rl_intent_system(self) -> None:
+        """根据配置启用RL意图系统"""
+        from core.components.world_config_component import WorldConfigComponent
+        config = self.world.get_world_component(WorldConfigComponent)
+        if config and config.use_rl_intent:
+            # 禁用规则驱动的意图系统
+            from human.systems.core.intent_system import IntentSystem
+            intent_system = self.get('intent')
+            if intent_system:
+                self.world.remove_system(intent_system)
+                logger.info("禁用规则驱动的意图系统")
+
+            # 注册RL意图系统
+            from human.rl.rl_intent_system import RLIntentSystem
+            rl_system = RLIntentSystem(training=config.rl_training)
+            self.register('rl_intent', rl_system, 'human', SystemPriority.HUMAN_COGNITIVE)
+            logger.info(f"启用RL驱动的意图系统，训练模式: {config.rl_training}")
 
     # === 手动注册层（特殊系统） ===
 

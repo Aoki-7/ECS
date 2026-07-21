@@ -18,6 +18,7 @@ from core.world import World
 
 # 统一从 biology 层导入疾病类型定义
 from biology.components.disease_component import DiseaseType
+from civilization.components.technology_modifier_component import TechnologyModifierComponent
 
 
 # 症状枚举
@@ -74,9 +75,10 @@ class HealthcareSystem(System):
             disease_comp: DiseaseComponent
             health: HealthStatusComponent
 
-            # 治疗：降低严重度
+            # 治疗：降低严重度（含技术加成）
             if disease_comp.severity > 0:
-                disease_comp.severity = max(0.0, disease_comp.severity - 0.5 * dt)
+                multiplier = self._get_healthcare_multiplier(world)
+                disease_comp.severity = max(0.0, disease_comp.severity - 0.5 * dt * multiplier)
 
             # 增加免疫（使用组件的 immunity 字段，如果不存在则跳过）
             if hasattr(disease_comp, 'immunity'):
@@ -166,6 +168,13 @@ class HealthcareSystem(System):
             "side_effects": side_effects,
             "timestamp": "now"
         })
+
+    def _get_healthcare_multiplier(self, world: World) -> float:
+        """读取文明技术带来的医疗效果加成"""
+        modifier = world.get_world_component(TechnologyModifierComponent)
+        if modifier is not None and modifier.healthcare_multiplier > 0:
+            return modifier.healthcare_multiplier
+        return 1.0
 
 
 if __name__ == "__main__":

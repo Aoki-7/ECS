@@ -12,7 +12,7 @@ import logging
 
 from core.system import System
 from core.world import World
-from typing import Dict, List, Any, Set
+from typing import Dict, List, Any, Set, Optional
 from enum import Enum
 from dataclasses import dataclass, field
 
@@ -23,6 +23,7 @@ from human.components.cognitive.memory_component import MemoryComponent
 from human.components.cognitive.knowledge_component import KnowledgeComponent
 from human.components.social.social_component import SocialComponent
 from human.components.economic.economy_component import EconomyComponent
+from civilization.components.technology_modifier_component import TechnologyModifierComponent
 
 
 class TechnologyType(Enum):
@@ -60,6 +61,7 @@ class TechnologySystem(System):
 
     # 技术树定义
     TECHNOLOGIES = {
+        # 农业线
         "basic_farming": Technology(
             name="基础农业",
             type=TechnologyType.AGRICULTURE,
@@ -74,6 +76,21 @@ class TechnologySystem(System):
             research_cost={"experience": 200.0},
             unlocked_features=["irrigation", "selective_breeding"]
         ),
+        "fertilizer_tech": Technology(
+            name="肥料技术",
+            type=TechnologyType.AGRICULTURE,
+            prerequisites={"advanced_farming"},
+            research_cost={"experience": 300.0},
+            unlocked_features=["organic_fertilizer", "yield_boost_30"]
+        ),
+        "mechanized_farming": Technology(
+            name="机械化农业",
+            type=TechnologyType.AGRICULTURE,
+            prerequisites={"fertilizer_tech", "steam_power"},
+            research_cost={"metal": 200.0, "experience": 500.0},
+            unlocked_features=["farm_machinery", "yield_boost_100"]
+        ),
+        # 金属加工线
         "metal_tools": Technology(
             name="金属工具",
             type=TechnologyType.METALWORKING,
@@ -81,6 +98,28 @@ class TechnologySystem(System):
             research_cost={"metal": 50.0, "experience": 150.0},
             unlocked_features=["metal_axes", "metal_picks", "improved_tools"]
         ),
+        "bronze_smelting": Technology(
+            name="青铜冶炼",
+            type=TechnologyType.METALWORKING,
+            prerequisites={"metal_tools"},
+            research_cost={"metal": 100.0, "experience": 200.0},
+            unlocked_features=["bronze_alloy", "bronze_tools_boost"]
+        ),
+        "iron_smelting": Technology(
+            name="冶铁技术",
+            type=TechnologyType.METALWORKING,
+            prerequisites={"bronze_smelting"},
+            research_cost={"metal": 150.0, "experience": 300.0},
+            unlocked_features=["iron_alloy", "iron_tools_boost"]
+        ),
+        "steelmaking": Technology(
+            name="炼钢技术",
+            type=TechnologyType.METALWORKING,
+            prerequisites={"iron_smelting"},
+            research_cost={"metal": 300.0, "experience": 400.0},
+            unlocked_features=["steel_alloy", "steel_tools_boost"]
+        ),
+        # 建筑线
         "basic_construction": Technology(
             name="基础建筑",
             type=TechnologyType.CONSTRUCTION,
@@ -88,6 +127,21 @@ class TechnologySystem(System):
             research_cost={"stone": 100.0, "wood": 100.0, "experience": 200.0},
             unlocked_features=["stone_houses", "workshops", "storage_facilities"]
         ),
+        "masonry": Technology(
+            name="砖石建筑",
+            type=TechnologyType.CONSTRUCTION,
+            prerequisites={"basic_construction"},
+            research_cost={"stone": 200.0, "experience": 250.0},
+            unlocked_features=["masonry_construction", "durability_boost"]
+        ),
+        "concrete": Technology(
+            name="混凝土技术",
+            type=TechnologyType.CONSTRUCTION,
+            prerequisites={"masonry", "steelmaking"},
+            research_cost={"stone": 300.0, "metal": 100.0, "experience": 400.0},
+            unlocked_features=["concrete_building", "skyscraper_possible"]
+        ),
+        # 医药线
         "herbal_medicine": Technology(
             name="草药医学",
             type=TechnologyType.MEDICINE,
@@ -95,12 +149,56 @@ class TechnologySystem(System):
             research_cost={"experience": 120.0},
             unlocked_features=["basic_healing", "disease_prevention"]
         ),
+        "anatomy": Technology(
+            name="解剖学",
+            type=TechnologyType.MEDICINE,
+            prerequisites={"herbal_medicine"},
+            research_cost={"experience": 250.0},
+            unlocked_features=["surgery", "healing_boost_20"]
+        ),
+        "antibiotics": Technology(
+            name="抗生素",
+            type=TechnologyType.MEDICINE,
+            prerequisites={"anatomy"},
+            research_cost={"experience": 400.0},
+            unlocked_features=["infection_treatment", "lifespan_boost_20"]
+        ),
+        # 武器线
         "basic_weaponry": Technology(
             name="基础武器",
             type=TechnologyType.WEAPONRY,
             prerequisites={"metal_tools"},
             research_cost={"metal": 30.0, "wood": 50.0, "experience": 180.0},
             unlocked_features=["metal_weapons", "defensive_structures"]
+        ),
+        "bronze_weapons": Technology(
+            name="青铜武器",
+            type=TechnologyType.WEAPONRY,
+            prerequisites={"basic_weaponry", "bronze_smelting"},
+            research_cost={"metal": 100.0, "experience": 250.0},
+            unlocked_features=["bronze_weapon_damage_boost_30"]
+        ),
+        "gunpowder": Technology(
+            name="火药",
+            type=TechnologyType.WEAPONRY,
+            prerequisites={"iron_smelting", "basic_construction"},
+            research_cost={"metal": 200.0, "experience": 400.0},
+            unlocked_features=["explosives", "early_guns"]
+        ),
+        # 交通/能源线
+        "wheel": Technology(
+            name="轮子",
+            type=TechnologyType.TRANSPORTATION,
+            prerequisites={"basic_construction"},
+            research_cost={"wood": 50.0, "experience": 150.0},
+            unlocked_features=["cart", "transport_efficiency_20"]
+        ),
+        "steam_power": Technology(
+            name="蒸汽动力",
+            type=TechnologyType.TRANSPORTATION,
+            prerequisites={"iron_smelting", "basic_construction"},
+            research_cost={"metal": 300.0, "experience": 500.0},
+            unlocked_features=["steam_engine", "power_boost_50"]
         )
     }
 
@@ -154,6 +252,9 @@ class TechnologySystem(System):
                 if knowledge and tech_name in knowledge.known_technologies:
                     total_experience += 50.0  # 已有知识加成
 
+            # 研究进度也转化为经验，加速技术自然涌现
+            total_experience += self.global_tech_progress.get(tech_name, 0.0) * 5.0
+
             if total_experience < required_experience:
                 return False
 
@@ -174,7 +275,7 @@ class TechnologySystem(System):
 
         # 通知所有人类（限制上限避免内存泄漏）
         count = 0
-        for entity, (knowledge) in world.get_components(KnowledgeComponent):
+        for entity, (knowledge,) in world.get_components(KnowledgeComponent):
             if knowledge:
                 knowledge.known_technologies.add(tech_name)
                 count += 1
@@ -192,7 +293,7 @@ class TechnologySystem(System):
             SkillComponent, KnowledgeComponent, MemoryComponent
         ):
             # 基于经验积累推进研究
-            research_points = dt * 0.1  # 基础研究点数
+            research_points = dt * 0.2  # 基础研究点数（适度加快）
 
             # 技能加成
             research_skill = skill.skills.get('research', 1.0)
@@ -216,7 +317,7 @@ class TechnologySystem(System):
 
             # 查找子女（限制上限避免内存泄漏）
             children = []
-            for child_id, relation_type in list(social.relationships.items()):
+            for child_id, relation_type in list(social.relations.items()):
                 if relation_type == "parent":
                     children.append(child_id)
                     if len(children) >= 100:  # 限制上限
@@ -235,43 +336,77 @@ class TechnologySystem(System):
                     child_knowledge.known_technologies.update(inherited_techs)
 
     def _apply_technology_effects(self, world: World):
-        """应用技术效果"""
+        """应用技术效果：将已解锁技术转换为全局数值加成"""
+        modifier = self._get_or_create_modifier_component(world)
+        if modifier is None:
+            return
+
+        # 每轮重新计算，避免重复叠加
+        modifier.harvest_multiplier = 1.0
+        modifier.gather_multiplier = 1.0
+        modifier.healthcare_multiplier = 1.0
+        modifier.construction_efficiency = 1.0
+
         for tech_name in self.discovered_technologies:
             technology = self.TECHNOLOGIES[tech_name]
-
-            # 应用解锁的功能
             for feature in technology.unlocked_features:
-                self._apply_feature_effect(feature, world)
+                self._apply_feature_effect(feature, modifier)
 
-    def _apply_feature_effect(self, feature: str, world: World):
-        """应用具体功能效果"""
+    def _get_or_create_modifier_component(self, world: World) -> Optional[TechnologyModifierComponent]:
+        """获取或创建世界实体的技术修正组件"""
+        modifier = world.get_world_component(TechnologyModifierComponent)
+        if modifier is None:
+            world_entity = world.get_world_entity()
+            if world_entity is None:
+                return None
+            modifier = TechnologyModifierComponent()
+            world.add_component(world_entity, modifier)
+        return modifier
+
+    def _apply_feature_effect(self, feature: str, modifier: TechnologyModifierComponent):
+        """应用具体功能效果到全局修正组件"""
         if feature == "plant_cultivation":
-            # 提高农业产量
-            self._boost_agriculture_yield(world, 1.2)
+            modifier.harvest_multiplier += 0.2
+        elif feature == "crop_rotation":
+            modifier.harvest_multiplier += 0.1
         elif feature == "irrigation":
-            # 进一步提高农业产量
-            self._boost_agriculture_yield(world, 1.5)
+            modifier.harvest_multiplier += 0.3
+        elif feature == "selective_breeding":
+            modifier.harvest_multiplier += 0.2
         elif feature == "metal_axes":
-            # 提高伐木效率
-            self._boost_gathering_efficiency(world, "wood", 1.3)
+            modifier.gather_multiplier += 0.3
+        elif feature == "metal_picks":
+            modifier.gather_multiplier += 0.3
+        elif feature == "improved_tools":
+            modifier.gather_multiplier += 0.2
         elif feature == "basic_healing":
-            # 提高医疗效果
-            self._improve_healthcare(world, 1.2)
+            modifier.healthcare_multiplier += 0.2
+        elif feature == "disease_prevention":
+            modifier.healthcare_multiplier += 0.2
+        elif feature == "stone_houses":
+            modifier.construction_efficiency += 0.2
+        elif feature == "workshops":
+            modifier.construction_efficiency += 0.2
+        elif feature == "storage_facilities":
+            modifier.construction_efficiency += 0.1
 
     def _boost_agriculture_yield(self, world: World, multiplier: float):
-        """提高农业产量"""
-        # 这里需要与农业系统集成
-        pass
+        """（旧接口保留）通过全局修正组件提高农业产量"""
+        modifier = self._get_or_create_modifier_component(world)
+        if modifier is not None:
+            modifier.harvest_multiplier *= multiplier
 
     def _boost_gathering_efficiency(self, world: World, resource_type: str, multiplier: float):
-        """提高采集效率"""
-        # 这里需要与采集系统集成
-        pass
+        """（旧接口保留）通过全局修正组件提高采集效率"""
+        modifier = self._get_or_create_modifier_component(world)
+        if modifier is not None:
+            modifier.gather_multiplier *= multiplier
 
     def _improve_healthcare(self, world: World, multiplier: float):
-        """提高医疗效果"""
-        # 这里需要与医疗系统集成
-        pass
+        """（旧接口保留）通过全局修正组件提高医疗效果"""
+        modifier = self._get_or_create_modifier_component(world)
+        if modifier is not None:
+            modifier.healthcare_multiplier *= multiplier
 
     def _get_relevant_skills(self, tech_type: TechnologyType) -> List[str]:
         """获取相关技能"""

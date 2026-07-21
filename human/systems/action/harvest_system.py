@@ -29,6 +29,7 @@ from biology.lifecycle.components.morphology_component import MorphologyComponen
 from resource.food.food_factory import FoodFactory
 from resource.wood.wood_factory import WoodFactory
 from human.systems.economy.economy_system import EconomySystem
+from civilization.components.technology_modifier_component import TechnologyModifierComponent
 
 import logging
 
@@ -91,11 +92,13 @@ class HarvestSystem(System):
             self._fail(action, task, "植物尚未成熟")
             return
 
-        # 计算收获量
-        yield_amount = self._calculate_yield(plant_comp, morph)
+        # 计算收获量（含技术加成）
+        yield_amount = self._calculate_yield(plant_comp, morph) * self._get_harvest_multiplier(world)
         if yield_amount <= 0:
             self._fail(action, task, "无可收获量")
             return
+
+        logger.debug(f"[Harvest] E{entity.id} 从植物 E{target_id} 收获了 {yield_amount:.1f}")
 
         # 创建收获物
         self._create_harvest_items(world, entity, space, plant_comp, yield_amount, target_entity)
@@ -187,6 +190,13 @@ class HarvestSystem(System):
             yield_amount = min(plant_comp.harvestable_yield, 3.0)
 
         return yield_amount * self.BASE_HARVEST_EFFICIENCY
+
+    def _get_harvest_multiplier(self, world: World) -> float:
+        """读取文明技术带来的农业收获加成"""
+        modifier = world.get_world_component(TechnologyModifierComponent)
+        if modifier is not None and modifier.harvest_multiplier > 0:
+            return modifier.harvest_multiplier
+        return 1.0
 
     def _fail(self, action: ActionComponent, task: TaskComponent, reason: str) -> None:
         action.current_action = ActionType.IDLE

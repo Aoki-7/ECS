@@ -125,22 +125,28 @@ class TechnologyEvolutionSystem(System):
     def _attempt_teach(
         self, world: World, teacher, learner, recipes: List[Dict]
     ) -> None:
-        """尝试教导"""
+        """尝试教导附近个体一个已知配方"""
         learner_knowledge = world.get_component(learner, CraftingKnowledgeComponent)
         if learner_knowledge is None:
             return
 
         # 随机选择一个配方传授
         recipe = random.choice(recipes)
-        mat_key = "+".join(sorted(recipe["materials"].keys()))
+        # recipe["materials"] 是 CraftingKnowledgeSystem 生成的字符串键，
+        # 形如 "wood:1.0+stone:2.0"，需要解析回字典供 record_attempt 使用
+        material_dict = {}
+        for part in recipe["materials"].split("+"):
+            if ":" in part:
+                name, amount = part.split(":", 1)
+                material_dict[name] = float(amount)
 
-        # 学习者记录这次"学习"
-        # 成功率打折扣（学习不如亲自实验）
-        learner_knowledge.record_attempt(
-            inputs=recipe["materials"],
+        # 学习者记录这次"学习"（成功率打折扣，学习不如亲自实验）
+        CraftingKnowledgeSystem.record_attempt(
+            learner_knowledge,
+            inputs=material_dict,
             output=recipe["output"],
-            quality=recipe["avg_quality"] * 0.7,
-            success=True,  # 假设教学成功
+            quality=recipe.get("avg_quality", 0.0) * 0.7,
+            success=True,
             conditions={"learned_from": teacher.id, "is_taught": True},
         )
 

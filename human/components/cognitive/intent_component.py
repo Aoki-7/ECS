@@ -90,3 +90,8 @@ class IntentComponent(Component):
 
     # 是否锁定（防止频繁切换）
     locked: bool = False
+
+    # 用于行为可视化的字段
+    current_action: Any = None
+    cooperation_partners: list[int] = field(default_factory=list)
+    goal_type: str | None = None

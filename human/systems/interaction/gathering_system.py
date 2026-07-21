@@ -14,6 +14,7 @@ from human.components.interaction.gathering_component import GatheringComponent
 from human.components.action.action_component import ActionComponent, ActionType, ActionStatus
 from resource.components.resource_component import ResourceComponent
 from space.space_component import SpaceComponent
+from civilization.components.technology_modifier_component import TechnologyModifierComponent
 import math
 
 
@@ -69,11 +70,12 @@ class GatheringSystem(System):
             action.status = ActionStatus.FAILED
             return
         
-        # 对每个附近的资源执行采集
+        # 对每个附近的资源执行采集（含技术加成）
         for resource_entity, resource, resource_space in nearby_resources:
+            multiplier = self._get_gather_multiplier(world)
             gathered_amount = min(
                 resource.amount,
-                self.GATHER_RATE * dt
+                self.GATHER_RATE * dt * multiplier
             )
             
             # 更新采集组件
@@ -123,3 +125,10 @@ class GatheringSystem(System):
                 nearby.append((candidate, resource, res_space))
         
         return nearby
+
+    def _get_gather_multiplier(self, world: World) -> float:
+        """读取文明技术带来的采集效率加成"""
+        modifier = world.get_world_component(TechnologyModifierComponent)
+        if modifier is not None and modifier.gather_multiplier > 0:
+            return modifier.gather_multiplier
+        return 1.0

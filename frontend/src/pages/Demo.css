@@ -1,0 +1,261 @@
+:root {
+  --bg: #0f1115;
+  --panel: #1a1d23;
+  --border: #2a2d35;
+  --text: #e0e0e0;
+  --muted: #9aa0a6;
+  --accent: #4caf50;
+  --danger: #ff5252;
+}
+
+.demo-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.demo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 2px solid var(--border);
+  background: var(--panel);
+}
+
+.demo-header h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.demo-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 6px var(--danger);
+}
+
+.status-dot.online {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.tick {
+  font-weight: bold;
+  color: var(--text);
+  margin-left: 8px;
+}
+
+.demo-main {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.demo-canvas-panel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  background: #0a0a0a;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  overflow: auto;
+}
+
+.loading {
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.demo-sidebar {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.panel {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.panel h2 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.control-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.control-row button {
+  flex: 1;
+  padding: 8px 6px;
+  border: 2px solid var(--border);
+  background: #0f1115;
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  transition: background 0.1s;
+}
+
+.control-row button:hover {
+  background: #252830;
+}
+
+.control-row.speed {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control-row.speed label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.control-row.speed input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.control-row.speed span {
+  font-size: 12px;
+  text-align: right;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stat-grid div {
+  display: flex;
+  flex-direction: column;
+  background: #0f1115;
+  border: 1px solid var(--border);
+  padding: 8px;
+  border-radius: 2px;
+}
+
+.stat-grid span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat-grid strong {
+  font-size: 18px;
+  color: var(--text);
+}
+
+.placeholder {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.entity-card {
+  background: #0f1115;
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+.entity-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 6px;
+  text-transform: capitalize;
+}
+
+.entity-dot {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #555;
+}
+
+.entity-pos {
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.entity-state {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.entity-state li {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.entity-state li span:first-child {
+  color: var(--muted);
+}
+
+.entity-components {
+  margin-top: 10px;
+}
+
+.entity-components summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+.entity-components ul {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0 0;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.entity-components li {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 2px 0;
+}
+
+@media (max-width: 800px) {
+  .demo-main {
+    flex-direction: column;
+  }
+  .demo-sidebar {
+    width: 100%;
+  }
+}

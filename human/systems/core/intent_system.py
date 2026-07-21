@@ -34,11 +34,11 @@ class IntentSystem(System):
     SOCIAL_THRESHOLD = 30
 
     # 紧急权重乘数（用于平局时打破优先级）
+    # 疲劳优先于饮食：人在极度困倦时无法有效觅食，必须优先休息
     CRITICAL_WEIGHTS = {
+        IntentType.SLEEP: 2.0,     # 疲劳优先，避免 exhaustion 死亡
         IntentType.DRINK: 1.25,   # 脱水致命快，优先级最高
         IntentType.EAT: 1.15,     # 饥饿次之
-        IntentType.SLEEP: 1.0,    # 疲劳可缓，优先级低于生存需求
-        IntentType.SOCIALIZE: 0.8,
     }
 
     def _urgency(self, needs: PhysiologyNeedsComponent) -> list[tuple[IntentType, float, str]]:

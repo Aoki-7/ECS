@@ -23,6 +23,7 @@ from biology.components.health_status_component import HealthStatusComponent
 from biology.components.physiology_needs_component import (
     PhysiologyNeedsComponent,
 )
+from civilization.components.technology_modifier_component import TechnologyModifierComponent
 
 
 class HealthSystem(System):
@@ -82,7 +83,7 @@ class HealthSystem(System):
         for entity, (components) in list(world.get_components(HealthStatusComponent)):
             health = components[0]
             needs = world.get_component(entity, PhysiologyNeedsComponent)
-            self._apply_health_logic(health=health, needs=needs, dt=dt)
+            self._apply_health_logic(health=health, needs=needs, dt=dt, world=world)
 
     # =========================================================
     # Internal
@@ -93,6 +94,7 @@ class HealthSystem(System):
         health: HealthStatusComponent,
         needs: PhysiologyNeedsComponent | None,
         dt: float,
+        world: World,
     ):
         """
         对单个实体应用健康逻辑
@@ -175,7 +177,7 @@ class HealthSystem(System):
         if can_recover:
 
             recover_amount = (
-                self.recover_rate * dt
+                self.recover_rate * dt * self._get_healthcare_multiplier(world)
             )
 
             health.hp += recover_amount
@@ -188,3 +190,10 @@ class HealthSystem(System):
             0.0,
             min(health.hp, health.max_hp)
         )
+
+    def _get_healthcare_multiplier(self, world: World) -> float:
+        """读取文明技术带来的医疗/恢复加成"""
+        modifier = world.get_world_component(TechnologyModifierComponent)
+        if modifier is not None and modifier.healthcare_multiplier > 0:
+            return modifier.healthcare_multiplier
+        return 1.0

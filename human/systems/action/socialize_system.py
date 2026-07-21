@@ -212,13 +212,15 @@ class SocializeSystem(System):
         name2 = identity2.name if identity2 else f"Human_{entity2.id}"
         
         if memory1:
-            MemoryManagementSystem.record_person(memory1, 
-                entity2.id, name2, current_time,
-                relationship="friend", trust=self.MEMORY_TRUST_BASE + self.MEMORY_TRUST_QUALITY_FACTOR * quality
+            MemoryManagementSystem.record_person(memory1,
+                entity2.id, name2,
+                relationship="friend", time=current_time,
+                trust=self.MEMORY_TRUST_BASE + self.MEMORY_TRUST_QUALITY_FACTOR * quality
             )
-        
+
         if memory2:
-            MemoryManagementSystem.record_person(memory2, 
-                entity1.id, name1, current_time,
-                relationship="friend", trust=0.5 + 0.2 * quality
+            MemoryManagementSystem.record_person(memory2,
+                entity1.id, name1,
+                relationship="friend", time=current_time,
+                trust=0.5 + 0.2 * quality
             )

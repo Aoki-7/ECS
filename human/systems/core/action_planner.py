@@ -14,6 +14,8 @@ import random
 from human.components.cognitive.intent_component import IntentComponent, IntentType
 from human.components.cognitive.task_component import TaskComponent, TaskType, TaskStatus
 from human.components.action.action_component import ActionComponent, ActionType
+from human.components.basic.human_component import HumanComponent
+from space.space_component import SpaceComponent
 
 
 class ActionPlanner:
@@ -32,6 +34,10 @@ class ActionPlanner:
             self.plan_explore(entity, task, action, space, world, world_config)
         elif intent.intent == IntentType.PAIR:
             self.plan_pair(task, action)
+        elif intent.intent == IntentType.SOCIALIZE:
+            self.plan_socialize(entity, task, action, space, world)
+        elif intent.intent == IntentType.TRADE:
+            self.plan_trade(entity, task, action, space, world)
 
     def plan_eat(self, entity, task: TaskComponent, action: ActionComponent, world, resource_finder) -> None:
         """规划进食行为"""
@@ -131,3 +137,64 @@ class ActionPlanner:
         task.task = TaskType.FIND_MATE
         task.status = TaskStatus.RUNNING
         action.action_queue = [ActionType.SEARCH, ActionType.MOVE_TO, ActionType.PAIR]
+
+    def plan_socialize(self, entity, task: TaskComponent, action: ActionComponent,
+                       space, world) -> None:
+        """规划社交行为：寻找附近人类并靠近互动"""
+        task.task = TaskType.FIND_PARTNER
+        task.status = TaskStatus.RUNNING
+        action.progress = 0.0
+
+        target = self._find_nearest_human(entity, world)
+        if target is None:
+            # 没有合适目标，改为原地休息
+            task.task = TaskType.IDLE
+            action.action_queue = [ActionType.IDLE]
+            return
+
+        target_space = world.get_component(target, SpaceComponent)
+        if target_space is not None:
+            action.target_pos = (target_space.x, target_space.y)
+        action.target_entity = target.id
+        action.action_queue = [ActionType.MOVE_TO, ActionType.SOCIALIZE]
+
+    def plan_trade(self, entity, task: TaskComponent, action: ActionComponent,
+                   space, world) -> None:
+        """规划交易行为：寻找附近人类进行交易"""
+        task.task = TaskType.IDLE
+        task.status = TaskStatus.RUNNING
+        action.progress = 0.0
+
+        target = self._find_nearest_human(entity, world)
+        if target is None:
+            action.action_queue = [ActionType.IDLE]
+            return
+
+        target_space = world.get_component(target, SpaceComponent)
+        if target_space is not None:
+            action.target_pos = (target_space.x, target_space.y)
+        action.target_entity = target.id
+        action.action_queue = [ActionType.MOVE_TO, ActionType.TRADE]
+
+    def _find_nearest_human(self, entity, world) -> object:
+        """寻找最近的非己人类实体（返回 Entity 或 None）"""
+        if entity is None:
+            return None
+
+        my_space = world.get_component(entity, SpaceComponent)
+        if my_space is None:
+            return None
+
+        nearest = None
+        nearest_dist = float("inf")
+        for candidate, (human, candidate_space) in world.get_components(HumanComponent, SpaceComponent):
+            if candidate.id == entity.id:
+                continue
+            dx = candidate_space.x - my_space.x
+            dy = candidate_space.y - my_space.y
+            dist = (dx * dx + dy * dy) ** 0.5
+            if dist < nearest_dist:
+                nearest_dist = dist
+                nearest = candidate
+
+        return nearest

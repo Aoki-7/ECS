@@ -2,37 +2,28 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:emotion_component.py
-@说明:情绪组件 v3.0 - 纯数据版
-@时间:2026/06/15
-@版本:3.0
+@说明:情绪组件 - 统一入口（转发到v4版本）
+@时间:2026/07/20
+@版本:4.0
+
+注意：此文件现在重定向到 emotion_component_v4.py，以实现版本统一。
+旧的 v3 实现已备份到 emotion_component_legacy.py。
 '''
 
-from core.component import Component
-from dataclasses import dataclass
+from human.components.cognitive.emotion_component_v4 import (
+    EmotionComponent,
+    EmotionState,
+    EmotionIntensity,
+    EmotionDuration,
+    BasicEmotion,
+    ComplexEmotion,
+)
 
-@dataclass(slots=True)
-class EmotionComponent(Component):
-    """
-    情绪组件 - 纯数据版
-    包括基础情绪和复合情绪/心情。
-    """
-    # === 基础情绪 (0-1) ===
-    happiness: float = 0.5   # 快乐程度
-    anger: float = 0.0       # 愤怒程度
-    fear: float = 0.0        # 恐惧程度
-    joy: float = 0.0         # 喜悦程度
-    sadness: float = 0.0     # 悲伤程度
-    disgust: float = 0.0     # 厌恶程度
-    surprise: float = 0.0    # 惊讶程度
-
-    # === 复合情绪/心情 (0-1) ===
-    stress: float = 0.0      # 压力（口渴+饥饿+疲劳综合）
-    calmness: float = 0.5    # 平静度
-    trust: float = 0.5       # 对周围环境的信任
-    loneliness: float = 0.0  # 孤独感
-    excitement: float = 0.0  # 兴奋度
-    hope: float = 0.5        # 希望感
-    frustration: float = 0.0 # 挫败感
-
-    # === 情绪变化记录 ===
-    last_mood_change: str = ""  # 上次情绪变化原因
+__all__ = [
+    "EmotionComponent",
+    "EmotionState",
+    "EmotionIntensity",
+    "EmotionDuration",
+    "BasicEmotion",
+    "ComplexEmotion",
+]

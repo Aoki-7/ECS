@@ -40,15 +40,22 @@ class QueryResult:
         """惰性执行查询，支持缓存"""
         # 尝试从 World 查询缓存获取
         if self._cache_key in self._world._query_cache:
-            yield from self._world._query_cache[self._cache_key]
+            for item in self._world._query_cache[self._cache_key]:
+                # 统一缓存格式为 (Entity, [components])，对外解包
+                if len(item) == 2 and isinstance(item[1], list):
+                    entity, comps = item
+                    yield (entity, *comps)
+                else:
+                    yield item
             return
 
         # 执行查询
         result = []
         for entity, components in self._world.get_components(*self._component_types):
-            item = (entity, *components)
+            # 缓存统一保存为 (Entity, [components])，便于与 get_components 共享
+            item = (entity, components)
             result.append(item)
-            yield item
+            yield (entity, *components)
 
         # 缓存结果
         self._world._query_cache[self._cache_key] = result

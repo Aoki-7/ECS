@@ -74,18 +74,35 @@ class EntitySpawner:
             )
 
     def create_initial_population(self, human_count: int = 10) -> None:
-        """创建初始人口"""
+        """创建初始人口，年龄分层分布，包含2-3名初始怀孕女性"""
         from human.human_factory import HumanFactory
+        from biology.components.gender_component import Gender
         factory = self._factories.get('human', HumanFactory())
         
         world_config = self.world.get_world_component(WorldConfigComponent)
         if world_config is None:
             world_config = WorldConfigComponent()
         
+        # 初始怀孕女性数量：human_count <= 5 → 1名，否则 2~3名
+        pregnant_count = 1 if human_count <=5 else random.randint(2, 3)
+        female_count = 0
+        logger.info(f"[Init] 人口配置: 年龄分层(70%育龄/20%未成年/10%老年), 初始怀孕女性={pregnant_count}名")
+
         for i in range(human_count):
             x = random.randint(0, world_config.map_width - 1)
             y = random.randint(0, world_config.map_height - 1)
-            factory.create_human(self.world, name=f"Human_{i}", x=x, y=y)
+            is_pregnant = False
+            if female_count < pregnant_count:
+                # 前N个女性设为怀孕
+                is_pregnant = True
+                female_count += 1
+            factory.create_human(
+                self.world,
+                name=f"Human_{i}",
+                x=x,
+                y=y,
+                is_pregnant=is_pregnant
+            )
         
         logger.info(f"[Init] 人口: {human_count} 人类")
 

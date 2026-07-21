@@ -86,7 +86,7 @@ class CivilizationSystem(System):
 
         # 计算技术水平
         discovered_techs = len(self.technology.discovered_technologies)
-        self.civilization_metrics['technology_level'] = 1.0 + discovered_techs * 0.5
+        self.civilization_metrics['technology_level'] = 1.0 + discovered_techs * 1.0
 
         # 计算经济复杂度
         total_wealth = 0.0
@@ -134,31 +134,79 @@ class CivilizationSystem(System):
         # 农业社会 -> 青铜时代
         elif (current_stage == "agricultural" and
               self.civilization_metrics['technology_level'] >= 4.0 and
-              "metal_tools" in self.technology.discovered_technologies):
+              "bronze_smelting" in self.technology.discovered_technologies):
             self.civilization_stage = "bronze_age"
             self._on_stage_transition("bronze_age", world)
 
         # 青铜时代 -> 铁器时代
         elif (current_stage == "bronze_age" and
               self.civilization_metrics['technology_level'] >= 6.0 and
-              self.civilization_metrics['economic_complexity'] >= 3.0):
+              "iron_smelting" in self.technology.discovered_technologies):
             self.civilization_stage = "iron_age"
             self._on_stage_transition("iron_age", world)
+        
+        # 铁器时代 -> 古典时代
+        elif (current_stage == "iron_age" and
+              self.civilization_metrics['technology_level'] >= 10.0 and
+              "masonry" in self.technology.discovered_technologies and
+              "anatomy" in self.technology.discovered_technologies and
+              self.civilization_metrics['population'] >= 50):
+            self.civilization_stage = "classical_age"
+            self._on_stage_transition("classical_age", world)
+        
+        # 古典时代 -> 中世纪
+        elif (current_stage == "classical_age" and
+              self.civilization_metrics['technology_level'] >= 14.0 and
+              "steelmaking" in self.technology.discovered_technologies and
+              "gunpowder" in self.technology.discovered_technologies and
+              self.civilization_metrics['population'] >= 100):
+            self.civilization_stage = "medieval_age"
+            self._on_stage_transition("medieval_age", world)
+        
+        # 中世纪 -> 工业时代
+        elif (current_stage == "medieval_age" and
+              self.civilization_metrics['technology_level'] >= 18.0 and
+              "steam_power" in self.technology.discovered_technologies and
+              "mechanized_farming" in self.technology.discovered_technologies and
+              self.civilization_metrics['population'] >= 200):
+            self.civilization_stage = "industrial_age"
+            self._on_stage_transition("industrial_age", world)
 
     def _on_stage_transition(self, new_stage: str, world: World):
         """文明阶段转换事件"""
         logger.info(f"[CivilizationSystem] Civilization advanced to: {new_stage}")
+        # 发送到事件总线
+        if hasattr(world, 'event_bus'):
+            world.event_bus.publish("civilization_stage_upgraded", {"new_stage": new_stage})
 
         # 触发阶段特定事件
         if new_stage == "agricultural":
             # 解锁农业相关行为
+            logger.info("[CivilizationSystem] 农业社会解锁：种植、养殖、定居点")
             self._unlock_agricultural_behaviors(world)
         elif new_stage == "bronze_age":
             # 解锁金属加工
+            logger.info("[CivilizationSystem] 青铜时代解锁：青铜工具、武器、大型建筑")
             self._unlock_metalworking_behaviors(world)
         elif new_stage == "iron_age":
             # 解锁高级建造
+            logger.info("[CivilizationSystem] 铁器时代解锁：铁制工具、大规模农业、坚固建筑")
             self._unlock_advanced_construction(world)
+        elif new_stage == "classical_age":
+            # 解锁古典时代特性
+            logger.info("[CivilizationSystem] 古典时代解锁：大型城市、文化、医学、哲学")
+            # 人口上限提升50%
+            self.civilization_metrics['population_cap'] = self.civilization_metrics.get('population_cap', 100) * 1.5
+        elif new_stage == "medieval_age":
+            # 解锁中世纪特性
+            logger.info("[CivilizationSystem] 中世纪解锁：封建制度、火药、大型战争、贸易网络")
+            # 经济复杂度提升100%
+            self.civilization_metrics['economic_complexity'] *= 2.0
+        elif new_stage == "industrial_age":
+            # 解锁工业时代特性
+            logger.info("[CivilizationSystem] 工业时代解锁：机械化生产、蒸汽动力、铁路、大规模工业")
+            # 资源采集效率提升100%
+            self.civilization_metrics['resource_gathering_multiplier'] = 2.0
 
     def _trigger_civilization_events(self, world: World, dt: float):
         """触发文明事件"""

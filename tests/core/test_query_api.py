@@ -100,9 +100,10 @@ class TestQueryAPI:
         result2 = list(world.query(HealthComponent))
 
         assert len(result1) == len(result2) == 1
-        # 缓存应在组件变更时清除
+        # 缓存应精确失效：添加不相关组件不影响已有查询缓存
         world.add_component(entity, PositionComponent())
-        assert len(world._query_cache) == 0
+        assert (HealthComponent,) in world._query_cache
+        assert len(list(world.query(HealthComponent))) == 1
 
     def test_query_one(self):
         """测试 query_one 快捷方法"""

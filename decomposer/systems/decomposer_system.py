@@ -47,6 +47,9 @@ class DecomposerSystem(System):
         5. 腐败完全后（decay_progress >= 1.0 或养分耗尽）销毁尸体实体
     """
 
+    # 基础微生物活性基准值
+    BASE_MICROBIAL_ACTIVITY = 0.5
+
     # 尸体养分已由硬编码改为从尸体形态/能量动态推导：
     #   - 氮/磷/钾含量 = f(体重, 能量上限, 原始类型)
     #   - 植物：N=体重×0.5, P=体重×0.2, K=体重×0.3
@@ -208,8 +211,9 @@ class DecomposerSystem(System):
 
         # 防止浮点负数
         for key in ("nitrogen", "phosphorus", "potassium", "organic_matter"):
-            if decomp.__dict__[f"remaining_{key}"] < 0:
-                decomp.__dict__[f"remaining_{key}"] = 0.0
+            remaining_attr = f"remaining_{key}"
+            if getattr(decomp, remaining_attr) < 0:
+                setattr(decomp, remaining_attr, 0.0)
 
         return release
 

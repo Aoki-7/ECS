@@ -1,4 +1,3 @@
-from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
@@ -23,6 +22,7 @@ from core.world import World
 from biology.lifecycle.death.components.dead_tag_component import DeadTagComponent
 from biology.lifecycle.death.components.death_reason_component import DeathReasonComponent
 from biology.lifecycle.death.components.death_time_component import DeathTimeComponent
+from human.systems.cognitive.memory_management_system import MemoryManagementSystem
 
 logger = logging.getLogger(__name__)
 

@@ -20,7 +20,7 @@ ArchetypeStore — v4.0 核心重构
 
 import logging
 from typing import Dict, List, Tuple, Type, Iterator, Optional, Set
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from core.entity import Entity
 from core.component import Component
@@ -53,13 +53,16 @@ def _is_subset(query_types: Tuple[Type[Component], ...], archetype_types: Tuple[
     return query_set.issubset(arch_set)
 
 
+from dataclasses import fields
+
 class Archetype:
     """
     Archetype = 组件类型的唯一组合
 
-    内部使用列式存储：
+    内部混合存储：
     - entities: List[int]         # 行：实体 ID 列表
-    - columns: Dict[Type, List]   # 列：组件数组
+    - columns: Dict[Type, List[Component]]   # 兼容旧API的组件对象数组（AoS）
+    - fields: Dict[Type[Component], Dict[str, List]]   # SoA字段数组（高性能访问用）
     """
 
     def __init__(self, component_types: Tuple[Type[Component], ...]):
@@ -70,6 +73,13 @@ class Archetype:
             t: [] for t in component_types
         }
         self.entity_index: Dict[int, int] = {}  # entity_id -> row_index
+
+        # SoA存储：每个组件的每个字段对应一个连续数组（高性能访问用）
+        self.fields: Dict[Type[Component], Dict[str, List]] = {}
+        for comp_type in component_types:
+            self.fields[comp_type] = {}
+            for f in fields(comp_type):
+                self.fields[comp_type][f.name] = []
 
     def add_entity(self, entity, components: Dict[Type[Component], Component]):
         """添加实体及其组件到 Archetype"""
@@ -82,7 +92,11 @@ class Archetype:
             comp = components.get(comp_type)
             if comp is None:
                 raise ValueError(f"缺少组件 {comp_type.__name__}")
+            # 更新AoS列（兼容旧API）
             self.columns[comp_type].append(comp)
+            # 更新SoA字段数组（高性能用）
+            for f in fields(comp_type):
+                self.fields[comp_type][f.name].append(getattr(comp, f.name))
 
     def remove_entity(self, entity_id: int) -> Dict[Type[Component], Component]:
         """从 Archetype 移除实体，返回其组件"""
@@ -102,23 +116,38 @@ class Archetype:
             self.entities[row_idx] = last_entity
             self.entity_index[_get_entity_id(last_entity)] = row_idx
 
+            # 移动AoS列
             for comp_type in self.component_types:
                 self.columns[comp_type][row_idx] = self.columns[comp_type][last_idx]
+
+            # 移动SoA字段数组
+            for comp_type in self.component_types:
+                for f_name in self.fields[comp_type]:
+                    self.fields[comp_type][f_name][row_idx] = self.fields[comp_type][f_name][last_idx]
 
         # 移除最后一个元素
         self.entities.pop()
         for comp_type in self.component_types:
             self.columns[comp_type].pop()
+            for f_name in self.fields[comp_type]:
+                self.fields[comp_type][f_name].pop()
 
         del self.entity_index[entity_id]
         return removed_components
 
     def get_component(self, entity_id: int, component_type: Type[Component]) -> Optional[Component]:
-        """获取实体的指定组件"""
+        """获取实体的指定组件（兼容旧API）"""
         row_idx = self.entity_index.get(entity_id)
         if row_idx is None:
             return None
         return self.columns.get(component_type, [None])[row_idx] if row_idx < len(self.columns.get(component_type, [])) else None
+
+    def get_field_array(self, component_type: Type[Component], field_name: str) -> Optional[List]:
+        """获取指定组件的指定字段的连续数组（高性能API）"""
+        comp_fields = self.fields.get(component_type)
+        if comp_fields is None:
+            return None
+        return comp_fields.get(field_name)
 
     def has_component(self, entity_id: int, component_type: Type[Component]) -> bool:
         """检查指定实体是否拥有某类组件"""
@@ -149,8 +178,9 @@ class ArchetypeStore:
         # entity_id -> archetype_id
         self._entity_archetype: Dict[int, int] = {}
 
-        # 查询缓存: {component_types_tuple -> [results]}
-        self._query_cache: Dict[Tuple[Type[Component], ...], List[Tuple[Entity, ...]]] = {}
+        # 查询缓存: LRU缓存，最多保存最近1000条查询结果
+        self._query_cache: OrderedDict[Tuple[Type[Component], ...], List[Tuple[Entity, ...]]] = OrderedDict()
+        self._query_cache_max_size = 1000
 
         # 统计
         self._stats = {
@@ -310,6 +340,18 @@ class ArchetypeStore:
             for comp_type in arch.component_types
         }
 
+    def get_all_components_by_type(self) -> Dict[Type[Component], Dict[int, Component]]:
+        """获取所有组件，按类型分组 {comp_type: {entity_id: component}}"""
+        result: Dict[Type[Component], Dict[int, Component]] = {}
+        for archetype in self._archetypes.values():
+            for i, entity in enumerate(archetype.entities):
+                entity_id = _get_entity_id(entity)
+                for comp_type, column in archetype.columns.items():
+                    if comp_type not in result:
+                        result[comp_type] = {}
+                    result[comp_type][entity_id] = column[i]
+        return result
+
     def query_entities(self, component_types: tuple) -> list:
         """查询具有指定组件组合的实体ID列表"""
         result = []
@@ -332,6 +374,8 @@ class ArchetypeStore:
         # 尝试从缓存获取
         if cache_key in self._query_cache:
             self._stats["cache_hit"] += 1
+            # LRU: 命中时移到末尾表示最近使用
+            self._query_cache.move_to_end(cache_key)
             yield from self._query_cache[cache_key]
             return
 
@@ -352,6 +396,9 @@ class ArchetypeStore:
 
         # 缓存结果
         self._query_cache[cache_key] = result
+        # LRU: 超过容量弹出最少使用的（最前面的）
+        if len(self._query_cache) > self._query_cache_max_size:
+            self._query_cache.popitem(last=False)
 
     def query_one(self, component_type: Type[Component]) -> Optional[Tuple[int, Component]]:
         """查询单个组件，返回第一个匹配结果 (entity_id, component)"""
@@ -371,9 +418,14 @@ class ArchetypeStore:
             return
 
         arch = self._archetypes[arch_id]
-        arch.remove_entity(entity_id)
+        components = arch.remove_entity(entity_id)
         del self._entity_archetype[entity_id]
         self._stats["entity_count"] -= 1
+
+        # 回收所有组件到对象池
+        from core.component_pool import component_pool
+        for comp in components.values():
+            component_pool.recycle(comp)
 
         # 清理空 Archetype
         if len(arch) == 0:

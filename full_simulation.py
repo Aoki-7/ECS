@@ -58,6 +58,9 @@ from resource.wood.wood_factory import WoodFactory
 from resource.stone.stone_factory import StoneFactory
 from resource.metal.metal_factory import MetalFactory
 
+# 文明系统（用于统计真实阶段）
+from civilization.systems.civilization_system import CivilizationSystem
+
 # 额外组件（用于统计）
 from biology.components.genome_component import GenomeComponent
 from resource.wood.components.wood_component import WoodComponent
@@ -223,7 +226,20 @@ class FullSimulationLoop(SimulationLoop):
         stats['stone_count'] = sum(1 for _ in self.world.get_components(StoneComponent))
         stats['metal_count'] = sum(1 for _ in self.world.get_components(MetalComponent))
         stats['env_cell_count'] = sum(1 for _ in self.world.get_components(EnvironmentComponent))
-        stats['civilization_stage'] = '部落'
+
+        # 文明阶段：优先从 CivilizationSystem 读取实际状态
+        civ_system = self.world.get_system(CivilizationSystem)
+        if civ_system is not None:
+            stage = getattr(civ_system, 'civilization_stage', 'hunter_gatherer')
+        else:
+            stage = 'hunter_gatherer'
+        stage_display_map = {
+            'hunter_gatherer': '狩猎采集',
+            'agricultural': '农业社会',
+            'bronze_age': '青铜时代',
+            'iron_age': '铁器时代',
+        }
+        stats['civilization_stage'] = stage_display_map.get(stage, '部落')
 
         return stats
 
@@ -275,29 +291,115 @@ class FullSimulationLoop(SimulationLoop):
         )
 
 
-def main():
-    """全面模拟主函数"""
-    parser = argparse.ArgumentParser(description="ECS 世界模拟 — 完整版")
-    parser.add_argument("--steps", type=int, default=300, help="运行步数")
-    parser.add_argument("--delta-hours", type=float, default=1.0, help="每步小时数")
-    parser.add_argument("--quiet", action="store_true", help="关闭 verbose 输出")
-    args = parser.parse_args()
-
-    logger.info("=== ECS 全面世界模拟 ===")
+def run_single_simulation(args, round_num: int = 0) -> dict:
+    """运行单轮模拟，返回该轮统计结果"""
+    import random
+    import time
+    logger.info(f"\n=== [轮次 {round_num}] 模拟开始 ===")
 
     world = World()
     simulation = FullSimulationLoop(world)
     simulation.init()
+
+    # 应用时间加速倍率
+    if args.time_scale != 1.0:
+        from core.components.world_config_component import WorldConfigComponent
+        world_config = world.get_world_component(WorldConfigComponent)
+        if world_config is not None:
+            world_config.time_scale = args.time_scale
+            logger.info(f"[Config] 时间加速倍率: {args.time_scale}x")
+
+    # 自适应初始配置：每轮微调参数避免完全重复
+    base_food = 80 + random.randint(-10, 20)
+    base_water = 80 + random.randint(-10, 20)
+    base_plants = 30 + random.randint(-5, 10)
+    base_humans = 10
+    logger.info(f"[Config] 本轮初始配置: 食物={base_food} 水源={base_water} 植物={base_plants} 人口={base_humans}")
+
     simulation.create_initial_resources(
-        food_count=80,
-        water_count=80,
-        plant_count=30,
-        wood_count=20,
-        stone_count=15,
-        metal_count=5,
+        food_count=base_food,
+        water_count=base_water,
+        plant_count=base_plants,
+        wood_count=20 + random.randint(-3, 5),
+        stone_count=15 + random.randint(-3, 5),
+        metal_count=5 + random.randint(-1, 3),
     )
-    simulation.create_initial_population(human_count=10)
-    simulation.run_simulation(steps=args.steps, delta_hours=args.delta_hours, verbose=not args.quiet)
+    simulation.create_initial_population(human_count=base_humans)
+
+    # 运行模拟
+    start_time = time.perf_counter()
+    step = 0
+    max_steps = args.steps
+    human_count = base_humans
+
+    while step < max_steps and human_count > 0:
+        simulation.update(delta_hours=args.delta_hours)
+        if step % 100 == 0 and not args.quiet:
+            stats = simulation.get_stats()
+            human_count = stats['human_count']
+            logger.info(
+                f"  Step {step:>4}/{max_steps} | "
+                f"人口:{stats['human_count']:>2} "
+                f"食物:{stats['food_count']:>2} "
+                f"植物:{stats['plant_count']:>2} "
+                f"文明:{stats['civilization_stage']}"
+            )
+        step += 1
+
+    # 统计结果
+    final_stats = simulation.get_stats()
+    elapsed = time.perf_counter() - start_time
+    result = {
+        'round': round_num,
+        'survived_steps': step,
+        'max_steps': max_steps,
+        'final_human_count': final_stats['human_count'],
+        'final_food': final_stats['food_count'],
+        'final_water': final_stats['water_count'],
+        'final_plants': final_stats['plant_count'],
+        'max_civilization_stage': final_stats['civilization_stage'],
+        'elapsed_seconds': round(elapsed, 2),
+        'cause_of_end': 'population_extinct' if final_stats['human_count'] == 0 else 'max_steps_reached'
+    }
+
+    logger.info(f"[轮次 {round_num}] 结束: {result['cause_of_end']}, 存活{result['survived_steps']}步, 最高文明: {result['max_civilization_stage']}")
+    return result
+
+
+def main():
+    """全面模拟主函数"""
+    parser = argparse.ArgumentParser(description="ECS 世界模拟 — 完整版")
+    parser.add_argument("--steps", type=int, default=300, help="单轮最大运行步数")
+    parser.add_argument("--delta-hours", type=float, default=1.0, help="每步小时数")
+    parser.add_argument("--time-scale", type=float, default=10.0, help="时间加速倍率（默认10.0，1.0=实时）")
+    parser.add_argument("--quiet", action="store_true", help="关闭 verbose 输出")
+    parser.add_argument("--rounds", type=int, default=1, help="循环模拟轮数（默认1轮，0=无限循环）")
+    args = parser.parse_args()
+
+    logger.info("=== ECS 全面世界模拟 - 多轮循环模式 ===")
+    logger.info(f"配置: 单轮最大步数={args.steps}, 循环轮数={args.rounds if args.rounds>0 else '无限'}")
+
+    history = []
+    current_round = 1
+    try:
+        while args.rounds == 0 or current_round <= args.rounds:
+            result = run_single_simulation(args, current_round)
+            history.append(result)
+            current_round += 1
+    except KeyboardInterrupt:
+        logger.info("\n[用户中断] 模拟停止")
+    finally:
+        # 输出历史统计
+        logger.info("\n=== 全部模拟历史统计 ===")
+        logger.info(f"共运行 {len(history)} 轮")
+        for res in history:
+            logger.info(
+                f"轮次 {res['round']:2d}: "
+                f"{res['cause_of_end']:15s} | "
+                f"存活步数: {res['survived_steps']:4d} | "
+                f"最高文明: {res['max_civilization_stage']:6s} | "
+                f"耗时: {res['elapsed_seconds']:.2f}s"
+            )
 
 
 if __name__ == "__main__":

@@ -171,7 +171,7 @@ class StormSystem(System):
         StormSystem.update_intensity(storm)
         world.add_component(entity, storm)
 
-        logger.info(f"[Storm] 生成 {storm_type}，强度={storm.intensity:.2f}，位置=({space.x:.1f}, {space.y:.1f})")
+        logger.debug(f"[Storm] 生成 {storm_type}，强度={storm.intensity:.2f}，位置=({space.x:.1f}, {space.y:.1f})")
 
     def _update_storms(self, world: World, dt: float) -> None:
         """更新现有风暴"""

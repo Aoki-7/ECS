@@ -54,6 +54,7 @@ class LifeCycleComponent(Component):
         "min_reproductive_age", "max_reproductive_age",
         "stage_durations", "gdd_accumulated",
         "gdd_requirements", "senescence_triggered", "death_reason",
+        "corpse_created", "stage_prev",
     )
 
     def __init__(
@@ -67,15 +68,21 @@ class LifeCycleComponent(Component):
         # 生命阶段
         self.stage = stage
 
-        # 当前生存时间（小时）
+        # 当前生存时间（世界年；由 AgeSystem 按 0.05 年/tick 推进）
         self.current_age = current_age
 
-        # 最大寿命（小时），超过自动进入衰老
+        # 最大寿命（世界年），超过自动进入衰老
         self.max_age = max_age
 
         # 生育年龄范围（从 AgeComponent 迁入）
         self.min_reproductive_age = 18.0
         self.max_reproductive_age = 50.0
+
+        # ===== v4.16 新增：尸体生成/阶段变更标记 =====
+        # 是否已生成过尸体，避免重复生成
+        self.corpse_created = False
+        # 上一个生命阶段，用于死亡时判断是否为结果期
+        self.stage_prev = stage
 
         # 各阶段持续时间阈值（小时）
         # [seed, sprout, vegetative, mature, senescence]
@@ -105,3 +112,8 @@ class LifeCycleComponent(Component):
 
         # 死亡原因（DeathSystem 填写）
         self.death_reason = None
+
+
+    def format_age(self) -> str:
+        """返回人类可读的年龄描述"""
+        return f"{self.current_age:.2f} 年 (max {self.max_age:.2f} 年)"

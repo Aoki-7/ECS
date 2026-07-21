@@ -1,0 +1,15 @@
+ECS Demo 长时间稳定性测试报告
+============================================================
+start_time: 2026-07-20 17:59:22.584304
+end_time: 2026-07-20 17:59:25.741996
+total_steps: 100
+initial_humans: 25
+min_humans: 25
+max_humans: 25
+final_humans: 25
+peak_memory_mb: 75.91796875
+total_time_sec: 3.157692
+csv_path: D:\个人助手\workspace\ECS\test_results\stability_test_20260720_175922.csv
+avg_step_time_ms: 31.52
+max_step_time_ms: 634.87
+p95_step_time_ms: 199.73

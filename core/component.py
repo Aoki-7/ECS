@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any, Dict
 
 from core.entity import Entity
+from core.component_pool import component_pool
 
 
 ENTITY_KEY_PREFIX = "__entity_key__"
@@ -17,6 +18,9 @@ class Component:
     - Enum 转 name 字符串
     - Entity 键转为带前缀的字符串，Entity 值转为 {"__entity__": True, ...}
     """
+    def __new__(cls, *args, **kwargs):
+        """从组件池获取实例，复用已回收的组件对象"""
+        return component_pool.get(cls, *args, **kwargs)
 
     def to_dict(self) -> Dict[str, Any]:
         """导出为字典，Enum / Entity 自动转为可 JSON 序列化的形式"""
@@ -27,6 +31,8 @@ class Component:
             return obj.name
         if isinstance(obj, Entity):
             return {"__entity__": True, "id": obj.id, "generation": obj.generation}
+        if isinstance(obj, set):
+            return [self._prepare_for_json(v) for v in obj]
         if isinstance(obj, dict):
             return {
                 self._entity_key(k): self._prepare_for_json(v)
@@ -47,7 +53,27 @@ class Component:
         """从字典还原，自动将字符串转回对应 Enum / Entity"""
         data = cls._restore_from_json(data)
         data = cls._convert_strings_to_enums(data)
+        data = cls._convert_lists_to_sets(data)
         return cls(**data)
+
+    @classmethod
+    def _convert_lists_to_sets(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        """将 dataclass 中声明为 set 类型的字段从列表还原为集合"""
+        set_fields = {}
+        from typing import get_origin
+        for f in fields(cls):
+            field_type = f.type
+            if isinstance(field_type, type) and issubclass(field_type, set):
+                set_fields[f.name] = True
+            elif get_origin(field_type) is set:
+                set_fields[f.name] = True
+
+        result = {}
+        for k, v in data.items():
+            if k in set_fields and isinstance(v, list):
+                v = set(v)
+            result[k] = v
+        return result
 
     @classmethod
     def _restore_from_json(cls, obj: Any) -> Any:

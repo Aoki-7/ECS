@@ -16,6 +16,7 @@ WorldEventBus — v4.0 新增
 
 import logging
 import uuid
+import bisect
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Any
 from collections import deque
@@ -74,10 +75,15 @@ class WorldEventBus:
         # 事件历史
         self._history: deque = deque(maxlen=1000)
 
+        # 异步低优先级事件队列
+        self._async_queue: deque = deque()
+
         # 统计
         self._stats = {
             "published": 0,
             "delivered": 0,
+            "async_delivered": 0,
+            "filtered": 0,
             "dropped": 0,
         }
 
@@ -90,12 +96,11 @@ class WorldEventBus:
         if event_type not in self._subscriptions:
             self._subscriptions[event_type] = []
 
-        self._subscriptions[event_type].append(
-            WorldEventSubscription(handler, priority, once, filter_fn)
-        )
-        # 按优先级排序（高优先级在前）
-        self._subscriptions[event_type].sort(
-            key=lambda s: s.priority, reverse=True
+        sub = WorldEventSubscription(handler, priority, once, filter_fn)
+        # 按优先级降序插入，避免每次订阅都全量排序
+        bisect.insort_left(
+            self._subscriptions[event_type], sub,
+            key=lambda s: -s.priority
         )
 
     def unsubscribe(self, event_type: str, handler: Callable):
@@ -114,36 +119,58 @@ class WorldEventBus:
     # === 发布 ===
 
     def publish(self, event_type: str, payload: dict,
-                source: str = "unknown", timestamp: float = 0) -> None:
-        """发布事件"""
+                source: str = "unknown", timestamp: float = 0, priority: int = 0) -> None:
+        """发布事件
+        Args:
+            priority: 事件优先级，>=0 同步执行，<0 异步队列执行（每帧末尾批量处理）
+        """
         event = WorldEvent(
             event_type=event_type,
             payload=payload,
             timestamp=timestamp,
             source=source,
+            priority=priority
         )
 
         self._history.append(event)
         self._stats["published"] += 1
 
-        # 分发
-        subscriptions = self._subscriptions.get(event_type, [])
+        if event.priority >= 0:
+            # 高优先级：同步分发
+            self._dispatch_event(event)
+        else:
+            # 低优先级：放入异步队列，帧末尾批量处理
+            self._async_queue.append(event)
+
+    def _dispatch_event(self, event: WorldEvent) -> None:
+        """分发单个事件"""
+        subscriptions = self._subscriptions.get(event.event_type, [])
         for sub in list(subscriptions):
             try:
                 # 过滤
                 if sub.filter_fn and not sub.filter_fn(event):
+                    self._stats["filtered"] = self._stats.get("filtered", 0) + 1
                     continue
 
                 sub.handler(event)
-                self._stats["delivered"] += 1
+                if event.priority >=0:
+                    self._stats["delivered"] += 1
+                else:
+                    self._stats["async_delivered"] += 1
 
                 # 一次性订阅
                 if sub.once:
-                    self.unsubscribe(event_type, sub.handler)
+                    self.unsubscribe(event.event_type, sub.handler)
 
             except Exception as e:
-                logger.error(f"[WorldEventBus] 处理事件 {event_type} 失败: {e}")
+                logger.error(f"[WorldEventBus] 处理事件 {event.event_type} 失败: {e}")
                 self._stats["dropped"] += 1
+
+    def process_async_queue(self) -> None:
+        """处理所有异步队列中的低优先级事件"""
+        while self._async_queue:
+            event = self._async_queue.popleft()
+            self._dispatch_event(event)
 
     # === 查询 ===
 
@@ -168,5 +195,6 @@ class WorldEventBus:
         self._stats = {
             "published": 0,
             "delivered": 0,
+            "filtered": 0,
             "dropped": 0,
         }

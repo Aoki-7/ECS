@@ -62,6 +62,10 @@ class PlantComponent(Component):
     energy: float = 50.0
     max_energy: float = 100.0
 
+    # ===== v4.16 新增：掉落标记 =====
+    # 是否已掉落过资源，避免重复掉落
+    dropped: bool = False
+
     def to_dict(self) -> dict:
         return {
             "harvestable_yield": self.harvestable_yield,

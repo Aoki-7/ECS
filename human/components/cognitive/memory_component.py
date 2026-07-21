@@ -1,100 +1,32 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 '''
 @文件:memory_component.py
-@说明:记忆组件 v4.0 — 纯数据化
-@时间:2026/06/12
-@作者:AI Assistant
+@说明:记忆组件 - 统一入口（转发到v4版本）
+@时间:2026/07/20
 @版本:4.0
 
-v4.0 变更：
-- 所有业务逻辑迁移到 MemoryManagementSystem
-- Component 仅保留数据字段
+注意：此文件现在重定向到 memory_component_v4.py，以实现版本统一。
+旧的 v2 实现已备份到 memory_component_legacy.py。
+新版组件提供完整的 v2 API 兼容属性（events/places/people/MAX_EVENTS/MAX_PEOPLE 等）。
 '''
 
-from dataclasses import dataclass, field
+from human.components.cognitive.memory_component_v4 import (
+    MemoryManagerComponent,
+    Memory,
+    MemoryType,
+    MemoryStrength,
+    RetrievalType,
+)
 
-from core.component import Component
-from core.component_serializer import register_component
+# 为旧版导入提供兼容别名
+MemoryComponent = MemoryManagerComponent
 
-
-@register_component
-@dataclass(slots=True)
-class MemoryComponent(Component):
-    """
-    记忆组件 — 纯数据
-
-    存储事件、地点和人物记忆，影响决策。
-    所有业务逻辑由 MemoryManagementSystem 处理。
-    """
-    # 事件记忆: [(time, type, description, impact, location)]
-    # type: "found_water", "found_food", "socialized", "fought", "paired", "birth", "death", "slept", "explored"
-    # impact: -1 (负面) ~ 1 (正面)
-    events: list = field(default_factory=list)
-
-    # 地点记忆: {(x, y): {"type": "water_source", "last_visit": time, "sentiment": 0.5, "visits": 1}}
-    places: dict = field(default_factory=dict)
-
-    # 人物记忆: {entity_id: {"name": str, "relationship": str, "last_interaction": time, "trust": 0.5, "events": []}}
-    people: dict = field(default_factory=dict)
-
-    # 最近成功的行动类型（用于强化学习）
-    recent_successes: dict = field(default_factory=lambda: {
-        "find_water": 0,
-        "find_food": 0,
-        "socialize": 0,
-        "explore": 0,
-        "rest": 0,
-    })
-
-    # 数据约束（非业务逻辑）
-    MAX_EVENTS: int = 100
-    MAX_PEOPLE: int = 50
-
-
-
-    def to_dict(self) -> dict:
-        return {
-            "events": self.events,
-            "places": self._convert_place_keys(self.places),
-            "people": self.people,
-            "recent_successes": self.recent_successes,
-        }
-
-    @staticmethod
-    def _convert_place_keys(places: dict) -> dict:
-        """地点记忆使用 tuple 坐标作为键，JSON 不支持，转为字符串键"""
-        return {
-            f"__tuple__:{k[0]},{k[1]}" if isinstance(k, tuple) else k: v
-            for k, v in places.items()
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "MemoryComponent":
-        return cls(
-            events=data.get("events", []),
-            places=cls._restore_place_keys(data.get("places", {})),
-            people=data.get("people", {}),
-            recent_successes=data.get("recent_successes", {
-                "find_water": 0,
-                "find_food": 0,
-                "socialize": 0,
-                "explore": 0,
-                "rest": 0,
-            }),
-        )
-
-    @staticmethod
-    def _restore_place_keys(places: dict) -> dict:
-        """还原字符串地点键为 tuple 坐标"""
-        restored = {}
-        for k, v in places.items():
-            if isinstance(k, str) and k.startswith("__tuple__:"):
-                _, coords = k.split(":", 1)
-                x, y = coords.split(",", 1)
-                restored[(int(x), int(y))] = v
-            else:
-                restored[k] = v
-        return restored
-
-
+__all__ = [
+    "MemoryComponent",
+    "MemoryManagerComponent",
+    "Memory",
+    "MemoryType",
+    "MemoryStrength",
+    "RetrievalType",
+]

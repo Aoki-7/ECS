@@ -2,34 +2,41 @@
 # -*- encoding: utf-8 -*-
 '''
 @文件:social_component.py
-@说明:社交组件 v2.0 - 纯数据版
+@说明:社交组件 - 统一入口（转发到v4版本）
+@时间:2026/07/20
+@版本:4.0
+
+注意：此文件现在重定向到 social_component_v4.py，以实现版本统一。
+旧的 v2 实现已备份到 social_component_legacy.py。
+新版组件提供完整的 v2 API 兼容属性（relations/relation_strength/conflicts 等）。
 '''
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from human.components.social.social_component_v4 import (
+    SocialManagerComponent,
+    Relationship,
+    SocialInteraction,
+    SocialRoleInfo,
+    SocialStatusInfo,
+    RelationshipType,
+    RelationshipStrength,
+    SocialRole,
+    SocialStatus,
+    InteractionType,
+)
 
-from core.component import Component
+# 为旧版导入提供兼容别名
+SocialComponent = SocialManagerComponent
 
-@dataclass(slots=True)
-class SocialComponent(Component):
-    """
-    社交组件 - 纯数据版
-    存储社交关系和冲突。
-    """
-    # 社交关系 {entity_id: relation_type}
-    relations: Dict[int, str] = field(default_factory=dict)
-    
-    # 关系强度 {entity_id: strength}
-    relation_strength: Dict[int, float] = field(default_factory=dict)
-    
-    # 冲突记录
-    conflicts: List[Dict] = field(default_factory=list)
-    
-    # 社交状态
-    is_socializing: bool = False
-    current_interaction_partner: Optional[int] = None
-    
-    # 社交统计
-    total_interactions: int = 0
-    successful_interactions: int = 0
-    failed_interactions: int = 0
+__all__ = [
+    "SocialComponent",
+    "SocialManagerComponent",
+    "Relationship",
+    "SocialInteraction",
+    "SocialRoleInfo",
+    "SocialStatusInfo",
+    "RelationshipType",
+    "RelationshipStrength",
+    "SocialRole",
+    "SocialStatus",
+    "InteractionType",
+]

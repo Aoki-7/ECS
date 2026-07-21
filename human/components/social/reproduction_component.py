@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# -*- encoding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 '''
 @文件:reproduction_component.py
 @说明:繁衍组件
@@ -22,10 +22,10 @@ class ReproductionComponent(Component):
     """
     is_pregnant: bool = False
     pregnancy_time: float = 0.0  # 怀孕时间（小时）
-    pregnancy_duration: float = 72.0  # 3天（模拟可观测周期，原270天）
+    pregnancy_duration: float = 7200.0  # 10个月 ≈ 7200小时，符合现实孕育周期
 
     partner_id: Optional[int] = None  # 生育伴侣ID
 
     # 生育间隔（避免连续生育）
     last_birth_time: float = 0.0
-    birth_cooldown: float = 96.0  # 4天（模拟可观测周期，原1年）
+    birth_cooldown: float = 8760.0  # 1年 ≈ 8760小时，自然生育间隔

@@ -1,0 +1,1441 @@
+2026-07-19 14:28:00,671 - core.world - INFO - [World] v4.0 World 初始化完成 (id=default)
+2026-07-19 14:28:00,671 - __main__ - INFO - 初始化世界...
+2026-07-19 14:28:00,671 - __main__ - INFO - 创建 20 个人类实体...
+2026-07-19 14:28:00,686 - __main__ - INFO - 创建 50 个资源实体...
+2026-07-19 14:28:00,687 - __main__ - INFO - 初始化系统...
+2026-07-19 14:28:00,687 - __main__ - INFO - 给人类实体添加初始知识...
+2026-07-19 14:28:00,687 - __main__ - INFO - 开始长时间模拟，共 1000 步...
+2026-07-19 14:28:00,687 - __main__ - INFO - ============================================================
+2026-07-19 14:28:00,718 - human.rl.social_structure - INFO - [SocialStructure] 形成新部落: 部落0, 成员: [16, 0, 2, 15, 6]
+2026-07-19 14:28:00,718 - human.rl.social_structure - INFO - [SocialStructure] 选举领导者: 实体16 成为 部落0 的领导者
+2026-07-19 14:28:00,718 - core.system_scheduler - ERROR - 系统 HierarchicalRLIntentSystem 执行失败: cannot access local variable 'primitive_idx' where it is not associated with a value
+2026-07-19 14:28:00,733 - core.system_scheduler - ERROR - 系统 HierarchicalRLIntentSystem 执行失败: cannot access local variable 'primitive_idx' where it is not associated with a value
+2026-07-19 14:28:00,749 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:00,749 - human.rl.social_structure - INFO - [SocialStructure] 形成新部落: 部落1, 成员: [17, 3, 11, 18, 19]
+2026-07-19 14:28:00,749 - human.rl.social_structure - INFO - [SocialStructure] 选举领导者: 实体18 成为 部落1 的领导者
+2026-07-19 14:28:00,781 - human.rl.social_structure - INFO - [SocialStructure] 形成新部落: 部落2, 成员: [8, 12, 14, 4, 5]
+2026-07-19 14:28:00,781 - human.rl.social_structure - INFO - [SocialStructure] 选举领导者: 实体5 成为 部落2 的领导者
+2026-07-19 14:28:00,812 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:00,812 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 形成文化传统: 部落2的CULTURE传统
+2026-07-19 14:28:00,812 - human.rl.social_structure - INFO - [SocialStructure] 形成新部落: 部落3, 成员: [9, 10, 7, 13, 1]
+2026-07-19 14:28:00,812 - human.rl.social_structure - INFO - [SocialStructure] 选举领导者: 实体13 成为 部落3 的领导者
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO - 总行为记录数: 100
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO - 协作网络数: 7
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO -   REST: 100
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:00,845 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:00,876 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:00,953 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,020 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO - 总行为记录数: 200
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO - 协作网络数: 7
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO -   REST: 200
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,020 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,104 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,181 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO - 总行为记录数: 300
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO - 协作网络数: 9
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO -   REST: 300
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:01,226 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,227 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,227 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,257 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,337 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,406 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO - 总行为记录数: 400
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO - 协作网络数: 9
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO -   REST: 400
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,406 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,483 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,544 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO - 总行为记录数: 500
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO - 协作网络数: 9
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO -   REST: 500
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,576 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,618 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,664 - core.system_scheduler - ERROR - 系统 HierarchicalRLIntentSystem 执行失败: cannot access local variable 'primitive_idx' where it is not associated with a value
+2026-07-19 14:28:01,664 - core.system_scheduler - ERROR - 系统 HierarchicalRLIntentSystem 执行失败: cannot access local variable 'primitive_idx' where it is not associated with a value
+2026-07-19 14:28:01,674 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,746 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO - 总行为记录数: 600
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO -   REST: 600
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,746 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,806 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,808 - human.rl.complex_tasks - INFO - [ComplexTask] 生成新任务: 防御定居点 at (86.4, 75.9)
+2026-07-19 14:28:01,861 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO - 总行为记录数: 700
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   REST: 699
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,891 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:01,918 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:01,970 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,026 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO - 总行为记录数: 800
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   REST: 799
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,026 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,084 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,132 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO - 总行为记录数: 900
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   REST: 899
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,164 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,199 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,249 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,308 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   REST: 999
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,308 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,312 - __main__ - INFO - 
+步数: 500/1000
+2026-07-19 14:28:02,312 - __main__ - INFO - 运行时间: 1.6秒
+2026-07-19 14:28:02,312 - __main__ - INFO - 人口数量: 20
+2026-07-19 14:28:02,312 - __main__ - INFO - 社会群体数量: 4
+2026-07-19 14:28:02,312 - __main__ - INFO -   部落0: 5 成员, 领导者: 16, 类型: tribe
+2026-07-19 14:28:02,312 - __main__ - INFO -   部落1: 5 成员, 领导者: 18, 类型: tribe
+2026-07-19 14:28:02,312 - __main__ - INFO -   部落2: 5 成员, 领导者: 5, 类型: tribe
+2026-07-19 14:28:02,312 - __main__ - INFO - 知识数量: 0
+2026-07-19 14:28:02,312 - __main__ - INFO - 文化传统数量: 1
+2026-07-19 14:28:02,312 - __main__ - INFO - 活跃任务数量: 1
+2026-07-19 14:28:02,312 - __main__ - INFO - RL智能体统计: 高层平均奖励: 1.50, 低层平均奖励: 1.50
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   REST: 999
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,336 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,368 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   REST: 999
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,368 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   REST: 999
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,386 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,418 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   REST: 999
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,418 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   REST: 999
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,450 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,478 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   REST: 999
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,478 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,510 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,510 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,510 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,510 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,510 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,510 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   REST: 999
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,511 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,528 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   REST: 999
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,528 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> GRAB
+2026-07-19 14:28:02,564 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,590 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> GRAB -> REST
+2026-07-19 14:28:02,590 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> GRAB -> REST -> REST
+2026-07-19 14:28:02,620 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,636 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   实体1: REST -> GRAB -> REST -> REST -> REST
+2026-07-19 14:28:02,636 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   实体1: GRAB -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,667 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,702 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,702 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,730 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,752 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,752 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,780 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,816 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,816 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,842 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,866 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,866 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,892 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,920 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,920 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,952 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,967 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:02,967 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,004 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,032 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,032 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,032 - human.rl.complex_tasks - INFO - [ComplexTask] 生成新任务: 建造定居点 at (44.5, 97.4)
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   GRAB: 1
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,061 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,083 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   REST: 997
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,083 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   REST: 997
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,118 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,139 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   REST: 997
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   CONSUME: 1
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,139 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,174 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,174 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,174 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,174 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,174 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,174 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,175 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,199 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,203 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,222 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,255 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,255 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,306 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,363 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,366 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,417 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,419 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,419 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,419 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,419 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,439 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,439 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,473 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,507 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,507 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 创造新知识: MEDICINE知识0, 等级: 1.0
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,507 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO - 协作网络数: 10
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,551 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,586 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO - 协作网络数: 11
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,586 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO - 协作网络数: 12
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,648 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,710 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO - 协作网络数: 12
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,710 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO - 协作网络数: 12
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,758 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,789 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO - 协作网络数: 12
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,789 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO - 协作网络数: 12
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,821 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,859 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO - 协作网络数: 12
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,859 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO - 协作网络数: 12
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,888 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,927 - human.rl.cultural_inheritance - INFO - [CulturalInheritance] 更新文化传承系统...
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO - 人类行为统计
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO - ============================================================
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO - 活跃实体数: 20
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO - 协作网络数: 12
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO - 
+动作频率:
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   REST: 998
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   GRAB: 2
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO - 
+协作关系:
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   实体5: 协作伙伴1个 - [12]
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   实体12: 协作伙伴1个 - [5]
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   实体16: 协作伙伴1个 - [6]
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   实体15: 协作伙伴1个 - [0]
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   实体0: 协作伙伴1个 - [15]
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO - 
+动作序列示例:
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   实体0: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   实体1: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,927 - human.rl.behavior_visualizer - INFO -   实体2: REST -> REST -> REST -> REST -> REST
+2026-07-19 14:28:03,927 - human.rl.hierarchical_rl_intent_system - INFO - [HierarchicalRL] 保存模型: 高层={'total_steps': 19, 'total_reward': 28.5, 'avg_reward': 1.5, 'epsilon': 0.1}, 低层={'total_steps': 19900, 'total_reward': 29815.0, 'avg_reward': 1.4982412060301507, 'epsilon': 0.01}, 协作={'total_steps': 10399, 'total_reward': 19.0, 'avg_reward': 0.0018270987594961054, 'epsilon': 0.1}
+2026-07-19 14:28:03,932 - __main__ - INFO - ============================================================
+2026-07-19 14:28:03,932 - __main__ - INFO - 模拟结束！
+2026-07-19 14:28:03,932 - __main__ - INFO - 
+最终统计:
+2026-07-19 14:28:03,932 - __main__ - INFO - 总运行时间: 3.2秒
+2026-07-19 14:28:03,932 - __main__ - INFO - 最终人口数量: 20
+2026-07-19 14:28:03,932 - __main__ - INFO - 最终社会群体数量: 4
+2026-07-19 14:28:03,932 - __main__ - INFO - 角色分布: {<RoleType.LEADER: 1>: 4, <RoleType.FARMER: 3>: 7, <RoleType.CRAFTSMAN: 5>: 2, <RoleType.HUNTER: 4>: 5, <RoleType.WORKER: 2>: 2}
+2026-07-19 14:28:03,932 - __main__ - INFO - 最终知识数量: 1
+2026-07-19 14:28:03,932 - __main__ - INFO - 知识分布: {<KnowledgeType.MEDICINE: 6>: 1}
+2026-07-19 14:28:03,932 - __main__ - INFO - 最终文化传统数量: 1
+2026-07-19 14:28:03,932 - __main__ - INFO - 最终活跃任务数量: 2
+2026-07-19 14:28:03,932 - __main__ - INFO - 最终RL智能体统计:
+2026-07-19 14:28:03,932 - __main__ - INFO -   高层平均奖励: 1.50, 探索率: 0.10
+2026-07-19 14:28:03,932 - __main__ - INFO -   低层平均奖励: 1.50, 探索率: 0.01
+2026-07-19 14:28:03,932 - __main__ - INFO -   协作平均奖励: 0.00, 探索率: 0.10
+2026-07-19 14:28:03,932 - __main__ - INFO - 总行为记录数: 1000
+2026-07-19 14:28:03,932 - __main__ - INFO - 协作网络数: 12

@@ -78,7 +78,8 @@ class LeadershipSystem(System):
             # 社交关系好的加分
             social = world.get_component(entity, SocialComponent)
             if social:
-                score += len(social.friends) * self.FRIENDS_WEIGHT
+                friend_count = len(getattr(social, 'friends', getattr(social, 'relations', {})))
+                score += friend_count * self.FRIENDS_WEIGHT
 
             if score > best_score:
                 best_score = score

@@ -68,15 +68,19 @@ class MemoryManagementSystem(System):
 
     @staticmethod
     def add_event(memory: MemoryComponent, time: float, event_type: str,
-                  description: str, impact: float = 0.0, location: Tuple = None):
+                  description: str, impact: float = 0.0, location: Tuple = None,
+                  data: dict = None):
         """添加事件记忆"""
-        memory.events.append({
+        event = {
             "time": time,
             "type": event_type,
             "description": description,
             "impact": impact,
             "location": location,
-        })
+        }
+        if data is not None:
+            event["data"] = data
+        memory.events.append(event)
 
     @staticmethod
     def get_recent_events(memory: MemoryComponent, n: int = 5,

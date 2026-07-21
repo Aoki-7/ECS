@@ -14,17 +14,18 @@ from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 
 
 class AgeSystem(System):
-    tick_interval = 10  # 每10帧执行一次
+    tick_interval = 1  # 每1帧执行一次
     """
     年龄增长系统
 
     每步推进 LifeCycleComponent.current_age。
-    时间压缩比例：每模拟步（1小时）≈ 0.05年（约18天），
-    使新生儿在约360步后达到生育年龄（18岁）。
+    时间压缩：每模拟步（1小时）≈ 0.05年（约18天），
+    使新生儿在约360步后达到生育年龄（18岁），
+    成年人在约140步后进入衰老（从18岁到25岁）。
     """
 
-    # 每步增长的年数（时间压缩）
-    YEAR_PER_STEP: float = 0.05
+    # 每步增长的年数（时间压缩）：每模拟小时 0.01 年 ≈ 3.65 天
+    YEAR_PER_STEP: float = 0.01
 
     def update(self, world: World, dt: float):
         for entity, [age] in world.get_components(LifeCycleComponent):

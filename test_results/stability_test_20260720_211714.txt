@@ -1,0 +1,18 @@
+ECS Demo 长时间稳定性测试报告
+============================================================
+start_time: 2026-07-20 21:17:14.135452
+end_time: 2026-07-20 21:17:32.395838
+total_steps: 2000
+initial_humans: 25
+min_humans: 0
+max_humans: 25
+final_humans: 0
+peak_memory_mb: 78.26953125
+total_time_sec: 18.260386
+csv_path: D:\个人助手\workspace\ECS\test_results\stability_test_20260720_211714.csv
+avg_step_time_ms: 36.01
+max_step_time_ms: 998.94
+p95_step_time_ms: 191.88
+
+错误:
+- Population extinct at step 505

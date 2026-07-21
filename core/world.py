@@ -168,8 +168,7 @@ class World:
         '''check whether entity exists in the world'''
         if entity is None:
             return False
-        entity_id = _get_entity_id(entity)
-        return self._entity_manager.get(entity_id) is not None
+        return self._entity_manager.has_entity(entity)
 
     # ====================
     # 组件管理
@@ -183,14 +182,15 @@ class World:
         entity_id = _get_entity_id(entity)
         self._archetype_store.add_component(entity_id, component)
 
-        # 清除查询缓存（v3.9 兼容）—— 实体被移除，全量失效
-        self._invalidate_query_cache()
+        # 精确清除查询缓存
+        self._invalidate_query_cache([type(component)])
 
         # 发布事件
         self._event_bus.publish(
             "component_added",
             {"entity_id": entity_id, "component_type": type(component).__name__},
-            source="world"
+            source="world",
+            timestamp=self.tick_count,
         )
 
     def remove_component(self, entity: Entity, component_type: type) -> None:
@@ -201,14 +201,15 @@ class World:
         entity_id = _get_entity_id(entity)
         self._archetype_store.remove_component(entity_id, component_type)
 
-        # 清除查询缓存（v3.9 兼容）—— 实体被移除，全量失效
-        self._invalidate_query_cache()
+        # 精确清除查询缓存
+        self._invalidate_query_cache([component_type])
 
         # 发布事件
         self._event_bus.publish(
             "component_removed",
             {"entity_id": entity_id, "component_type": component_type.__name__},
-            source="world"
+            source="world",
+            timestamp=self.tick_count,
         )
 
     def get_component(self, entity: Entity, component_type: type) -> Optional[Component]:
@@ -302,15 +303,7 @@ class World:
     @property
     def components(self):
         """v3.9 兼容：返回所有组件，按类型分组 {comp_type: {entity_id: comp}}"""
-        result = {}
-        for archetype in self._archetype_store._archetypes.values():
-            for i, entity in enumerate(archetype.entities):
-                entity_id = _get_entity_id(entity)
-                for comp_type, column in archetype.columns.items():
-                    if comp_type not in result:
-                        result[comp_type] = {}
-                    result[comp_type][entity_id] = column[i]
-        return result
+        return self._archetype_store.get_all_components_by_type()
 
     def get_entities_with(self, component_type: type):
         """v3.9 兼容：返回具有指定组件的所有实体"""
@@ -354,9 +347,19 @@ class World:
     def update(self, dt: float = 1.0) -> None:
         """更新所有系统"""
         self.tick_count += 1
-        # 每 tick 清除查询缓存（v3.9 兼容）
-        self._query_cache.clear()
+
+        # 时间加速：读取世界配置中的 time_scale，等比例放大 dt
+        from core.components.world_config_component import WorldConfigComponent
+        world_config = self.get_world_component(WorldConfigComponent)
+        if world_config is not None and world_config.time_scale != 1.0:
+            dt *= world_config.time_scale
+
+        # 组件/实体的变更会在 add/remove 时通过 _invalidate_query_cache 精确失效缓存，
+        # 此处不再每 tick 全量清空，以提升系统间查询缓存复用率。
         self._system_scheduler.update(self, dt)
+
+        # 处理低优先级异步事件队列
+        self._event_bus.process_async_queue()
 
     # ====================
     # 世界实体管理

@@ -23,7 +23,7 @@ from human.components.basic.human_component import HumanComponent
 from biology.components.physiology_needs_component import PhysiologyNeedsComponent
 from biology.components.health_status_component import HealthStatusComponent
 
-from biology.components.disease_component import DiseaseComponent
+from human.components.health.disease_component_v4 import DiseaseManagerComponent as DiseaseComponent
 from human.components.combat.combat_stats_component import CombatStatsComponent
 from human.components.social.dialogue_component import DialogueComponent
 from human.components.social.conflict_component import ConflictComponent
@@ -37,10 +37,11 @@ from human.components.cognitive.brain_component import BrainComponent
 from human.components.cognitive.intent_component import IntentComponent
 from human.components.cognitive.task_component import TaskComponent
 from human.components.cognitive.goal_component import GoalComponent
-from human.components.cognitive.memory_component import MemoryComponent
+from human.components.cognitive.memory_component_v4 import MemoryManagerComponent as MemoryComponent
+from human.components.cognitive.knowledge_component import KnowledgeComponent
 from human.components.cognitive.personality_component import PersonalityComponent
-from human.components.cognitive.emotion_component import EmotionComponent
-from human.components.social.social_component import SocialComponent
+from human.components.cognitive.emotion_component_v4 import EmotionComponent
+from human.components.social.social_component_v4 import SocialManagerComponent as SocialComponent
 from human.components.social.relationship_component import RelationshipComponent
 from human.components.social.reproduction_component import ReproductionComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
@@ -93,6 +94,7 @@ class HumanEntity:
         TaskComponent,            # 当前任务
         GoalComponent,            # 长期目标
         MemoryComponent,          # 记忆存储
+        KnowledgeComponent,       # 知识库
         PersonalityComponent,     # 性格特征
     ]
 
@@ -164,7 +166,10 @@ class HumanEntity:
             endurance=kwargs.get('endurance', 1.0),
         ))
         world.add_component(entity, GenderComponent(kwargs.get('gender', None)))
-        world.add_component(entity, LifeCycleComponent(current_age=kwargs.get('age', 18)))
+        world.add_component(entity, LifeCycleComponent(
+            current_age=kwargs.get('age', 18),
+            max_age=kwargs.get('max_age', 25.0)  # 默认 25 年，确保能在可观测模拟周期内看到生老病死
+        ))
 
         # 生理组件
         world.add_component(entity, HealthStatusComponent())
@@ -192,6 +197,7 @@ class HumanEntity:
         world.add_component(entity, TaskComponent())
         world.add_component(entity, GoalComponent())
         world.add_component(entity, MemoryComponent())
+        world.add_component(entity, KnowledgeComponent())
         world.add_component(entity, PersonalityComponent())
         world.add_component(entity, EmotionComponent())
 
