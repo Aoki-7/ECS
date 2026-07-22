@@ -66,6 +66,7 @@ class DynamicTechnologySystem(System):
     def __init__(self, seed: int | None = None):
         super().__init__()
         self._rng = random.Random(seed)
+        self._tick_counter = 0
         
         # 已发明的技术 {tech_id: DynamicTechnology}
         self.discovered_technologies: Dict[str, DynamicTechnology] = {}
@@ -136,13 +137,18 @@ class DynamicTechnologySystem(System):
         self._verb_lib = ["原始", "基础", "高级", "改良", "新式", "传统", "高效", "节能", "生态", "复合"]
 
     def update(self, world: World, dt: float = 1.0) -> None:
-        """旧版动态技术系统已弃用，技术掌握由人类个体主观能动性产生"""
-        pass
+        """更新动态技术系统"""
+        # 1. 统计人类活动和面临的问题
+        self._update_activity_and_problem_stats(world, dt)
+        
+        # 2. 检查是否有新技术发明
+        if self._tick_counter % self.tick_interval == 0:
+            self._try_invent_new_technology(world)
 
     def _update_activity_and_problem_stats(self, world: World, dt: float) -> None:
         """统计人类活动和问题，更新统计数据"""
         # 统计活动
-        for entity, (memory, inv) in world.get_components([MemoryComponent, InventoryComponent]):
+        for entity, (memory, inv) in world.get_components((MemoryComponent, InventoryComponent)):
             # 从记忆中提取最近的活动
             recent_events = memory.events[-10:] if len(memory.events) > 10 else memory.events
             for event in recent_events:
@@ -156,7 +162,7 @@ class DynamicTechnologySystem(System):
         total_cold = 0
         total_disease = 0
         
-        for entity, (human, health) in world.get_components([HumanComponent, KnowledgeComponent]):
+        for entity, (human, health) in world.get_components((HumanComponent, KnowledgeComponent)):
             human_count += 1
             # 统计饥饿问题
             if hasattr(health, 'hunger') and health.hunger > 0.8:
@@ -385,7 +391,3 @@ class DynamicTechnologySystem(System):
             prerequisites=prerequisites,
             effect_params=effect_params
         )
-
-# 兼容旧版API：对外导出TechnologySystem别名
-TechnologySystem = DynamicTechnologySystem
-

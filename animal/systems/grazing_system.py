@@ -1,230 +1,133 @@
-#!/usr/bin/env python
-# -*- encoding: utf-8 -*-
+#!/usr/bin/env python3
 """
-动物食草系统（重构版）
-
-处理食草动物 (diet="herbivore") 的植物觅食行为：
-    1. 优先访问记忆中的食物位置（记忆驱动觅食）
-    2. 在 grazing_range 内搜索可食用植物
-    3. 消耗植物的 harvestable_yield / ResourceComponent.amount
-    4. 将消耗量转化为动物 EnergyComponent.value
-    5. 觅食成功后记录食物位置到记忆
-
-性能优化：
-    - 批量查询附近实体，减少 query_entity 调用次数
-    - 记忆缓存优先，避免重复空间搜索
+动物啃食系统 v4.16.0
+实现食草动物啃食植物、获取食物的行为逻辑
 """
+
+import random
+import logging
+from typing import Tuple
 
 from core.system import System
 from core.world import World
-
+from core.entity import Entity
 from animal.components.animal_component import AnimalComponent
 from animal.components.animal_needs_component import AnimalNeedsComponent
-from animal.components.animal_memory_component import AnimalMemoryComponent
-from biology.lifecycle.components.energy_component import EnergyComponent
-from space.space_component import SpaceComponent
-from space.space_system import SpaceSystem
 from plant.components.plant_component import PlantComponent
-from resource.components.resource_component import ResourceComponent
-from identity.category_component import CategoryComponent
-from identity.category import EntityCategory
-from biology.components.phenotype_component import PhenotypeComponent
-from biology.lifecycle.components.morphology_component import MorphologyComponent
-
-import logging
+from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
+from space.space_component import SpaceComponent
 
 logger = logging.getLogger(__name__)
 
 
 class GrazingSystem(System):
-    tick_interval = 10
+    """
+    食草动物啃食系统
+    处理食草动物寻找和啃食植物的行为
+    """
 
-    def update(self, world: World, dt: float = 1.0) -> None:
-        """执行食草更新"""
-        space_system = world.get_system(SpaceSystem)
-        if space_system is None:
-            return
+    tick_interval = 5  # 每5tick执行一次
+    priority = 170  # 在动物需求系统之后运行
 
-        # 批量获取所有植物实体，建立快速查找缓存
-        plant_cache = self._build_plant_cache(world)
+    # 啃食参数
+    GRAZING_RADIUS = 2.0  # 啃食范围（米）
+    MAX_PLANT_CONSUMPTION_PER_TICK = 0.3  # 每次最多啃食植物大小的30%
+    MIN_PLANT_SIZE_TO_GRAZE = 0.2  # 植物最小可啃食大小
+    HUNGER_THRESHOLD_TO_GRAZE = 50.0  # 饥饿度超过50才会主动啃食
 
-        for entity, (animal, energy, space) in world.get_components(
-            AnimalComponent, EnergyComponent, SpaceComponent
+    def update(self, world: World, dt: float):
+        # 遍历所有饥饿的食草动物
+        for entity, animal, needs, space in world.query(
+            AnimalComponent,
+            AnimalNeedsComponent,
+            SpaceComponent
         ):
-            if animal.diet not in ("herbivore", "omnivore"):
+            # 只要肉食偏好低于0.7的动物都可以食用植物（包括偏杂食的动物）
+            if animal.carnivore_preference >= 0.7:
                 continue
-
-            if not self._is_hungry(energy):
+            # 只处理饥饿的动物（hunger 0=饱，1=饿）
+            if needs.hunger < self.HUNGER_THRESHOLD_TO_GRAZE / 100.0:
                 continue
-
-            pheno = world.get_component(entity, PhenotypeComponent)
-            if pheno is None:
-                pheno = PhenotypeComponent()  # 使用默认表型
-            morph = world.get_component(entity, MorphologyComponent)
-            if morph is None:
-                morph = MorphologyComponent()  # 使用默认形态
-            max_graze, efficiency = self._derive_grazing_params(pheno, morph)
-
-            # 记忆驱动：优先尝试记忆中的食物位置
-            memory = world.get_component(entity, AnimalMemoryComponent)
-            best_plant = self._find_plant_with_memory(
-                world, space_system, entity, space, animal, memory, plant_cache
-            )
-
-            if best_plant is None:
-                # 回退到空间搜索
-                best_plant = self._find_best_plant_fast(
-                    space_system, entity, space, animal, plant_cache
-                )
-
-            if best_plant is None:
+            if needs.hunger <= 0.1:  # 10%以下算饱足
                 continue
-
-            self._perform_graze(
-                world, entity, energy, best_plant, max_graze, efficiency
-            )
-
-            # 记录成功觅食位置到记忆
-            if memory:
-                plant_entity = world.query_entity(best_plant)
-                if plant_entity:
-                    plant_comp = world.get_component(plant_entity, PlantComponent)
-                    yield_val = plant_comp.harvestable_yield if plant_comp else 0.5
-                    memory.add_memory(
-                        space.x, space.y, "food",
-                        entity_id=best_plant, value=yield_val
-                    )
-
-    def _build_plant_cache(self, world: World) -> dict[int, tuple]:
-        """
-        批量构建植物缓存：{entity_id -> (PlantComponent, ResourceComponent, CategoryComponent)}
-        避免在循环中重复调用 get_component
-        """
-        cache = {}
-        for entity, (plant, resource, cat) in world.get_components(
-            PlantComponent, ResourceComponent, CategoryComponent
-        ):
-            if cat.category == EntityCategory.PLANT:
-                cache[entity.id] = (plant, resource, cat)
-        return cache
-
-    def _is_hungry(self, energy: EnergyComponent) -> bool:
-        """检查动物是否饥饿"""
-        threshold = getattr(energy, "max_energy", 100.0) * 0.7
-        return energy.value < threshold
-
-    def _derive_grazing_params(self, pheno, morph):
-        """根据表型和形态动态推导食草参数"""
-        weight = morph.weight if morph else 10.0
-        max_graze_amount = weight * 0.1
-        metabolism = PhenotypeSystem.get(pheno, "metabolism_rate", 0.02) if pheno else 0.02
-        conversion_efficiency = max(1.0, 5.0 - metabolism * 80)
-        return max_graze_amount, conversion_efficiency
-
-    def _find_plant_with_memory(
-        self, world: World, space_system: SpaceSystem,
-        entity, space: SpaceComponent, animal: AnimalComponent,
-        memory: AnimalMemoryComponent | None, plant_cache: dict
-    ) -> int | None:
-        """
-        使用记忆优先查找食物。
-        若记忆中有强食物记忆且位置附近确实有植物，直接返回。
-        """
-        if memory is None:
-            return None
-
-        food_mem = memory.recall_nearest(space.x, space.y, "food")
-        if food_mem is None or food_mem.strength < 0.3:
-            return None
-
-        # 检查记忆中的位置附近是否有可食用植物
-        nearby = space_system.query_radius(
-            x=food_mem.x, y=food_mem.y, r=animal.grazing_range
-        )
-
-        best_plant = None
-        best_yield = 0.0
-
-        for candidate_id in nearby:
-            if candidate_id == entity.id:
+            if animal.is_dead:
                 continue
-            if candidate_id not in plant_cache:
+            
+            # 搜索周围的可食用植物
+            edible_plants = self._find_edible_plants(world, space.x, space.y, animal)
+            if not edible_plants:
+                # 没有找到植物，触发寻路（后续对接动物行为规划）
                 continue
+            
+            # 选择最近的可食用植物
+            selected_plant = min(edible_plants, key=lambda x: x[1])  # 按距离排序选最近
+            plant_entity, distance = selected_plant
+            
+            # 距离足够近则啃食
+            if distance <= self.GRAZING_RADIUS:
+                self._graze_plant(world, entity, animal, needs, plant_entity)
+            else:
+                # 距离太远，向植物移动（后续对接移动系统）
+                pass
 
-            plant_comp, _, _ = plant_cache[candidate_id]
-            if plant_comp.harvestable_yield <= 0.1:
+    def _find_edible_plants(self, world: World, x: float, y: float, animal: AnimalComponent) -> list[Tuple[Entity, float]]:
+        """查找周围可食用的植物"""
+        edible_plants = []
+        search_radius = animal.perception_range if hasattr(animal, 'perception_range') else 10.0
+        
+        for e, plant, lc, s in world.query(PlantComponent, LifeCycleComponent, SpaceComponent):
+            if lc.is_dead:
                 continue
-            if plant_comp.harvestable_yield > best_yield:
-                best_yield = plant_comp.harvestable_yield
-                best_plant = candidate_id
-
-        return best_plant
-
-    def _find_best_plant_fast(
-        self, space_system: SpaceSystem, entity,
-        space: SpaceComponent, animal: AnimalComponent,
-        plant_cache: dict
-    ) -> int | None:
-        """
-        使用空间索引搜索附近最佳可食用植物（优化版）。
-        利用 plant_cache 避免重复 get_component 调用。
-        """
-        nearby = space_system.query_radius(
-            x=space.x, y=space.y, r=animal.grazing_range
-        )
-
-        best_plant = None
-        best_yield = 0.0
-
-        for candidate_id in nearby:
-            if candidate_id == entity.id:
+            if lc.stage < 2:  # 植物至少到生长期才可食用
                 continue
-            if candidate_id not in plant_cache:
+            if hasattr(plant, 'is_edible') and not plant.is_edible:
                 continue
-
-            plant_comp, _, _ = plant_cache[candidate_id]
-            if plant_comp.harvestable_yield <= 0.1:
+            if plant.size < self.MIN_PLANT_SIZE_TO_GRAZE:
                 continue
-            if plant_comp.harvestable_yield > best_yield:
-                best_yield = plant_comp.harvestable_yield
-                best_plant = candidate_id
+            
+            # 计算距离
+            distance = ((s.x - x)**2 + (s.y - y)**2)**0.5
+            if distance <= search_radius:
+                # 检查动物是否可以食用这种植物
+                if hasattr(animal, 'edible_plants') and plant.type not in animal.edible_plants:
+                    continue
+                edible_plants.append((e, distance))
+        
+        return edible_plants
 
-        return best_plant
-
-    def _perform_graze(
-        self, world: World, entity, energy: EnergyComponent,
-        best_plant_id: int, max_graze_amount: float, conversion_efficiency: float
-    ) -> None:
-        """执行啃食逻辑：消耗植物并增加动物能量"""
-        best_plant_entity = world.query_entity(best_plant_id)
-        if best_plant_entity is None:
+    def _graze_plant(self, world: World, animal_entity: Entity, animal: AnimalComponent, needs: AnimalNeedsComponent, plant_entity: Entity) -> None:
+        """动物啃食植物"""
+        plant = world.get_component(plant_entity, PlantComponent)
+        if not plant:
             return
-
-        plant_comp = world.get_component(best_plant_entity, PlantComponent)
-        resource = world.get_component(best_plant_entity, ResourceComponent)
-
-        best_yield = plant_comp.harvestable_yield if plant_comp else 0.0
-        graze_amount = min(max_graze_amount, best_yield)
-
-        if plant_comp is not None:
-            plant_comp.harvestable_yield = max(0.0, plant_comp.harvestable_yield - graze_amount)
-        if resource is not None:
-            resource.amount = max(0.0, resource.amount - graze_amount)
-
-        energy_gain = graze_amount * conversion_efficiency
-        energy.value = min(
-            getattr(energy, "max_energy", 1000.0),
-            energy.value + energy_gain
+        
+        # 计算啃食量
+        max_graze = min(
+            self.MAX_PLANT_CONSUMPTION_PER_TICK * plant.size,
+            animal.max_food_intake if hasattr(animal, 'max_food_intake') else 0.5
         )
-
-        # 更新需求组件
-        needs = world.get_component(entity, AnimalNeedsComponent)
-        if needs:
-            needs.hunger = max(0.0, needs.hunger - graze_amount * 0.1)
-            needs.last_satisfied = getattr(world, 'time', 0)
-
-        logger.debug(
-            f"[Grazing] E{entity.id} 啃食植物 E{best_plant_id}, "
-            f"获得能量 {energy_gain:.1f} "
-            f"(食量 {graze_amount:.2f}, 转化率 {conversion_efficiency:.2f})"
-        )
+        # 饥饿度越高，吃的越多，最多吃到饱
+        graze_amount = min(max_graze, needs.hunger)
+        graze_amount = max(0.05, graze_amount)  # 最少啃食0.05单位
+        
+        # 减少植物大小
+        plant.size = max(0.0, plant.size - graze_amount)
+        
+        # 植物被啃光了则死亡
+        if plant.size <= 0.01:
+            lc = world.get_component(plant_entity, LifeCycleComponent)
+            if lc:
+                lc.is_dead = True
+                lc.stage = 4  # DEAD
+        
+        # 满足动物饥饿需求
+        nutrition_value = plant.nutrition_value if hasattr(plant, 'nutrition_value') else 0.8
+        # 吃多少就减少多少饥饿度，乘以营养价值系数
+        hunger_reduction = graze_amount * nutrition_value
+        needs.hunger = max(0.0, needs.hunger - hunger_reduction)
+        
+        # 啃食降低植物生长速度
+        if hasattr(plant, 'growth_rate'):
+            plant.growth_rate = max(0.0, plant.growth_rate - 0.3)
+        
+        logger.debug(f"[GrazingSystem] E{animal_entity.id}啃食植物E{plant_entity.id}，获得{hunger_gain:.1f}饱食度")

@@ -32,6 +32,7 @@ _SCAN_PACKAGES = [
     ("environment/pollution", "environment", SystemPriority.ENVIRONMENT),
     ("environment/ocean", "environment", SystemPriority.ENVIRONMENT),
     ("environment/extreme_weather", "environment", SystemPriority.ENVIRONMENT),
+    ("environment/events/systems", "environment", SystemPriority.WEATHER_EFFECT),
     ("environment/phenology", "environment", SystemPriority.ENVIRONMENT),
     ("environment/light_field", "environment", SystemPriority.ENVIRONMENT),
     ("environment/continuum/systems", "environment", SystemPriority.ENVIRONMENT),

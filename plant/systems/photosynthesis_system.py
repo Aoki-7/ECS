@@ -43,11 +43,11 @@ class PlantPhotosynthesisSystem(System):
             world: World 实例
             dt: 时间步长（小时，预留）
         """
-        for entity, (light, canopy, pheno) in world.get_components(
+        for _, (light, canopy, pheno) in world.get_components(
             LightReceiverComponent,
             CanopyComponent,
             PhenotypeComponent,
-        ):
+        ):  
             # 有效 PAR = 接收到的总光照 × (1 - 遮光率)
             effective_par = light.received_total * (1.0 - light.shade_ratio)
 

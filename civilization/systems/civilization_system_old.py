@@ -5,7 +5,7 @@
 @说明:文明系统主控制器 - 协调所有文明子系统的系统
 @时间:2026/04/18 10:00:00
 @作者:Sherry
-@版本:2.0 - 多维度自动评分，技术驱动阶段
+@版本:1.0
 '''
 
 import logging
@@ -17,7 +17,6 @@ from typing import List
 logger = logging.getLogger(__name__)
 
 from human.components.basic.human_component import HumanComponent
-from human.components.skill.human_tech_skill_component import HumanTechSkillComponent
 from human.components.economic.economy_component import EconomyComponent
 from human.components.economic.inventory.inventory_component import InventoryComponent
 from human.components.social.social_component import SocialComponent
@@ -27,7 +26,7 @@ from human.components.cognitive.knowledge_component import KnowledgeComponent
 from .resource_gathering_system import ResourceGatheringSystem
 from .construction_system import ConstructionSystem
 from .trade_system import TradeSystem
-from .human_tech_innovation_system import HumanTechInnovationSystem as TechnologySystem
+from .technology_system import TechnologySystem
 
 
 class CivilizationSystem(System):
@@ -37,8 +36,7 @@ class CivilizationSystem(System):
 
     功能：
     - 协调资源采集、建造、交易、技术进步等子系统
-    - 多维度自动评估文明发展水平
-    - 技术驱动阶段升级/降级，阶段是发展结果而非前提
+    - 管理文明发展阶段
     - 跟踪社会指标（人口、技术水平、经济规模等）
     - 触发文明事件和里程碑
     """
@@ -47,7 +45,7 @@ class CivilizationSystem(System):
         self.resource_gathering = ResourceGatheringSystem()
         self.construction = ConstructionSystem()
         self.trade = TradeSystem()
-        self.technology = None  # 延迟从world获取，确保全局唯一实例
+        self.technology = TechnologySystem()
 
         # 文明发展多维度指标（0-100分）
         self.civilization_metrics = {
@@ -93,18 +91,15 @@ class CivilizationSystem(System):
             "industrial_age": (950, 1000),   # 工业时代：950-1000分
         }
         
-        # 核心领域技术加成：当某领域技术发展达到一定程度，直接给对应阶段基础分
-        # 技术名动态，但领域和阶段有对应关系，数量代表发展水平
+        # 核心技术对应阶段（解锁这些技术会大幅提升对应维度评分，自然进入对应阶段）
         self.core_tech_stage_map = {
-            "agricultural": ("农业", 1),      # 有1个以上农业技术 → 农业社会基础分
-            "bronze_age": ("生产", 2),        # 2个以上生产技术 → 青铜时代基础分
-            "iron_age": ("材料", 3),          # 3个以上材料技术 → 铁器时代基础分
-            "classical_age": ("建筑", 3),     # 3个以上建筑技术 → 古典时代基础分
-            "medieval_age": ("社会", 4),      # 4个以上社会技术 → 中世纪基础分
-            "industrial_age": ("能源", 2),    # 2个以上能源技术 → 工业时代基础分
+            "basic_farming": "agricultural",
+            "bronze_smelting": "bronze_age",
+            "iron_smelting": "iron_age",
+            "masonry": "classical_age",
+            "steelmaking": "medieval_age",
+            "steam_power": "industrial_age",
         }
-        
-        self._domain_counts = {}
 
         # 文明阶段（自动匹配当前评分，无需手动设置）
         self.civilization_stage = "hunter_gatherer"  # 初始狩猎采集
@@ -112,23 +107,16 @@ class CivilizationSystem(System):
 
     def update(self, world: World, dt: float) -> None:
         """更新文明系统"""
-        # 延迟获取全局唯一的技术系统实例
-        if self.technology is None:
-            self.technology = world.get_system("HumanTechInnovationSystem")
-            if self.technology is None:
-                self.technology = world.get_system(TechnologySystem)
-        
         # 更新子系统
         self.resource_gathering.update(world, dt)
         self.construction.update(world, dt)
         self.trade.update(world, dt)
-        if self.technology:
-            self.technology.update(world, dt)
+        self.technology.update(world, dt)
 
         # 更新文明指标
         self._update_civilization_metrics(world)
 
-        # 检查文明阶段转换（自动升级/降级）
+        # 检查文明阶段转换
         self._check_stage_transition(world)
 
         # 触发文明事件
@@ -146,42 +134,22 @@ class CivilizationSystem(System):
             total_age += human.age
         
         self.civilization_metrics['population'] = human_count
-        self.civilization_metrics['average_lifespan'] = min(100, total_age / max(1, human_count) / 365 * 100)  # 换算成0-100分
+        self.civilization_metrics['average_lifespan'] = total_age / max(1, human_count) / 365 * 100  # 换算成0-100分
         self.civilization_metrics['population_density'] = min(100, human_count / 100 * 100)  # 假设世界100x100
 
         # === 技术维度 ===
-        # 从人类个体的技术技能掌握情况统计文明技术水平
-        total_skills = 0
-        total_skill_level = 0.0
-        max_skill_level = 0.0
-        domain_counts = {}
-        top_innovators = 0
-        
-        for entity, tech_skill in world.get_components(HumanTechSkillComponent):
-            if not tech_skill.skills:
-                continue
-            total_skills += len(tech_skill.skills)
-            for skill_name, skill_data in tech_skill.skills.items():
-                level = tech_skill.get_skill_level(skill_name)
-                total_skill_level += level
-                max_skill_level = max(max_skill_level, level)
-                domain = skill_data.get('domain', 'general')
-                domain_counts[domain] = domain_counts.get(domain, 0) + 1
-            if tech_skill.innovation_count > 0:
-                top_innovators += 1
-        
-        # 技术数量：人均掌握技能数
-        self.civilization_metrics['technology_count'] = min(100, total_skills / max(1, human_count) * 10)
-        # 技术复杂度：平均技能等级
-        avg_level = total_skill_level / max(1, total_skills) if total_skills > 0 else 0
-        self.civilization_metrics['technology_complexity'] = min(100, avg_level * 100)
-        # 工具水平：根据生产/材料/建筑领域技能数量
-        production_skills = domain_counts.get('生产', 0) + domain_counts.get('材料', 0)
-        construction_skills = domain_counts.get('建筑', 0)
-        self.civilization_metrics['tool_level'] = min(100, (production_skills * 10 + construction_skills * 5 + max_skill_level * 20))
-        
-        # 存储领域统计，供阶段评分使用
-        self._domain_counts = domain_counts
+        discovered_techs = list(self.technology.discovered_technologies.keys())
+        tech_count = len(discovered_techs)
+        self.civilization_metrics['technology_count'] = tech_count
+        # 技术复杂度：根据最高技术的等级计算
+        max_tech_level = max([tech.get('level', 1) for tech in self.technology.discovered_technologies.values()] or [1])
+        self.civilization_metrics['technology_complexity'] = min(100, max_tech_level * 10)
+        # 工具水平：是否解锁了金属工具
+        tool_level = 10 if 'stone_tools' in discovered_techs else 0
+        tool_level += 30 if 'bronze_tools' in discovered_techs else 0
+        tool_level += 40 if 'iron_tools' in discovered_techs else 0
+        tool_level += 20 if 'steel_tools' in discovered_techs else 0
+        self.civilization_metrics['tool_level'] = tool_level
 
         # === 生产维度 ===
         total_food = 0
@@ -226,7 +194,7 @@ class CivilizationSystem(System):
         public_building_count = 0
         for entity, building in world.get_components(BuildingComponent):
             building_count += 1
-            if building.type in ['house', 'farm', 'mine', 'workshop', 'temple']:
+            if building.type in ['house', 'farm', 'mine', 'workshop']:
                 public_building_count += 1
         
         self.civilization_metrics['building_count'] = min(100, building_count * 2)
@@ -272,74 +240,152 @@ class CivilizationSystem(System):
             if metric in weights:
                 total_score += value * weights[metric]
         
-        # 核心领域技术加成：某领域技术达到数量阈值，直接给对应阶段基础分
-        for stage, (domain, threshold) in self.core_tech_stage_map.items():
-            domain_count = self._domain_counts.get(domain, 0)
-            if domain_count >= threshold:
+        # 核心技术加成：解锁核心技术直接加对应阶段的基础分
+        for tech, stage in self.core_tech_stage_map.items():
+            if tech in self.technology.discovered_technologies:
                 base_score = self.stage_score_ranges[stage][0]
                 if total_score < base_score:
-                    total_score = base_score  # 该领域技术成熟，直接达到对应阶段最低分
+                    total_score = base_score  # 解锁核心技术直接达到对应阶段最低分
         
         return total_score
 
     def _check_stage_transition(self, world: World):
-        """根据当前评分自动匹配文明阶段（支持升级和降级）"""
-        total_score = self._calculate_civilization_score()
-        
-        # 匹配当前阶段
-        new_stage = self.civilization_stage
-        for stage, (min_score, max_score) in self.stage_score_ranges.items():
-            if min_score <= total_score < max_score:
-                new_stage = stage
-                break
-        
-        # 阶段发生变化
-        if new_stage != self._last_stage:
-            # 触发阶段转换事件（支持升级和降级）
-            self._on_stage_transition(world, self._last_stage, new_stage, total_score)
-            self._last_stage = new_stage
-            self.civilization_stage = new_stage
+        """检查文明阶段转换"""
+        current_stage = self.civilization_stage
 
-    def _on_stage_transition(self, world: World, old_stage: str, new_stage: str, score: float):
-        """阶段转换事件通知（仅做日志和事件触发，不解锁任何东西，技术已经提前解锁）"""
-        stage_name_map = {
-            "hunter_gatherer": "狩猎采集",
-            "agricultural": "农业社会",
-            "bronze_age": "青铜时代",
-            "iron_age": "铁器时代",
-            "classical_age": "古典时代",
-            "medieval_age": "中世纪",
-            "industrial_age": "工业时代",
-        }
+        # 狩猎采集 -> 农业社会
+        if (current_stage == "hunter_gatherer" and
+            self.civilization_metrics['technology_level'] >= 2.0 and
+            "basic_farming" in self.technology.discovered_technologies):
+            self.civilization_stage = "agricultural"
+            self._on_stage_transition("agricultural", world)
+
+        # 农业社会 -> 青铜时代
+        elif (current_stage == "agricultural" and
+              self.civilization_metrics['technology_level'] >= 4.0 and
+              "bronze_smelting" in self.technology.discovered_technologies):
+            self.civilization_stage = "bronze_age"
+            self._on_stage_transition("bronze_age", world)
+
+        # 青铜时代 -> 铁器时代
+        elif (current_stage == "bronze_age" and
+              self.civilization_metrics['technology_level'] >= 6.0 and
+              "iron_smelting" in self.technology.discovered_technologies):
+            self.civilization_stage = "iron_age"
+            self._on_stage_transition("iron_age", world)
         
-        # 判断是升级还是降级
-        stage_order = list(self.stage_score_ranges.keys())
-        old_idx = stage_order.index(old_stage)
-        new_idx = stage_order.index(new_stage)
-        transition_type = "升级" if new_idx > old_idx else "降级"
+        # 铁器时代 -> 古典时代
+        elif (current_stage == "iron_age" and
+              self.civilization_metrics['technology_level'] >= 10.0 and
+              "masonry" in self.technology.discovered_technologies and
+              "anatomy" in self.technology.discovered_technologies and
+              self.civilization_metrics['population'] >= 50):
+            self.civilization_stage = "classical_age"
+            self._on_stage_transition("classical_age", world)
         
-        logger.warning(
-            f"[Civilization] 文明{transition_type}：从 {stage_name_map[old_stage]} 进入 {stage_name_map[new_stage]}，"
-            f"当前评分 {score:.0f}/1000"
-        )
+        # 古典时代 -> 中世纪
+        elif (current_stage == "classical_age" and
+              self.civilization_metrics['technology_level'] >= 14.0 and
+              "steelmaking" in self.technology.discovered_technologies and
+              "gunpowder" in self.technology.discovered_technologies and
+              self.civilization_metrics['population'] >= 100):
+            self.civilization_stage = "medieval_age"
+            self._on_stage_transition("medieval_age", world)
         
-        # 发送文明阶段变化事件到事件总线，供其他系统订阅
+        # 中世纪 -> 工业时代
+        elif (current_stage == "medieval_age" and
+              self.civilization_metrics['technology_level'] >= 18.0 and
+              "steam_power" in self.technology.discovered_technologies and
+              "mechanized_farming" in self.technology.discovered_technologies and
+              self.civilization_metrics['population'] >= 200):
+            self.civilization_stage = "industrial_age"
+            self._on_stage_transition("industrial_age", world)
+
+    def _on_stage_transition(self, new_stage: str, world: World):
+        """文明阶段转换事件"""
+        logger.info(f"[CivilizationSystem] Civilization advanced to: {new_stage}")
+        # 发送到事件总线
         if hasattr(world, 'event_bus'):
-            world.event_bus.publish(
-                "civilization_stage_changed", 
-                {
-                    "old_stage": old_stage,
-                    "new_stage": new_stage,
-                    "transition_type": transition_type,
-                    "score": score,
-                    "metrics": self.civilization_metrics.copy()
-                }
-            )
+            world.event_bus.publish("civilization_stage_upgraded", {"new_stage": new_stage})
+
+        # 触发阶段特定事件
+        if new_stage == "agricultural":
+            # 解锁农业相关行为
+            logger.info("[CivilizationSystem] 农业社会解锁：种植、养殖、定居点")
+            self._unlock_agricultural_behaviors(world)
+        elif new_stage == "bronze_age":
+            # 解锁金属加工
+            logger.info("[CivilizationSystem] 青铜时代解锁：青铜工具、武器、大型建筑")
+            self._unlock_metalworking_behaviors(world)
+        elif new_stage == "iron_age":
+            # 解锁高级建造
+            logger.info("[CivilizationSystem] 铁器时代解锁：铁制工具、大规模农业、坚固建筑")
+            self._unlock_advanced_construction(world)
+        elif new_stage == "classical_age":
+            # 解锁古典时代特性
+            logger.info("[CivilizationSystem] 古典时代解锁：大型城市、文化、医学、哲学")
+            # 人口上限提升50%
+            self.civilization_metrics['population_cap'] = self.civilization_metrics.get('population_cap', 100) * 1.5
+        elif new_stage == "medieval_age":
+            # 解锁中世纪特性
+            logger.info("[CivilizationSystem] 中世纪解锁：封建制度、火药、大型战争、贸易网络")
+            # 经济复杂度提升100%
+            self.civilization_metrics['economic_complexity'] *= 2.0
+        elif new_stage == "industrial_age":
+            # 解锁工业时代特性
+            logger.info("[CivilizationSystem] 工业时代解锁：机械化生产、蒸汽动力、铁路、大规模工业")
+            # 资源采集效率提升100%
+            self.civilization_metrics['resource_gathering_multiplier'] = 2.0
 
     def _trigger_civilization_events(self, world: World, dt: float):
-        """触发随机文明事件（灾害、繁荣、文化突破等）"""
-        # 示例：低社会稳定度时触发叛乱事件
-        if self.civilization_metrics['social_stability'] < 30 and self._rng.random() < 0.01:
-            logger.warning("[Civilization] 社会稳定度过低，发生叛乱事件！")
-            # 叛乱会损失人口、建筑、资源
-            # TODO: 实现具体事件逻辑
+        """触发文明事件"""
+        # 人口里程碑
+        if self.civilization_metrics['population'] >= 10 and not hasattr(self, '_population_milestone_10'):
+            self._population_milestone_10 = True
+            self._trigger_population_event(10, world)
+
+        if self.civilization_metrics['population'] >= 50 and not hasattr(self, '_population_milestone_50'):
+            self._population_milestone_50 = True
+            self._trigger_population_event(50, world)
+
+        # 技术里程碑
+        if len(self.technology.discovered_technologies) >= 3 and not hasattr(self, '_tech_milestone_3'):
+            self._tech_milestone_3 = True
+            self._trigger_technology_event(3, world)
+
+    def _trigger_population_event(self, milestone: int, world: World):
+        """触发人口里程碑事件"""
+        logger.info(f"[CivilizationSystem] Population milestone reached: {milestone} humans")
+
+        # 增加社会复杂度
+        self.civilization_metrics['social_organization'] *= 1.2
+
+    def _trigger_technology_event(self, milestone: int, world: World):
+        """触发技术里程碑事件"""
+        logger.info(f"[CivilizationSystem] Technology milestone reached: {milestone} technologies")
+
+        # 增加技术水平
+        self.civilization_metrics['technology_level'] *= 1.1
+
+    def _unlock_agricultural_behaviors(self, world: World):
+        """解锁农业行为"""
+        logger.info("[CivilizationSystem] Agricultural behaviors unlocked")
+        # 这里可以添加农业相关的行为解锁逻辑
+
+    def _unlock_metalworking_behaviors(self, world: World):
+        """解锁金属加工行为"""
+        logger.info("[CivilizationSystem] Metalworking behaviors unlocked")
+        # 这里可以添加金属加工相关的行为解锁逻辑
+
+    def _unlock_advanced_construction(self, world: World):
+        """解锁高级建造"""
+        logger.info("[CivilizationSystem] Advanced construction unlocked")
+        # 这里可以添加高级建造相关的行为解锁逻辑
+
+    def get_civilization_status(self) -> dict:
+        """获取文明状态"""
+        return {
+            'stage': self.civilization_stage,
+            'metrics': self.civilization_metrics.copy(),
+            'discovered_technologies': list(self.technology.discovered_technologies)
+        }

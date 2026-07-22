@@ -182,7 +182,12 @@ class AnimalReproductionSystem(System):
         self, world: World, entity, animal: AnimalComponent,
         repro: AnimalReproductionComponent, genome: GenomeComponent, space: SpaceComponent
     ) -> None:
-        """分娩产生后代"""
+        """分娩产生后代，支持性状遗传与变异，自发物种演化"""
+        # 获取配偶的性状
+        mate_animal = None
+        if repro.mate_id != -1:
+            mate_animal = world.get_component(repro.mate_id, AnimalComponent)
+        
         # 计算后代位置
         child_x = max(0, space.x + self._rng.randint(-2, 2))
         child_y = max(0, space.y + self._rng.randint(-2, 2))
@@ -193,6 +198,72 @@ class AnimalReproductionSystem(System):
             parent_species=animal.species,
             parent_generation=repro.reproduction_count,
         )
+        
+        # 获取后代动物组件
+        child_animal = world.get_component(child, AnimalComponent)
+        if not child_animal:
+            # 更新父母状态
+            repro.give_birth()
+            return
+        
+        # === 性状遗传：融合父母双方的性状 ===
+        # 优先融合父母性状，没有配偶则完全继承母亲
+        if mate_animal:
+            # 体型：父母平均值±5%随机
+            child_animal.size = (animal.size + mate_animal.size) / 2 * self._rng.uniform(0.95, 1.05)
+            # 肉食偏好：父母平均值±0.1随机
+            child_animal.carnivore_preference = (animal.carnivore_preference + mate_animal.carnivore_preference) / 2 + self._rng.uniform(-0.1, 0.1)
+            # 移动速度：父母平均值±5%随机
+            child_animal.movement_speed = (animal.movement_speed + mate_animal.movement_speed) / 2 * self._rng.uniform(0.95, 1.05)
+            # 繁殖率：父母平均值±5%随机
+            child_animal.reproduction_rate = (animal.reproduction_rate + mate_animal.reproduction_rate) / 2 * self._rng.uniform(0.95, 1.05)
+            # 变异率：父母平均值±10%随机
+            child_animal.mutation_rate = (animal.mutation_rate + mate_animal.mutation_rate) / 2 * self._rng.uniform(0.9, 1.1)
+            # 父代物种记录父母双方
+            child_animal.parent_species = f"{animal.species}_{mate_animal.species}"
+        else:
+            # 无性繁殖，完全继承母亲
+            child_animal.size = animal.size * self._rng.uniform(0.95, 1.05)
+            child_animal.carnivore_preference = animal.carnivore_preference + self._rng.uniform(-0.1, 0.1)
+            child_animal.movement_speed = animal.movement_speed * self._rng.uniform(0.95, 1.05)
+            child_animal.reproduction_rate = animal.reproduction_rate * self._rng.uniform(0.95, 1.05)
+            child_animal.mutation_rate = animal.mutation_rate * self._rng.uniform(0.9, 1.1)
+            child_animal.parent_species = animal.species
+        
+        # 限制性状范围
+        child_animal.size = max(0.1, child_animal.size)
+        child_animal.carnivore_preference = max(0.0, min(1.0, child_animal.carnivore_preference))
+        child_animal.movement_speed = max(0.1, child_animal.movement_speed)
+        child_animal.reproduction_rate = max(0.01, min(1.0, child_animal.reproduction_rate))
+        child_animal.mutation_rate = max(0.001, min(0.2, child_animal.mutation_rate))
+        
+        # === 随机变异 ===
+        child_animal.mutate()
+        
+        # === 新物种形成检测：与原物种性状差异超过阈值则生成新物种 ===
+        original_species = animal.species
+        # 计算性状差异度：体型差异+食性差异+速度差异
+        size_diff = abs(child_animal.size - animal.size) / max(0.1, animal.size)
+        diet_diff = abs(child_animal.carnivore_preference - animal.carnivore_preference)
+        speed_diff = abs(child_animal.movement_speed - animal.movement_speed) / max(0.1, animal.movement_speed)
+        total_diff = size_diff * 0.4 + diet_diff * 0.4 + speed_diff * 0.2
+        
+        # 总差异度超过50%则形成新物种
+        if total_diff >= 0.5:
+            # 根据食性和大小生成新物种名
+            if child_animal.carnivore_preference < 0.3:
+                diet_prefix = "herbivorous_"
+            elif child_animal.carnivore_preference > 0.7:
+                diet_prefix = "carnivorous_"
+            else:
+                diet_prefix = "omnivorous_"
+            
+            size_suffix = "_giant" if child_animal.size > animal.size * 1.5 else "_dwarf" if child_animal.size < animal.size * 0.7 else ""
+            new_species_name = f"{diet_prefix}{original_species}{size_suffix}_{self._rng.randint(100,999)}"
+            child_animal.species = new_species_name
+            logger.info(f"[Evolution] 新物种诞生：{new_species_name}，与原物种{original_species}差异度{total_diff:.1%}")
+        else:
+            child_animal.species = original_species
 
         # 更新父母状态
         repro.give_birth()
@@ -204,5 +275,6 @@ class AnimalReproductionSystem(System):
 
         logger.info(
             f"[Reproduction] E{entity.id}({animal.species}) 分娩，"
-            f"后代 E{child.id} at ({child_x}, {child_y})"
+            f"后代 E{child.id}({child_animal.species}) at ({child_x}, {child_y})，"
+            f"食性偏好{child_animal.carnivore_preference:.2f}，体型{child_animal.size:.2f}"
         )

@@ -20,11 +20,14 @@ Thumbs.db
 
 # Project specific
 *.log
+*.pid
 .ecs_backend.pid
 .ecs_frontend.pid
 
 # Reports
 reports/
+tools/
+logs/
 
 # Runtime artifacts
 saves/

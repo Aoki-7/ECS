@@ -42,6 +42,7 @@ from human.components.cognitive.knowledge_component import KnowledgeComponent
 from human.components.cognitive.personality_component import PersonalityComponent
 from human.components.cognitive.emotion_component_v4 import EmotionComponent
 from human.components.social.social_component_v4 import SocialManagerComponent as SocialComponent
+from human.components.skill.human_tech_skill_component import HumanTechSkillComponent
 from human.components.social.relationship_component import RelationshipComponent
 from human.components.social.reproduction_component import ReproductionComponent
 from human.components.social.tribe_membership_component import TribeMembershipComponent
@@ -96,6 +97,8 @@ class HumanEntity:
         MemoryComponent,          # 记忆存储
         KnowledgeComponent,       # 知识库
         PersonalityComponent,     # 性格特征
+        EmotionComponent,         # 情绪状态
+        HumanTechSkillComponent,  # 技术技能掌握
     ]
 
     # 社交组件 (Social Components)

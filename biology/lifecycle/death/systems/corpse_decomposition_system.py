@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
 """
-尸体分解系统 — 符合现实逻辑的资源闭环
-动物/人类死亡后生成尸体，随时间分解，增加土壤肥力，促进植物生长，形成完整物质循环
-
-触发规则：
-1. 实体死亡后生成尸体实体，带有腐烂进度
-2. 尸体每tick腐烂，腐烂速度随温度/湿度升高而加快
-3. 完全腐烂后消失，对应位置土壤肥力增加
-4. 腐烂过程中有概率吸引食腐动物（可选扩展）
-
-版本: v4.16.0
+尸体分解系统 v4.16.0
+处理尸体的自然分解过程，释放养分到土壤，完善生态物质循环
 """
+
 import random
 import logging
 from typing import Tuple
@@ -18,15 +11,10 @@ from typing import Tuple
 from core.system import System
 from core.world import World
 from core.entity import Entity
-from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
-# 生命周期阶段常量（临时替代枚举）
-LifeCycleStage = type('LifeCycleStage', (), {
-    'MATURE': 3,
-    'DEAD': 4,
-})()
-from biology.components.corpse_component import CorpseComponent
+from biology.components.corpse_component import CorpseComponent, DecompositionStage
 from environment.soil.components.soil_component import SoilComponent
 from space.space_component import SpaceComponent
+from environment.environment_component import EnvironmentComponent
 
 logger = logging.getLogger(__name__)
 
@@ -34,76 +22,113 @@ logger = logging.getLogger(__name__)
 class CorpseDecompositionSystem(System):
     """
     尸体分解系统
-    实现生物 → 尸体 → 土壤肥力 → 植物的物质循环
+    处理所有尸体实体的分解过程，释放养分到对应位置的土壤
     """
 
     tick_interval = 10  # 每10tick执行一次
-    priority = 130  # 在DeathSystem之后运行
+    priority = 130  # 在死亡系统之后，植物生长系统之前运行
 
-    # 配置参数
-    BASE_DECAY_RATE = 0.01  # 基础腐烂速率 (每tick)
-    TEMPERATURE_BONUS = 0.0005  # 每摄氏度额外腐烂速率
-    HUMIDITY_BONUS = 0.01  # 每10%湿度额外腐烂速率
-    FERTILITY_BONUS_AMOUNT = 0.2  # 完全腐烂后增加的土壤肥力
+    # 环境影响系数
+    TEMPERATURE_OPTIMAL = 25.0  # 最适分解温度（°C）
+    MOISTURE_OPTIMAL = 0.6  # 最适分解湿度（0-1）
+    MAX_TEMPERATURE_EFFECT = 2.0  # 温度最大影响系数
+    MAX_MOISTURE_EFFECT = 2.0  # 湿度最大影响系数
 
     def update(self, world: World, dt: float):
-        # 获取全局环境温度/湿度
-        world_env = world.get_component(world.get_world_entity(), EnvironmentComponent)
-        temp = world_env.air_temperature if world_env else 15.0
-        humidity = world_env.air_humidity if world_env else 0.5
+        # 获取全局环境参数
+        world_env = world.get_world_component(EnvironmentComponent)
+        global_temp = world_env.temperature if world_env else 20.0
+        global_rain = world_env.rainfall if world_env else 0.0
 
-        # 实际腐烂速率
-        actual_decay_rate = self.BASE_DECAY_RATE + self.TEMPERATURE_BONUS * max(0, temp - 10) + self.HUMIDITY_BONUS * (humidity * 10)
-        actual_decay_rate = max(0.001, min(0.1, actual_decay_rate))  # 限制范围
-
-        # 处理所有尸体
-        for entity, (corpse, space, lc) in world.query(CorpseComponent, SpaceComponent, LifeCycleComponent):
-            # 增加腐烂进度
-            corpse.decay_progress += actual_decay_rate * dt
-
-            # 完全腐烂
-            if corpse.decay_progress >= 1.0:
-                # 找到该位置的土壤单元格，增加肥力
-                for e, (soil, s) in world.query(SoilComponent, SpaceComponent):
-                    if round(s.x) == round(space.x) and round(s.y) == round(space.y):
-                        soil.fertility = min(1.0, soil.fertility + self.FERTILITY_BONUS_AMOUNT)
-                        logger.debug(f"尸体{entity.id}完全腐烂，增加({space.x:.0f}, {space.y:.0f})土壤肥力至{soil.fertility:.2f}")
-                        break
-                # 销毁尸体实体
-                world.delete_entity(entity)
+        # 遍历所有尸体实体
+        for entity, corpse, space in world.query(CorpseComponent, SpaceComponent):
+            # 获取尸体所在位置的土壤
+            soil = self._get_soil_at_position(world, space.x, space.y)
+            if not soil:
+                # 没有土壤的位置（如水面、岩石）分解速率减半
+                env_factor = 0.5
+            else:
+                # 计算环境综合因子
+                temp_factor = self._calculate_temperature_factor(global_temp)
+                moisture_factor = self._calculate_moisture_factor(soil.moisture + global_rain * 0.01)
+                env_factor = temp_factor * moisture_factor
+            
+            # 执行分解
+            released_nutrients = corpse.decompose(dt, env_factor)
+            
+            # 将养分添加到土壤
+            if soil:
+                soil.nitrogen += released_nutrients.get("nitrogen", 0) * 1000  # 转换为mg/kg
+                soil.phosphorus += released_nutrients.get("phosphorus", 0) * 1000
+                soil.potassium += released_nutrients.get("potassium", 0) * 1000
+                soil.organic_matter = min(100.0, soil.organic_matter + released_nutrients.get("carbon", 0) * 0.1)
+            
+            # 完全分解后销毁尸体实体
+            if corpse.is_fully_decomposed():
+                world.remove_entity(entity)
+                logger.debug(f"[CorpseDecomposition] 尸体E{entity.id}已完全分解")
                 continue
+            
+            # 活跃腐烂阶段有概率传播疾病
+            if corpse.decomposition_stage == DecompositionStage.ACTIVE_DECAY and corpse.toxic_level > 0.3:
+                self._spread_disease(world, entity, space, corpse)
 
-            # 半腐烂状态：降低50%碰撞
-            if corpse.decay_progress >= 0.5 and not corpse.half_decayed:
-                corpse.half_decayed = True
-                collider = world.get_component(entity, ColliderComponent)
-                if collider:
-                    collider.radius *= 0.5
-                logger.debug(f"尸体{entity.id}半腐烂，碰撞缩小")
+    def _get_soil_at_position(self, world: World, x: float, y: float) -> SoilComponent:
+        """获取指定位置的土壤组件"""
+        # 空间查询当前位置的土壤实体
+        for e, soil, s in world.query(SoilComponent, SpaceComponent):
+            if round(s.x) == round(x) and round(s.y) == round(y):
+                return soil
+        return None
 
-        # 死亡实体生成尸体
-        for entity, (lc, space) in world.query(LifeCycleComponent, SpaceComponent):
-            if lc.stage == LifeCycleStage.DEAD and not lc.corpse_created:
-                # 标记已生成尸体，避免重复
-                lc.corpse_created = True
+    def _calculate_temperature_factor(self, temperature: float) -> float:
+        """计算温度对分解速率的影响"""
+        # 温度响应曲线：0°C以下几乎不分解，25°C最优，超过40°C开始下降
+        if temperature <= 0:
+            return 0.01
+        if temperature >= 40:
+            return max(0.1, 1.0 - (temperature - 40) * 0.05)
+        
+        # 0~25°C线性增长到最优值
+        if temperature <= self.TEMPERATURE_OPTIMAL:
+            return 0.01 + (self.MAX_TEMPERATURE_EFFECT - 0.01) * (temperature / self.TEMPERATURE_OPTIMAL)
+        # 25~40°C线性下降
+        else:
+            return self.MAX_TEMPERATURE_EFFECT - (self.MAX_TEMPERATURE_EFFECT - 0.1) * ((temperature - self.TEMPERATURE_OPTIMAL) / (40 - self.TEMPERATURE_OPTIMAL))
 
-                # 跳过植物（植物死亡直接掉木材，不生成尸体）
-                if world.get_component(entity, PlantComponent) is not None:
-                    continue
+    def _calculate_moisture_factor(self, moisture: float) -> float:
+        """计算湿度对分解速率的影响"""
+        moisture = max(0.0, min(1.0, moisture))
+        # 湿度响应曲线：0湿度几乎不分解，0.6最优，超过0.8开始下降（缺氧）
+        if moisture < 0.1:
+            return 0.05 + moisture * 2
+        
+        if moisture <= self.MOISTURE_OPTIMAL:
+            return 0.25 + (self.MAX_MOISTURE_EFFECT - 0.25) * ((moisture - 0.1) / (self.MOISTURE_OPTIMAL - 0.1))
+        elif moisture <= 0.8:
+            return self.MAX_MOISTURE_EFFECT
+        else:
+            return self.MAX_MOISTURE_EFFECT - (self.MAX_MOISTURE_EFFECT - 0.3) * ((moisture - 0.8) / 0.2)
 
-                # 创建尸体实体
-                corpse_entity = world.create_entity()
-                world.add_component(corpse_entity, SpaceComponent(x=space.x, y=space.y))
-                world.add_component(corpse_entity, CorpseComponent(
-                    source_entity_id=entity.id,
-                    size=1.0 if world.get_component(entity, HumanComponent) is not None else 0.5,
-                ))
-                world.add_component(corpse_entity, LifeCycleComponent(
-                    stage=LifeCycleStage.DEAD,
-                    max_age=100.0,
-                ))
-                world.add_component(corpse_entity, ColliderComponent(radius=0.3))
-
-                # 删除原死亡实体（或者保留？根据现有逻辑）
-                # world.delete_entity(entity)
-                logger.debug(f"实体{entity.id}死亡，生成尸体{corpse_entity.id}于({space.x:.0f}, {space.y:.0f})")
+    def _spread_disease(self, world: World, corpse_entity: Entity, space: SpaceComponent, corpse: CorpseComponent) -> None:
+        """腐烂尸体传播疾病"""
+        # 周围3格范围内的人类/动物有概率感染疾病
+        from human.components.health.disease_component import DiseaseComponent
+        from animal.components.animal_health_component import AnimalHealthComponent
+        
+        infection_radius = 3.0
+        infection_chance = 0.05 * corpse.toxic_level
+        
+        for e, health, s in world.query(DiseaseComponent, SpaceComponent):
+            distance = ((s.x - space.x)**2 + (s.y - space.y)**2)**0.5
+            if distance <= infection_radius and hasattr(health, 'infect'):
+                if random.random() < infection_chance:
+                    health.infect("septicemia", severity=0.3 + corpse.toxic_level * 0.4)
+                    logger.debug(f"[CorpseDecomposition] E{e.id}因接触腐烂尸体感染败血症")
+        
+        # 动物同理
+        for e, health, s in world.query(AnimalHealthComponent, SpaceComponent):
+            distance = ((s.x - space.x)**2 + (s.y - space.y)**2)**0.5
+            if distance <= infection_radius and hasattr(health, 'infect'):
+                if random.random() < infection_chance:
+                    health.infect("septicemia", severity=0.3 + corpse.toxic_level * 0.4)

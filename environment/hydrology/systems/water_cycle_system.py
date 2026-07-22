@@ -1,53 +1,20 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-水循环系统 — 基于连续统框架的统一扩散
-
-v4.1 重构：拆分核心逻辑到子模块
-
-物理模型:
-    降雨: 直接补充土壤和水体
-    蒸发: 水体 → 大气湿度
-    渗透: 土壤 → 地下水 (达西定律简化)
-    径流: 土壤饱和 → 重力水流 (使用 continuum 重力水流模型)
-    地下水交换: 地下水 ↔ 水体 (扩散模型)
-    河流流动: 上游 → 下游 (连通图)
-
-参数:
-    蒸发率 = 0.001 /h
-    渗透率 = 0.01 /h
-    径流阈值 = 0.9 (土壤饱和度)
-    地下水排泄 = 0.005 /h
-
-与其他模块的关系:
-    - continuum/: 使用通用扩散内核 (compute_diffusion_flux, resolve_boundary)
-    - environment/: 读取降雨/温度，写入湿度
-    - soil/: 读取/写入土壤湿度
-    - hydrology/: 读取/写入水体/地下水
-
-版本: v4.1
+水循环系统 v4.16.0
+实现完整的自然水循环：降雨→下渗→土壤水→地下水→蒸发→径流
 """
 
 import logging
-import math
-from typing import Dict, Tuple, Optional
+from typing import Tuple, Dict
 
 from core.system import System
 from core.world import World
 from core.entity import Entity
-
-from environment.hydrology.components.water_body_component import WaterBodyComponent
-from environment.hydrology.components.groundwater_component import GroundwaterComponent
 from environment.environment_component import EnvironmentComponent
 from environment.soil.components.soil_component import SoilComponent
+from environment.hydrology.components.groundwater_component import GroundwaterComponent
+from environment.terrain.components.terrain_component import TerrainComponent
 from space.space_component import SpaceComponent
-
-from environment.hydrology.systems.evaporation_calculator import EvaporationCalculator
-from environment.hydrology.systems.infiltration_calculator import InfiltrationCalculator
-from environment.hydrology.systems.runoff_calculator import RunoffCalculator
-from environment.hydrology.systems.groundwater_exchanger import GroundwaterExchanger
-from environment.hydrology.systems.river_flow_calculator import RiverFlowCalculator
-from core.sqrt_cache import cached_sqrt
 
 logger = logging.getLogger(__name__)
 
@@ -55,84 +22,167 @@ logger = logging.getLogger(__name__)
 class WaterCycleSystem(System):
     """
     水循环系统
-
-    使用连续统框架处理:
-    1. 降雨补充 (直接)
-    2. 蒸发 (水体 → 大气)
-    3. 渗透 (土壤 → 地下水)
-    4. 径流 (重力水流，使用 continuum 模型)
-    5. 地下水交换 (扩散模型)
-    6. 河流流动 (连通图)
-
-    在管线中应运行在 EnvironmentalContinuumSystem 之后。
+    处理全局与网格级别的水循环过程
     """
 
-    tick_interval = 5  # 每5帧执行一次
+    tick_interval = 10  # 每10tick执行一次
+    priority = 100  # 在所有环境相关系统最先运行，为后续系统提供水数据
 
     # 水循环参数
-    EVAPORATION_RATE = 0.001       # 基础蒸发速率 (1/h)
-    INFILTRATION_RATE = 0.01       # 渗透速率 (1/h)
-    RUNOFF_THRESHOLD = 0.9         # 土壤饱和度径流阈值
-    GROUNDWATER_DISCHARGE = 0.005  # 地下水排泄速率 (1/h)
-    RIVER_FLOW_RATE = 0.1          # 河流流速 (格/h)
+    MAX_INFILTRATION_RATE = {  # 不同土壤下渗速率（mm/h）
+        "sand": 50.0,
+        "loam": 10.0,
+        "clay": 2.0,
+        "peat": 15.0,
+        "chalk": 8.0,
+    }
+    EVAPORATION_FACTOR = 0.05  # 蒸发系数，温度每升高1°C蒸发增加5%
+    RUNOFF_THRESHOLD = 0.9  # 土壤饱和度超过此值产生地表径流
+    GROUNDWATER_FLOW_RATE = 0.1  # 地下水横向流动速率系数
 
-    def __init__(self):
-        super().__init__()
-        self._evaporation = EvaporationCalculator(self.EVAPORATION_RATE)
-        self._infiltration = InfiltrationCalculator(self.INFILTRATION_RATE)
-        self._runoff = RunoffCalculator(self.RUNOFF_THRESHOLD)
-        self._groundwater = GroundwaterExchanger(self.GROUNDWATER_DISCHARGE)
-        self._river_flow = RiverFlowCalculator(self.RIVER_FLOW_RATE)
-
-    def update(self, world: World, dt: float = 1.0) -> None:
-        """执行水循环更新"""
-        # 获取环境组件
-        env = world.get_environment()
-        if env is None:
+    def update(self, world: World, dt: float):
+        # 获取全局环境参数
+        world_env = world.get_world_component(EnvironmentComponent)
+        if not world_env:
             return
+        
+        rainfall = world_env.rainfall  # 降雨强度 mm/h
+        temperature = world_env.temperature  # 气温 °C
+        solar_radiation = world_env.solar_radiation if hasattr(world_env, 'solar_radiation') else 500.0  # W/m²
+        
+        # 先处理所有网格的下渗、蒸发
+        grid_water: Dict[Tuple[int, int], float] = {}  # 存储每个网格的地表径流量
+        all_grids = list(world.query(SoilComponent, GroundwaterComponent, SpaceComponent, TerrainComponent))
+        
+        for entity, soil, groundwater, space, terrain in all_grids:
+            x, y = round(space.x), round(space.y)
+            
+            # 1. 降雨阶段
+            total_water = rainfall * dt / 3600.0  # 转换为当前时间步的降雨量 mm
+            
+            # 2. 下渗阶段
+            infiltration_rate = self.MAX_INFILTRATION_RATE.get(soil.soil_type, 10.0)
+            max_infiltration = infiltration_rate * dt / 3600.0
+            
+            # 先填充土壤水分
+            soil_available_space = (soil.saturation - soil.moisture) * 1000  # 转换为mm（1体积含水量=1mm水深）
+            actual_infiltration_soil = min(total_water, max_infiltration, soil_available_space)
+            soil.moisture += actual_infiltration_soil / 1000.0  # 转换回体积含水量
+            remaining_water = total_water - actual_infiltration_soil
+            
+            # 剩余下渗补给地下水
+            if remaining_water > 0:
+                max_infiltration_gw = max_infiltration - actual_infiltration_soil
+                actual_infiltration_gw = min(remaining_water, max_infiltration_gw)
+                gw_overflow = groundwater.add_water(actual_infiltration_gw)
+                remaining_water = remaining_water - actual_infiltration_gw + gw_overflow
+            
+            # 3. 地表径流
+            if remaining_water > 0 or soil.moisture >= self.RUNOFF_THRESHOLD:
+                runoff_amount = remaining_water + max(0.0, (soil.moisture - self.RUNOFF_THRESHOLD) * 1000)
+                grid_water[(x, y)] = runoff_amount
+                # 径流多的地方生成临时水源
+                if runoff_amount > 5.0:
+                    from resource.water.water_factory import WaterFactory
+                    if not hasattr(self, '_water_factory'):
+                        self._water_factory = WaterFactory()
+                    # 10%概率生成水坑
+                    import random
+                    if random.random() < 0.1:
+                        self._water_factory.create_water(world, x=x, y=y, amount=min(runoff_amount / 2, 10.0))
+            
+            # 4. 蒸发阶段
+            # 潜在蒸发量（mm/h），基于彭曼公式简化
+            potential_evap = (0.002 * (temperature + 17.8) * solar_radiation / 1000.0) * self.EVAPORATION_FACTOR
+            actual_evap = potential_evap * dt / 3600.0
+            
+            # 先蒸发土壤水分
+            evap_from_soil = min(actual_evap, soil.moisture * 1000.0 * 0.5)
+            soil.moisture -= evap_from_soil / 1000.0
+            remaining_evap = actual_evap - evap_from_soil
+            
+            # 剩余蒸发消耗地下水（毛管上升）
+            if remaining_evap > 0 and groundwater.water_table_depth < 2.0:
+                evap_from_gw = min(remaining_evap, groundwater.get_available_water() * 0.1)
+                groundwater.remove_water(evap_from_gw)
+        
+        # 5. 地下水横向流动（从高水位流向低水位）
+        self._process_groundwater_flow(all_grids, dt)
+        
+        # 6. 地表径流流动（从高海拔流向低海拔）
+        self._process_surface_runoff(grid_water, all_grids, dt)
 
-        # 获取降雨数据
-        rainfall = getattr(env, 'rainfall', 0.0)
-        temperature = getattr(env, 'temperature', 20.0)
+    def _process_groundwater_flow(self, grids, dt: float) -> None:
+        """处理地下水横向流动"""
+        # 构建位置到组件的映射
+        pos_map = {}
+        for entity, soil, gw, space, terrain in grids:
+            x, y = round(space.x), round(space.y)
+            pos_map[(x, y)] = (gw, terrain.elevation)
+        
+        # 遍历每个网格，与四个邻居比较水位
+        for (x, y), (gw, elev) in pos_map.items():
+            total_outflow = 0.0
+            # 检查四个方向邻居
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                nx, ny = x + dx, y + dy
+                if (nx, ny) not in pos_map:
+                    continue
+                neighbor_gw, neighbor_elev = pos_map[(nx, ny)]
+                # 水位 = 海拔 - 地下水埋深
+                water_level = elev - gw.water_table_depth
+                neighbor_water_level = neighbor_elev - neighbor_gw.water_table_depth
+                
+                # 水位差大于0.1m时流动
+                if water_level - neighbor_water_level > 0.1:
+                    flow_amount = (water_level - neighbor_water_level) * gw.hydraulic_conductivity * self.GROUNDWATER_FLOW_RATE * dt / 3600.0
+                    flow_amount = min(flow_amount, gw.get_available_water() * 0.1)
+                    
+                    # 转移水量
+                    gw.remove_water(flow_amount)
+                    neighbor_gw.add_water(flow_amount)
+                    total_outflow += flow_amount
 
-        # 处理所有水体
-        for entity, (water, space) in world.get_components(WaterBodyComponent, SpaceComponent):
-            # 降雨补充
-            if rainfall > 0:
-                water.volume += rainfall * dt * 0.1  # 10% 降雨进入水体
-                water.volume = min(water.volume, water.max_volume)
-
-            # 蒸发
-            self._evaporation.calculate(water, temperature, dt)
-
-        # 处理所有土壤
-        for entity, (soil, space) in world.get_components(SoilComponent, SpaceComponent):
-            # 降雨补充
-            if rainfall > 0:
-                soil.moisture += rainfall * dt * 0.5  # 50% 降雨进入土壤
-                soil.moisture = min(soil.moisture, soil.max_moisture)
-
-            # 渗透
-            self._infiltration.calculate(soil, world, entity, dt)
-
-            # 径流
-            self._runoff.calculate(soil, world, entity, dt)
-
-        # 地下水交换
-        self._groundwater.exchange(world, dt)
-
-        # 河流流动
-        self._river_flow.calculate(world, dt)
-
-        # 更新环境湿度
-        if hasattr(env, 'humidity'):
-            total_evaporation = self._calculate_total_evaporation(world)
-            env.humidity += total_evaporation * 0.1
-            env.humidity = min(1.0, max(0.0, env.humidity))
-
-    def _calculate_total_evaporation(self, world: World) -> float:
-        """计算总蒸发量"""
-        total = 0.0
-        for entity, (water,) in world.get_components(WaterBodyComponent):
-            total += getattr(water, 'evaporated_this_tick', 0.0)
-        return total
+    def _process_surface_runoff(self, grid_water: Dict[Tuple[int, int], float], grids, dt: float) -> None:
+        """处理地表径流流动"""
+        # 构建海拔映射
+        elev_map = {}
+        for entity, soil, gw, space, terrain in grids:
+            x, y = round(space.x), round(space.y)
+            elev_map[(x, y)] = terrain.elevation
+        
+        # 径流迭代流动
+        new_grid_water = grid_water.copy()
+        for (x, y), amount in grid_water.items():
+            if amount <= 0:
+                continue
+            if (x, y) not in elev_map:
+                continue
+            
+            current_elev = elev_map[(x, y)]
+            # 寻找最低海拔的邻居
+            min_elev = current_elev
+            min_pos = None
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                nx, ny = x + dx, y + dy
+                if (nx, ny) in elev_map and elev_map[(nx, ny)] < min_elev:
+                    min_elev = elev_map[(nx, ny)]
+                    min_pos = (nx, ny)
+            
+            # 有更低的邻居则流动30%的水量
+            if min_pos is not None and current_elev - min_elev > 0.5:
+                flow_amount = amount * 0.3
+                new_grid_water[(x, y)] -= flow_amount
+                new_grid_water[min_pos] = new_grid_water.get(min_pos, 0.0) + flow_amount
+        
+        # 最终剩余的径流补充到低洼处的地下水或形成水坑
+        for (x, y), amount in new_grid_water.items():
+            if amount < 1.0:
+                continue
+            # 查找对应网格
+            for entity, soil, gw, space, terrain in grids:
+                if round(space.x) == x and round(space.y) == y:
+                    # 50%下渗到土壤，50%下渗到地下水
+                    soil.moisture = min(soil.saturation, soil.moisture + amount * 0.5 / 1000)
+                    gw.add_water(amount * 0.5)
+                    break
