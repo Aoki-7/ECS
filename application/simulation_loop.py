@@ -53,8 +53,8 @@ class SimulationLoop:
         from resource.food.food_factory import FoodFactory
         from resource.water.water_factory import WaterFactory
         from human.human_factory import HumanFactory
-        from plant.plant_factory import PlantFactory
-        from animal.animal_factory import AnimalFactory
+        from biology.organisms.plant.plant_factory import PlantFactory
+        from biology.organisms.animal.animal_factory import AnimalFactory
 
         self.spawner.register_factory('food', FoodFactory())
         self.spawner.register_factory('water', WaterFactory())

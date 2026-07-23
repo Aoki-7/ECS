@@ -21,4 +21,3 @@ from decomposer.components.decomposition_component import DecompositionComponent
 
 __all__ = ["DecompositionComponent"]
 
-

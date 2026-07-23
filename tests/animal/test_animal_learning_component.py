@@ -7,8 +7,8 @@ v3.9 适配：Component 纯数据化，方法迁移到 AnimalLearningSystem
 """
 
 import unittest
-from animal.components.animal_learning_component import AnimalLearningComponent
-from animal.systems.animal_learning_system import AnimalLearningSystem
+from biology.organisms.animal.components.animal_learning_component import AnimalLearningComponent
+from biology.organisms.animal.systems.animal_learning_system import AnimalLearningSystem
 
 
 class TestLearningComponent(unittest.TestCase):

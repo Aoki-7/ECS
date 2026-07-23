@@ -19,7 +19,7 @@ class ResourceFinder:
     def find_harvestable_plant(self, entity, world):
         """查找附近可收获的植物"""
         from space.space_component import SpaceComponent
-        from plant.components.plant_component import PlantComponent
+        from biology.organisms.plant.components.plant_component import PlantComponent
 
         space = world.get_component(entity, SpaceComponent)
         if space is None:

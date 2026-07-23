@@ -26,4 +26,3 @@ from .equipment_factory import EquipmentFactory
 __all__ = [
     "EquipmentFactory",
 ]
-

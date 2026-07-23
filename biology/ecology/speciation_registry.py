@@ -56,13 +56,13 @@ class SpeciationRegistry:
             preset[target] = centroid[i]
 
         # 注册到动物工厂（如果原始物种是动物）
-        from animal.animal_factory import AnimalFactory
+        from biology.organisms.animal.animal_factory import AnimalFactory
         if parent_species in AnimalFactory.SPECIES_PRESETS:
             AnimalFactory.SPECIES_PRESETS[new_species_id] = preset
             logger.info(f"[Speciation] 已注册新动物物种 '{new_species_id}' 到 AnimalFactory")
 
         # 注册到植物工厂（如果原始物种是植物）
-        from plant.plant_factory import PlantFactory
+        from biology.organisms.plant.plant_factory import PlantFactory
         if parent_species in PlantFactory.SPECIES_PRESETS:
             PlantFactory.SPECIES_PRESETS[new_species_id] = preset
             logger.info(f"[Speciation] 已注册新植物物种 '{new_species_id}' 到 PlantFactory")

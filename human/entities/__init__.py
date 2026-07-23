@@ -22,4 +22,3 @@
     - human_factory.py 负责按模板实例化实体并注册到 World
 """
 
-

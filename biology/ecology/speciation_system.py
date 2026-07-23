@@ -33,8 +33,8 @@ from core.world import World
 
 from biology.components.genome_component import GenomeComponent
 from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
-from animal.components.animal_component import AnimalComponent
-from plant.components.plant_component import PlantComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
 
 from biology.ecology.speciation_analyzer import SpeciationAnalyzer
 from biology.ecology.speciation_registry import SpeciationRegistry

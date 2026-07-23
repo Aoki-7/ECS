@@ -17,9 +17,9 @@ from core.entity import Entity
 from memory_layer import MemoryLayer, SensoryDescription, SubjectType
 from memory_layer.memory_registration_system import MemoryRegistrationSystem
 
-from animal.components.animal_component import AnimalComponent
-from animal.components.animal_perception_component import AnimalPerceptionComponent
-from animal.components.animal_memory_component import AnimalMemoryComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
+from biology.organisms.animal.components.animal_perception_component import AnimalPerceptionComponent
+from biology.organisms.animal.components.animal_memory_component import AnimalMemoryComponent
 from space.space_component import SpaceComponent
 
 

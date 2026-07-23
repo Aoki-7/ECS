@@ -22,7 +22,7 @@ from human.components.cognitive.task_component import TaskComponent, TaskType
 from space.space_component import SpaceComponent
 from biology.components.smell_component import SmellComponent
 from biology.systems.smell_diffusion_system import SmellDiffusionSystem
-from plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from human.components.cognitive.memory_component import MemoryComponent
 from space.space_system import SpaceSystem

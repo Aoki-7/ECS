@@ -114,7 +114,7 @@ class CorpseDecompositionSystem(System):
         """腐烂尸体传播疾病"""
         # 周围3格范围内的人类/动物有概率感染疾病
         from human.components.health.disease_component import DiseaseComponent
-        from animal.components.animal_health_component import AnimalHealthComponent
+        from biology.organisms.animal.components.animal_health_component import AnimalHealthComponent
         
         infection_radius = 3.0
         infection_chance = 0.05 * corpse.toxic_level

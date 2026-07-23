@@ -30,15 +30,15 @@ from core.world import World
 from core.entity import Entity
 from core.components.world_config_component import WorldConfigComponent
 
-from plant.plant_factory import PlantFactory
-from plant.presets import SPECIES_PRESETS, SPECIES_LIFECYCLE
-from plant.components.plant_component import PlantComponent
-from plant.components.canopy_component import CanopyComponent
-from plant.components.root_component import PlantRootComponent
-from plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
-from plant.systems.seed_dispersal_system import SeedDispersalSystem
-from plant.systems.water_uptake_system import PlantWaterUptakeSystem
-from plant.systems.terrain_adaptation_system import TerrainAdaptationSystem
+from biology.organisms.plant.plant_factory import PlantFactory
+from biology.organisms.plant.presets import SPECIES_PRESETS, SPECIES_LIFECYCLE
+from biology.organisms.plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.canopy_component import CanopyComponent
+from biology.organisms.plant.components.root_component import PlantRootComponent
+from biology.organisms.plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
+from biology.organisms.plant.systems.seed_dispersal_system import SeedDispersalSystem
+from biology.organisms.plant.systems.water_uptake_system import PlantWaterUptakeSystem
+from biology.organisms.plant.systems.terrain_adaptation_system import TerrainAdaptationSystem
 
 from biology.components.genome_component import GenomeComponent
 from biology.components.phenotype_component import PhenotypeComponent

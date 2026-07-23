@@ -22,4 +22,3 @@
     - GenomeComponent 使用 genetics.Gene 存储个体的完整基因型
 """
 
-

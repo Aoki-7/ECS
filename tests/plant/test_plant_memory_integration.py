@@ -18,9 +18,9 @@ from core.world import World
 
 from memory_layer import MemoryLayer, SensoryDescription, SubjectType
 
-from plant.components.plant_component import PlantComponent
-from plant.components.plant_perception_component import PlantPerceptionComponent
-from plant.components.canopy_component import CanopyComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.plant_perception_component import PlantPerceptionComponent
+from biology.organisms.plant.components.canopy_component import CanopyComponent
 from space.space_component import SpaceComponent
 from environment.light_field.components.light_receiver_component import LightReceiverComponent
 
@@ -119,7 +119,7 @@ class TestPlantPerceptionSystem(unittest.TestCase):
 
     def test_system_update(self):
         """测试系统更新不报错"""
-        from plant.systems.plant_perception_system import PlantPerceptionSystem
+        from biology.organisms.plant.systems.plant_perception_system import PlantPerceptionSystem
 
         system = PlantPerceptionSystem()
 

@@ -85,7 +85,7 @@ class WorldVisualizer:
 
         # 尝试获取社交关系
         try:
-            from animal.components.animal_social_component import AnimalSocialComponent
+            from biology.organisms.animal.components.animal_social_component import AnimalSocialComponent
             for entity, (social) in self.world.get_components(AnimalSocialComponent):
                 for other_id, score in social.relationship_scores.items():
                     if abs(score) > 0.3:

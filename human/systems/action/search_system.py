@@ -38,7 +38,7 @@ from resource.water.components.water_component import WaterComponent
 from resource.components.resource_component import ResourceComponent
 from human.components.basic.human_component import HumanComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
-from plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
 
 from human.systems.action.search_strategies import SEARCH_STRATEGIES
 

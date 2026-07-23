@@ -73,8 +73,8 @@ class DeathArchiveSystem(System):
             return
 
         from human.components.basic.human_component import HumanComponent
-        from plant.components.plant_component import PlantComponent
-        from animal.components.animal_component import AnimalComponent
+        from biology.organisms.plant.components.plant_component import PlantComponent
+        from biology.organisms.animal.components.animal_component import AnimalComponent
         from identity.name_component import NameComponent
 
         for entity, (dead_tag,) in world.get_components(DeadTagComponent):

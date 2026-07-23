@@ -472,4 +472,3 @@ class SocialManagerComponent(Component):
     def failed_interactions(self, value: int):
         """兼容v2: 只读统计，设置无效"""
         pass
-

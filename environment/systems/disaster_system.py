@@ -90,7 +90,7 @@ class DisasterSystem(System):
             return
 
         # 找到有植物的位置
-        from plant.components.plant_component import PlantComponent
+        from biology.organisms.plant.components.plant_component import PlantComponent
         plant_positions = []
         for entity, (space, plant) in world.get_components(SpaceComponent, PlantComponent):
             plant_positions.append((space.x, space.y))

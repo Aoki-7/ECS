@@ -9,8 +9,8 @@ v3.6 新增
 import pytest
 
 from core.world import World
-from animal.migration.components.migration_component import MigrationComponent
-from animal.migration.systems.migration_system import MigrationSystem
+from biology.organisms.animal.migration.components.migration_component import MigrationComponent
+from biology.organisms.animal.migration.systems.migration_system import MigrationSystem
 from environment.environment_component import EnvironmentComponent
 from environment.season.season_component import SeasonComponent
 from space.space_component import SpaceComponent
@@ -27,7 +27,7 @@ class TestMigrationComponent:
 
     def test_spring_departure_conditions(self):
         """测试春季北迁条件"""
-        from animal.systems.animal_migration_system import AnimalMigrationSystem
+        from biology.organisms.animal.systems.animal_migration_system import AnimalMigrationSystem
         comp = MigrationComponent(
             is_migratory=True,
             temperature_threshold_depart=10.0,
@@ -50,7 +50,7 @@ class TestMigrationComponent:
 
     def test_autumn_departure_conditions(self):
         """测试秋季南迁条件"""
-        from animal.systems.animal_migration_system import AnimalMigrationSystem
+        from biology.organisms.animal.systems.animal_migration_system import AnimalMigrationSystem
         comp = MigrationComponent(
             is_migratory=True,
             temperature_threshold_depart=10.0,
@@ -66,7 +66,7 @@ class TestMigrationComponent:
 
     def test_arrival_condition(self):
         """测试到达条件"""
-        from animal.systems.animal_migration_system import AnimalMigrationSystem
+        from biology.organisms.animal.systems.animal_migration_system import AnimalMigrationSystem
         comp = MigrationComponent(temperature_threshold_arrive=15.0)
         
         assert AnimalMigrationSystem.can_arrive(comp, 20.0) == True
@@ -98,7 +98,7 @@ class TestMigrationSystem:
 
     def test_spring_migration_trigger(self, world, system):
         """测试春季迁徙触发"""
-        from animal.systems.animal_migration_system import AnimalMigrationSystem
+        from biology.organisms.animal.systems.animal_migration_system import AnimalMigrationSystem
         entity = world.create_entity()
         migration = MigrationComponent(
             is_migratory=True,
@@ -128,7 +128,7 @@ class TestMigrationSystem:
 
     def test_arrival(self, world, system):
         """测试到达"""
-        from animal.systems.animal_migration_system import AnimalMigrationSystem
+        from biology.organisms.animal.systems.animal_migration_system import AnimalMigrationSystem
         entity = world.create_entity()
         migration = MigrationComponent(
             is_migratory=True,

@@ -13,7 +13,7 @@ from core.entity import Entity
 from environment.environment_component import EnvironmentComponent
 from environment.physics_weather.components.temperature_component import TemperatureComponent
 from environment.soil.components.soil_component import SoilComponent
-from plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
 from space.space_component import SpaceComponent
 
 logger = logging.getLogger(__name__)

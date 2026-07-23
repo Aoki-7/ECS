@@ -118,4 +118,3 @@ from .economic.inventory.inventory_component import InventoryComponent
 # 行动与控制
 from .action.action_component import ActionComponent
 
-

@@ -56,7 +56,7 @@ from environment.continuum.continuum_utils import (
     get_neighbor_offsets,
 )
 
-from animal.components.animal_component import AnimalComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
 from human.components.basic.human_component import HumanComponent
 from human.components.action.action_component import ActionComponent
 from human.components.interaction.gathering_component import GatheringComponent

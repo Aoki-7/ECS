@@ -29,4 +29,3 @@ resource/food 子模块
     - 腐败食物可能导致 DiseaseSystem 触发
 """
 
-

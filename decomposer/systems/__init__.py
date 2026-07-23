@@ -22,4 +22,3 @@ from decomposer.systems.decomposer_system import DecomposerSystem
 
 __all__ = ["DecomposerSystem"]
 
-

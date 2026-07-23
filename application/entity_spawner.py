@@ -108,7 +108,7 @@ class EntitySpawner:
 
     def create_initial_plants(self, plant_count: int = 30) -> None:
         """创建初始植物"""
-        from plant.plant_factory import PlantFactory
+        from biology.organisms.plant.plant_factory import PlantFactory
         factory = self._factories.get('plant', PlantFactory())
         
         world_config = self.world.get_world_component(WorldConfigComponent)
@@ -127,7 +127,7 @@ class EntitySpawner:
 
     def create_initial_animals(self, animal_count: int = 20) -> None:
         """创建初始动物"""
-        from animal.animal_factory import AnimalFactory
+        from biology.organisms.animal.animal_factory import AnimalFactory
         factory = self._factories.get('animal', AnimalFactory())
         
         world_config = self.world.get_world_component(WorldConfigComponent)

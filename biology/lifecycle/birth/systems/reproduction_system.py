@@ -156,7 +156,7 @@ class BiologyReproductionSystem(System):
         Returns:
             创建的子代 Entity
         """
-        from plant.plant_factory import PlantFactory
+        from biology.organisms.plant.plant_factory import PlantFactory
 
         # 使用 PlantFactory 创建完整植物子代，确保所有生态组件齐全
         return PlantFactory.create_plant_from_genome(

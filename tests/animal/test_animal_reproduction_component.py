@@ -7,8 +7,8 @@ v3.9 适配：方法迁移到 AnimalReproductionSystem
 """
 
 import unittest
-from animal.components.animal_reproduction_component import AnimalReproductionComponent
-from animal.systems.animal_reproduction_system import AnimalReproductionSystem
+from biology.organisms.animal.components.animal_reproduction_component import AnimalReproductionComponent
+from biology.organisms.animal.systems.animal_reproduction_system import AnimalReproductionSystem
 
 
 class TestAnimalReproductionComponent(unittest.TestCase):

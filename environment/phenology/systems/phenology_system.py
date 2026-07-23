@@ -207,7 +207,7 @@ class PhenologySystem(System):
                                  phenology: PhenologyComponent) -> None:
         """更新植物生理状态（与植物系统联动）"""
         # 获取植物组件（如果存在）
-        from plant.components.plant_component import PlantComponent
+        from biology.organisms.plant.components.plant_component import PlantComponent
 
         plant = world.get_component(entity, PlantComponent)
         if plant is None:

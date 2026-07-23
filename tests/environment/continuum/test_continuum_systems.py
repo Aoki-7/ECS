@@ -187,7 +187,7 @@ class TestBioEnvironmentCouplingSystem:
         world = World()
         system = BioEnvironmentCouplingSystem()
 
-        from animal.components.animal_component import AnimalComponent
+        from biology.organisms.animal.components.animal_component import AnimalComponent
 
         # 动物实体
         animal = world.create_entity()

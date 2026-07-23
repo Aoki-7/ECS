@@ -18,8 +18,8 @@ from environment.events.components.climate_event_component import (
 from environment.soil.components.soil_component import SoilComponent
 from environment.physics_weather.components.temperature_component import TemperatureComponent
 from environment.physics_weather.components.precipitation_component import PrecipitationComponent
-from plant.components.plant_component import PlantComponent
-from animal.components.animal_component import AnimalComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent, LifeStage
 from biology.lifecycle.components.energy_component import EnergyComponent
 from biology.lifecycle.systems.death_system import DeathSystem

@@ -28,4 +28,3 @@ from .light_field_component import LightFieldComponent
 
 __all__ = ['LightFieldComponent']
 
-

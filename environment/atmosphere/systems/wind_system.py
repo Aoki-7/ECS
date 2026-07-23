@@ -15,7 +15,7 @@ from environment.environment_component import EnvironmentComponent
 from environment.atmosphere.components.wind_component import WindComponent
 from environment.temperature_component import TemperatureComponent
 from environment.terrain.components.terrain_component import TerrainComponent
-from plant.components.seed_component import SeedComponent
+from biology.organisms.plant.components.seed_component import SeedComponent
 from space.space_component import SpaceComponent
 
 logger = logging.getLogger(__name__)

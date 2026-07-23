@@ -51,4 +51,3 @@ __all__ = [
     'get_classification_rules',
 ]
 
-

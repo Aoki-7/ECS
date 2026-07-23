@@ -12,7 +12,7 @@ from core.world import World
 from environment.systems.disaster_system import DisasterSystem
 from environment.environment_component import EnvironmentComponent
 from space.space_component import SpaceComponent
-from plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
 
 
 class TestDisasterSystem(unittest.TestCase):

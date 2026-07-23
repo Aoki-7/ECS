@@ -181,4 +181,3 @@ class SpaceSystem():
                 result |= self.index.entities_at(i, j, layer)
 
         return result
-

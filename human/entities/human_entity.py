@@ -258,4 +258,3 @@ class HumanEntity:
             entities.append(entity)
 
         return entities
-

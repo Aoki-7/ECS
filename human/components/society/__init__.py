@@ -26,4 +26,3 @@ human/components/society 子模块
     - civilization/ 关注群体级别的文明演进
 """
 
-

@@ -36,16 +36,16 @@ from environment.atmosphere.system.atmosphere_physics_system import AtmospherePh
 
 
 
-from plant.plant_factory import PlantFactory
-from plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
-from plant.systems.water_uptake_system import PlantWaterUptakeSystem
-from plant.systems.seed_dispersal_system import SeedDispersalSystem
-from plant.systems.terrain_adaptation_system import TerrainAdaptationSystem
+from biology.organisms.plant.plant_factory import PlantFactory
+from biology.organisms.plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
+from biology.organisms.plant.systems.water_uptake_system import PlantWaterUptakeSystem
+from biology.organisms.plant.systems.seed_dispersal_system import SeedDispersalSystem
+from biology.organisms.plant.systems.terrain_adaptation_system import TerrainAdaptationSystem
 
-from animal.animal_factory import AnimalFactory
-from animal.systems.grazing_system import GrazingSystem
-from animal.systems.predation_system import PredationSystem
-from animal.systems.animal_reproduction_system import AnimalReproductionSystem
+from biology.organisms.animal.animal_factory import AnimalFactory
+from biology.organisms.animal.systems.grazing_system import GrazingSystem
+from biology.organisms.animal.systems.predation_system import PredationSystem
+from biology.organisms.animal.systems.animal_reproduction_system import AnimalReproductionSystem
 
 from biology.systems.gene_expression_system import GeneExpressionSystem
 from biology.systems.competition_system import CompetitionSystem
@@ -71,8 +71,8 @@ from biology.ecology.speciation_system import SpeciationSystem
 
 from environment.soil.components.soil_component import SoilComponent
 from space.space_component import SpaceComponent
-from plant.components.plant_component import PlantComponent
-from animal.components.animal_component import AnimalComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
 from biology.ecology.components.speciation_tracker_component import SpeciationTrackerComponent
 
 

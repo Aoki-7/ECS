@@ -8,13 +8,13 @@ v3.9 适配：AnimalLearningComponent 方法迁移到 AnimalLearningSystem
 
 import unittest
 from core.world import World
-from animal.components.animal_component import AnimalComponent
-from animal.components.animal_learning_component import AnimalLearningComponent
-from animal.components.animal_needs_component import AnimalNeedsComponent
-from animal.components.animal_perception_component import AnimalPerceptionComponent
-from animal.components.animal_memory_component import AnimalMemoryComponent
-from animal.systems.animal_learning_system import AnimalLearningSystem
-from animal.systems.animal_perception_system import AnimalPerceptionSystem
+from biology.organisms.animal.components.animal_component import AnimalComponent
+from biology.organisms.animal.components.animal_learning_component import AnimalLearningComponent
+from biology.organisms.animal.components.animal_needs_component import AnimalNeedsComponent
+from biology.organisms.animal.components.animal_perception_component import AnimalPerceptionComponent
+from biology.organisms.animal.components.animal_memory_component import AnimalMemoryComponent
+from biology.organisms.animal.systems.animal_learning_system import AnimalLearningSystem
+from biology.organisms.animal.systems.animal_perception_system import AnimalPerceptionSystem
 from space.space_component import SpaceComponent
 
 
@@ -111,7 +111,7 @@ class TestMemoryComponent(unittest.TestCase):
 
     def test_memory_storage(self):
         """测试记忆存储"""
-        from animal.systems.animal_memory_system import AnimalMemorySystem
+        from biology.organisms.animal.systems.animal_memory_system import AnimalMemorySystem
         memory = AnimalMemoryComponent()
         AnimalMemorySystem.add_memory(memory, 1.0, 2.0, "danger", value=0.8, timestamp=0)
 
@@ -119,7 +119,7 @@ class TestMemoryComponent(unittest.TestCase):
 
     def test_memory_decay(self):
         """测试记忆衰减"""
-        from animal.systems.animal_memory_system import AnimalMemorySystem
+        from biology.organisms.animal.systems.animal_memory_system import AnimalMemorySystem
         memory = AnimalMemoryComponent()
         AnimalMemorySystem.add_memory(memory, 1.0, 2.0, "danger", value=0.8, timestamp=0)
         AnimalMemorySystem.decay(memory)
@@ -143,7 +143,7 @@ class TestNeedsSystem(unittest.TestCase):
 
     def test_critical_needs(self):
         """测试临界需求"""
-        from animal.systems.animal_needs_system import AnimalNeedsSystem
+        from biology.organisms.animal.systems.animal_needs_system import AnimalNeedsSystem
         needs = AnimalNeedsComponent()
         needs.hunger = 0.9
         needs.thirst = 0.9

@@ -22,7 +22,7 @@ from core.world import World
 from environment.hydrology.components.groundwater_component import GroundwaterComponent
 from environment.hydrology.components.water_body_component import WaterBodyComponent
 from biology.components.root_component import RootComponent
-from plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
 from space.space_component import SpaceComponent
 
 # 海洋 + 气候
@@ -41,8 +41,8 @@ from biology.components.health_status_component import HealthStatusComponent
 from environment.light_field.components.light_field_component import LightFieldComponent
 
 # 迁徙 + 动物
-from animal.migration.components.migration_component import MigrationComponent
-from animal.components.animal_component import AnimalComponent
+from biology.organisms.animal.migration.components.migration_component import MigrationComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
 
 
 class TestHydrologyPlantIntegration:
@@ -219,7 +219,7 @@ class TestMigrationAnimalIntegration:
         world.add_component(animal_entity, space)
 
         # 更新迁徙
-        from animal.systems.animal_migration_system import AnimalMigrationSystem
+        from biology.organisms.animal.systems.animal_migration_system import AnimalMigrationSystem
         sys = AnimalMigrationSystem()
         sys._update_migration_component(world, animal_entity, migration, animal, space, 1.0)
 

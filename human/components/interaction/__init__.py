@@ -18,4 +18,3 @@ human/components/interaction 子模块
     - 支持采集、建造、交易、对话等多种交互模式
 """
 
-

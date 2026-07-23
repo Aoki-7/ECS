@@ -22,4 +22,3 @@ human/systems/injury 子模块
     - PainSystem     : 疼痛影响（疼痛对行动能力和决策的修正）
 """
 
-

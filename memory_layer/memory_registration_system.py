@@ -69,7 +69,7 @@ class MemoryRegistrationSystem(System):
         """
         # 尝试 AnimalComponent
         try:
-            from animal.components.animal_component import AnimalComponent
+            from biology.organisms.animal.components.animal_component import AnimalComponent
             animal_comp = world.get_component(entity, AnimalComponent)
             if animal_comp:
                 return self._extract_animal_info(animal_comp)
@@ -78,7 +78,7 @@ class MemoryRegistrationSystem(System):
 
         # 尝试 PlantComponent
         try:
-            from plant.components.plant_component import PlantComponent
+            from biology.organisms.plant.components.plant_component import PlantComponent
             plant_comp = world.get_component(entity, PlantComponent)
             if plant_comp:
                 return self._extract_plant_info(plant_comp)

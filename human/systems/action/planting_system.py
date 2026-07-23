@@ -98,7 +98,7 @@ class PlantingSystem(System):
         if space_system is None:
             return False
         nearby = space_system.query_radius(x=target_x, y=target_y, r=2)
-        from plant.components.plant_component import PlantComponent
+        from biology.organisms.plant.components.plant_component import PlantComponent
         for nid in nearby:
             if world.get_component_by_id(nid, PlantComponent) is not None:
                 return True
@@ -106,7 +106,7 @@ class PlantingSystem(System):
 
     def _create_plant_at(self, world, target_x: int, target_y: int):
         """在指定位置创建植物"""
-        from plant.plant_factory import PlantFactory
+        from biology.organisms.plant.plant_factory import PlantFactory
         species_list = list(PlantFactory.SPECIES_PRESETS.keys())
         species = random.choice(species_list)
         PlantFactory.create_plant(

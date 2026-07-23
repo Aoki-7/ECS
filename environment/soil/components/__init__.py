@@ -30,4 +30,3 @@ __all__ = [
     "SoilQualityComponent",
     "SoilTemperatureComponent",
 ]
-

@@ -29,4 +29,3 @@ class GoalComponent(Component):
     # 运行时状态（由 GoalSystem 管理）
     _last_update_time: float = 0.0
 
-

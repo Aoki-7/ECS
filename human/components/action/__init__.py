@@ -15,4 +15,3 @@ from .search_component import SearchComponent
 
 __all__ = ["ActionComponent", "ActionType", "ActionStatus", "SearchComponent"]
 
-

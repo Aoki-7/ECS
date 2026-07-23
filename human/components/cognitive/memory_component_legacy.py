@@ -97,4 +97,3 @@ class MemoryComponent(Component):
                 restored[k] = v
         return restored
 
-

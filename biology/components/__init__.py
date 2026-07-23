@@ -24,4 +24,3 @@
     - biology/lifecycle/components/ → 生命周期特有（能量、形态、阶段）
 """
 
-

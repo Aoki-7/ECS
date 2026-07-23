@@ -10,17 +10,17 @@ v3.9 适配：
 
 import unittest
 from core.world import World
-from animal.components.animal_component import AnimalComponent
-from animal.components.animal_learning_component import AnimalLearningComponent
-from animal.components.animal_memory_component import AnimalMemoryComponent
-from animal.components.animal_needs_component import AnimalNeedsComponent
-from animal.components.animal_perception_component import AnimalPerceptionComponent
-from animal.components.animal_reproduction_component import AnimalReproductionComponent
-from animal.components.animal_social_component import AnimalSocialComponent
-from animal.components.animal_territory_component import AnimalTerritoryComponent
-from animal.systems.animal_learning_system import AnimalLearningSystem
-from animal.systems.animal_memory_system import AnimalMemorySystem
-from animal.systems.animal_reproduction_system import AnimalReproductionSystem
+from biology.organisms.animal.components.animal_component import AnimalComponent
+from biology.organisms.animal.components.animal_learning_component import AnimalLearningComponent
+from biology.organisms.animal.components.animal_memory_component import AnimalMemoryComponent
+from biology.organisms.animal.components.animal_needs_component import AnimalNeedsComponent
+from biology.organisms.animal.components.animal_perception_component import AnimalPerceptionComponent
+from biology.organisms.animal.components.animal_reproduction_component import AnimalReproductionComponent
+from biology.organisms.animal.components.animal_social_component import AnimalSocialComponent
+from biology.organisms.animal.components.animal_territory_component import AnimalTerritoryComponent
+from biology.organisms.animal.systems.animal_learning_system import AnimalLearningSystem
+from biology.organisms.animal.systems.animal_memory_system import AnimalMemorySystem
+from biology.organisms.animal.systems.animal_reproduction_system import AnimalReproductionSystem
 from space.space_component import SpaceComponent
 from biology.lifecycle.components.energy_component import EnergyComponent
 
@@ -80,7 +80,7 @@ class TestAnimalComponents(unittest.TestCase):
         self.assertFalse(repro.is_pregnant)
 
     def test_animal_territory_component(self):
-        from animal.systems.animal_territory_system import AnimalTerritorySystem
+        from biology.organisms.animal.systems.animal_territory_system import AnimalTerritorySystem
         terr = AnimalTerritoryComponent(center_x=5.0, center_y=5.0, radius=3.0)
         self.assertTrue(AnimalTerritorySystem.is_inside(terr, 5.0, 5.0))
         self.assertTrue(AnimalTerritorySystem.is_inside(terr, 7.0, 5.0))
@@ -92,7 +92,7 @@ class TestAnimalComponents(unittest.TestCase):
         self.assertNotIn(99, terr.intruders)
 
     def test_animal_social_component(self):
-        from animal.systems.animal_social_system import AnimalSocialSystem
+        from biology.organisms.animal.systems.animal_social_system import AnimalSocialSystem
         social = AnimalSocialComponent(group_id=1, group_role="leader")
         AnimalSocialSystem.update_relationship(social, 2, 0.5)
         self.assertAlmostEqual(AnimalSocialSystem.get_relationship(social, 2), 0.5)
@@ -108,7 +108,7 @@ class TestAnimalSystems(unittest.TestCase):
 
     def test_animal_memory_system(self):
         """测试记忆系统衰减"""
-        from animal.systems.animal_memory_system import AnimalMemorySystem
+        from biology.organisms.animal.systems.animal_memory_system import AnimalMemorySystem
         entity = self.world.create_entity()
         memory = AnimalMemoryComponent(decay_rate=0.5)
         AnimalMemorySystem.add_memory(memory, 1.0, 2.0, "food", value=0.8, timestamp=0)

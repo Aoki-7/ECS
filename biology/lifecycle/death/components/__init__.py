@@ -19,4 +19,3 @@
     - DeathCauseComponent   : 详细描述死亡原因（疾病、饥饿、战斗、天气等）
 """
 
-

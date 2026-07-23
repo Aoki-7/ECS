@@ -14,4 +14,3 @@ from .inventory_component import InventoryComponent
 
 __all__ = ["InventoryComponent"]
 
-

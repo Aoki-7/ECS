@@ -53,7 +53,7 @@ from human.systems.identity.identity_system import IdentitySystem
 from human.systems.identity.age_system import AgeSystem
 
 # 额外工厂
-from plant.plant_factory import PlantFactory
+from biology.organisms.plant.plant_factory import PlantFactory
 from resource.wood.wood_factory import WoodFactory
 from resource.stone.stone_factory import StoneFactory
 from resource.metal.metal_factory import MetalFactory
@@ -70,7 +70,7 @@ from environment.environment_component import EnvironmentComponent
 from human.components.basic.human_component import HumanComponent
 from resource.food.components.food_component import FoodComponent
 from resource.water.components.water_component import WaterComponent
-from plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
 
 
 class FullSimulationLoop(SimulationLoop):

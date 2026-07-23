@@ -42,4 +42,3 @@ class TransformationSystem(System):
 
                 if rule.condition(comp):
                     rule.transform(entity, world)
-

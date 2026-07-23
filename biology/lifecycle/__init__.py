@@ -25,4 +25,3 @@ biology/lifecycle/ — 生命周期子领域
     - 尸体处理由 corpse/systems/corpse_system.py 负责
 """
 
-

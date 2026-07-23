@@ -46,8 +46,8 @@ from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from biology.components.gender_component import GenderComponent
 from human.components.social.reproduction_component import ReproductionComponent
 from biology.components.health_status_component import HealthStatusComponent
-from plant.components.plant_component import PlantComponent
-from animal.components.animal_component import AnimalComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
 from resource.food.components.food_component import FoodComponent
 from resource.water.components.water_component import WaterComponent
 

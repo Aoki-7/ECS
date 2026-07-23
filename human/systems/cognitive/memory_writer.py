@@ -31,7 +31,7 @@ class MemoryWriter:
         from biology.lifecycle.components.morphology_component import MorphologyComponent
         from resource.food.components.food_component import FoodComponent
         from resource.water.components.water_component import WaterComponent
-        from plant.components.plant_component import PlantComponent
+        from biology.organisms.plant.components.plant_component import PlantComponent
         from biology.lifecycle.death.components.dead_tag_component import DeadTagComponent
         from human.components.basic.human_component import HumanComponent
         from biology.lifecycle.components.life_cycle_component import LifeCycleComponent

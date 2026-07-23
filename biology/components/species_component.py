@@ -26,4 +26,3 @@ class SpeciesComponent(Component):
         species: 物种名称
     """
     species: str = "Human"      # 物种名称
-

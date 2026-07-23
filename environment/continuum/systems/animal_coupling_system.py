@@ -15,7 +15,7 @@ from core.system import System
 from core.world import World
 from space.space_component import SpaceComponent
 from environment.soil.components.soil_component import SoilComponent
-from animal.components.animal_component import AnimalComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
 
 logger = logging.getLogger(__name__)
 

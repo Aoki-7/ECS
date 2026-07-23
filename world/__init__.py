@@ -32,4 +32,3 @@ from .world_entity import WorldEntity
 __all__ = [
     "WorldEntity",
 ]
-

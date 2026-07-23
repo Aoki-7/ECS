@@ -100,14 +100,14 @@ class WorldSimulationDashboard:
         
         # 动物
         try:
-            from animal.components.animal_component import AnimalComponent
+            from biology.organisms.animal.components.animal_component import AnimalComponent
             snapshot.animals = len(list(self.world.get_entities_with(AnimalComponent)))
         except ImportError:
             pass
         
         # 植物
         try:
-            from plant.components.plant_component import PlantComponent
+            from biology.organisms.plant.components.plant_component import PlantComponent
             plants = list(self.world.get_entities_with(PlantComponent))
             snapshot.plants = len(plants)
         except ImportError:
@@ -188,8 +188,8 @@ class WorldSimulationDashboard:
         try:
             from space.space_component import SpaceComponent
             from human.components.basic.human_component import HumanComponent
-            from animal.components.animal_component import AnimalComponent
-            from plant.components.plant_component import PlantComponent
+            from biology.organisms.animal.components.animal_component import AnimalComponent
+            from biology.organisms.plant.components.plant_component import PlantComponent
             from civilization.components.building_component import BuildingComponent
             from civilization.components.farm_component import FarmPlotComponent
             

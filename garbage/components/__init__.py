@@ -18,4 +18,3 @@
     - 可扩展：GarbageTypeComponent 区分不同类型的残留物
 """
 
-

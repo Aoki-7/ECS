@@ -16,7 +16,7 @@ from environment.environment_component import EnvironmentComponent
 from environment.terrain.components.terrain_component import TerrainComponent
 from environment.soil.components.soil_component import SoilComponent
 from space.space_component import SpaceComponent
-from animal.components.animal_component import AnimalComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
 
 
 class TestFireDetectionSystem:

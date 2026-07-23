@@ -45,4 +45,3 @@ __all__ = [
     "resource_depletion_condition",
     "resource_depletion_transform",
 ]
-

@@ -22,4 +22,3 @@ human/systems/death 子模块
     - HumanDeathTriggerSystem: 检测人类特有死亡条件（绝望、过劳等）
 """
 
-

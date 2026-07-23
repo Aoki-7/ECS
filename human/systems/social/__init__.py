@@ -25,4 +25,3 @@
     - biology/lifecycle/birth/ 处理通用的出生创建逻辑
 """
 
-

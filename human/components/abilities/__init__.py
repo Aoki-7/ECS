@@ -13,4 +13,3 @@ from .velocity_component import VelocityComponent
 
 __all__ = ["VelocityComponent"]
 
-

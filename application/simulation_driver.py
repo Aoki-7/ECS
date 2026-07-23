@@ -63,8 +63,8 @@ class SimulationDriver:
     def get_stats(self) -> Dict[str, Any]:
         """获取统计信息"""
         from human.components.basic.human_component import HumanComponent
-        from animal.components.animal_component import AnimalComponent
-        from plant.components.plant_component import PlantComponent
+        from biology.organisms.animal.components.animal_component import AnimalComponent
+        from biology.organisms.plant.components.plant_component import PlantComponent
 
         # 使用 get_components 批量查询，避免 O(n) 遍历
         humans = sum(1 for _ in self.world.get_components(HumanComponent))

@@ -508,4 +508,3 @@ class MemoryManagerComponent(Component):
     def MAX_PEOPLE(self, value: int):
         """兼容v2: 设置长期记忆容量"""
         self.long_term_memory_capacity = value
-

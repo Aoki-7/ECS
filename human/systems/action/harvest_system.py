@@ -23,7 +23,7 @@ from resource.food.components.food_component import FoodComponent
 from space.space_component import SpaceComponent
 from space.space_system import SpaceSystem
 from equipment.components.ownership_component import OwnershipComponent
-from plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
 from biology.lifecycle.components.life_cycle_component import LifeCycleComponent
 from biology.lifecycle.components.morphology_component import MorphologyComponent
 from resource.food.food_factory import FoodFactory

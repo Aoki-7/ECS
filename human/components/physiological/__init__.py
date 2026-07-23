@@ -13,4 +13,3 @@ from .death_component import DeathComponent
 
 __all__ = ["DeathComponent"]
 
-

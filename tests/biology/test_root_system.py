@@ -10,7 +10,7 @@ import pytest
 
 from core.world import World
 from biology.components.root_component import RootComponent
-from plant.components.plant_component import PlantComponent
+from biology.organisms.plant.components.plant_component import PlantComponent
 from space.space_component import SpaceComponent
 from biology.systems.root_system import RootSystem
 

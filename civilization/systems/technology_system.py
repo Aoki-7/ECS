@@ -388,4 +388,3 @@ class DynamicTechnologySystem(System):
 
 # 兼容旧版API：对外导出TechnologySystem别名
 TechnologySystem = DynamicTechnologySystem
-

@@ -12,10 +12,10 @@ from core.world import World
 from core.entity import Entity
 
 from environment.light_field.components.light_receiver_component import LightReceiverComponent
-from plant.components.canopy_component import CanopyComponent
+from biology.organisms.plant.components.canopy_component import CanopyComponent
 from biology.components.phenotype_component import PhenotypeComponent
 from biology.systems.phenotype_system import PhenotypeSystem
-from plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
+from biology.organisms.plant.systems.photosynthesis_system import PlantPhotosynthesisSystem
 
 
 class TestPhotosynthesisSystem:

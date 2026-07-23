@@ -16,7 +16,7 @@ from human.components.economic.inventory.inventory_component import InventoryCom
 from human.components.perception.vision_component import VisionComponent
 from human.components.basic.human_component import HumanComponent
 from civilization.settlement.components.settlement_component import SettlementComponent
-from animal.components.animal_component import AnimalComponent
+from biology.organisms.animal.components.animal_component import AnimalComponent
 
 class ECSEnvironment:
     """ECS世界强化学习环境 v2.0，支持更多环境信息"""

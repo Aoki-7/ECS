@@ -27,4 +27,3 @@ resource/metal 子模块
     - 金属用于制造装备（equipment/）和建筑（civilization/）
 """
 
-

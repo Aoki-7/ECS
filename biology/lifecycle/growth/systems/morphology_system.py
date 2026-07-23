@@ -26,7 +26,7 @@ from biology.components.phenotype_component import PhenotypeComponent
 from biology.lifecycle.components.morphology_component import MorphologyComponent
 from biology.lifecycle.components.energy_component import EnergyComponent
 from resource.components.resource_component import ResourceComponent
-from plant.components.canopy_component import CanopyComponent
+from biology.organisms.plant.components.canopy_component import CanopyComponent
 
 
 class MorphologySystem(System):
